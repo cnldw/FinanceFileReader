@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/icon.ico</file>
+        <file>qm/qt_zh_CN.qm</file>
+    </qresource>
+</RCC>
