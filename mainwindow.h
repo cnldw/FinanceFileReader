@@ -8,6 +8,7 @@
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QFile>
+#include <QFileInfo>
 #include <QUrl>
 #include <QLabel>
 namespace Ui {
@@ -40,10 +41,30 @@ private:
     QLabel *statusLabelOne;
     QLabel *statusLabelTwo;
     QLabel *statusLabelThree;
+    QLabel *statusLabelFour;
+    QLabel *statusLabelFive;
     QString filePath;
 
+    /**
+     * @brief clear_statusBar
+     */
+    void clear_statusBar();
+    /**
+     * @brief display_rowsCount
+     * @param rowsCount
+     */
+    void display_rowsCount(int rowsCount);
+    /**
+     * @brief display_fileName
+     * @param filePath
+     */
     void display_fileName(QString filePath);
+    /**
+     * @brief open_file_Dialog
+     */
     void open_file_Dialog();
+
+    void statusBar_disPlay(QString text);
 };
 
 #endif // MAINWINDOW_H

@@ -1,42 +1,60 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     setAcceptDrops(true);
     //第一个标签
     statusLabelOne = new QLabel;
-    statusLabelOne->setMinimumSize(150, 20); // 设置标签最小大小
-    // statusLabelOne->setFrameShape(QFrame::WinPanel); // 设置标签形状
-    //  statusLabelOne->setFrameShadow(QFrame::Sunken); // 设置标签阴影
+    statusLabelOne->setMinimumSize(100, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabelOne);
     statusLabelOne->setText(tr("解析耗时:"));
 
     //第二个标签
     statusLabelTwo = new QLabel;
-    statusLabelTwo->setMinimumSize(200, 20); // 设置标签最小大小
-    // statusLabelTwo->setFrameShape(QFrame::WinPanel); // 设置标签形状
-    //  statusLabelTwo->setFrameShadow(QFrame::Sunken); // 设置标签阴影
+    statusLabelTwo->setMinimumSize(150, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabelTwo);
     //设置标签内容
-    statusLabelTwo->setText(tr("记录数："));
+    statusLabelTwo->setText(tr("总记录数:"));
 
     //第三个标签
     statusLabelThree = new QLabel;
-    statusLabelThree->setMinimumSize(250, 20); // 设置标签最小大小
-    // statusLabelTwo->setFrameShape(QFrame::WinPanel); // 设置标签形状
-    //  statusLabelTwo->setFrameShadow(QFrame::Sunken); // 设置标签阴影
+    statusLabelThree->setMinimumSize(230, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabelThree);
     //设置标签内容
-    statusLabelThree->setText(tr("文件："));
+    statusLabelThree->setText(tr("文件:"));
+
+    //第四个标签
+    statusLabelFour = new QLabel;
+    statusLabelFour->setMinimumSize(150, 20); // 设置标签最小大小
+    ui->statusBar->addWidget(statusLabelFour);
+    //设置标签内容
+    statusLabelFour->setText(tr("文件内0行0列"));
+    statusLabelFour->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列"));
+
+    //第五个标签
+    statusLabelFive = new QLabel;
+    statusLabelFive->setMinimumSize(195, 20); // 设置标签最小大小
+    ui->statusBar->addWidget(statusLabelFive);
+    //设置标签内容
+    statusLabelFive->setText(tr(""));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete statusLabelOne;
+    statusLabelOne=NULL;
+    delete statusLabelTwo;
+    statusLabelTwo=NULL;
+    delete statusLabelThree;
+    statusLabelThree=NULL;
+    delete statusLabelFour;
+    statusLabelFour=NULL;
+    delete statusLabelFive;
+    statusLabelFive=NULL;
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -47,12 +65,40 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 void MainWindow::dropEvent(QDropEvent *event)
 {
     QList<QUrl> urls = event->mimeData()->urls();
-    if (urls.isEmpty())
+    if (urls.isEmpty()){
         return;
+    }
+    if(urls.count()>1){
+        statusBar_disPlay("拖进来一个文件试试~,文件太多啦");
+        return;
+    }
     QString fileName = urls.first().toLocalFile();
-    if (fileName.isEmpty())
+    //判断是否是文件夹
+    QFileInfo fileinfo(fileName);
+    if(fileinfo.isDir()){
+        statusBar_disPlay("拖进来一个文件试试~,不接受文件夹");
         return;
-    ui->filePathLineText->setText(fileName);
+    }
+    if (fileName.isEmpty())
+    {        return;
+    }
+    else{
+        filePath=fileName;
+        ui->filePathLineText->setText(filePath);
+        display_fileName(filePath);
+        statusBar_disPlay(NULL);
+    }
+}
+
+/**
+  *清除状态栏的信息
+ * @brief MainWindow::clear_statusBar
+ */
+void MainWindow::clear_statusBar(){
+    statusLabelOne->setText(tr("解析耗时:"));
+    statusLabelTwo->setText(tr("总记录数:"));
+    statusLabelThree->setText(tr("文件:"));
+    statusLabelFour->setText(tr("文件内0行0列"));
 }
 
 /**
@@ -60,20 +106,41 @@ void MainWindow::dropEvent(QDropEvent *event)
  * @brief MainWindow::open_file_Dialog
  */
 void MainWindow::open_file_Dialog(){
-    filePath = QFileDialog::getOpenFileName(this, tr("打开文件..."), ".", tr("所有文件(*.*)"));
-    if(filePath.length() != 0) {
+    QString   file = QFileDialog::getOpenFileName(this, tr("打开文件..."), ".", tr("所有文件(*.*)"));
+    if(file.length() != 0) {
+        filePath=file;
         ui->filePathLineText->setText(filePath);
         display_fileName(filePath);
     } else {
         //放弃了读取文件
     }
 }
+/**
+  *显示加载的记录总数
+ * @brief MainWindow::display_rowsCount
+ * @param rowsCount
+ */
+void MainWindow::display_rowsCount(int rowsCount){
 
+    statusLabelTwo->setText(tr("总记录数:")+QString::number(rowsCount, 10)+tr("行"));
+}
+
+
+/**
+ * 用于加载文件后在状态栏显示加载的文件
+ * @brief MainWindow::display_fileName
+ * @param filePath
+ */
 void MainWindow::display_fileName(QString filePath){
     int first = filePath.lastIndexOf ("/");
     QString fileName = filePath.right (filePath.length ()-first-1);
     statusLabelThree->setText(tr("文件：")+fileName);
 }
+
+void MainWindow::statusBar_disPlay(QString text){
+    statusLabelFive->setText(text);
+}
+
 void MainWindow::on_fileOpen_triggered()
 {
     open_file_Dialog();
