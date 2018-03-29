@@ -25,11 +25,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    utils.cpp
+    utils.cpp \
+    ofdfiledefinition.cpp \
+    fielddefinition.cpp \
+    codeinfo.cpp
 
 HEADERS += \
         mainwindow.h \
-    utils.h
+    utils.h \
+    ofdfiledefinition.h \
+    fielddefinition.h \
+    codeinfo.h
 
 FORMS += \
         mainwindow.ui

@@ -43,21 +43,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 
     load_CodeInfo();
     load_FileType();
+    load_OFDDefinition();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
     delete statusLabelOne;
-    statusLabelOne=NULL;
+    statusLabelOne=nullptr;
     delete statusLabelTwo;
-    statusLabelTwo=NULL;
+    statusLabelTwo=nullptr;
     delete statusLabelThree;
-    statusLabelThree=NULL;
+    statusLabelThree=nullptr;
     delete statusLabelFour;
-    statusLabelFour=NULL;
+    statusLabelFour=nullptr;
     delete statusLabelFive;
-    statusLabelFive=NULL;
+    statusLabelFive=nullptr;
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -140,7 +141,11 @@ void MainWindow::load_CodeInfo(){
         QStringList agencyInfo=codeInfoIni.childGroups();
         //获取所有代码和代码对应的机构名称
         for(int i=0;i<agencyInfo.count();i++){
-            codeInfo.insert(codeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),codeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
+            CodeInfo info;
+            info.setCode(codeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString());
+            info.setVersion(codeInfoIni.value(agencyInfo.at(i)+"/IVERSION").toString());
+            info.setName(codeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
+            codeInfo.insert(codeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),info);
         }
         //debug信息
         QString info=QString("共计加载代码数据条数:").append(QString::number(agencyInfo.count()));
@@ -181,6 +186,96 @@ void MainWindow::load_FileType(){
         fileTypeIni.endGroup();}
     else{
         statusBar_disPlay(tr("config/FileType.ini配置丢失"));
+    }
+}
+
+void MainWindow::load_OFDDefinition(){
+    QDir dirPath("./config/");
+    QStringList filters;
+    filters << "OFD_*.ini";//设置过滤类型
+    dirPath.setNameFilters(filters);//设置文件名的过滤
+    QFileInfoList list = dirPath.entryInfoList();
+    if(list.length()!=0){
+        //循环检索config目录下可用的接口定义配置
+        //OFD开头ini结尾,形式类似于OFD_XXX_XXX.ini
+        for (int f = 0; f < list.size(); f++)
+        {
+            QString fileName=list.at(f).fileName();
+            QString fixName=fileName;
+            if(fileName.startsWith("OFD",Qt::CaseInsensitive)&&fileName.endsWith("ini",Qt::CaseInsensitive)){
+                //编辑加载文件
+                if(fixName.contains(".",Qt::CaseInsensitive)){
+                    fixName=fixName.mid(0,fixName.indexOf("."));
+                }
+                QStringList nameList=fixName.split("_");
+                if(nameList.count()==3){
+                    qDebug()<<"可用接口文件配置"<<fileName;
+                    //加载ini文件
+                    QString prefixName=nameList.at(1)+"_"+nameList.at(2);
+                    qDebug()<<prefixName;
+                    QSettings ofdIni("./config/"+fileName,QSettings::IniFormat,0);
+                    //目前仅接收UTF-8编码的配置文件
+                    ofdIni.setIniCodec("UTF-8");
+                    QStringList interfaceList=ofdIni.childGroups();
+                    //获取所有文件类别定义
+                    if(interfaceList.count()>0){
+                        for(int i=0;i<interfaceList.count();i++){
+                            //存入Qmap使用的key
+                            QString name=prefixName+"_"+interfaceList.at(i);
+                            QString message;
+                            qDebug()<<"待解析的文件------"+name;
+                            //查找COUNT标记
+                            QString countStr=ofdIni.value(interfaceList.at(i)+"/COUNT").toString();
+                            if(countStr.isEmpty()){
+                                message="找不到"+interfaceList.at(i)+"文件的字段总数配置";
+                                OFDFileDefinition ofd;
+                                ofd.setuseAble(false);
+                                ofd.setMessage(message);
+                                ofdDefinitionMap.insert(name,ofd);
+                            }else{
+                                bool ok;
+                                int countInt=countStr.toInt(&ok,10);
+                                if(ok&&countInt>0){
+                                    //满足要求,开始记录此接口文件的格式信息
+                                    OFDFileDefinition ofd;
+                                    QStringList iniStrList;
+                                    /*----------------开始解析此接口文件的定义-----------------------------------------------*/
+
+                                    for(int j=1;j<=countInt;j++){
+                                        //获取这个文件定义的第i个字段的信息
+                                        iniStrList=ofdIni.value(interfaceList.at(i)+"/"+QString::number(j)).toStringList();
+                                        if (iniStrList.isEmpty()||iniStrList.length()!=5){
+                                            message=interfaceList.at(i)+"文件的第"+j+"个字段定义不正确";
+                                            ofd.setuseAble(false);
+                                            ofd.setMessage(message);
+                                            ofdDefinitionMap.insert(name,ofd);
+                                            //遇到失败字段，则不再解析本文件的配置---
+                                            break;
+                                        }
+                                        else{
+                                            //解析没问题，存入此字段的信息
+                                            ofd.setfieldCount(countInt);
+                                            qDebug()<<iniStrList.at(3);
+                                        }
+                                    }
+                                    //读取结束要关闭组
+                                }
+                                else{
+                                    message=interfaceList.at(i)+"文件的字段总数配置不是有效的整数";
+                                    OFDFileDefinition ofd;
+                                    ofd.setuseAble(false);
+                                    ofd.setMessage(message);
+                                    ofdDefinitionMap.insert(name,ofd);
+                                }
+                            }
+                        }
+                    }
+                }
+            }}
+
+    } else
+    {
+        qDebug()<<"no file";
     }
 }
 /**
@@ -230,18 +325,18 @@ void MainWindow::initFile(QString filePath){
                 QString recCode=nameList.at(2);
                 QString dateInfo=nameList.at(3);
                 QString fileTypeCode=nameList.at(4);
-                //名称信息
-                QString sendInfo=codeInfo.value(sendCode);
-                QString recInfo=codeInfo.value(recCode);
-                QString fileTypeInfo=ofdFileInfo.value(fileTypeCode);
+                //con从配置文件获取名称信息
+                QString sendName=(codeInfo.value(sendCode)).getName();
+                QString recName=(codeInfo.value(recCode)).getName();
+                QString fileTypeName=ofdFileInfo.value(fileTypeCode);
                 //刷新UI
                 ui->lineEditSendCode->setText(sendCode);
                 ui->lineEditRecCode->setText(recCode);
                 ui->lineEditFileTransferDate->setText(dateInfo);
                 ui->lineEditFileType->setText(fileTypeCode);
-                ui->lineEditSenfInfo->setText(sendInfo);
-                ui->lineEditRecInfo->setText(recInfo);
-                ui->lineEditFileDescribe->setText(fileTypeInfo);
+                ui->lineEditSenfInfo->setText(sendName);
+                ui->lineEditRecInfo->setText(recName);
+                ui->lineEditFileDescribe->setText(fileTypeName);
                 return;
             }
         }else{
@@ -271,17 +366,17 @@ void MainWindow::initFile(QString filePath){
                     QString dateInfo=nameList.at(3);
                     QString fileIndexTypeCode=nameBegin;
                     //名称信息
-                    QString sendInfo=codeInfo.value(sendCode);
-                    QString recInfo=codeInfo.value(recCode);
-                    QString fileIndexTypeInfo=indexFileInfo.value(fileIndexTypeCode);
+                    QString sendName=codeInfo.value(sendCode).getName();
+                    QString recName=codeInfo.value(recCode).getName();
+                    QString fileIndexTypeName=indexFileInfo.value(fileIndexTypeCode);
                     //刷新UI
                     ui->lineEditSendCode->setText(sendCode);
                     ui->lineEditRecCode->setText(recCode);
                     ui->lineEditFileTransferDate->setText(dateInfo);
                     ui->lineEditFileType->setText(fileIndexTypeCode);
-                    ui->lineEditSenfInfo->setText(sendInfo);
-                    ui->lineEditRecInfo->setText(recInfo);
-                    ui->lineEditFileDescribe->setText(fileIndexTypeInfo);
+                    ui->lineEditSenfInfo->setText(sendName);
+                    ui->lineEditRecInfo->setText(recName);
+                    ui->lineEditFileDescribe->setText(fileIndexTypeName);
                     return;
                 }
             }else{

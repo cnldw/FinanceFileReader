@@ -7,6 +7,7 @@
 #include<QString>
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QUrl>
@@ -14,8 +15,11 @@
 #include <QSettings>
 #include <QDebug>
 #include <QMap>
+#include <QStringList>
 
 #include<utils.h>
+#include<ofdfiledefinition.h>
+#include<codeinfo.h>
 namespace Ui {
 class MainWindow;
 }
@@ -49,9 +53,10 @@ private:
     QLabel *statusLabelFour;
     QLabel *statusLabelFive;
     QString filePath;
-    QMap<QString, QString> codeInfo;
+    QMap<QString, CodeInfo> codeInfo;
     QMap<QString, QString> indexFileInfo;
     QMap<QString, QString> ofdFileInfo;
+    QMap<QString,OFDFileDefinition>ofdDefinitionMap;
 
     /**
      * @brief clear_statusBar
@@ -80,6 +85,8 @@ private:
     void load_CodeInfo();
 
     void load_FileType();
+
+    void load_OFDDefinition();
 };
 
 #endif // MAINWINDOW_H
