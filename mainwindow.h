@@ -11,6 +11,11 @@
 #include <QFileInfo>
 #include <QUrl>
 #include <QLabel>
+#include <QSettings>
+#include <QDebug>
+#include <QMap>
+
+#include<utils.h>
 namespace Ui {
 class MainWindow;
 }
@@ -44,6 +49,9 @@ private:
     QLabel *statusLabelFour;
     QLabel *statusLabelFive;
     QString filePath;
+    QMap<QString, QString> codeInfo;
+    QMap<QString, QString> indexFileInfo;
+    QMap<QString, QString> ofdFileInfo;
 
     /**
      * @brief clear_statusBar
@@ -59,12 +67,19 @@ private:
      * @param filePath
      */
     void display_fileName(QString filePath);
+    void initFile(QString filePath);
     /**
      * @brief open_file_Dialog
      */
     void open_file_Dialog();
 
+    void clear_Display();
+
     void statusBar_disPlay(QString text);
+
+    void load_CodeInfo();
+
+    void load_FileType();
 };
 
 #endif // MAINWINDOW_H
