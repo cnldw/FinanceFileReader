@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 
     //第五个标签
     statusLabelFive = new QLabel;
-    statusLabelFive->setMinimumSize(300, 20); // 设置标签最小大小
+    statusLabelFive->setMinimumSize(310, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabelFive);
     //设置标签内容
     statusLabelFive->setText(tr(""));
