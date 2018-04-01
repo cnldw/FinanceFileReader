@@ -6,15 +6,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 {
     ui->setupUi(this);
     setAcceptDrops(true);
-    //第一个标签
-    statusLabelOne = new QLabel;
-    statusLabelOne->setMinimumSize(50, 20); // 设置标签最小大小
-    ui->statusBar->addWidget(statusLabelOne);
-    statusLabelOne->setText(tr("耗时:"));
+    setWindowTitle("基金文件阅读器-"+Utils::getVersion());
 
     //第二个标签
     statusLabelTwo = new QLabel;
-    statusLabelTwo->setMinimumSize(100, 20); // 设置标签最小大小
+    statusLabelTwo->setMinimumSize(130, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabelTwo);
     //设置标签内容
     statusLabelTwo->setText(tr("记录数:"));
@@ -36,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 
     //第五个标签
     statusLabelFive = new QLabel;
-    statusLabelFive->setMinimumSize(310, 20); // 设置标签最小大小
+    statusLabelFive->setMinimumSize(335, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabelFive);
     //设置标签内容
     statusLabelFive->setText(tr(""));
@@ -49,8 +45,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete statusLabelOne;
-    statusLabelOne=nullptr;
     delete statusLabelTwo;
     statusLabelTwo=nullptr;
     delete statusLabelThree;
@@ -99,7 +93,6 @@ void MainWindow::dropEvent(QDropEvent *event)
  * @brief MainWindow::clear_statusBar
  */
 void MainWindow::clear_statusBar(){
-    statusLabelOne->setText(tr("耗时:"));
     statusLabelTwo->setText(tr("记录数:"));
     statusLabelThree->setText(tr("文件:"));
     statusLabelFour->setText(tr("文件内0行0列"));
@@ -198,6 +191,7 @@ void MainWindow::load_OFDDefinition(){
     if(list.length()!=0){
         //循环检索config目录下可用的接口定义配置
         //OFD开头ini结尾,形式类似于OFD_XXX_XXX.ini
+        /*-------------------------------开启第一重循环,遍历config下的OFD配置文件-----------------------------------*/
         for (int f = 0; f < list.size(); f++)
         {
             QString fileName=list.at(f).fileName();
@@ -219,54 +213,96 @@ void MainWindow::load_OFDDefinition(){
                     QStringList interfaceList=ofdIni.childGroups();
                     //获取所有文件类别定义
                     if(interfaceList.count()>0){
+                        /*-----------------第二重循环，遍历OFD文件内的文件定义----------------------*/
+                        /* /////////////////////////开始解析本文件可用接口文件定义////////// */
                         for(int i=0;i<interfaceList.count();i++){
                             //存入Qmap使用的key
                             QString name=prefixName+"_"+interfaceList.at(i);
+                            OFDFileDefinition ofd;
+                            QList<FieldDefinition> fieldList;
                             QString message;
-                            qDebug()<<"待解析的文件------"+name;
+                            bool okFlag=false;
+                            //记录每行的长度，自动总数
+                            int rowLength=0;
+                            int filedCount=0;
+                            //qDebug()<<"待解析的文件记录------"+name;
                             //查找COUNT标记
                             QString countStr=ofdIni.value(interfaceList.at(i)+"/COUNT").toString();
                             if(countStr.isEmpty()){
                                 message="找不到"+interfaceList.at(i)+"文件的字段总数配置";
-                                OFDFileDefinition ofd;
-                                ofd.setuseAble(false);
-                                ofd.setMessage(message);
-                                ofdDefinitionMap.insert(name,ofd);
+                                okFlag=false;
                             }else{
                                 bool ok;
                                 int countInt=countStr.toInt(&ok,10);
                                 if(ok&&countInt>0){
-                                    //满足要求,开始记录此接口文件的格式信息
-                                    OFDFileDefinition ofd;
-                                    QStringList iniStrList;
-                                    /*----------------开始解析此接口文件的定义-----------------------------------------------*/
-
+                                    filedCount=countInt;
+                                    /*------第三重循环--开始按行解析此接口文件的定义----------------*/
+                                    //解析规则-一旦解析到一个失败的记录，就不再往下解析了
                                     for(int j=1;j<=countInt;j++){
+                                        FieldDefinition ofdfiled;
                                         //获取这个文件定义的第i个字段的信息
-                                        iniStrList=ofdIni.value(interfaceList.at(i)+"/"+QString::number(j)).toStringList();
+                                        QStringList iniStrList=ofdIni.value(interfaceList.at(i)+"/"+QString::number(j)).toStringList();
                                         if (iniStrList.isEmpty()||iniStrList.length()!=5){
-                                            message=interfaceList.at(i)+"文件的第"+j+"个字段定义不正确";
-                                            ofd.setuseAble(false);
-                                            ofd.setMessage(message);
-                                            ofdDefinitionMap.insert(name,ofd);
-                                            //遇到失败字段，则不再解析本文件的配置---
+                                            message=interfaceList.at(i)+"文件的第"+j+"个字段定义不正确或者缺失";
+                                            okFlag=false;
                                             break;
                                         }
-                                        else{
-                                            //解析没问题，存入此字段的信息
-                                            ofd.setfieldCount(countInt);
-                                            qDebug()<<iniStrList.at(3);
+                                        //获取字符类型参数
+                                        QString filedType=((QString)iniStrList.at(0));
+                                        if(filedType.length()!=1){
+                                            message=interfaceList.at(i)+"文件的第"+j+"个字段字段类型定义不对";
+                                            okFlag=false;
+                                            break;
                                         }
+                                        //字段长度
+                                        bool lengthOk;
+                                        int length=((QString)iniStrList.at(1)).toInt(&lengthOk,10);
+                                        if(!lengthOk){
+                                            message=interfaceList.at(i)+"文件的第"+j+"个字段的长度定义竟然不是整数";
+                                            okFlag=false;
+                                            break;
+                                        }
+                                        //字段小数长度
+                                        bool declengthOk;
+                                        int declength=((QString)iniStrList.at(2)).toInt(&declengthOk,10);
+                                        if(!declengthOk){
+                                            message=interfaceList.at(i)+"文件的第"+j+"个字段的小数长度定义竟然不是整数";
+                                            okFlag=false;
+                                            break;
+                                        }
+                                        //历经千辛万苦经理校验无误后存入字段信息
+                                        rowLength+=length;
+                                        ofdfiled.setLength(length);
+                                        ofdfiled.setDecLength(declength);
+                                        ofdfiled.setFiledType(filedType);
+                                        ofdfiled.setFiledName((QString)iniStrList.at(4));
+                                        ofdfiled.setFiledDescribe((QString)iniStrList.at(3));
+                                        fieldList.append(ofdfiled);
+                                        //更新记录为成功
+                                        okFlag=true;
                                     }
                                     //读取结束要关闭组
                                 }
                                 else{
                                     message=interfaceList.at(i)+"文件的字段总数配置不是有效的整数";
-                                    OFDFileDefinition ofd;
-                                    ofd.setuseAble(false);
-                                    ofd.setMessage(message);
-                                    ofdDefinitionMap.insert(name,ofd);
+                                    okFlag=false;
                                 }
+                            }
+                            //写入该文件的配置
+                            //如果记录完整没错误则写入
+                            if(okFlag){
+                                ofd.setuseAble(okFlag);
+                                ofd.setMessage(message);
+                                ofd.setfieldCount(filedCount);
+                                ofd.setrowLength(rowLength);
+                                ofd.setfieldList(fieldList);
+                                ofdDefinitionMap.insert(name,ofd);
+                            }
+                            //如果记录有错误,则仅写于不可用和错误原因
+                            else{
+                                ofd.setuseAble(okFlag);
+                                ofd.setMessage(message);
+                                ofdDefinitionMap.insert(name,ofd);
                             }
                         }
                     }
@@ -337,6 +373,7 @@ void MainWindow::initFile(QString filePath){
                 ui->lineEditSenfInfo->setText(sendName);
                 ui->lineEditRecInfo->setText(recName);
                 ui->lineEditFileDescribe->setText(fileTypeName);
+                //此处开始加载OFD数据文件
                 return;
             }
         }else{
@@ -377,6 +414,8 @@ void MainWindow::initFile(QString filePath){
                     ui->lineEditSenfInfo->setText(sendName);
                     ui->lineEditRecInfo->setText(recName);
                     ui->lineEditFileDescribe->setText(fileIndexTypeName);
+                    //此处开始加载索引文件
+                    load_indexFile(filePath);
                     return;
                 }
             }else{
@@ -386,6 +425,73 @@ void MainWindow::initFile(QString filePath){
             }
         }
     }
+}
+
+/**
+  *加载索引文件的实现,注意数据加载放到后台线程实现,避免加载数据时UI卡顿
+ * @brief MainWindow::load_indexFile
+ * @param filePath
+ */
+
+void MainWindow::load_indexFile(QString filePath){
+    QList <QStringList> data;
+    QStringList list;
+    list.append("索引的文件");
+    data.append(list);
+    for(int i=0;i<65;i++){
+        QStringList list;
+        list.append("OFD_C4_225_20170620_07.TXT");
+        data.append(list);
+    }
+    displayTable(data);
+}
+
+void MainWindow::displayTable(QList <QStringList> data){
+    //data分解，第一行记录是表头，从第二行开始为数据
+    QDateTime current_date_time = QDateTime::currentDateTime();
+    //QString current_date = current_date_time.toString("yyyy-MM-dd");
+    QString current_time = current_date_time.toString("hh:mm:ss.zzz ");
+    qDebug()<<current_time;
+    if(!data.empty()){
+        int colCount=data.at(0).count();
+        int rowCount=data.count()-1;
+        QTableWidget *table=ui->tableWidget;
+        table->setColumnCount(colCount);
+        table->setRowCount(rowCount);
+        //设置表格行标题
+        table->setHorizontalHeaderLabels(data.at(0));
+        //设置表格的选择方式
+        table->setSelectionBehavior(QAbstractItemView::SelectItems);
+        //设置编辑方式
+        table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        //设置表格的内容
+        if(rowCount>0){
+            for (int row = 1; row <= rowCount; ++row)
+            {
+                table->setRowHeight(row-1,22);
+                QStringList rowdata=data.at(row);
+                for(int col=0;col<colCount;col++){
+                    QTableWidgetItem *item= new QTableWidgetItem(rowdata.at(col));
+                    table->setItem(row-1, col, item);
+                }
+            }
+        }
+        table->resizeColumnsToContents();
+        display_rowsCount(rowCount);
+    }
+    else
+    {
+        statusBar_disPlay(tr("没有数据可供显示~"));
+    }
+    QDateTime current_date_time2 = QDateTime::currentDateTime();
+    //QString current_date2 = current_date_time2.toString("yyyy-MM-dd");
+    QString current_time2 = current_date_time2.toString("hh:mm:ss.zzz ");
+    qDebug()<<current_time2;
+}
+
+void MainWindow::clearTable(){
+    ui->tableWidget->setRowCount(0);
+    ui->tableWidget->setColumnCount(0);
 }
 
 void MainWindow::statusBar_disPlay(QString text){
@@ -401,6 +507,7 @@ void MainWindow::clear_Display(){
     ui->lineEditRecInfo->setText(NULL);
     ui->lineEditFileDescribe->setText(NULL);
     clear_statusBar();
+    clearTable();
 }
 
 void MainWindow::on_fileOpen_triggered()
@@ -410,7 +517,7 @@ void MainWindow::on_fileOpen_triggered()
 
 void MainWindow::on_aboutOpen_triggered()
 {
-    QMessageBox::about(this,tr("关于本程序"),tr("本程序是一个可以解析格式化显示开放式基金数据交换协议的工具，用于解析如上所述协议所交换的各种文件\r\n作者:793554262@qq.com(刘德位)"));
+    QMessageBox::about(this,tr("关于本程序"),tr("本程序是一个可以解析格式化显示开放式基金数据交换协议的工具，用于解析如上所述协议所交换的各种文件\r\n作者:793554262@qq.com(刘德位)\r\n\r\n版本:")+Utils::getVersion());
 }
 
 void MainWindow::on_actionAboutQt_triggered()

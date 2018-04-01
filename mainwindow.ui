@@ -50,7 +50,7 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QGroupBox" name="groupBox">
+     <widget class="QGroupBox" name="groupBoxInfo">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -73,7 +73,7 @@
        <bool>true</bool>
       </property>
       <property name="title">
-       <string>文件信息区</string>
+       <string>文件信息</string>
       </property>
       <widget class="QLabel" name="labelFileTransferDate">
        <property name="geometry">
@@ -356,30 +356,30 @@
         <string>文件检查</string>
        </property>
       </widget>
-      <zorder>labelSendInfo</zorder>
-      <zorder>labelFileTransferDate</zorder>
-      <zorder>lineEditFileTransferDate</zorder>
-      <zorder>labelUseIni</zorder>
-      <zorder>lineEditRecInfo</zorder>
+      <zorder>labelFileInfo</zorder>
+      <zorder>filePathLineText</zorder>
+      <zorder>pushButtonOpenFile</zorder>
+      <zorder>labelSendCode</zorder>
       <zorder>lineEditSendCode</zorder>
-      <zorder>labelFileDescribe</zorder>
-      <zorder>lineEditUseIni</zorder>
-      <zorder>lineEditFileType</zorder>
-      <zorder>labeTRecInfo</zorder>
+      <zorder>labelSendInfo</zorder>
       <zorder>lineEditSenfInfo</zorder>
       <zorder>labelRecCode</zorder>
-      <zorder>lineEditFileDescribe</zorder>
-      <zorder>labelFileType</zorder>
-      <zorder>filePathLineText</zorder>
-      <zorder>labelSendCode</zorder>
       <zorder>lineEditRecCode</zorder>
-      <zorder>labelFileInfo</zorder>
+      <zorder>labeTRecInfo</zorder>
+      <zorder>lineEditRecInfo</zorder>
+      <zorder>labelUseIni</zorder>
+      <zorder>lineEditUseIni</zorder>
+      <zorder>labelFileType</zorder>
+      <zorder>lineEditFileType</zorder>
+      <zorder>labelFileDescribe</zorder>
+      <zorder>lineEditFileDescribe</zorder>
+      <zorder>labelFileTransferDate</zorder>
+      <zorder>lineEditFileTransferDate</zorder>
       <zorder>pushButtonOpenFile_2</zorder>
-      <zorder>pushButtonOpenFile</zorder>
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_2">
+     <widget class="QGroupBox" name="groupBoxTools">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -485,11 +485,11 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_3">
-      <property name="title">
-       <string>数据内容</string>
-      </property>
-     </widget>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QTableWidget" name="tableWidget"/>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

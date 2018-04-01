@@ -14,6 +14,7 @@ public:
     Utils();
      static bool isDirExist(QString fullPath);
      static bool isFileExist(QString fullFileName);
+     static QString getVersion();
 };
 
 #endif // UTILS_H

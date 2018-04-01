@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include<QString>
 #include <QDragEnterEvent>
 #include <QMimeData>
@@ -16,9 +18,10 @@
 #include <QDebug>
 #include <QMap>
 #include <QStringList>
-
+#include<QDateTime>
 #include<utils.h>
 #include<ofdfiledefinition.h>
+#include <fielddefinition.h>
 #include<codeinfo.h>
 namespace Ui {
 class MainWindow;
@@ -47,11 +50,11 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QLabel *statusLabelOne;
     QLabel *statusLabelTwo;
     QLabel *statusLabelThree;
     QLabel *statusLabelFour;
     QLabel *statusLabelFive;
+    QTableWidget *table;
     QString filePath;
     QMap<QString, CodeInfo> codeInfo;
     QMap<QString, QString> indexFileInfo;
@@ -87,6 +90,12 @@ private:
     void load_FileType();
 
     void load_OFDDefinition();
+
+    void load_indexFile(QString filePath);
+
+    void displayTable(QList <QStringList> data);
+
+    void clearTable();
 };
 
 #endif // MAINWINDOW_H

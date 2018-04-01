@@ -21,3 +21,9 @@ bool Utils::isFileExist(QString fullFileName)
     }
     return false;
 }
+
+QString Utils::getVersion()
+{
+    return "V0.1";
+}
+
