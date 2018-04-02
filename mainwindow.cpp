@@ -135,6 +135,7 @@ void MainWindow::load_CodeInfo(){
         //获取所有代码和代码对应的机构名称
         for(int i=0;i<agencyInfo.count();i++){
             CodeInfo info;
+            //qDebug()<<codeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString();
             info.setCode(codeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString());
             info.setVersion(codeInfoIni.value(agencyInfo.at(i)+"/IVERSION").toString());
             info.setName(codeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
@@ -243,14 +244,14 @@ void MainWindow::load_OFDDefinition(){
                                         //获取这个文件定义的第i个字段的信息
                                         QStringList iniStrList=ofdIni.value(interfaceList.at(i)+"/"+QString::number(j)).toStringList();
                                         if (iniStrList.isEmpty()||iniStrList.length()!=5){
-                                            message=interfaceList.at(i)+"文件的第"+j+"个字段定义不正确或者缺失";
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段定义不正确或者缺失";
                                             okFlag=false;
                                             break;
                                         }
                                         //获取字符类型参数
                                         QString filedType=((QString)iniStrList.at(0));
-                                        if(filedType.length()!=1){
-                                            message=interfaceList.at(i)+"文件的第"+j+"个字段字段类型定义不对";
+                                        if(filedType.length()<1){
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的类型定义缺失,请配置";
                                             okFlag=false;
                                             break;
                                         }
@@ -258,7 +259,7 @@ void MainWindow::load_OFDDefinition(){
                                         bool lengthOk;
                                         int length=((QString)iniStrList.at(1)).toInt(&lengthOk,10);
                                         if(!lengthOk){
-                                            message=interfaceList.at(i)+"文件的第"+j+"个字段的长度定义竟然不是整数";
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的长度定义竟然不是整数";
                                             okFlag=false;
                                             break;
                                         }
@@ -266,7 +267,7 @@ void MainWindow::load_OFDDefinition(){
                                         bool declengthOk;
                                         int declength=((QString)iniStrList.at(2)).toInt(&declengthOk,10);
                                         if(!declengthOk){
-                                            message=interfaceList.at(i)+"文件的第"+j+"个字段的小数长度定义竟然不是整数";
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义竟然不是整数";
                                             okFlag=false;
                                             break;
                                         }
@@ -373,7 +374,9 @@ void MainWindow::initFile(QString filePath){
                 ui->lineEditSenfInfo->setText(sendName);
                 ui->lineEditRecInfo->setText(recName);
                 ui->lineEditFileDescribe->setText(fileTypeName);
+                //记录从文件里读取的文件发送信息
                 //此处开始加载OFD数据文件
+                load_ofdFile(sendCode,fileTypeCode,filePath);
                 return;
             }
         }else{
@@ -434,24 +437,146 @@ void MainWindow::initFile(QString filePath){
  */
 
 void MainWindow::load_indexFile(QString filePath){
-    QList <QStringList> data;
-    QStringList list;
-    list.append("索引的文件");
-    data.append(list);
-    for(int i=0;i<65;i++){
-        QStringList list;
-        list.append("OFD_C4_225_20170620_07.TXT");
-        data.append(list);
+
+    //清除原来的数据信息
+    fileHeaderMap.clear();
+    fileDataList.clear();
+    /////////////////////////////
+    QList<int> width;
+    width.append(210);
+    QStringList header;
+    header.append("索引包含的文件信息");
+    fileDataList.append(header);
+    QFile dataFile(filePath);
+    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    {
+        QTextStream data(&dataFile);
+        QString line;
+        int lineNumber=0;
+        while (!data.atEnd())
+        {   QStringList lineList;
+            line = data.readLine();
+            line=line.remove('\r').remove('\n');
+            //文件体
+            if(lineNumber>5){
+                lineList.append(line);
+                fileDataList.append(lineList);
+            }
+            //文件头部
+            else{
+                switch (lineNumber) {
+                case 0:
+                    //文件第一行OF标记
+                    fileHeaderMap.insert("filebegin",line);
+                    break;
+                case 1:
+                    //文件第二行版本
+                    fileHeaderMap.insert("version",line);
+                    break;
+                case 2:
+                    //文件第三行发送方代码
+                    fileHeaderMap.insert("sendcode",line);
+                    break;
+                case 3:
+                    //文件第四行接收方代码
+                    fileHeaderMap.insert("recivecode",line);
+                    break;
+                case 4:
+                    //文件第五行文件传递日期
+                    fileHeaderMap.insert("filedate",line);
+                    break;
+                case 5:
+                    //文件第6行文件记录数
+                    fileHeaderMap.insert("count",line);
+                    break;
+                default:
+                    break;
+                }
+            }
+            lineNumber++;
+        }
+        //处理最后一行
+        QString lastLine=fileDataList.last().at(0);
+        if(lastLine.startsWith("OFDCFEND")){
+            fileHeaderMap.insert("fileend",lastLine);
+            fileDataList.removeLast();
+        }
+        dataFile.close();
     }
-    displayTable(data);
+    displayIndexTable(width,fileDataList);
 }
 
-void MainWindow::displayTable(QList <QStringList> data){
+void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath){
+
+    //清除原来的数据信息
+    fileHeaderMap.clear();
+    fileDataList.clear();
+    //首先获取发送方Code用于检索V版本
+    QString defineMapName;
+    QString versionName;
+    CodeInfo info=codeInfo.value(sendCode);
+    if(info.getCode().isEmpty()){
+        qDebug()<<"未找到该代码的版本信息，默认使用400接口";
+        versionName="400";
+    }else{
+        versionName=info.getVersion();
+    }
+    qDebug()<<"用于解析本文件的大版本"<<versionName;
+    QString versionFromFile="";
+    QFile dataFile(filePath);
+    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    {
+        QTextStream data(&dataFile);
+        QString line;
+        int lineNumber=0;
+        while (!data.atEnd())
+        {   QStringList lineList;
+            line = data.readLine();
+            line=line.remove('\r').remove('\n').trimmed();
+            //文件体
+            lineList.append(line);
+            //仅读取两行,用户获取文件版本
+            if(lineNumber==1){
+                versionFromFile=line;
+                break;
+            }
+            lineNumber++;
+        }
+        dataFile.close();
+        if(versionFromFile.isEmpty()){
+            statusBar_disPlay("解析失败,未从文件第二行读取到版本号信息");
+            return;
+        }else{
+            defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
+            //配置完毕,输出使用的配置
+            ui->lineEditUseIni->setText("OFD_"+versionName+"_"+versionFromFile+".ini");
+        }
+        //判断对应的配置文件是否存在
+        QString path="config/OFD_"+versionName+"_"+versionFromFile+".ini";
+        if(Utils::isFileExist(path)){
+            OFDFileDefinition ofd=ofdDefinitionMap.value(defineMapName);
+            if(ofdDefinitionMap.contains(defineMapName)) {
+                if(ofd.getuseAble()){
+                    //找到配置,开始解析配置,此处待优化,需改为后台读取文件
+                    statusBar_disPlay("开始解析文件内容");
+                }else{
+                    statusBar_disPlay("解析失败:配置文件"+path+"中"+ofd.getMessage());
+                    return;
+                }
+            }else{
+                statusBar_disPlay("解析失败:未在"+path+"配置中找到"+fileType+"文件的定义,请配置");
+                return;
+            }
+
+        }else{
+            statusBar_disPlay("解析失败,配置"+path+"不存在");
+            return;
+        }
+    }
+}
+
+void MainWindow::displayIndexTable(QList<int> colwidth,QList <QStringList> data){
     //data分解，第一行记录是表头，从第二行开始为数据
-    QDateTime current_date_time = QDateTime::currentDateTime();
-    //QString current_date = current_date_time.toString("yyyy-MM-dd");
-    QString current_time = current_date_time.toString("hh:mm:ss.zzz ");
-    qDebug()<<current_time;
     if(!data.empty()){
         int colCount=data.at(0).count();
         int rowCount=data.count()-1;
@@ -460,6 +585,9 @@ void MainWindow::displayTable(QList <QStringList> data){
         table->setRowCount(rowCount);
         //设置表格行标题
         table->setHorizontalHeaderLabels(data.at(0));
+        for(int i=0;i<colCount;i++){
+            table->setColumnWidth(i,colwidth.at(i));
+        }
         //设置表格的选择方式
         table->setSelectionBehavior(QAbstractItemView::SelectItems);
         //设置编辑方式
@@ -476,17 +604,13 @@ void MainWindow::displayTable(QList <QStringList> data){
                 }
             }
         }
-        table->resizeColumnsToContents();
+        //table->resizeColumnsToContents();
         display_rowsCount(rowCount);
     }
     else
     {
         statusBar_disPlay(tr("没有数据可供显示~"));
     }
-    QDateTime current_date_time2 = QDateTime::currentDateTime();
-    //QString current_date2 = current_date_time2.toString("yyyy-MM-dd");
-    QString current_time2 = current_date_time2.toString("hh:mm:ss.zzz ");
-    qDebug()<<current_time2;
 }
 
 void MainWindow::clearTable(){
@@ -528,4 +652,22 @@ void MainWindow::on_actionAboutQt_triggered()
 void MainWindow::on_pushButtonOpenFile_clicked()
 {
     open_file_Dialog();
+}
+
+void MainWindow::on_pushButtonOpenFile_2_clicked()
+{
+    if(!fileHeaderMap.isEmpty()){
+        //组织要显示的内容
+        QString info;
+        info.append("文件解析情况如下:\r\n");
+        info.append("文件发送者代码:").append(fileHeaderMap.value("sendcode")).append("\r\n");
+        info.append("文件接收者代码:").append(fileHeaderMap.value("recivecode")).append("\r\n");
+        info.append("文件传递日期:").append(fileHeaderMap.value("filedate")).append("\r\n");
+        info.append("文件总记录数:").append(fileHeaderMap.value("count")).append("成功加载记录数:").append(QString::number(fileDataList.count()-1)).append("\r\n");
+        info.append("文件起始行:").append(fileHeaderMap.value("filebegin")).append("\r\n");
+        info.append("文件结束行:").append(fileHeaderMap.value("fileend")).append("\r\n");
+        QMessageBox::information(this,tr("检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
+    }else{
+        QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Yes,QMessageBox::Yes);
+    }
 }

@@ -15,7 +15,7 @@ QString CodeInfo::getName()const{
     return this->name;
 };
 void CodeInfo::setCode(QString code){
-    this->name=code;
+    this->code=code;
 };
 void CodeInfo::setVersion(QString version){
     this->version=version;

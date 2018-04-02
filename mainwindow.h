@@ -48,6 +48,8 @@ private slots:
 
     void on_pushButtonOpenFile_clicked();
 
+    void on_pushButtonOpenFile_2_clicked();
+
 private:
     Ui::MainWindow *ui;
     QLabel *statusLabelTwo;
@@ -60,6 +62,8 @@ private:
     QMap<QString, QString> indexFileInfo;
     QMap<QString, QString> ofdFileInfo;
     QMap<QString,OFDFileDefinition>ofdDefinitionMap;
+    QList<QStringList> fileDataList;
+    QMap<QString,QString> fileHeaderMap;
 
     /**
      * @brief clear_statusBar
@@ -93,7 +97,9 @@ private:
 
     void load_indexFile(QString filePath);
 
-    void displayTable(QList <QStringList> data);
+    void load_ofdFile(QString sendCode,QString fileType,QString filePath);
+
+    void displayIndexTable(QList<int> colwidth,QList <QStringList> data);
 
     void clearTable();
 };
