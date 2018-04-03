@@ -519,7 +519,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
         qDebug()<<"未找到该代码的版本信息，默认使用400接口";
         versionName="400";
     }else{
-        versionName=info.getVersion();
+        versionName=(info.getVersion().isEmpty()?"400":info.getVersion());
     }
     qDebug()<<"用于解析本文件的大版本"<<versionName;
     QString versionFromFile="";
@@ -558,7 +558,46 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
             if(ofdDefinitionMap.contains(defineMapName)) {
                 if(ofd.getuseAble()){
                     //找到配置,开始解析配置,此处待优化,需改为后台读取文件
+                    qDebug()<<"接口文档记录长度"<<ofd.getrowLength();
+                    QList<QString> fileContentList;
+                    QFile dataFile(filePath);
+                    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                    {
+                        QTextStream data(&dataFile);
+                        QString line;
+                        while (!data.atEnd())
+                        {
+                            line = data.readLine();
+                            line=line.remove('\r').remove('\n');
+                            fileContentList.append(line);
+                        }
+                        dataFile.close();
+                    }
+                    //读取到了文本内容
                     statusBar_disPlay("开始解析文件内容");
+                    //开始解析文件头
+                    qDebug()<<fileContentList.count();
+                    if(fileContentList.count()<10){
+                        statusBar_disPlay("文件内没什么可以解析的内容");
+                    }{
+                        //从文件中获取字段数
+                        QString fileCount=fileContentList.at(9);
+                        bool ok;
+                        int count=fileCount.toInt(&ok,10);
+                        if(ok){
+                            //文件字段数一致，准予解析
+                            if(ofd.getfieldCount()==count){
+
+                            }else{
+                                statusBar_disPlay(path+"中定义的字段数和文件中不一致,解析失败");
+                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的字段数和文件中不一致\r\n"+path+"中"+fileType+"文件定义的有["+QString::number(ofd.getfieldCount())+"[个字段\r\n实际打开的文件中有["+QString::number(count)+"]个字段\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Yes,QMessageBox::Yes);
+                                return;
+                            }
+                        }else{
+                            statusBar_disPlay("从文件中第9行读取字段总数时失败，请检查文件是否合规");
+                            return;
+                        }
+                    }
                 }else{
                     statusBar_disPlay("解析失败:配置文件"+path+"中"+ofd.getMessage());
                     return;
