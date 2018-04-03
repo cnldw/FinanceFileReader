@@ -101,6 +101,8 @@ private:
 
     void displayIndexTable(QList<int> colwidth,QList <QStringList> data);
 
+    void displayOFDTable();
+
     void clearTable();
 };
 

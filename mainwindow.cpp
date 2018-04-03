@@ -585,12 +585,38 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                         bool ok;
                         int count=fileCount.toInt(&ok,10);
                         if(ok){
+                            //首先记录表头信息
+                            QStringList titleList;
+                            for(int coltitle=0;coltitle<ofd.getfieldCount();coltitle++){
+                                titleList.append(ofd.getfieldList().at(coltitle).getFiledDescribe());
+                            }
+                            fileDataList.append(titleList);
                             //文件字段数一致，准予解析
                             if(ofd.getfieldCount()==count){
+                                //数据开始位置
+                                //9个文件头行记录，1个文件记录数行，共计10个
+                                int beginIndex=11+ofd.getfieldCount();
+                                //数据内容结束位置,去除最后一行OFD标记
+                                int endIndex=fileContentList.count()-1;
+                                int dataRowNumber=0;
+                                for(int dataRow=beginIndex;dataRow<endIndex;dataRow++){
+                                    dataRowNumber++;
+                                    QString rowString=fileContentList.at(dataRow);
+                                    //长度不一致，报错提示
+                                    if(rowString.length()!=ofd.getrowLength()){
+                                        statusBar_disPlay(path+"中定义的记录长度和文件中不一致,解析失败");
+                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(dataRow)+"[行长度为["+QString::number(rowString.length())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                        break;
+                                    }else{
+                                        //长度一致，准予解析
 
+                                    }
+                                }
+                                displayOFDTable();
+                                return;
                             }else{
                                 statusBar_disPlay(path+"中定义的字段数和文件中不一致,解析失败");
-                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的字段数和文件中不一致\r\n"+path+"中"+fileType+"文件定义的有["+QString::number(ofd.getfieldCount())+"[个字段\r\n实际打开的文件中有["+QString::number(count)+"]个字段\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Yes,QMessageBox::Yes);
+                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的字段数和文件中不一致\r\n"+path+"中"+fileType+"文件定义的有["+QString::number(ofd.getfieldCount())+"[个字段\r\n实际打开的文件中有]"+QString::number(count)+"]个字段\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                 return;
                             }
                         }else{
@@ -644,6 +670,41 @@ void MainWindow::displayIndexTable(QList<int> colwidth,QList <QStringList> data)
             }
         }
         //table->resizeColumnsToContents();
+        display_rowsCount(rowCount);
+    }
+    else
+    {
+        statusBar_disPlay(tr("没有数据可供显示~"));
+    }
+}
+
+void MainWindow::displayOFDTable(){
+    //fileDataList分解，第一行记录是表头，从第二行开始为数据
+    if(!fileDataList.empty()){
+        int colCount=fileDataList.at(0).count();
+        int rowCount=fileDataList.count()-1;
+        QTableWidget *table=ui->tableWidget;
+        table->setColumnCount(colCount);
+        table->setRowCount(rowCount);
+        //设置表格行标题
+        table->setHorizontalHeaderLabels(fileDataList.at(0));
+        //设置表格的选择方式
+        table->setSelectionBehavior(QAbstractItemView::SelectItems);
+        //设置编辑方式
+        table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        //设置表格的内容
+        if(rowCount>0){
+            for (int row = 1; row <= rowCount; ++row)
+            {
+                table->setRowHeight(row-1,22);
+                QStringList rowdata=fileDataList.at(row);
+                for(int col=0;col<colCount;col++){
+                    QTableWidgetItem *item= new QTableWidgetItem(rowdata.at(col));
+                    table->setItem(row-1, col, item);
+                }
+            }
+        }
+        table->resizeColumnsToContents();
         display_rowsCount(rowCount);
     }
     else
