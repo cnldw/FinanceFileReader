@@ -587,8 +587,9 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                         if(ok){
                             //首先记录表头信息
                             QStringList titleList;
+                            QList <FieldDefinition>  filedDef=(ofd.getfieldList());
                             for(int coltitle=0;coltitle<ofd.getfieldCount();coltitle++){
-                                titleList.append(ofd.getfieldList().at(coltitle).getFiledDescribe());
+                                titleList.append(filedDef.at(coltitle).getFiledDescribe());
                             }
                             fileDataList.append(titleList);
                             //文件字段数一致，准予解析
@@ -602,14 +603,72 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                                 for(int dataRow=beginIndex;dataRow<endIndex;dataRow++){
                                     dataRowNumber++;
                                     QString rowString=fileContentList.at(dataRow);
+                                    //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
+                                    //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
+                                    QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+                                    //获取行记录的byte
+                                    QByteArray qbyteArrayRow=rowString.toLocal8Bit();
                                     //长度不一致，报错提示
-                                    if(rowString.length()!=ofd.getrowLength()){
+                                    if(qbyteArrayRow.size()!=ofd.getrowLength()){
                                         statusBar_disPlay(path+"中定义的记录长度和文件中不一致,解析失败");
                                         QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(dataRow)+"[行长度为["+QString::number(rowString.length())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                         break;
                                     }else{
                                         //长度一致，准予解析
+                                        int begin=0;
+                                        QStringList rowList;
+                                        //循环截取字符数组,获取每个字段转换成QString
+                                        for(int col=0;col<count;col++){
+                                            //字段长度
+                                            int filedlength=filedDef.at(col).getLength();
+                                            //小数长度
+                                            int filedDeclength=filedDef.at(col).getDecLength();
 
+                                            //获取此字段的值
+                                            QString filed=QString::fromLocal8Bit(qbyteArrayRow.mid(begin,filedlength));
+                                            //数据信息处理
+                                            //字符型--trim处理
+                                            if(filedDef.at(col).getFiledType()=="C"){
+                                                filed=filed.trimmed();
+                                            }
+                                            //数字字符型，限于0—9--trim处理
+                                            else if(filedDef.at(col).getFiledType()=="A"){
+                                                filed=filed.trimmed();
+                                            }
+                                            //数值型，其长度不包含小数点，可参与数值计算
+                                            //去除左侧的0,但是如果整数部分全是0，则至少保留一个0然后插入一个小数点
+                                            else  if(filedDef.at(col).getFiledType()=="N"){
+                                                int needCheck=filedlength-filedDeclength-1;
+                                                int needCutZero=0;
+                                                for(int s=0;s<needCheck;s++){
+                                                    if(filed.at(s)=='0'){
+                                                        needCutZero++;
+                                                    }
+                                                    //如果不是0了，则跳出循环
+                                                    else{
+                                                        break;
+                                                    }
+                                                }
+                                                //获取整数
+                                                QString left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
+                                                //获取小数--如果小数长度为0,就不必处理小数了
+                                                if(filedDeclength==0){
+                                                    filed=left;
+                                                }else{
+                                                    QString right=filed.right(filedDeclength);
+                                                    filed=left.append(".").append(right);
+                                                }
+                                            }
+                                            //不定长文本
+                                            else  if(filedDef.at(col).getFiledType()=="TEXT"){
+                                                filed=filed.trimmed();
+                                            }
+                                            //其他类型,原样输出，不再调整
+                                            rowList.append(filed);
+                                            //下一个字段的起始位置
+                                            begin+=filedlength;
+                                        }
+                                        fileDataList.append(rowList);
                                     }
                                 }
                                 displayOFDTable();
@@ -706,6 +765,7 @@ void MainWindow::displayOFDTable(){
         }
         table->resizeColumnsToContents();
         display_rowsCount(rowCount);
+        statusBar_disPlay("文件解析完毕!");
     }
     else
     {
@@ -741,7 +801,7 @@ void MainWindow::on_fileOpen_triggered()
 
 void MainWindow::on_aboutOpen_triggered()
 {
-    QMessageBox::about(this,tr("关于本程序"),tr("本程序是一个可以解析格式化显示开放式基金数据交换协议的工具，用于解析如上所述协议所交换的各种文件\r\n作者:793554262@qq.com(刘德位)\r\n\r\n版本:")+Utils::getVersion());
+    QMessageBox::about(this,tr("关于本程序"),tr("本程序是一个可以解析格式化显示开放式基金数据交换协议文件的工具\r\n可以用于解析如上所述协议所交换的各种文件\r\n作      者:793554262@qq.com(刘德位)\r\n商业支持:793554262@qq.com(刘德位)\r\n友情赞助:15238872101(支付宝转账)\r\n\r\n版本:")+Utils::getVersion());
 }
 
 void MainWindow::on_actionAboutQt_triggered()

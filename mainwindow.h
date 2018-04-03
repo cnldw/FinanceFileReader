@@ -23,6 +23,8 @@
 #include<ofdfiledefinition.h>
 #include <fielddefinition.h>
 #include<codeinfo.h>
+#include<QByteArray>
+#include<QTextCodec>
 namespace Ui {
 class MainWindow;
 }
