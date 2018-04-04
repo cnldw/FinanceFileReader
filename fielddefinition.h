@@ -23,8 +23,12 @@ public:
     QString getFiledDescribe() const;
     void setFiledDescribe( QString value);
 
+    int getRowBeginIndex() const;
+    void setRowBeginIndex(int value);
+
 private:
     QString filedType;
+    int rowBeginIndex;
     int length;
     int decLength;
     QString filedName;

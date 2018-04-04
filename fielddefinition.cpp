@@ -54,3 +54,13 @@ void FieldDefinition::setFiledDescribe( QString value)
 {
     filedDescribe = value;
 }
+
+int FieldDefinition::getRowBeginIndex() const
+{
+    return rowBeginIndex;
+}
+
+void FieldDefinition::setRowBeginIndex(int value)
+{
+    rowBeginIndex = value;
+}

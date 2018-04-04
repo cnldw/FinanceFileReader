@@ -8,6 +8,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     setAcceptDrops(true);
     setWindowTitle("基金文件阅读器-"+Utils::getVersion());
 
+    //监控表格进度条的变化
+    connect (ui->tableWidget->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //第二个标签
     statusLabelTwo = new QLabel;
     statusLabelTwo->setMinimumSize(130, 20); // 设置标签最小大小
@@ -86,6 +88,28 @@ void MainWindow::dropEvent(QDropEvent *event)
         display_fileName(filePath);
         initFile(filePath);
     }
+}
+
+
+//滚动条变化信息竖向
+void MainWindow::acceptVScrollValueChanged(int value)
+{
+    for(int h = hValue; h < hValue + 15; h++)
+    {
+        for(int w = wValue; w <wValue + 15; w++)
+        {
+         //deleteColumnItem(h, w);
+        }
+    }
+    hValue = value;
+    for(int h = hValue; h < hValue + 15; h++)
+    {
+        for(int w = wValue; w <wValue + 15; w++)
+        {
+            //setColumnItem(h, w, QString("%0").arg (OriginalDate[h*strList.size () + w]));
+        }
+    }
+    qDebug()<<hValue;
 }
 
 /**
@@ -272,6 +296,9 @@ void MainWindow::load_OFDDefinition(){
                                             break;
                                         }
                                         //历经千辛万苦经理校验无误后存入字段信息
+                                        //每个字段开始的位置就是截至到上一个字段结束的长度
+                                        //比如第一个字段长度为2,则第二个字段在此行记录中的起始坐标就是2（0,1这两个字节是第一个字段的索引）
+                                        ofdfiled.setRowBeginIndex(rowLength);
                                         rowLength+=length;
                                         ofdfiled.setLength(length);
                                         ofdfiled.setDecLength(declength);
@@ -511,7 +538,8 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
     //清除原来的数据信息
     fileHeaderMap.clear();
     fileDataList.clear();
-    //首先获取发送方Code用于检索V版本
+    ofdFileHeaderQStringList.clear();
+    ofdFileContentQByteArrayList.clear();
     QString defineMapName;
     QString versionName;
     CodeInfo info=codeInfo.value(sendCode);
@@ -557,154 +585,80 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
             OFDFileDefinition ofd=ofdDefinitionMap.value(defineMapName);
             if(ofdDefinitionMap.contains(defineMapName)) {
                 if(ofd.getuseAble()){
+                    //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
+                    //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
+                    QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
                     //找到配置,开始解析配置,此处待优化,需改为后台读取文件
                     qDebug()<<"接口文档记录长度"<<ofd.getrowLength();
-                    QList<QString> fileContentList;
                     QFile dataFile(filePath);
+                    //判断如果文件打开成功,则开始读取
                     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
                     {
                         QTextStream data(&dataFile);
+                        int lineNumber=0;
+                        //数据行开始的位置
+                        int beginIndex=11+ofd.getfieldCount();
                         QString line;
                         while (!data.atEnd())
-                        {
-                            line = data.readLine();
-                            line=line.remove('\r').remove('\n');
-                            fileContentList.append(line);
+                        {   //如果此行记录小于数据开始行,则认为是文件头
+                            if(lineNumber<beginIndex){
+                                line = data.readLine();
+                                line=line.remove('\r').remove('\n');
+                                ofdFileHeaderQStringList.append(line);
+                            }
+                            //数据行
+                            else{
+                                line = data.readLine();
+                                line=line.remove('\r').remove('\n');
+                                //获取本行的QByteArray
+                                QByteArray qbyteArrayRow=line.toLocal8Bit();
+                                //本行记录和接口约束的一致,存入
+                                if(qbyteArrayRow.size()==ofd.getrowLength()){
+                                    ofdFileContentQByteArrayList.append(qbyteArrayRow);
+                                }else{
+                                    //如果行长度为9且内容为OFDCFEND,我们就认为文件结束
+                                    if(line.length()==8&&QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
+                                        break;
+                                    }else{
+                                        statusBar_disPlay(path+"中定义的记录长度和文件中不一致,解析失败...");
+                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"[行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                        break;
+                                    }
+                                }
+                            }
+                            lineNumber++;
                         }
                         dataFile.close();
-                    }
-                    //读取到了文本内容
-                    statusBar_disPlay("开始解析文件内容");
-                    //开始解析文件头
-                    qDebug()<<fileContentList.count();
-                    if(fileContentList.count()<10){
-                        statusBar_disPlay("文件内没什么可以解析的内容");
-                    }{
-                        //从文件中获取字段数
-                        QString fileCount=fileContentList.at(9);
-                        bool ok;
-                        int count=fileCount.toInt(&ok,10);
-                        if(ok){
-                            //首先记录表头信息
+                        //开始解析文件头
+                        if(ofdFileContentQByteArrayList.count()<1){
+                            statusBar_disPlay("文件内没什么可以解析的内容");
+                        }
+                        //文件体包含内容,准予解析
+                        else{
+                            statusBar_disPlay("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行,开始准备解析显示");
+                            //获取下表头信息
                             QStringList titleList;
                             QList <FieldDefinition>  filedDef=(ofd.getfieldList());
                             for(int coltitle=0;coltitle<ofd.getfieldCount();coltitle++){
                                 titleList.append(filedDef.at(coltitle).getFiledDescribe());
                             }
                             fileDataList.append(titleList);
-                            //文件字段数一致，准予解析
-                            if(ofd.getfieldCount()==count){
-                                //数据开始位置
-                                //9个文件头行记录，1个文件记录数行，共计10个
-                                int beginIndex=11+ofd.getfieldCount();
-                                //数据内容结束位置,去除最后一行OFD标记
-                                int endIndex=fileContentList.count()-1;
-                                int dataRowNumber=0;
-                                //是否需要显示内容的flag,如果解析文件出现错误则不再显示
-                                bool needDisplay=true;
-                                for(int dataRow=beginIndex;dataRow<endIndex;dataRow++){
-                                    dataRowNumber++;
-                                    //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
-                                    //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
-                                    QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
-                                    //获取行记录的byte
-                                    QByteArray qbyteArrayRow=fileContentList.at(dataRow).toLocal8Bit();
-                                    //长度不一致，报错提示
-                                    if(qbyteArrayRow.size()!=ofd.getrowLength()){
-                                        statusBar_disPlay(path+"中定义的记录长度和文件中不一致,解析失败");
-                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(dataRow)+"[行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
-                                        break;
-                                        needDisplay=false;
-                                    }else{
-                                        //长度一致，准予解析
-                                        int begin=0;
-                                        QStringList rowList;
-                                        //循环截取字符数组,获取每个字段转换成QString
-                                        int filedlength=0;
-                                        int filedDeclength=0;
-                                        QString filed="";
-                                        QString left="";
-                                        QString right="";
-                                        for(int col=0;col<count;col++){
-                                            //字段长度
-                                            filedlength=filedDef.at(col).getLength();
-                                            //小数长度
-                                            filedDeclength=filedDef.at(col).getDecLength();
-                                            //获取此字段的值
-                                            filed=QString::fromLocal8Bit(qbyteArrayRow.mid(begin,filedlength));
-                                            //数据信息处理
-                                            //字符型--trim处理
-                                            if(filedDef.at(col).getFiledType()=="C"){
-                                                filed=filed.trimmed();
-                                            }
-                                            //数字字符型，限于0—9--trim处理
-                                            else if(filedDef.at(col).getFiledType()=="A"){
-                                                filed=filed.trimmed();
-                                            }
-                                            //数值型，其长度不包含小数点，可参与数值计算
-                                            //去除左侧的0,但是如果整数部分全是0，则至少保留一个0然后插入一个小数点
-                                            else  if(filedDef.at(col).getFiledType()=="N"){
-                                                int needCheck=filedlength-filedDeclength-1;
-                                                int needCutZero=0;
-                                                for(int s=0;s<needCheck;s++){
-                                                    if(filed.at(s)=='0'){
-                                                        needCutZero++;
-                                                    }
-                                                    //如果不是0了，则跳出循环
-                                                    else{
-                                                        break;
-                                                    }
-                                                }
-                                                //获取整数
-                                                left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
-                                                //获取小数--如果小数长度为0,就不必处理小数了
-                                                if(filedDeclength==0){
-                                                    filed=left;
-                                                }else{
-                                                    right=filed.right(filedDeclength);
-                                                    filed=left.append(".").append(right);
-                                                }
-                                            }
-                                            //不定长文本
-                                            else  if(filedDef.at(col).getFiledType()=="TEXT"){
-                                                filed=filed.trimmed();
-                                            }
-                                            //其他类型,原样输出，不再调整
-                                            rowList.append(filed);
-                                            //下一个字段的起始位置
-                                            begin+=filedlength;
-                                        }
-                                        fileDataList.append(rowList);
-                                    }
-                                }
-                                //实验特性,清除原始记录
-                                fileContentList.clear();
-                                //如果行记录全部解析正常则显示到表格
-                                if(needDisplay){
-                                    displayOFDTable();
-                                }
-                                return;
-                            }else{
-                                statusBar_disPlay(path+"中定义的字段数和文件中不一致,解析失败");
-                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的字段数和文件中不一致\r\n"+path+"中"+fileType+"文件定义的有["+QString::number(ofd.getfieldCount())+"[个字段\r\n实际打开的文件中有]"+QString::number(count)+"]个字段\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
-                                return;
-                            }
-                        }else{
-                            statusBar_disPlay("从文件中第9行读取字段总数时失败，请检查文件是否合规");
-                            return;
+                            displayOFDTable(ofd);
                         }
+                    }else{
+                        statusBar_disPlay("解析失败:文件读取失败,请重试...");
+                        return;
                     }
                 }else{
                     statusBar_disPlay("解析失败:配置文件"+path+"中"+ofd.getMessage());
                     return;
                 }
             }else{
-                statusBar_disPlay("解析失败:未在"+path+"配置中找到"+fileType+"文件的定义,请配置");
+                statusBar_disPlay("解析失败:未在"+path+"配置中找到"+fileType+"文件的定义,请配置...");
                 return;
             }
-
         }else{
-            statusBar_disPlay("解析失败,配置"+path+"不存在");
+            statusBar_disPlay("解析失败,配置"+path+"不存在...");
             return;
         }
     }
@@ -748,11 +702,11 @@ void MainWindow::displayIndexTable(QList<int> colwidth,QList <QStringList> data)
     }
 }
 
-void MainWindow::displayOFDTable(){
-    //fileDataList分解，第一行记录是表头，从第二行开始为数据
+void MainWindow::displayOFDTable(OFDFileDefinition ofd){
+    //对于OFD文件fileDataList只用来记录表头
     if(!fileDataList.empty()){
         int colCount=fileDataList.at(0).count();
-        int rowCount=fileDataList.count()-1;
+        int rowCount=ofdFileContentQByteArrayList.count();
         QTableWidget *table=ui->tableWidget;
         table->setColumnCount(colCount);
         table->setRowCount(rowCount);
@@ -762,15 +716,65 @@ void MainWindow::displayOFDTable(){
         table->setSelectionBehavior(QAbstractItemView::SelectItems);
         //设置编辑方式
         table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        table->verticalHeader()->setDefaultSectionSize(22);
         //设置表格的内容
+        //按行读取ofdFileContentQByteArrayList,边读取边解析
         if(rowCount>0){
-            for (int row = 1; row <= rowCount; ++row)
+            //模拟设置前100行数据内容
+            for (int row = 0; row < 100; ++row)
             {
-                table->setRowHeight(row-1,22);
-                QStringList rowdata=fileDataList.at(row);
                 for(int col=0;col<colCount;col++){
-                    QTableWidgetItem *item= new QTableWidgetItem(rowdata.at(col));
+                    QTableWidgetItem *item= new QTableWidgetItem();
                     table->setItem(row-1, col, item);
+                    //开始获取此字段的值
+                    QString filed="";
+                    //字段长度
+                    int filedlength=ofd.getfieldList().at(col).getLength();
+                    //小数长度
+                    int filedDeclength=ofd.getfieldList().at(col).getDecLength();
+                    //获取此字段的值
+                    filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row).mid(ofd.getfieldList().at(col).getRowBeginIndex(),filedlength));
+                    //数据信息处理
+                    //字符型--trim处理
+                    if(ofd.getfieldList().at(col).getFiledType()=="C"){
+                        filed=filed.trimmed();
+                    }
+                    //数字字符型，限于0—9--trim处理
+                    else if(ofd.getfieldList().at(col).getFiledType()=="A"){
+                        filed=filed.trimmed();
+                    }
+                    //数值型，其长度不包含小数点，可参与数值计算
+                    //去除左侧的0,但是如果整数部分全是0，则至少保留一个0然后插入一个小数点
+                    else  if(ofd.getfieldList().at(col).getFiledType()=="N"){
+                        int needCheck=filedlength-filedDeclength-1;
+                        int needCutZero=0;
+                        for(int s=0;s<needCheck;s++){
+                            if(filed.at(s)=='0'){
+                                needCutZero++;
+                            }
+                            //如果不是0了，则跳出循环
+                            else{
+                                break;
+                            }
+                        }
+                        //获取整数
+                        QString left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
+                        //获取小数--如果小数长度为0,就不必处理小数了
+                        if(filedDeclength==0){
+                            filed=left;
+                        }else{
+                            //获取小数
+                            QString right=filed.right(filedDeclength);
+                            //拼接整数部分和小数部分
+                            filed=left.append(".").append(right);
+                        }
+                    }
+                    //不定长文本
+                    else  if(ofd.getfieldList().at(col).getFiledType()=="TEXT"){
+                        filed=filed.trimmed();
+                    }
+                    //其他类型,原样输出，不再调整
+                    item->setText(filed);
                 }
             }
         }
@@ -780,7 +784,7 @@ void MainWindow::displayOFDTable(){
     }
     else
     {
-        statusBar_disPlay(tr("没有数据可供显示~"));
+        statusBar_disPlay(tr("空的数据记录,没有数据可供显示..."));
     }
 }
 

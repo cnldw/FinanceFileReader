@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QScrollBar>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include<QString>
@@ -52,6 +53,9 @@ private slots:
 
     void on_pushButtonOpenFile_2_clicked();
 
+    //接受滚动条事件
+    void acceptVScrollValueChanged(int value);
+
 private:
     Ui::MainWindow *ui;
     QLabel *statusLabelTwo;
@@ -66,6 +70,13 @@ private:
     QMap<QString,OFDFileDefinition>ofdDefinitionMap;
     QList<QStringList> fileDataList;
     QMap<QString,QString> fileHeaderMap;
+    //OFD文件头使用Qstring记录
+    QList<QString> ofdFileHeaderQStringList;
+    //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
+    QList<QByteArray> ofdFileContentQByteArrayList;
+
+    int hValue = 0;
+    int wValue = 0;
 
     /**
      * @brief clear_statusBar
@@ -103,7 +114,7 @@ private:
 
     void displayIndexTable(QList<int> colwidth,QList <QStringList> data);
 
-    void displayOFDTable();
+    void displayOFDTable(OFDFileDefinition ofd);
 
     void clearTable();
 };
