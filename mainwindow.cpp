@@ -620,13 +620,18 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                                         int begin=0;
                                         QStringList rowList;
                                         //循环截取字符数组,获取每个字段转换成QString
+                                        int filedlength=0;
+                                        int filedDeclength=0;
+                                        QString filed="";
+                                        QString left="";
+                                        QString right="";
                                         for(int col=0;col<count;col++){
                                             //字段长度
-                                            int filedlength=filedDef.at(col).getLength();
+                                            filedlength=filedDef.at(col).getLength();
                                             //小数长度
-                                            int filedDeclength=filedDef.at(col).getDecLength();
+                                            filedDeclength=filedDef.at(col).getDecLength();
                                             //获取此字段的值
-                                            QString filed=QString::fromLocal8Bit(qbyteArrayRow.mid(begin,filedlength));
+                                            filed=QString::fromLocal8Bit(qbyteArrayRow.mid(begin,filedlength));
                                             //数据信息处理
                                             //字符型--trim处理
                                             if(filedDef.at(col).getFiledType()=="C"){
@@ -651,12 +656,12 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                                                     }
                                                 }
                                                 //获取整数
-                                                QString left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
+                                                left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
                                                 //获取小数--如果小数长度为0,就不必处理小数了
                                                 if(filedDeclength==0){
                                                     filed=left;
                                                 }else{
-                                                    QString right=filed.right(filedDeclength);
+                                                    right=filed.right(filedDeclength);
                                                     filed=left.append(".").append(right);
                                                 }
                                             }
