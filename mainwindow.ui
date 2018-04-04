@@ -60,14 +60,20 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>100</height>
+        <height>95</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>100</height>
+        <height>95</height>
        </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <kerning>true</kerning>
+       </font>
       </property>
       <property name="autoFillBackground">
        <bool>true</bool>
@@ -79,14 +85,14 @@
        <property name="geometry">
         <rect>
          <x>560</x>
-         <y>65</y>
+         <y>67</y>
          <width>81</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -96,9 +102,9 @@
       <widget class="QLineEdit" name="lineEditFileTransferDate">
        <property name="geometry">
         <rect>
-         <x>640</x>
-         <y>65</y>
-         <width>150</width>
+         <x>642</x>
+         <y>67</y>
+         <width>148</width>
          <height>20</height>
         </rect>
        </property>
@@ -107,14 +113,14 @@
        <property name="geometry">
         <rect>
          <x>13</x>
-         <y>65</y>
+         <y>67</y>
          <width>71</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -124,9 +130,9 @@
       <widget class="QLineEdit" name="lineEditRecInfo">
        <property name="geometry">
         <rect>
-         <x>630</x>
-         <y>41</y>
-         <width>232</width>
+         <x>634</x>
+         <y>43</y>
+         <width>228</width>
          <height>20</height>
         </rect>
        </property>
@@ -134,9 +140,9 @@
       <widget class="QLineEdit" name="lineEditSendCode">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>41</y>
-         <width>41</width>
+         <x>88</x>
+         <y>43</y>
+         <width>46</width>
          <height>20</height>
         </rect>
        </property>
@@ -145,14 +151,14 @@
        <property name="geometry">
         <rect>
          <x>344</x>
-         <y>65</y>
-         <width>68</width>
+         <y>67</y>
+         <width>61</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -163,14 +169,14 @@
        <property name="geometry">
         <rect>
          <x>13</x>
-         <y>16</y>
+         <y>18</y>
          <width>31</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -180,9 +186,9 @@
       <widget class="QLineEdit" name="lineEditUseIni">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>65</y>
-         <width>126</width>
+         <x>88</x>
+         <y>67</y>
+         <width>124</width>
          <height>20</height>
         </rect>
        </property>
@@ -191,7 +197,7 @@
        <property name="geometry">
         <rect>
          <x>280</x>
-         <y>65</y>
+         <y>67</y>
          <width>61</width>
          <height>20</height>
         </rect>
@@ -201,14 +207,14 @@
        <property name="geometry">
         <rect>
          <x>560</x>
-         <y>41</y>
+         <y>43</y>
          <width>71</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -219,7 +225,7 @@
        <property name="geometry">
         <rect>
          <x>216</x>
-         <y>41</y>
+         <y>43</y>
          <width>211</width>
          <height>20</height>
         </rect>
@@ -229,7 +235,7 @@
        <property name="geometry">
         <rect>
          <x>792</x>
-         <y>15</y>
+         <y>17</y>
          <width>71</width>
          <height>22</height>
         </rect>
@@ -242,14 +248,14 @@
        <property name="geometry">
         <rect>
          <x>430</x>
-         <y>41</y>
+         <y>43</y>
          <width>71</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -259,9 +265,9 @@
       <widget class="QLineEdit" name="lineEditFileDescribe">
        <property name="geometry">
         <rect>
-         <x>402</x>
-         <y>65</y>
-         <width>152</width>
+         <x>406</x>
+         <y>67</y>
+         <width>148</width>
          <height>20</height>
         </rect>
        </property>
@@ -269,15 +275,15 @@
       <widget class="QLabel" name="labelFileType">
        <property name="geometry">
         <rect>
-         <x>220</x>
-         <y>65</y>
+         <x>216</x>
+         <y>67</y>
          <width>61</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -288,7 +294,7 @@
        <property name="geometry">
         <rect>
          <x>50</x>
-         <y>16</y>
+         <y>18</y>
          <width>740</width>
          <height>20</height>
         </rect>
@@ -301,14 +307,14 @@
        <property name="geometry">
         <rect>
          <x>13</x>
-         <y>41</y>
+         <y>43</y>
          <width>71</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -318,9 +324,9 @@
       <widget class="QLineEdit" name="lineEditRecCode">
        <property name="geometry">
         <rect>
-         <x>500</x>
-         <y>41</y>
-         <width>54</width>
+         <x>504</x>
+         <y>43</y>
+         <width>50</width>
          <height>20</height>
         </rect>
        </property>
@@ -329,14 +335,14 @@
        <property name="geometry">
         <rect>
          <x>140</x>
-         <y>41</y>
+         <y>43</y>
          <width>71</width>
          <height>20</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>10</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -347,7 +353,7 @@
        <property name="geometry">
         <rect>
          <x>792</x>
-         <y>64</y>
+         <y>66</y>
          <width>71</width>
          <height>22</height>
         </rect>
@@ -398,6 +404,11 @@
         <height>45</height>
        </size>
       </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+       </font>
+      </property>
       <property name="title">
        <string>操作栏</string>
       </property>
@@ -405,7 +416,7 @@
        <property name="geometry">
         <rect>
          <x>13</x>
-         <y>15</y>
+         <y>18</y>
          <width>263</width>
          <height>20</height>
         </rect>
@@ -417,8 +428,8 @@
       <widget class="QPushButton" name="pushButtonPreSearch">
        <property name="geometry">
         <rect>
-         <x>280</x>
-         <y>14</y>
+         <x>278</x>
+         <y>17</y>
          <width>74</width>
          <height>22</height>
         </rect>
@@ -430,8 +441,8 @@
       <widget class="QPushButton" name="pushButtonNextSearch">
        <property name="geometry">
         <rect>
-         <x>355</x>
-         <y>14</y>
+         <x>353</x>
+         <y>17</y>
          <width>73</width>
          <height>22</height>
         </rect>
@@ -443,8 +454,8 @@
       <widget class="QPushButton" name="pushButtonNextSearch_2">
        <property name="geometry">
         <rect>
-         <x>429</x>
-         <y>14</y>
+         <x>427</x>
+         <y>17</y>
          <width>70</width>
          <height>22</height>
         </rect>
@@ -464,8 +475,8 @@ p, li { white-space: pre-wrap; }
       <widget class="QPushButton" name="pushButtonNextSearch_3">
        <property name="geometry">
         <rect>
-         <x>500</x>
-         <y>14</y>
+         <x>498</x>
+         <y>17</y>
          <width>70</width>
          <height>22</height>
         </rect>
@@ -523,6 +534,11 @@ p, li { white-space: pre-wrap; }
    <property name="text">
     <string>打开</string>
    </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei</family>
+    </font>
+   </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
@@ -530,6 +546,12 @@ p, li { white-space: pre-wrap; }
   <action name="aboutOpen">
    <property name="text">
     <string>关于本程序</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei</family>
+     <kerning>true</kerning>
+    </font>
    </property>
    <property name="shortcut">
     <string>F1</string>
@@ -541,6 +563,11 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="statusTip">
     <string/>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei</family>
+    </font>
    </property>
    <property name="shortcut">
     <string>F2</string>

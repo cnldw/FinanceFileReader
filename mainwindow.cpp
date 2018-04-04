@@ -104,7 +104,7 @@ void MainWindow::clear_statusBar(){
  * @brief MainWindow::open_file_Dialog
  */
 void MainWindow::open_file_Dialog(){
-    QString   file = QFileDialog::getOpenFileName(this, tr("打开文件..."), ".", tr("所有文件(*.*)"));
+    QString   file = QFileDialog::getOpenFileName(this, tr("打开"), ".", tr("所有文件(*.*)"));
     if(file.length() != 0) {
         filePath=file;
         ui->filePathLineText->setText(filePath);
