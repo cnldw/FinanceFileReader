@@ -600,19 +600,21 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                                 //数据内容结束位置,去除最后一行OFD标记
                                 int endIndex=fileContentList.count()-1;
                                 int dataRowNumber=0;
+                                //是否需要显示内容的flag,如果解析文件出现错误则不再显示
+                                bool needDisplay=true;
                                 for(int dataRow=beginIndex;dataRow<endIndex;dataRow++){
                                     dataRowNumber++;
-                                    QString rowString=fileContentList.at(dataRow);
                                     //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
                                     //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
                                     QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
                                     //获取行记录的byte
-                                    QByteArray qbyteArrayRow=rowString.toLocal8Bit();
+                                    QByteArray qbyteArrayRow=fileContentList.at(dataRow).toLocal8Bit();
                                     //长度不一致，报错提示
                                     if(qbyteArrayRow.size()!=ofd.getrowLength()){
                                         statusBar_disPlay(path+"中定义的记录长度和文件中不一致,解析失败");
-                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(dataRow)+"[行长度为["+QString::number(rowString.length())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(dataRow)+"[行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                         break;
+                                        needDisplay=false;
                                     }else{
                                         //长度一致，准予解析
                                         int begin=0;
@@ -623,7 +625,6 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                                             int filedlength=filedDef.at(col).getLength();
                                             //小数长度
                                             int filedDeclength=filedDef.at(col).getDecLength();
-
                                             //获取此字段的值
                                             QString filed=QString::fromLocal8Bit(qbyteArrayRow.mid(begin,filedlength));
                                             //数据信息处理
@@ -671,7 +672,12 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString filePath
                                         fileDataList.append(rowList);
                                     }
                                 }
-                                displayOFDTable();
+                                //实验特性,清除原始记录
+                                fileContentList.clear();
+                                //如果行记录全部解析正常则显示到表格
+                                if(needDisplay){
+                                    displayOFDTable();
+                                }
                                 return;
                             }else{
                                 statusBar_disPlay(path+"中定义的字段数和文件中不一致,解析失败");
@@ -774,6 +780,7 @@ void MainWindow::displayOFDTable(){
 }
 
 void MainWindow::clearTable(){
+    ui->tableWidget->clearContents();
     ui->tableWidget->setRowCount(0);
     ui->tableWidget->setColumnCount(0);
 }
