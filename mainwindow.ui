@@ -290,7 +290,7 @@
         <string>文件类型:</string>
        </property>
       </widget>
-      <widget class="QLineEdit" name="filePathLineText">
+      <widget class="QLineEdit" name="currentOpenFilePathLineText">
        <property name="geometry">
         <rect>
          <x>50</x>
@@ -363,7 +363,7 @@
        </property>
       </widget>
       <zorder>labelFileInfo</zorder>
-      <zorder>filePathLineText</zorder>
+      <zorder>currentOpenFilePathLineText</zorder>
       <zorder>pushButtonOpenFile</zorder>
       <zorder>labelSendCode</zorder>
       <zorder>lineEditSendCode</zorder>

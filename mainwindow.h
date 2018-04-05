@@ -19,13 +19,13 @@
 #include <QDebug>
 #include <QMap>
 #include <QStringList>
-#include<QDateTime>
 #include<utils.h>
 #include<ofdfiledefinition.h>
 #include <fielddefinition.h>
 #include<codeinfo.h>
 #include<QByteArray>
 #include<QTextCodec>
+
 namespace Ui {
 class MainWindow;
 }
@@ -39,10 +39,14 @@ public:
     ~MainWindow();
 
 protected:
+    //文件拖拽支持
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
-
+    //窗口尺寸变化事件
+    void resizeEvent (QResizeEvent * event );
+    //槽函数
 private slots:
+
     void on_fileOpen_triggered();
 
     void on_aboutOpen_triggered();
@@ -58,49 +62,56 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QLabel *statusLabelTwo;
-    QLabel *statusLabelThree;
-    QLabel *statusLabelFour;
-    QLabel *statusLabelFive;
-    QTableWidget *table;
-    QString filePath;
-    QMap<QString, CodeInfo> codeInfo;
-    QMap<QString, QString> indexFileInfo;
-    QMap<QString, QString> ofdFileInfo;
-    QMap<QString,OFDFileDefinition>ofdDefinitionMap;
-    QList<QStringList> fileDataList;
-    QMap<QString,QString> fileHeaderMap;
-    //OFD文件头使用Qstring记录
+    //状态栏指针变量
+    QLabel *statusLabel_ptr_showCount;
+    QLabel *statusLabel_ptr_showFileName;
+    QLabel *statusLabel_ptr_showRowAndCol;
+    QLabel *statusLabel_ptr_showMessage;
+    QTableWidget *ptr_table;
+    QString currentOpenFilePath;
+    //已经加载的code信息,记录销售商和TA的代码信息
+    QMap<QString, CodeInfo> loadedCodeInfo;
+    //已经加载的索引文件信息,记录各种索引文件的文件名开头三个字符
+    QMap<QString, QString> loadedIndexFileInfo;
+    //已经加载的OFD文件的文件名结尾两个字符和文件名的对应关系,比如04,交易类确认
+    QMap<QString, QString> loadedOfdFileInfo;
+    //已经加载的各种OFD文件的定义,比如400_21_01,代表V400,第21版本的01文件的定义
+    QMap<QString,OFDFileDefinition>loadedOfdDefinitionMap;
+    //用来记录文件头部内容的map,此信息用于文件检查
+    QMap<QString,QString> indexFileHeaderMap;
+    //用来记录文件标题和内容的list,解析索引类文件时使用
+    QList<QStringList> indexFileDataList;
+    //当前正在使用的ofd定义,打开哪个文件,就切换到改文件的ofd定义
+    OFDFileDefinition ofd;
+    //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
     QList<QByteArray> ofdFileContentQByteArrayList;
+    //记录table在当前界面显示的行范围,用于判断需要刷新显示到界面的元素
+    int hValueBegin = 0;
+    int hValueEnd = 0;
+    //当前打开的文件类别,0索引,1OFD数据
+    int currentOpenFileType=0;
 
-    int hValue = 0;
-    int wValue = 0;
+    int tableHeight;
 
-    /**
-     * @brief clear_statusBar
-     */
-    void clear_statusBar();
-    /**
-     * @brief display_rowsCount
-     * @param rowsCount
-     */
-    void display_rowsCount(int rowsCount);
-    /**
-     * @brief display_fileName
-     * @param filePath
-     */
-    void display_fileName(QString filePath);
-    void initFile(QString filePath);
-    /**
-     * @brief open_file_Dialog
-     */
+    void statusBar_clear_statusBar();
+
+    void statusBar_display_rowsCount(int rowsCount);
+
+    void statusBar_display_fileName(QString currentOpenFilePath);
+
+    void statusBar_disPlayMessage(QString text);
+
+    void clearTable();
+
+    void clear_Display_Table_Info();
+
+    void clear_oldData();
+
+    void initFile(QString currentOpenFilePath);
+
     void open_file_Dialog();
-
-    void clear_Display();
-
-    void statusBar_disPlay(QString text);
 
     void load_CodeInfo();
 
@@ -108,15 +119,19 @@ private:
 
     void load_OFDDefinition();
 
-    void load_indexFile(QString filePath);
+    void load_indexFile(QString currentOpenFilePath);
 
-    void load_ofdFile(QString sendCode,QString fileType,QString filePath);
+    void load_ofdFile(QString sendCode,QString fileType,QString currentOpenFilePath);
 
-    void displayIndexTable(QList<int> colwidth,QList <QStringList> data);
+    //初始化且显示索引文件数据
+    //索引文件数据较小,不再启用懒加载
+    void init_display_IndexTable();
 
-    void displayOFDTable(OFDFileDefinition ofd);
-
-    void clearTable();
+    void init_OFDTable();
+    //仅仅渲染显示当前指定区域
+    //算法原理,当table试图发生滚动或者table控件大小发生变化时
+    //探视当前屏幕显示的区间范围,从QTableWidgetItem池中获取已经不再显示的item复用，大大降低内存开销
+    void display_OFDTable(int begin ,int end);
 };
 
 #endif // MAINWINDOW_H
