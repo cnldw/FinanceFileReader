@@ -60,6 +60,10 @@ private slots:
     //接受滚动条事件
     void acceptVScrollValueChanged(int value);
 
+    void on_tableWidget_doubleClicked(const QModelIndex &index);
+
+    void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
+
 private:
     Ui::MainWindow *ui;
     //状态栏指针变量
@@ -98,6 +102,8 @@ private:
     void statusBar_clear_statusBar();
 
     void statusBar_display_rowsCount(int rowsCount);
+
+    void statusBar_display_rowsAndCol(int row,int col,int length);
 
     void statusBar_display_fileName(QString currentOpenFilePath);
 

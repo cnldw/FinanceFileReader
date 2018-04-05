@@ -25,14 +25,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     statusLabel_ptr_showFileName->setText(tr("文件:"));
 
     statusLabel_ptr_showRowAndCol = new QLabel;
-    statusLabel_ptr_showRowAndCol->setMinimumSize(150, 20); // 设置标签最小大小
+    statusLabel_ptr_showRowAndCol->setMinimumSize(170, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showRowAndCol);
     //设置标签内容
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
     statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列"));
 
     statusLabel_ptr_showMessage = new QLabel;
-    statusLabel_ptr_showMessage->setMinimumSize(335, 20); // 设置标签最小大小
+    statusLabel_ptr_showMessage->setMinimumSize(305, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showMessage);
     //设置标签内容
     statusLabel_ptr_showMessage->setText(tr(""));
@@ -145,6 +145,10 @@ void MainWindow::open_file_Dialog(){
 void MainWindow::statusBar_display_rowsCount(int rowsCount){
 
     statusLabel_ptr_showCount->setText(tr("记录数:")+QString::number(rowsCount, 10)+tr("行"));
+}
+
+void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
+    statusLabel_ptr_showRowAndCol->setText("文件内"+QString::number(row)+"行,"+QString::number(col)+"列,长度为"+QString::number(length));
 }
 
 void MainWindow::clear_oldData(){
@@ -845,5 +849,18 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
     }
     else{
         //OFD文件检查器
+    }
+}
+
+void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
+{
+    qDebug()<<index.row();
+}
+void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
+{
+    if(currentOpenFileType==1){
+        int rowInFile=12+ofd.getfieldCount()+currentRow;
+        int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
+        statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
     }
 }
