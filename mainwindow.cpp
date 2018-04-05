@@ -40,6 +40,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     load_CodeInfo();
     load_FileType();
     load_OFDDefinition();
+    //配置加载完毕
+    loadCompleted=true;
 }
 
 MainWindow::~MainWindow()
@@ -64,6 +66,10 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 }
 void MainWindow::dropEvent(QDropEvent *event)
 {
+    if(!loadCompleted){
+        return;
+        statusBar_disPlayMessage("有正在加载的任务,稍后再拖入文件试试...");
+    }
     QList<QUrl> urls = event->mimeData()->urls();
     if (urls.isEmpty()){
         return;
@@ -90,6 +96,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     }
 }
 
+//监控窗口大小变化
 void MainWindow:: resizeEvent (QResizeEvent * event ){
     event->ignore();
     if(tableHeight!=ptr_table->height()){
@@ -363,6 +370,8 @@ void MainWindow::statusBar_display_fileName(QString currentOpenFilePath){
 }
 
 void MainWindow::initFile(QString currentOpenFilePath){
+    //开始加载文件时,设置加载状态为未完成,避免这个文件还没加载,就拖入了新的文件
+    loadCompleted=false;
     //首先清除原来的显示信息
     clear_Display_Table_Info();
     //清除上次打开文件加载的数据信息
@@ -374,6 +383,7 @@ void MainWindow::initFile(QString currentOpenFilePath){
     statusBar_display_fileName(fileName);
     if(fileName.length()<10){
         statusBar_disPlayMessage("无法识别的文件类别,请检查");
+        loadCompleted=true;
         return;
     }
     else{
@@ -390,6 +400,7 @@ void MainWindow::initFile(QString currentOpenFilePath){
             //正常的OFD文件应该有5段信息组成
             if(nameList.count()!=5){
                 statusBar_disPlayMessage("错误的文件名,参考:OFD_XX_XXX_YYYYMMDD_XX.TXT");
+                loadCompleted=true;
                 return;
             }
             else{
@@ -415,6 +426,7 @@ void MainWindow::initFile(QString currentOpenFilePath){
                 //记录从文件里读取的文件发送信息
                 //此处开始加载OFD数据文件
                 load_ofdFile(sendCode,fileTypeCode,currentOpenFilePath);
+                loadCompleted=true;
                 return;
             }
         }else{
@@ -433,6 +445,7 @@ void MainWindow::initFile(QString currentOpenFilePath){
                 //正常的OFD文件应该有5段信息组成
                 if(nameList.count()!=4){
                     statusBar_disPlayMessage("无法识别的非OFD文件,请检查config/FileType.ini配置");
+                    loadCompleted=true;
                     return;
                 }
                 else{
@@ -457,11 +470,13 @@ void MainWindow::initFile(QString currentOpenFilePath){
                     ui->lineEditFileDescribe->setText(fileIndexTypeName);
                     //此处开始加载索引文件
                     load_indexFile(currentOpenFilePath);
+                    loadCompleted=true;
                     return;
                 }
             }else{
                 //没有检索到满足的文件头标识
                 statusBar_disPlayMessage("无法识别的文件类别,请检查config/FileType.ini配置");
+                loadCompleted=true;
                 return;
             }
         }
@@ -741,6 +756,10 @@ void MainWindow::display_OFDTable(int begin,int end){
 }
 
 QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
+    //判断越界
+    if(row>=ofdFileContentQByteArrayList.count()||col>=ofd.getfieldCount()){
+        return "";
+    }
     //开始获取此字段的值
     QString filed="";
     //字段长度
@@ -809,6 +828,7 @@ void MainWindow::clear_Display_Table_Info(){
     ui->lineEditSenfInfo->setText(NULL);
     ui->lineEditRecInfo->setText(NULL);
     ui->lineEditFileDescribe->setText(NULL);
+    ui->lineEditUseIni->setText(NULL);
     statusBar_clear_statusBar();
     clearTable();
 }
@@ -886,6 +906,9 @@ void MainWindow::on_pushButtonPreSearch_clicked()
         statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
         return;
     }
+    if(ofdFileContentQByteArrayList.count()<1){
+        return;
+    }
     //开始搜索
     statusBar_disPlayMessage("正在搜索,请耐心等待...");
     QString searchText=ui->lineTextText->text();
@@ -904,13 +927,13 @@ void MainWindow::on_pushButtonPreSearch_clicked()
         }
         beginCol=colCount-1;
     }
-    statusBar_disPlayMessage("搜索到顶了也没有找到你要搜索的内容...");
+    statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
 }
 
 void MainWindow::on_pushButtonNextSearch_clicked()
 {
 
-    int rowcount=ptr_table->rowCount();
+    int rowcount=ofdFileContentQByteArrayList.count();
     int colCount=ofd.getfieldCount();
     //向下搜索
     if(ui->lineTextText->text().isEmpty()){
@@ -919,6 +942,9 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     }
     if(rowcurrent==rowcount-1&&colcurrent==colCount-1){
         statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
+        return;
+    }
+    if(ofdFileContentQByteArrayList.count()<1){
         return;
     }
     //开始搜索
@@ -937,5 +963,5 @@ void MainWindow::on_pushButtonNextSearch_clicked()
         }
         beginCol=0;
     }
-    statusBar_disPlayMessage("搜索到低了也没有找到你要搜索的内容...");
+    statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
 }

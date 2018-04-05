@@ -105,7 +105,10 @@ private:
     int rowcurrent=0;
     int colcurrent=0;
 
+    //表格高度
     int tableHeight;
+
+    bool loadCompleted=false;
 
     void statusBar_clear_statusBar();
 
