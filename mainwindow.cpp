@@ -641,7 +641,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString currentO
                         }
                         dataFile.close();
                         if(sucessFalg){
-                            statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行,开始准备解析显示");
+                            statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行");
                             init_OFDTable();
                         }
                     }else{
@@ -882,7 +882,6 @@ void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
 }
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
-
     if(currentOpenFileType==1){
         //记录当前所在行
         rowcurrent=currentRow;
