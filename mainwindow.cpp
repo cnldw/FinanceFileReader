@@ -733,58 +733,62 @@ void MainWindow::display_OFDTable(int begin,int end){
         for(int col=0;col<colCount;col++){
             QTableWidgetItem *item= new QTableWidgetItem();
             ptr_table->setItem(row, col, item);
-            //开始获取此字段的值
-            QString filed="";
-            //字段长度
-            int filedlength=ofd.getfieldList().at(col).getLength();
-            //小数长度
-            int filedDeclength=ofd.getfieldList().at(col).getDecLength();
-            //获取此字段的值
-            filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row).mid(ofd.getfieldList().at(col).getRowBeginIndex(),filedlength));
-            //数据信息处理
-            //字符型--trim处理
-            if(ofd.getfieldList().at(col).getFiledType()=="C"){
-                filed=filed.trimmed();
-            }
-            //数字字符型，限于0—9--trim处理
-            else if(ofd.getfieldList().at(col).getFiledType()=="A"){
-                filed=filed.trimmed();
-            }
-            //数值型，其长度不包含小数点，可参与数值计算
-            //去除左侧的0,但是如果整数部分全是0，则至少保留一个0然后插入一个小数点
-            else  if(ofd.getfieldList().at(col).getFiledType()=="N"){
-                int needCheck=filedlength-filedDeclength-1;
-                int needCutZero=0;
-                for(int s=0;s<needCheck;s++){
-                    if(filed.at(s)=='0'){
-                        needCutZero++;
-                    }
-                    //如果不是0了，则跳出循环
-                    else{
-                        break;
-                    }
-                }
-                //获取整数
-                QString left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
-                //获取小数--如果小数长度为0,就不必处理小数了
-                if(filedDeclength==0){
-                    filed=left;
-                }else{
-                    //获取小数
-                    QString right=filed.right(filedDeclength);
-                    //拼接整数部分和小数部分
-                    filed=left.append(".").append(right);
-                }
-            }
-            //不定长文本
-            else  if(ofd.getfieldList().at(col).getFiledType()=="TEXT"){
-                filed=filed.trimmed();
-            }
             //其他类型,原样输出，不再调整
-            item->setText(filed);
+            item->setText(getValuesFromofdFileContentQByteArrayList(row,col));
         }
     }
     ptr_table->resizeColumnsToContents();
+}
+
+QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
+    //开始获取此字段的值
+    QString filed="";
+    //字段长度
+    int filedlength=ofd.getfieldList().at(col).getLength();
+    //小数长度
+    int filedDeclength=ofd.getfieldList().at(col).getDecLength();
+    //获取此字段的值
+    filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row).mid(ofd.getfieldList().at(col).getRowBeginIndex(),filedlength));
+    //数据信息处理
+    //字符型--trim处理
+    if(ofd.getfieldList().at(col).getFiledType()=="C"){
+        filed=filed.trimmed();
+    }
+    //数字字符型，限于0—9--trim处理
+    else if(ofd.getfieldList().at(col).getFiledType()=="A"){
+        filed=filed.trimmed();
+    }
+    //数值型，其长度不包含小数点，可参与数值计算
+    //去除左侧的0,但是如果整数部分全是0，则至少保留一个0然后插入一个小数点
+    else  if(ofd.getfieldList().at(col).getFiledType()=="N"){
+        int needCheck=filedlength-filedDeclength-1;
+        int needCutZero=0;
+        for(int s=0;s<needCheck;s++){
+            if(filed.at(s)=='0'){
+                needCutZero++;
+            }
+            //如果不是0了，则跳出循环
+            else{
+                break;
+            }
+        }
+        //获取整数
+        QString left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
+        //获取小数--如果小数长度为0,就不必处理小数了
+        if(filedDeclength==0){
+            filed=left;
+        }else{
+            //获取小数
+            QString right=filed.right(filedDeclength);
+            //拼接整数部分和小数部分
+            filed=left.append(".").append(right);
+        }
+    }
+    //不定长文本
+    else  if(ofd.getfieldList().at(col).getFiledType()=="TEXT"){
+        filed=filed.trimmed();
+    }
+    return filed;
 }
 
 void MainWindow::clearTable(){
@@ -858,9 +862,80 @@ void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
 }
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
+
     if(currentOpenFileType==1){
+        //记录当前所在行
+        rowcurrent=currentRow;
+        //当前所在列
+        colcurrent=currentColumn;
+        // qDebug()<<"row"<<QString::number(rowcurrent)<<",col"<<QString::number(colcurrent);
         int rowInFile=12+ofd.getfieldCount()+currentRow;
         int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
         statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
     }
+}
+
+void MainWindow::on_pushButtonPreSearch_clicked()
+{
+    //向上搜索
+    if(ui->lineTextText->text().isEmpty()){
+        statusBar_disPlayMessage("请填写你要搜索的内容...");
+        return;
+    }
+    if(rowcurrent==0&&colcurrent==0){
+        statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
+        return;
+    }
+    //开始搜索
+    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+    QString searchText=ui->lineTextText->text();
+    //判断是否是当前搜索行,如果是则从焦点单元格前一个单元格搜索,否则从行记录的最后一个单元格搜索
+    int colCount=ofd.getfieldCount();
+    //搜索当前行时,不能从最后一列开始,要从焦点单元格前一个开始
+    int beginCol=colcurrent-1;
+    for(int row=rowcurrent;row>=0;row--){
+        for(int col=beginCol;col>=0;col--){
+            if(getValuesFromofdFileContentQByteArrayList(row,col).contains(searchText,Qt::CaseInsensitive)){
+                statusBar_disPlayMessage("在"+QString::number(row+1)+"行,"+QString::number(col+1)+"列找到你搜索的内容");
+                ptr_table->setCurrentCell(row,col);
+                ptr_table->setFocus();
+                return;
+            }
+        }
+        beginCol=colCount-1;
+    }
+    statusBar_disPlayMessage("搜索到顶了也没有找到你要搜索的内容...");
+}
+
+void MainWindow::on_pushButtonNextSearch_clicked()
+{
+
+    int rowcount=ptr_table->rowCount();
+    int colCount=ofd.getfieldCount();
+    //向下搜索
+    if(ui->lineTextText->text().isEmpty()){
+        statusBar_disPlayMessage("请填写你要搜索的内容...");
+        return;
+    }
+    if(rowcurrent==rowcount-1&&colcurrent==colCount-1){
+        statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
+        return;
+    }
+    //开始搜索
+    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+    QString searchText=ui->lineTextText->text();
+    //是否是当前搜索行,如果是则从焦点单元格后一个单元格搜索,否则从行记录的第一个单元格搜索
+    int beginCol=colcurrent+1;
+    for(int row=rowcurrent;row<rowcount;row++){
+        for(int col=beginCol;col<colCount;col++){
+            if(getValuesFromofdFileContentQByteArrayList(row,col).contains(searchText,Qt::CaseInsensitive)){
+                statusBar_disPlayMessage("在"+QString::number(row+1)+"行,"+QString::number(col+1)+"列找到你搜索的内容");
+                ptr_table->setCurrentCell(row,col);
+                ptr_table->setFocus();
+                return;
+            }
+        }
+        beginCol=0;
+    }
+    statusBar_disPlayMessage("搜索到低了也没有找到你要搜索的内容...");
 }

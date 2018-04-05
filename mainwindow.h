@@ -64,6 +64,10 @@ private slots:
 
     void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
 
+    void on_pushButtonPreSearch_clicked();
+
+    void on_pushButtonNextSearch_clicked();
+
 private:
     Ui::MainWindow *ui;
     //状态栏指针变量
@@ -96,6 +100,10 @@ private:
     int hValueEnd = 0;
     //当前打开的文件类别,0索引,1OFD数据
     int currentOpenFileType=0;
+
+    //记录当前选中的行和列
+    int rowcurrent=0;
+    int colcurrent=0;
 
     int tableHeight;
 
@@ -132,6 +140,8 @@ private:
     //初始化且显示索引文件数据
     //索引文件数据较小,不再启用懒加载
     void init_display_IndexTable();
+
+    QString getValuesFromofdFileContentQByteArrayList(int row ,int col);
 
     void init_OFDTable();
     //仅仅渲染显示当前指定区域
