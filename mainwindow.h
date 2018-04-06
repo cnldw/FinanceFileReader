@@ -114,9 +114,6 @@ private:
     //数据更新状态
     bool isUpdateData=false;
 
-    //表格item;
-    QList<QTableWidgetItem> *itemList;
-
     void statusBar_clear_statusBar();
 
     void statusBar_display_rowsCount(int rowsCount);

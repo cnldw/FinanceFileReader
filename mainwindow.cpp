@@ -734,9 +734,9 @@ void MainWindow::display_OFDTable(){
     }
     for (int row = hValueBegin; row <= hValueEnd; ++row)
     {
-        //仅对非空单元格赋值
         for(int col=0;col<colCount;col++){
             QString values=getValuesFromofdFileContentQByteArrayList(row,col);
+            //仅对数据非空单元格赋值
             if(!values.isEmpty()){
                 QTableWidgetItem *item= new QTableWidgetItem();
                 ptr_table->setItem(row, col, item);
