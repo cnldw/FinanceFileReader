@@ -61,19 +61,17 @@ MainWindow::~MainWindow()
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
-    if (event->mimeData()->hasFormat("text/uri-list"))
+    if (event->mimeData()->hasFormat("text/uri-list")){
         event->acceptProposedAction();
+    }
 }
 void MainWindow::dropEvent(QDropEvent *event)
 {
     if(!loadCompleted){
-        return;
         statusBar_disPlayMessage("有正在加载的任务,稍后再拖入文件试试...");
+        return;
     }
     QList<QUrl> urls = event->mimeData()->urls();
-    if (urls.isEmpty()){
-        return;
-    }
     if(urls.count()>1){
         statusBar_disPlayMessage("拖进来一个文件试试~,文件太多啦");
         return;
@@ -86,42 +84,43 @@ void MainWindow::dropEvent(QDropEvent *event)
         return;
     }
     if (fileName.isEmpty())
-    {        return;
+    {
+        statusBar_disPlayMessage("加载失败,请重试");
+        return;
     }
     else{
         currentOpenFilePath=fileName;
         ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
-        statusBar_display_fileName(currentOpenFilePath);
-        initFile(currentOpenFilePath);
+        isUpdateData=true;
+        initFile();
+        isUpdateData=false;
     }
 }
 
-//监控窗口大小变化
 void MainWindow:: resizeEvent (QResizeEvent * event ){
     event->ignore();
-    if(tableHeight!=ptr_table->height()){
+    if(tableHeight!=ptr_table->height()&&!isUpdateData&&currentOpenFileType!=0){
         //获取当前table的高度
         int higth=ptr_table->size().height();
-        int hValueEnd=hValueBegin+(higth/22);
-        display_OFDTable(hValueBegin,hValueEnd);
+        //窗口变大不会影响起始行
+        hValueEnd=hValueBegin+(higth/22);
+        display_OFDTable();
     }
 }
 
-//滚动条变化信息竖向
-//通知显示指定行范围内的数据
 void MainWindow::acceptVScrollValueChanged(int value)
 {
-    hValueBegin=value;
-    //获取当前table的高度
-    int higth=ptr_table->size().height();
-    int hValueEnd=hValueBegin+(higth/22);
-    display_OFDTable(hValueBegin,hValueEnd);
+    //正在更新表/数据源时不开启自动加载
+    if(!isUpdateData&&currentOpenFileType!=0){
+        //新的起始位置
+        hValueBegin=value;
+        //获取当前table的高度
+        int higth=ptr_table->size().height();
+        hValueEnd=hValueBegin+(higth/22);
+        display_OFDTable();
+    }
 }
 
-/**
-  *清除状态栏的信息
- * @brief MainWindow::statusBar_clear_statusBar
- */
 void MainWindow::statusBar_clear_statusBar(){
     statusLabel_ptr_showCount->setText(tr("记录数:"));
     statusLabel_ptr_showFileName->setText(tr("文件:"));
@@ -129,26 +128,19 @@ void MainWindow::statusBar_clear_statusBar(){
     statusLabel_ptr_showMessage->setText(NULL);
 }
 
-/**
-  *打开文件窗口
- * @brief MainWindow::open_file_Dialog
- */
 void MainWindow::open_file_Dialog(){
     QString   file = QFileDialog::getOpenFileName(this, tr("打开"), ".", tr("所有文件(*.*)"));
     if(file.length() != 0) {
         currentOpenFilePath=file;
         ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
-        statusBar_display_fileName(currentOpenFilePath);
-        initFile(currentOpenFilePath);
+        isUpdateData=true;
+        initFile();
+        isUpdateData=false;
     } else {
         //放弃了读取文件
     }
 }
-/**
-  *显示加载的记录总数
- * @brief MainWindow::statusBar_display_rowsCount
- * @param rowsCount
- */
+
 void MainWindow::statusBar_display_rowsCount(int rowsCount){
 
     statusLabel_ptr_showCount->setText(tr("记录数:")+QString::number(rowsCount, 10)+tr("行"));
@@ -165,10 +157,10 @@ void MainWindow::clear_oldData(){
     ofdFileContentQByteArrayList.clear();
 }
 void MainWindow::load_CodeInfo(){
-    QString currentOpenFilePath="./config/CodeInfo.ini";
-    if(Utils::isFileExist(currentOpenFilePath)){
+    QString codeInipath="./config/CodeInfo.ini";
+    if(Utils::isFileExist(codeInipath)){
         //加载ini文件
-        QSettings loadedCodeInfoIni(currentOpenFilePath,QSettings::IniFormat,0);
+        QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,0);
         //目前仅接收UTF-8编码的配置文件
         loadedCodeInfoIni.setIniCodec("UTF-8");
         QStringList agencyInfo=loadedCodeInfoIni.childGroups();
@@ -190,10 +182,10 @@ void MainWindow::load_CodeInfo(){
 }
 
 void MainWindow::load_FileType(){
-    QString currentOpenFilePath="./config/FileType.ini";
-    if(Utils::isFileExist(currentOpenFilePath)){
+    QString fileTypeInipath="./config/FileType.ini";
+    if(Utils::isFileExist(fileTypeInipath)){
         //加载ini文件
-        QSettings fileTypeIni(currentOpenFilePath,QSettings::IniFormat,0);
+        QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,0);
         //目前仅接收UTF-8编码的配置文件
         fileTypeIni.setIniCodec("UTF-8");
         //读取INDEXFILE
@@ -244,10 +236,10 @@ void MainWindow::load_OFDDefinition(){
                 }
                 QStringList nameList=fixName.split("_");
                 if(nameList.count()==3){
-                    qDebug()<<"可用接口文件配置"<<fileName;
+                    //qDebug()<<"可用接口文件配置"<<fileName;
                     //加载ini文件
                     QString prefixName=nameList.at(1)+"_"+nameList.at(2);
-                    qDebug()<<prefixName;
+                    //qDebug()<<prefixName;
                     QSettings ofdIni("./config/"+fileName,QSettings::IniFormat,0);
                     //目前仅接收UTF-8编码的配置文件
                     ofdIni.setIniCodec("UTF-8");
@@ -311,6 +303,11 @@ void MainWindow::load_OFDDefinition(){
                                             okFlag=false;
                                             break;
                                         }
+                                        if(filedType=="N"&&(declength>=length)){
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义应该小于字段总长度";
+                                            okFlag=false;
+                                            break;
+                                        }
                                         //历经千辛万苦经理校验无误后存入字段信息
                                         //每个字段开始的位置就是截至到上一个字段结束的长度
                                         //比如第一个字段长度为2,则第二个字段在此行记录中的起始坐标就是2（0,1这两个字节是第一个字段的索引）
@@ -355,32 +352,28 @@ void MainWindow::load_OFDDefinition(){
 
     } else
     {
-        qDebug()<<"no file";
+        //qDebug()<<"no file";
     }
 }
-/**
- * 用于加载文件后在状态栏显示加载的文件
- * @brief MainWindow::statusBar_display_fileName
- * @param currentOpenFilePath
- */
-void MainWindow::statusBar_display_fileName(QString currentOpenFilePath){
+
+void MainWindow::statusBar_display_fileName(){
     int first = currentOpenFilePath.lastIndexOf ("/");
     QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
     statusLabel_ptr_showFileName->setText(tr("文件：")+fileName);
 }
 
-void MainWindow::initFile(QString currentOpenFilePath){
+void MainWindow::initFile(){
     //开始加载文件时,设置加载状态为未完成,避免这个文件还没加载,就拖入了新的文件
     loadCompleted=false;
     //首先清除原来的显示信息
-    clear_Display_Table_Info();
-    //清除上次打开文件加载的数据信息
     clear_oldData();
+    clear_Display_Info();
+    clear_Table_Info();
     //首先获取完整的文件名
     int first = currentOpenFilePath.lastIndexOf ("/");
     QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
     //状态栏显示文件名
-    statusBar_display_fileName(fileName);
+    statusBar_display_fileName();
     if(fileName.length()<10){
         statusBar_disPlayMessage("无法识别的文件类别,请检查");
         loadCompleted=true;
@@ -425,7 +418,7 @@ void MainWindow::initFile(QString currentOpenFilePath){
                 ui->lineEditFileDescribe->setText(fileTypeName);
                 //记录从文件里读取的文件发送信息
                 //此处开始加载OFD数据文件
-                load_ofdFile(sendCode,fileTypeCode,currentOpenFilePath);
+                load_ofdFile(sendCode,fileTypeCode);
                 loadCompleted=true;
                 return;
             }
@@ -469,7 +462,7 @@ void MainWindow::initFile(QString currentOpenFilePath){
                     ui->lineEditRecInfo->setText(recName);
                     ui->lineEditFileDescribe->setText(fileIndexTypeName);
                     //此处开始加载索引文件
-                    load_indexFile(currentOpenFilePath);
+                    load_indexFile();
                     loadCompleted=true;
                     return;
                 }
@@ -483,7 +476,7 @@ void MainWindow::initFile(QString currentOpenFilePath){
     }
 }
 
-void MainWindow::load_indexFile(QString currentOpenFilePath){
+void MainWindow::load_indexFile(){
     currentOpenFileType=0;
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
@@ -544,20 +537,18 @@ void MainWindow::load_indexFile(QString currentOpenFilePath){
     init_display_IndexTable();
 }
 
-void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString currentOpenFilePath){
-
-    //清除原来的数据信息
+void MainWindow::load_ofdFile(QString sendCode,QString fileType){
     currentOpenFileType=1;
     QString defineMapName;
     QString versionName;
     CodeInfo info=loadedCodeInfo.value(sendCode);
     if(info.getCode().isEmpty()){
-        qDebug()<<"未找到该代码的版本信息，默认使用400接口";
+        // qDebug()<<"未找到该代码的版本信息，默认使用400接口";
         versionName="400";
     }else{
         versionName=(info.getVersion().isEmpty()?"400":info.getVersion());
     }
-    qDebug()<<"用于解析本文件的大版本"<<versionName;
+    //qDebug()<<"用于解析本文件的大版本"<<versionName;
     QString versionFromFile="";
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
@@ -597,7 +588,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString currentO
                     //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
                     QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
                     //找到配置,开始解析配置,此处待优化,需改为后台读取文件
-                    qDebug()<<"接口文档记录长度"<<ofd.getrowLength();
+                    //qDebug()<<"接口文档记录长度"<<ofd.getrowLength();
                     QFile dataFile(currentOpenFilePath);
                     //判断如果文件打开成功,则开始读取
                     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
@@ -626,7 +617,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType,QString currentO
                                 if(qbyteArrayRow.size()==ofd.getrowLength()){
                                     ofdFileContentQByteArrayList.append(qbyteArrayRow);
                                 }else{
-                                    //如果行长度为9且内容为OFDCFEND,我们就认为文件结束
+                                    //如果行长度为8且内容为OFDCFEND跳过
                                     if(line.length()==8&&QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
                                         break;
                                     }else{
@@ -718,8 +709,9 @@ void MainWindow::init_OFDTable(){
         if(rowCount>0){
             //获取当前table的高度
             int higth=ptr_table->size().height();
-            int hValueEnd=hValueBegin+(higth/22);
-            display_OFDTable(hValueBegin,hValueEnd);
+            hValueBegin=0;
+            hValueEnd=hValueBegin+(higth/22);
+            display_OFDTable();
         }
         statusBar_display_rowsCount(rowCount);
         statusBar_disPlayMessage("文件解析完毕!");
@@ -730,26 +722,26 @@ void MainWindow::init_OFDTable(){
     }
 }
 
-//仅仅渲染显示当前指定区域
-//算法原理,当table试图发生滚动或者table控件大小发生变化时
-//探视当前屏幕显示的区间范围,从QTableWidgetItem池中获取已经不再显示的item复用，大大降低内存开销
-void MainWindow::display_OFDTable(int begin,int end){
-    int count=ptr_table->rowCount();
+void MainWindow::display_OFDTable(){
+    int rowCount=ptr_table->rowCount();
     int colCount=ptr_table->columnCount();
     //防止渲染边界超过表总行数
-    if(begin<0){
-        begin=0;
+    if(hValueBegin<0){
+        hValueBegin=0;
     }
-    if(end>=count){
-        end=count-1;
+    if(hValueEnd>=rowCount){
+        hValueEnd=rowCount-1;
     }
-    for (int row = begin; row <= end; ++row)
+    for (int row = hValueBegin; row <= hValueEnd; ++row)
     {
+        //仅对非空单元格赋值
         for(int col=0;col<colCount;col++){
-            QTableWidgetItem *item= new QTableWidgetItem();
-            ptr_table->setItem(row, col, item);
-            //其他类型,原样输出，不再调整
-            item->setText(getValuesFromofdFileContentQByteArrayList(row,col));
+            QString values=getValuesFromofdFileContentQByteArrayList(row,col);
+            if(!values.isEmpty()){
+                QTableWidgetItem *item= new QTableWidgetItem();
+                ptr_table->setItem(row, col, item);
+                item->setText(values);
+            }
         }
     }
     ptr_table->resizeColumnsToContents();
@@ -810,7 +802,7 @@ QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
     return filed;
 }
 
-void MainWindow::clearTable(){
+void MainWindow::clear_Table_Info(){
     ptr_table->clearContents();
     ptr_table->setRowCount(0);
     ptr_table->setColumnCount(0);
@@ -820,7 +812,7 @@ void MainWindow::statusBar_disPlayMessage(QString text){
     statusLabel_ptr_showMessage->setText(text);
 }
 
-void MainWindow::clear_Display_Table_Info(){
+void MainWindow::clear_Display_Info(){
     ui->lineEditSendCode->setText(NULL);
     ui->lineEditRecCode->setText(NULL);
     ui->lineEditFileTransferDate->setText(NULL);
@@ -830,7 +822,6 @@ void MainWindow::clear_Display_Table_Info(){
     ui->lineEditFileDescribe->setText(NULL);
     ui->lineEditUseIni->setText(NULL);
     statusBar_clear_statusBar();
-    clearTable();
 }
 
 void MainWindow::on_fileOpen_triggered()
@@ -840,7 +831,7 @@ void MainWindow::on_fileOpen_triggered()
 
 void MainWindow::on_aboutOpen_triggered()
 {
-    QMessageBox::about(this,tr("关于本程序"),tr("本程序是一个可以解析格式化显示开放式基金数据交换协议文件的工具\r\n可以用于解析如上所述协议所交换的各种文件\r\n作      者:793554262@qq.com(刘德位)\r\n商业支持:793554262@qq.com(刘德位)\r\n友情赞助:15238872101(支付宝转账)\r\n\r\n版本:")+Utils::getVersion());
+    QMessageBox::about(this,tr("关于本程序"),tr("本程序是一个可以解析格式化显示开放式基金数据交换协议文件的工具\r\n可以用于解析如上所述协议所交换的各种文件\r\n作      者:793554262@qq.com(刘德位)\r\n商业支持:793554262@qq.com(刘德位)\r\n友情赞助:15238872101(支付宝)\r\n\r\n版本:")+Utils::getVersion());
 }
 
 void MainWindow::on_actionAboutQt_triggered()
@@ -863,16 +854,37 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             info.append("文件发送者代码:").append(indexFileHeaderMap.value("sendcode")).append("\r\n");
             info.append("文件接收者代码:").append(indexFileHeaderMap.value("recivecode")).append("\r\n");
             info.append("文件传递日期:").append(indexFileHeaderMap.value("filedate")).append("\r\n");
-            info.append("文件总记录数:").append(indexFileHeaderMap.value("count")).append("成功加载记录数:").append(QString::number(indexFileDataList.count())).append("\r\n");
-            info.append("文件起始行:").append(indexFileHeaderMap.value("filebegin")).append("\r\n");
-            info.append("文件结束行:").append(indexFileHeaderMap.value("fileend")).append("\r\n");
-            QMessageBox::information(this,tr("检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
+            info.append("文件内标识的总记录数:").append(indexFileHeaderMap.value("count")).append("成功加载记录数:").append(QString::number(indexFileDataList.count())).append("\r\n");
+            QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
         }else{
-            QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Yes,QMessageBox::Yes);
+            QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
         }
     }
     else{
-        //OFD文件检查器
+        if(!ofdFileHeaderQStringList.isEmpty()||ofdFileHeaderQStringList.count()>=10){
+            //组织要显示的内容
+            QString info;
+            info.append("文件解析情况如下:\r\n");
+            info.append("文件发送者代码:").append(ofdFileHeaderQStringList.at(2)).append("\r\n");
+            info.append("文件接收者代码:").append(ofdFileHeaderQStringList.at(3)).append("\r\n");
+            info.append("文件传递日期:").append(ofdFileHeaderQStringList.at(4)).append("\r\n");
+            bool ok=false;
+            int  filedCount=ofdFileHeaderQStringList.at(9).toInt(&ok);
+            if(ok){
+                 int countRow=10+filedCount;
+                 if(countRow>ofdFileHeaderQStringList.count()-1){
+                            info.append("从原文件读取记录数标志失败,").append("成功加载记录数:").append(QString::number(indexFileDataList.count())).append("\r\n");
+                 }
+                 else{
+                     info.append("文件内标识的总记录数:").append(ofdFileHeaderQStringList.at(countRow)).append("成功加载记录数:").append(QString::number(ofdFileContentQByteArrayList.count())).append("\r\n");
+                 }
+            }else{
+                info.append("读取文件字段数错误");
+            }
+            QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
+        }else{
+            QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
+        }
     }
 }
 
@@ -882,12 +894,11 @@ void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
 }
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==1&&!isUpdateData){
         //记录当前所在行
         rowcurrent=currentRow;
         //当前所在列
         colcurrent=currentColumn;
-        // qDebug()<<"row"<<QString::number(rowcurrent)<<",col"<<QString::number(colcurrent);
         int rowInFile=12+ofd.getfieldCount()+currentRow;
         int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
         statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());

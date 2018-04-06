@@ -95,20 +95,27 @@ private:
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
     QList<QByteArray> ofdFileContentQByteArrayList;
-    //记录table在当前界面显示的行范围,用于判断需要刷新显示到界面的元素
-    int hValueBegin = 0;
-    int hValueEnd = 0;
     //当前打开的文件类别,0索引,1OFD数据
     int currentOpenFileType=0;
 
+    /*
+      极其重要的表格相关参数
+    */
+    //记录table在当前界面显示的行范围,用于判断需要刷新显示到界面的元素
+    int hValueBegin = 0;
+    int hValueEnd = 0;
     //记录当前选中的行和列
     int rowcurrent=0;
     int colcurrent=0;
-
-    //表格高度
+    //表格当前高度
     int tableHeight;
-
+    //配置和文件加载的状态
     bool loadCompleted=false;
+    //数据更新状态
+    bool isUpdateData=false;
+
+    //表格item;
+    QList<QTableWidgetItem> *itemList;
 
     void statusBar_clear_statusBar();
 
@@ -116,17 +123,17 @@ private:
 
     void statusBar_display_rowsAndCol(int row,int col,int length);
 
-    void statusBar_display_fileName(QString currentOpenFilePath);
+    void statusBar_display_fileName();
 
     void statusBar_disPlayMessage(QString text);
 
-    void clearTable();
+    void clear_Table_Info();
 
-    void clear_Display_Table_Info();
+    void clear_Display_Info();
 
     void clear_oldData();
 
-    void initFile(QString currentOpenFilePath);
+    void initFile();
 
     void open_file_Dialog();
 
@@ -136,9 +143,9 @@ private:
 
     void load_OFDDefinition();
 
-    void load_indexFile(QString currentOpenFilePath);
+    void load_indexFile();
 
-    void load_ofdFile(QString sendCode,QString fileType,QString currentOpenFilePath);
+    void load_ofdFile(QString sendCode,QString fileType);
 
     //初始化且显示索引文件数据
     //索引文件数据较小,不再启用懒加载
@@ -150,7 +157,7 @@ private:
     //仅仅渲染显示当前指定区域
     //算法原理,当table试图发生滚动或者table控件大小发生变化时
     //探视当前屏幕显示的区间范围,从QTableWidgetItem池中获取已经不再显示的item复用，大大降低内存开销
-    void display_OFDTable(int begin ,int end);
+    void display_OFDTable();
 };
 
 #endif // MAINWINDOW_H
