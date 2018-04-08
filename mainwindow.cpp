@@ -734,13 +734,19 @@ void MainWindow::display_OFDTable(){
     }
     for (int row = hValueBegin; row <= hValueEnd; ++row)
     {
-        for(int col=0;col<colCount;col++){
-            QString values=getValuesFromofdFileContentQByteArrayList(row,col);
-            //仅对数据非空单元格赋值
-            if(!values.isEmpty()){
-                QTableWidgetItem *item= new QTableWidgetItem();
-                ptr_table->setItem(row, col, item);
-                item->setText(values);
+        //如果此行已经加载过了,则不再加载
+        if(rowHasloaded.contains(row)){
+            continue;
+        }else{
+            rowHasloaded.append(row);
+            for(int col=0;col<colCount;col++){
+                QString values=getValuesFromofdFileContentQByteArrayList(row,col);
+                //仅对数据非空单元格赋值
+                if(!values.isEmpty()){
+                    QTableWidgetItem *item= new QTableWidgetItem();
+                    ptr_table->setItem(row, col, item);
+                    item->setText(values);
+                }
             }
         }
     }
@@ -871,13 +877,13 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             bool ok=false;
             int  filedCount=ofdFileHeaderQStringList.at(9).toInt(&ok);
             if(ok){
-                 int countRow=10+filedCount;
-                 if(countRow>ofdFileHeaderQStringList.count()-1){
-                            info.append("从原文件读取记录数标志失败,").append("成功加载记录数:").append(QString::number(indexFileDataList.count())).append("\r\n");
-                 }
-                 else{
-                     info.append("文件内标识的总记录数:").append(ofdFileHeaderQStringList.at(countRow)).append("成功加载记录数:").append(QString::number(ofdFileContentQByteArrayList.count())).append("\r\n");
-                 }
+                int countRow=10+filedCount;
+                if(countRow>ofdFileHeaderQStringList.count()-1){
+                    info.append("从原文件读取记录数标志失败,").append("成功加载记录数:").append(QString::number(ofdFileContentQByteArrayList.count())).append("\r\n");
+                }
+                else{
+                    info.append("文件内标识的总记录数:").append(ofdFileHeaderQStringList.at(countRow)).append("成功加载记录数:").append(QString::number(ofdFileContentQByteArrayList.count())).append("\r\n");
+                }
             }else{
                 info.append("读取文件字段数错误");
             }

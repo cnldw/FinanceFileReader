@@ -114,6 +114,8 @@ private:
     //数据更新状态
     bool isUpdateData=false;
 
+    QList<int> rowHasloaded;
+
     void statusBar_clear_statusBar();
 
     void statusBar_display_rowsCount(int rowsCount);

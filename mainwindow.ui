@@ -18,8 +18,7 @@
   </property>
   <property name="font">
    <font>
-    <weight>50</weight>
-    <bold>false</bold>
+    <family>Microsoft YaHei</family>
    </font>
   </property>
   <property name="windowTitle">
@@ -81,6 +80,246 @@
       <property name="title">
        <string>文件信息</string>
       </property>
+      <widget class="QLabel" name="labelFileInfo">
+       <property name="geometry">
+        <rect>
+         <x>13</x>
+         <y>18</y>
+         <width>31</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>文件:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="currentOpenFilePathLineText">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>18</y>
+         <width>740</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="readOnly">
+        <bool>false</bool>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButtonOpenFile">
+       <property name="geometry">
+        <rect>
+         <x>792</x>
+         <y>17</y>
+         <width>71</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>打开文件</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelSendCode">
+       <property name="geometry">
+        <rect>
+         <x>13</x>
+         <y>43</y>
+         <width>71</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>发送方代码:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEditSendCode">
+       <property name="geometry">
+        <rect>
+         <x>88</x>
+         <y>43</y>
+         <width>46</width>
+         <height>20</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelSendInfo">
+       <property name="geometry">
+        <rect>
+         <x>140</x>
+         <y>43</y>
+         <width>71</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>发送方信息:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEditSenfInfo">
+       <property name="geometry">
+        <rect>
+         <x>216</x>
+         <y>43</y>
+         <width>211</width>
+         <height>20</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelRecCode">
+       <property name="geometry">
+        <rect>
+         <x>430</x>
+         <y>43</y>
+         <width>71</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>接收方代码:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEditRecCode">
+       <property name="geometry">
+        <rect>
+         <x>504</x>
+         <y>43</y>
+         <width>50</width>
+         <height>20</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labeTRecInfo">
+       <property name="geometry">
+        <rect>
+         <x>560</x>
+         <y>43</y>
+         <width>71</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>接收方信息:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEditRecInfo">
+       <property name="geometry">
+        <rect>
+         <x>634</x>
+         <y>43</y>
+         <width>228</width>
+         <height>20</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelUseIni">
+       <property name="geometry">
+        <rect>
+         <x>13</x>
+         <y>67</y>
+         <width>71</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>使用的配置:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEditUseIni">
+       <property name="geometry">
+        <rect>
+         <x>88</x>
+         <y>67</y>
+         <width>124</width>
+         <height>20</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelFileType">
+       <property name="geometry">
+        <rect>
+         <x>216</x>
+         <y>67</y>
+         <width>61</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>文件类型:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEditFileType">
+       <property name="geometry">
+        <rect>
+         <x>280</x>
+         <y>67</y>
+         <width>61</width>
+         <height>20</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelFileDescribe">
+       <property name="geometry">
+        <rect>
+         <x>344</x>
+         <y>67</y>
+         <width>61</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>文件描述:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEditFileDescribe">
+       <property name="geometry">
+        <rect>
+         <x>406</x>
+         <y>67</y>
+         <width>148</width>
+         <height>20</height>
+        </rect>
+       </property>
+      </widget>
       <widget class="QLabel" name="labelFileTransferDate">
        <property name="geometry">
         <rect>
@@ -107,246 +346,6 @@
          <width>148</width>
          <height>20</height>
         </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelUseIni">
-       <property name="geometry">
-        <rect>
-         <x>13</x>
-         <y>67</y>
-         <width>71</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>使用的配置:</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEditRecInfo">
-       <property name="geometry">
-        <rect>
-         <x>634</x>
-         <y>43</y>
-         <width>228</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEditSendCode">
-       <property name="geometry">
-        <rect>
-         <x>88</x>
-         <y>43</y>
-         <width>46</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelFileDescribe">
-       <property name="geometry">
-        <rect>
-         <x>344</x>
-         <y>67</y>
-         <width>61</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>文件描述:</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelFileInfo">
-       <property name="geometry">
-        <rect>
-         <x>13</x>
-         <y>18</y>
-         <width>31</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>文件:</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEditUseIni">
-       <property name="geometry">
-        <rect>
-         <x>88</x>
-         <y>67</y>
-         <width>124</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEditFileType">
-       <property name="geometry">
-        <rect>
-         <x>280</x>
-         <y>67</y>
-         <width>61</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labeTRecInfo">
-       <property name="geometry">
-        <rect>
-         <x>560</x>
-         <y>43</y>
-         <width>71</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>接收方信息:</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEditSenfInfo">
-       <property name="geometry">
-        <rect>
-         <x>216</x>
-         <y>43</y>
-         <width>211</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButtonOpenFile">
-       <property name="geometry">
-        <rect>
-         <x>792</x>
-         <y>17</y>
-         <width>71</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>打开文件</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelRecCode">
-       <property name="geometry">
-        <rect>
-         <x>430</x>
-         <y>43</y>
-         <width>71</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>接收方代码:</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEditFileDescribe">
-       <property name="geometry">
-        <rect>
-         <x>406</x>
-         <y>67</y>
-         <width>148</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelFileType">
-       <property name="geometry">
-        <rect>
-         <x>216</x>
-         <y>67</y>
-         <width>61</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>文件类型:</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="currentOpenFilePathLineText">
-       <property name="geometry">
-        <rect>
-         <x>50</x>
-         <y>18</y>
-         <width>740</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="readOnly">
-        <bool>false</bool>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelSendCode">
-       <property name="geometry">
-        <rect>
-         <x>13</x>
-         <y>43</y>
-         <width>71</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>发送方代码:</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEditRecCode">
-       <property name="geometry">
-        <rect>
-         <x>504</x>
-         <y>43</y>
-         <width>50</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelSendInfo">
-       <property name="geometry">
-        <rect>
-         <x>140</x>
-         <y>43</y>
-         <width>71</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>发送方信息:</string>
        </property>
       </widget>
       <widget class="QPushButton" name="pushButtonOpenFile_2">
