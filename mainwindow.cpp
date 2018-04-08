@@ -37,6 +37,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     //设置标签内容
     statusLabel_ptr_showMessage->setText(tr(""));
 
+    //开始进行配置加载
+    //后期计划将此部分放到后台
     load_CodeInfo();
     load_FileType();
     load_OFDDefinition();
@@ -83,17 +85,14 @@ void MainWindow::dropEvent(QDropEvent *event)
         statusBar_disPlayMessage("拖进来一个文件试试~,不接受文件夹");
         return;
     }
-    if (fileName.isEmpty())
+    if (!fileName.isEmpty())
     {
-        statusBar_disPlayMessage("加载失败,请重试");
-        return;
-    }
-    else{
         currentOpenFilePath=fileName;
         ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
         isUpdateData=true;
         initFile();
         isUpdateData=false;
+        return;
     }
 }
 
@@ -103,7 +102,7 @@ void MainWindow:: resizeEvent (QResizeEvent * event ){
         //获取当前table的高度
         int higth=ptr_table->size().height();
         //窗口变大不会影响起始行
-        hValueEnd=hValueBegin+(higth/22);
+        hValueEnd=hValueBegin+(higth/rowHight);
         display_OFDTable();
     }
 }
@@ -116,13 +115,14 @@ void MainWindow::acceptVScrollValueChanged(int value)
         hValueBegin=value;
         //获取当前table的高度
         int higth=ptr_table->size().height();
-        hValueEnd=hValueBegin+(higth/22);
+        //计算要结束的行
+        hValueEnd=hValueBegin+(higth/rowHight);
         display_OFDTable();
     }
 }
 
 void MainWindow::statusBar_clear_statusBar(){
-    statusLabel_ptr_showCount->setText(tr("记录数:"));
+    statusLabel_ptr_showCount->setText(tr("记录数:0"));
     statusLabel_ptr_showFileName->setText(tr("文件:"));
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
     statusLabel_ptr_showMessage->setText(NULL);
@@ -147,7 +147,12 @@ void MainWindow::statusBar_display_rowsCount(int rowsCount){
 }
 
 void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
-    statusLabel_ptr_showRowAndCol->setText("文件内"+QString::number(row)+"行,"+QString::number(col)+"列,长度为"+QString::number(length));
+    if(length==-1){
+        statusLabel_ptr_showRowAndCol->setText("源文件"+QString::number(row)+"行");
+    }
+    else{
+        statusLabel_ptr_showRowAndCol->setText("源文件"+QString::number(row)+"行,"+QString::number(col)+"列,长度为"+QString::number(length));
+    }
 }
 
 void MainWindow::clear_oldData(){
@@ -157,6 +162,7 @@ void MainWindow::clear_oldData(){
     ofdFileContentQByteArrayList.clear();
     rowHasloaded.clear();
 }
+
 void MainWindow::load_CodeInfo(){
     QString codeInipath="./config/CodeInfo.ini";
     if(Utils::isFileExist(codeInipath)){
@@ -669,7 +675,7 @@ void MainWindow::init_display_IndexTable(){
         ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
         //设置编辑方式
         ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        ptr_table->verticalHeader()->setDefaultSectionSize(22);
+        ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
         //设置表格的内容
         for (int row = 0; row < rowCount; ++row)
         {
@@ -704,14 +710,14 @@ void MainWindow::init_OFDTable(){
         ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
         //设置编辑方式
         ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        ptr_table->verticalHeader()->setDefaultSectionSize(22);
+        ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
         //设置表格的内容
         //按行读取ofdFileContentQByteArrayList,边读取边解析
         if(rowCount>0){
             //获取当前table的高度
             int higth=ptr_table->size().height();
             hValueBegin=0;
-            hValueEnd=hValueBegin+(higth/22);
+            hValueEnd=hValueBegin+(higth/rowHight);
             display_OFDTable();
         }
         statusBar_display_rowsCount(rowCount);
@@ -900,6 +906,7 @@ void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
 {
     qDebug()<<index.row();
 }
+
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
     if(currentOpenFileType==1&&!isUpdateData){
@@ -910,6 +917,9 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
         int rowInFile=12+ofd.getfieldCount()+currentRow;
         int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
         statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
+    }
+    if(currentOpenFileType==0&&!isUpdateData){
+        statusBar_display_rowsAndCol(currentRow+5,0,-1);
     }
 }
 
