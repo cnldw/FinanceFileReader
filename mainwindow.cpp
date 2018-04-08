@@ -155,6 +155,7 @@ void MainWindow::clear_oldData(){
     indexFileDataList.clear();
     ofdFileHeaderQStringList.clear();
     ofdFileContentQByteArrayList.clear();
+    rowHasloaded.clear();
 }
 void MainWindow::load_CodeInfo(){
     QString codeInipath="./config/CodeInfo.ini";
@@ -751,6 +752,7 @@ void MainWindow::display_OFDTable(){
         }
     }
     ptr_table->resizeColumnsToContents();
+    qDebug()<<"已经加载的行数:"<<QString::number(rowHasloaded.count());
 }
 
 QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
