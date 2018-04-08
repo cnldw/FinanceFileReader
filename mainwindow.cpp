@@ -917,6 +917,13 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
         int rowInFile=12+ofd.getfieldCount()+currentRow;
         int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
         statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
+        if(ptr_table->item(currentRow,currentColumn)!=nullptr){
+            QString text=ptr_table->item(currentRow,currentColumn)->text();
+            statusBar_disPlayMessage(text.isEmpty()?NULL:QString("Ctrl+C复制\"%1\"到剪切板").arg(text));
+        }
+        else{
+            statusBar_disPlayMessage(NULL);
+        }
     }
     if(currentOpenFileType==0&&!isUpdateData){
         statusBar_display_rowsAndCol(currentRow+5,0,-1);
