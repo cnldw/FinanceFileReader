@@ -28,14 +28,16 @@ SOURCES += \
     utils.cpp \
     ofdfiledefinition.cpp \
     fielddefinition.cpp \
-    codeinfo.cpp
+    codeinfo.cpp \
+    dictionary.cpp
 
 HEADERS += \
         mainwindow.h \
     utils.h \
     ofdfiledefinition.h \
     fielddefinition.h \
-    codeinfo.h
+    codeinfo.h \
+    dictionary.h
 
 FORMS += \
         mainwindow.ui

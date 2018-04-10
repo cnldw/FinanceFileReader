@@ -10,6 +10,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
     tableHeight=ptr_table->height();
+
+    initStatusBar();
+    //开始进行配置加载
+    load_CodeInfo();
+    load_FileType();
+    load_OFDDefinition();
+    load_Dictionary();
+    //配置加载完毕
+    loadCompleted=true;
+}
+
+void MainWindow::initStatusBar(){
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     statusLabel_ptr_showCount = new QLabel;
@@ -36,14 +48,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ui->statusBar->addWidget(statusLabel_ptr_showMessage);
     //设置标签内容
     statusLabel_ptr_showMessage->setText(tr(""));
-
-    //开始进行配置加载
-    //后期计划将此部分放到后台
-    load_CodeInfo();
-    load_FileType();
-    load_OFDDefinition();
-    //配置加载完毕
-    loadCompleted=true;
 }
 
 MainWindow::~MainWindow()
@@ -219,6 +223,22 @@ void MainWindow::load_FileType(){
         fileTypeIni.endGroup();}
     else{
         statusBar_disPlayMessage(tr("config/FileType.ini配置丢失"));
+    }
+}
+
+void MainWindow::load_Dictionary(){
+    QFile dataFile("./config/Dictionary.ini");
+    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    {
+        QTextStream data(&dataFile);
+        QString line;
+        while (!data.atEnd())
+        {   QStringList lineList;
+            line = data.readLine();
+            line=line.remove('\r').remove('\n');
+            dictionary.addDictionary(line);
+        }
+        dataFile.close();
     }
 }
 
@@ -550,7 +570,6 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
     QString versionName;
     CodeInfo info=loadedCodeInfo.value(sendCode);
     if(info.getCode().isEmpty()){
-        // qDebug()<<"未找到该代码的版本信息，默认使用400接口";
         versionName="400";
     }else{
         versionName=(info.getVersion().isEmpty()?"400":info.getVersion());
@@ -578,7 +597,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
         }
         dataFile.close();
         if(versionFromFile.isEmpty()){
-            statusBar_disPlayMessage("解析失败,未从文件第二行读取到版本号信息");
+            statusBar_disPlayMessage("解析失败,未从文件第二行读取到OFD文件的版本号信息");
             return;
         }else{
             defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
@@ -606,6 +625,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                         int beginIndex=11+ofd.getfieldCount();
                         QString line;
                         bool sucessFalg=true;
+                        QApplication::setOverrideCursor(Qt::WaitCursor);
                         while (!data.atEnd())
                         {
                             //如果此行记录小于数据开始行,则认为是文件头
@@ -636,7 +656,14 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                                 }
                             }
                             lineNumber++;
+                            //为了防止UI卡死,进行循环读取文件时,考虑支持下窗口事件接收
+                            //每读取1000行更新下窗口事件
+                            if((lineNumber%1000)==0){
+                                statusBar_disPlayMessage(QString("文件读取中,已读取数据记录%1行").arg(QString::number(lineNumber)));
+                                qApp->processEvents();
+                            }
                         }
+                        QApplication::restoreOverrideCursor();
                         dataFile.close();
                         if(sucessFalg){
                             statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行");
@@ -721,7 +748,7 @@ void MainWindow::init_OFDTable(){
             display_OFDTable();
         }
         statusBar_display_rowsCount(rowCount);
-        statusBar_disPlayMessage("文件解析完毕!");
+        statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
     }
     else
     {
@@ -919,7 +946,13 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
         statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
         if(ptr_table->item(currentRow,currentColumn)!=nullptr){
             QString text=ptr_table->item(currentRow,currentColumn)->text();
-            statusBar_disPlayMessage(text.isEmpty()?NULL:QString("Ctrl+C复制\"%1\"到剪切板").arg(text));
+            QString dic=dictionary.getDictionary(ofd.getfieldList().at(currentColumn).getFiledName(),text);
+            if(text.isEmpty()){
+                statusBar_disPlayMessage(NULL);
+            }
+            else{
+                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+            }
         }
         else{
             statusBar_disPlayMessage(NULL);

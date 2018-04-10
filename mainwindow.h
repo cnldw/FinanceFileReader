@@ -22,6 +22,7 @@
 #include<utils.h>
 #include<ofdfiledefinition.h>
 #include <fielddefinition.h>
+#include <dictionary.h>
 #include<codeinfo.h>
 #include<QByteArray>
 #include<QTextCodec>
@@ -98,6 +99,8 @@ private:
     //当前打开的文件类别,0索引,1OFD数据
     int currentOpenFileType=0;
 
+    Dictionary dictionary;
+
     /*
       极其重要的表格相关参数
     */
@@ -136,11 +139,15 @@ private:
 
     void initFile();
 
+    void initStatusBar();
+
     void open_file_Dialog();
 
     void load_CodeInfo();
 
     void load_FileType();
+
+    void load_Dictionary();
 
     void load_OFDDefinition();
 
