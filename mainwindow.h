@@ -26,6 +26,10 @@
 #include<codeinfo.h>
 #include<QByteArray>
 #include<QTextCodec>
+#include<QMenu>
+#include<QAction>
+#include<QPoint>
+#include<QClipboard>
 
 namespace Ui {
 class MainWindow;
@@ -69,6 +73,11 @@ private slots:
 
     void on_pushButtonNextSearch_clicked();
 
+
+    void on_tableWidget_customContextMenuRequested(const QPoint &pos);
+
+    void copyToClipboard();
+
 private:
     Ui::MainWindow *ui;
     //状态栏指针变量
@@ -99,7 +108,15 @@ private:
     //当前打开的文件类别,0索引,1OFD数据
     int currentOpenFileType=0;
 
+    //字典参数
     Dictionary dictionary;
+
+    //表格的右键菜单
+    QMenu *tablePopMenu;
+    QAction *action_ShowDetails;
+    QAction *action_ShowCopyColum;
+
+    QPoint posCurrentMenu;
 
     /*
       极其重要的表格相关参数

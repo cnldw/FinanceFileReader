@@ -27,7 +27,6 @@ void Dictionary::addDictionary(QString line)
                         QString item=((QString)list.at(i));
                         if(item.contains(":")){
                             int sp=item.indexOf(':');
-                            qDebug()<<item.left(sp)<<item.mid(sp+1);
                             dictionaryItem.insert(item.left(sp),item.mid(sp+1));
                         }
                     }

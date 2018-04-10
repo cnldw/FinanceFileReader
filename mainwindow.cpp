@@ -10,7 +10,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
     tableHeight=ptr_table->height();
-
+    ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
+    //初始化表格右键菜单
+    tablePopMenu = new QMenu(ptr_table);
+    //action_ShowDetails = new QAction("查看此行记录",this);
+    action_ShowCopyColum = new QAction("复制此单元格",this);
+    connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
+    //开始初始化状态栏
     initStatusBar();
     //开始进行配置加载
     load_CodeInfo();
@@ -240,6 +246,7 @@ void MainWindow::load_Dictionary(){
         }
         dataFile.close();
     }
+    return;
 }
 
 void MainWindow::load_OFDDefinition(){
@@ -963,6 +970,15 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
     }
 }
 
+void MainWindow::copyToClipboard(){
+    if(ptr_table->itemAt(posCurrentMenu)!=nullptr){
+        QString text= ptr_table->itemAt(posCurrentMenu)->text();
+        QClipboard *board = QApplication::clipboard();
+        board->setText(text);
+        statusBar_disPlayMessage(QString("复制数据:%1").arg(text));
+    }
+}
+
 void MainWindow::on_pushButtonPreSearch_clicked()
 {
     //向上搜索
@@ -1032,4 +1048,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
         beginCol=0;
     }
     statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
+}
+
+void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
+{
+    posCurrentMenu=pos;
+    //tablePopMenu->addAction(action_ShowDetails);
+    tablePopMenu->addAction(action_ShowCopyColum);
+    tablePopMenu->exec(QCursor::pos());
 }
