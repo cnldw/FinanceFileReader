@@ -191,8 +191,8 @@ void MainWindow::load_CodeInfo(){
             loadedCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),info);
         }
         //debug信息
-        QString info=QString("共计加载代码数据条数:").append(QString::number(agencyInfo.count()));
-        qDebug()<<info;
+        //QString info=QString("共计加载代码数据条数:").append(QString::number(agencyInfo.count()));
+        //qDebug()<<info;
     }else{
         statusBar_disPlayMessage(tr("config/CodeInfo.ini配置丢失"));
     }
@@ -582,7 +582,11 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
         versionName=(info.getVersion().isEmpty()?"400":info.getVersion());
     }
     //qDebug()<<"用于解析本文件的大版本"<<versionName;
+    //读取文件结束位置
+    int lineEnd=9;
+    int countNumberFromFile=0;
     QString versionFromFile="";
+    QStringList filedNameFromFile;
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
     {
@@ -595,28 +599,63 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
             line=line.remove('\r').remove('\n').trimmed();
             //文件体
             lineList.append(line);
-            //仅读取两行,用户获取文件版本
+            //文件的第二行是文件版本
             if(lineNumber==1){
                 versionFromFile=line;
-                break;
+                //获取不到版本号，退出
+                if(versionFromFile.isEmpty()){
+                    statusBar_disPlayMessage("解析失败,未从文件第2行读取到OFD文件的版本号信息");
+                    return;
+                }
+            }
+            //文件的第10行记录了该文件有多少个字段
+            if(lineNumber==9){
+                QString count=line;
+                bool flag=false;
+                countNumberFromFile=count.toInt(&flag);
+                if(!flag)
+                {
+                    statusBar_disPlayMessage("解析失败,从文件第10行读取接口字段总数失败,请检查文件");
+                    return;
+                }else{
+                    //如果读取记录数成功,则延长结束行,读取文件的字段记录
+                    lineEnd+=countNumberFromFile;
+                }
+            }
+            //从第11行开始,为字段名字
+            if(lineNumber>9){
+                    filedNameFromFile.append(line);
             }
             lineNumber++;
+            //如果到达了终止点就跳出
+            if(lineNumber>lineEnd){
+                break;
+            }
         }
         dataFile.close();
-        if(versionFromFile.isEmpty()){
-            statusBar_disPlayMessage("解析失败,未从文件第二行读取到OFD文件的版本号信息");
-            return;
-        }else{
-            defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
-            //配置完毕,输出使用的配置
-            ui->lineEditUseIni->setText("OFD_"+versionName+"_"+versionFromFile+".ini");
-        }
+        defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
+        QString useini="OFD_"+versionName+"_"+versionFromFile+".ini";
+        ui->lineEditUseIni->setText(useini);
         //判断对应的配置文件是否存在
-        QString path="config/OFD_"+versionName+"_"+versionFromFile+".ini";
+        QString path="config/"+useini;
         if(Utils::isFileExist(path)){
             ofd=loadedOfdDefinitionMap.value(defineMapName);
             if(loadedOfdDefinitionMap.contains(defineMapName)) {
                 if(ofd.getuseAble()){
+                    if(filedNameFromFile.count()!=countNumberFromFile){
+                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n从解析的文件第10行获取到的文件字段数为["+QString::number( countNumberFromFile)+"],但是读取字段时，确只读取到了["+QString::number(filedNameFromFile.count())+"]个,请检查文件是否完整",QMessageBox::Ok,QMessageBox::Ok);
+                        return;
+                    }
+                    if(ofd.getfieldCount()!=countNumberFromFile){
+                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件有["+QString::number(ofd.getfieldCount())+"]个字段，但是从文件第10行获取到的文件字段数为["+QString::number( countNumberFromFile)+"],请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
+                        return;
+                    }
+                    for(int ff=0;ff<filedNameFromFile.count();ff++){
+                        if(((QString)filedNameFromFile.at(ff)).toUpper()!=ofd.getfieldList().at(ff).getFiledName().toUpper()){
+                            QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件第["+QString::number(ff)+"]个字段是["+ofd.getfieldList().at(ff).getFiledName().toUpper()+"],但是从文件第["+QString::number(11+ff)+"]行获取到的字段是["+((QString)filedNameFromFile.at(ff)).toUpper()+"] 字段名(忽略大小写)不一致,请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
+                            return;
+                        }
+                    }
                     //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
                     //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
                     QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
@@ -657,7 +696,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                                     }else{
                                         sucessFalg=false;
                                         statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
-                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"[行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                         break;
                                     }
                                 }
@@ -689,7 +728,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                 return;
             }
         }else{
-            statusBar_disPlayMessage("解析失败,配置"+path+"不存在...");
+            statusBar_disPlayMessage("解析失败,配置文件"+path+"不存在...");
             return;
         }
     }
