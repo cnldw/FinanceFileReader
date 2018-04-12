@@ -29,7 +29,8 @@ SOURCES += \
     ofdfiledefinition.cpp \
     fielddefinition.cpp \
     codeinfo.cpp \
-    dictionary.cpp
+    dictionary.cpp \
+    dialogshowtablerow.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -37,10 +38,12 @@ HEADERS += \
     ofdfiledefinition.h \
     fielddefinition.h \
     codeinfo.h \
-    dictionary.h
+    dictionary.h \
+    dialogshowtablerow.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    dialogshowtablerow.ui
 
 RESOURCES += \
     res.qrc

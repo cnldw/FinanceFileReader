@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>480</height>
+    <width>780</width>
+    <height>640</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>750</width>
+    <height>640</height>
+   </size>
   </property>
   <property name="font">
    <font>
@@ -16,12 +22,22 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>查看此行详情</string>
+   <string>查看表格行记录</string>
   </property>
   <property name="windowIcon">
    <iconset resource="res.qrc">
     <normaloff>:/res/icon.ico</normaloff>:/res/icon.ico</iconset>
   </property>
+  <widget class="QTableWidget" name="tableWidget">
+   <property name="geometry">
+    <rect>
+     <x>5</x>
+     <y>5</y>
+     <width>611</width>
+     <height>441</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <resources>
   <include location="res.qrc"/>

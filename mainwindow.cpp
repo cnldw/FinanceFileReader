@@ -9,11 +9,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     setWindowTitle("基金文件阅读器-"+Utils::getVersion());
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
+    ptr_table->setAlternatingRowColors(true);
     tableHeight=ptr_table->height();
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
     //初始化表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
-    //action_ShowDetails = new QAction("查看此行记录",this);
+    action_ShowDetails = new QAction("查看此行记录",this);
+    connect(action_ShowDetails, SIGNAL(triggered()), this, SLOT(showRowDetails()));
     action_ShowCopyColum = new QAction("复制此单元格",this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
     //开始初始化状态栏
@@ -624,7 +626,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
             }
             //从第11行开始,为字段名字
             if(lineNumber>9){
-                    filedNameFromFile.append(line);
+                filedNameFromFile.append(line);
             }
             lineNumber++;
             //如果到达了终止点就跳出
@@ -1018,6 +1020,45 @@ void MainWindow::copyToClipboard(){
     }
 }
 
+void MainWindow::showRowDetails(){
+    //行
+    int row=ptr_table->rowAt(posCurrentMenu.y());
+    int colCount=ptr_table->columnCount();
+    statusBar_disPlayMessage(QString("查看第:%1行数据").arg(row+1));
+    //定义一个Qlist存储此行的数据,将表格的列转换为行，共计三列
+    //数据内容从表格取，从原始数据取还需要转换
+    QList<QStringList> rowdata;
+    for(int i=0;i<colCount;i++){
+        QStringList colitem;
+        if(ptr_table->item(row,i)==nullptr){
+            //字段名
+            //colitem.append(ofd.getfieldList().at(i).getFiledDescribe()+"("+ofd.getfieldList().at(i).getFiledName()+")");
+            colitem.append(ofd.getfieldList().at(i).getFiledDescribe());
+            colitem.append(ofd.getfieldList().at(i).getFiledName());
+            //字段值
+            colitem.append(NULL);
+            //字典翻译
+            colitem.append(NULL);
+        }
+        else{
+            QString colvalue=ptr_table->item(row,i)->text();
+            //字段名
+            colitem.append(ofd.getfieldList().at(i).getFiledDescribe());
+            colitem.append(ofd.getfieldList().at(i).getFiledName());
+            //字段值
+            colitem.append(colvalue);
+            //字典翻译
+            colitem.append(dictionary.getDictionary(ofd.getfieldList().at(i).getFiledName(),colvalue));
+        }
+        rowdata.append(colitem);
+    }
+    //打开窗口
+    DialogShowTableRow * dialog = new DialogShowTableRow(&rowdata,this);
+    dialog->setWindowTitle(QString("查看表格行记录-第%1行").arg(row+1));
+    dialog->setModal(false);
+    dialog->show();
+}
+
 void MainWindow::on_pushButtonPreSearch_clicked()
 {
     //向上搜索
@@ -1092,7 +1133,19 @@ void MainWindow::on_pushButtonNextSearch_clicked()
 void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
     posCurrentMenu=pos;
-    //tablePopMenu->addAction(action_ShowDetails);
+    //判断当前鼠标位置是不是在表格单元格位置内
+    //空表
+    if(ptr_table->rowCount()<1){
+        return;
+    }
+    //如果鼠标点击的是表格得空白位置取到得行y是-1
+    if( ptr_table->rowAt(pos.y()) <0){
+        return;
+    }
+    //OFD数据可以打开行详情
+    if(currentOpenFileType==1){
+        tablePopMenu->addAction(action_ShowDetails);
+    }
     tablePopMenu->addAction(action_ShowCopyColum);
     tablePopMenu->exec(QCursor::pos());
 }

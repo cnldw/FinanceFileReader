@@ -22,6 +22,7 @@
 #include<utils.h>
 #include<ofdfiledefinition.h>
 #include <fielddefinition.h>
+#include <dialogshowtablerow.h>
 #include <dictionary.h>
 #include<codeinfo.h>
 #include<QByteArray>
@@ -77,6 +78,8 @@ private slots:
     void on_tableWidget_customContextMenuRequested(const QPoint &pos);
 
     void copyToClipboard();
+
+    void showRowDetails();
 
 private:
     Ui::MainWindow *ui;
