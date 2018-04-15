@@ -141,7 +141,14 @@ void MainWindow::statusBar_clear_statusBar(){
 }
 
 void MainWindow::open_file_Dialog(){
-    QString   file = QFileDialog::getOpenFileName(this, tr("打开"), currentOpenFilePath.left(currentOpenFilePath.lastIndexOf("/")+1), tr("所有文件(*.*)"));
+    QString openpath="./";
+    if(!currentOpenFilePath.isEmpty()){
+        if(currentOpenFilePath.contains("/",Qt::CaseSensitive)){
+            openpath=currentOpenFilePath.left(currentOpenFilePath.lastIndexOf("/")+1);
+            qDebug()<<openpath;
+        }
+    }
+    QString   file = QFileDialog::getOpenFileName(this, tr("打开"),openpath , tr("所有文件(*.*)"));
     if(file.length() != 0) {
         currentOpenFilePath=file;
         ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
