@@ -66,14 +66,11 @@ private slots:
     //接受滚动条事件
     void acceptVScrollValueChanged(int value);
 
-    void on_tableWidget_doubleClicked(const QModelIndex &index);
-
     void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
 
     void on_pushButtonPreSearch_clicked();
 
     void on_pushButtonNextSearch_clicked();
-
 
     void on_tableWidget_customContextMenuRequested(const QPoint &pos);
 
@@ -134,8 +131,8 @@ private:
     int tableHeight;
     //表格行高度,常量
     const int rowHight=22;
-    //配置和文件加载的状态
-    bool loadCompleted=false;
+    //配置文件加载的状态
+    bool configLoadCompleted=false;
     //数据更新状态
     bool isUpdateData=false;
 

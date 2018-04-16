@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 {
     ui->setupUi(this);
     setAcceptDrops(true);
-    setWindowTitle("基金文件阅读器-"+Utils::getVersion());
+    setWindowTitle(tr("基金文件阅读器-")+Utils::getVersion());
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
     ptr_table->setAlternatingRowColors(true);
@@ -14,9 +14,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
     //初始化表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
-    action_ShowDetails = new QAction("查看此行记录",this);
+    action_ShowDetails = new QAction(tr("查看此行记录"),this);
     connect(action_ShowDetails, SIGNAL(triggered()), this, SLOT(showRowDetails()));
-    action_ShowCopyColum = new QAction("复制此单元格",this);
+    action_ShowCopyColum = new QAction(tr("复制此单元格"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
     //开始初始化状态栏
     initStatusBar();
@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     load_OFDDefinition();
     load_Dictionary();
     //配置加载完毕
-    loadCompleted=true;
+    configLoadCompleted=true;
 }
 
 void MainWindow::initStatusBar(){
@@ -81,20 +81,24 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 }
 void MainWindow::dropEvent(QDropEvent *event)
 {
-    if(!loadCompleted){
-        statusBar_disPlayMessage("有正在加载的任务,稍后再拖入文件试试...");
+    if(!configLoadCompleted){
+        statusBar_disPlayMessage(tr("正在加载配置,稍后再拖入文件试试..."));
+        return;
+    }
+    if(isUpdateData){
+        statusBar_disPlayMessage(tr("有正在加载的任务,稍后再拖入文件试试..."));
         return;
     }
     QList<QUrl> urls = event->mimeData()->urls();
     if(urls.count()>1){
-        statusBar_disPlayMessage("拖进来一个文件试试~,文件太多啦");
+        statusBar_disPlayMessage(tr("拖进来一个文件试试~,文件太多啦"));
         return;
     }
     QString fileName = urls.first().toLocalFile();
     //判断是否是文件夹
     QFileInfo fileinfo(fileName);
     if(fileinfo.isDir()){
-        statusBar_disPlayMessage("拖进来一个文件试试~,不接受文件夹");
+        statusBar_disPlayMessage(tr("拖进来一个文件试试~,不接受文件夹"));
         return;
     }
     if (!fileName.isEmpty())
@@ -145,7 +149,6 @@ void MainWindow::open_file_Dialog(){
     if(!currentOpenFilePath.isEmpty()){
         if(currentOpenFilePath.contains("/",Qt::CaseSensitive)){
             openpath=currentOpenFilePath.left(currentOpenFilePath.lastIndexOf("/")+1);
-            qDebug()<<openpath;
         }
     }
     QString   file = QFileDialog::getOpenFileName(this, tr("打开"),openpath , tr("所有文件(*.*)"));
@@ -193,15 +196,11 @@ void MainWindow::load_CodeInfo(){
         //获取所有代码和代码对应的机构名称
         for(int i=0;i<agencyInfo.count();i++){
             CodeInfo info;
-            //qDebug()<<loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString();
             info.setCode(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString());
             info.setVersion(loadedCodeInfoIni.value(agencyInfo.at(i)+"/IVERSION").toString());
             info.setName(loadedCodeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
             loadedCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),info);
         }
-        //debug信息
-        //QString info=QString("共计加载代码数据条数:").append(QString::number(agencyInfo.count()));
-        //qDebug()<<info;
     }else{
         statusBar_disPlayMessage(tr("config/CodeInfo.ini配置丢失"));
     }
@@ -221,7 +220,6 @@ void MainWindow::load_FileType(){
         if(info.count()>0){
             for(int i=0;i<info.count();i++){
                 loadedIndexFileInfo.insert(info.at(i),fileTypeIni.value(info.at(i)).toString());
-                //  qDebug()<<info.at(i)<<fileTypeIni.value(info.at(i)).toString();
             }
         }
         fileTypeIni.endGroup();
@@ -232,7 +230,6 @@ void MainWindow::load_FileType(){
         if(info2.count()>0){
             for(int i=0;i<info2.count();i++){
                 loadedOfdFileInfo.insert(info2.at(i),fileTypeIni.value(info2.at(i)).toString());
-                // qDebug()<<info2.at(i)<<fileTypeIni.value(info2.at(i)).toString();
             }
         }
         fileTypeIni.endGroup();}
@@ -243,6 +240,7 @@ void MainWindow::load_FileType(){
 
 void MainWindow::load_Dictionary(){
     //读取配置使用UTF-8
+    //字典解析直接按行解析即可,不再使用QSettings
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
     QFile dataFile("./config/Dictionary.ini");
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
@@ -281,10 +279,8 @@ void MainWindow::load_OFDDefinition(){
                 }
                 QStringList nameList=fixName.split("_");
                 if(nameList.count()==3){
-                    //qDebug()<<"可用接口文件配置"<<fileName;
                     //加载ini文件
                     QString prefixName=nameList.at(1)+"_"+nameList.at(2);
-                    //qDebug()<<prefixName;
                     QSettings ofdIni("./config/"+fileName,QSettings::IniFormat,0);
                     //目前仅接收UTF-8编码的配置文件
                     ofdIni.setIniCodec("UTF-8");
@@ -303,7 +299,6 @@ void MainWindow::load_OFDDefinition(){
                             //记录每行的长度，自动总数
                             int rowLength=0;
                             int filedCount=0;
-                            //qDebug()<<"待解析的文件记录------"+name;
                             //查找COUNT标记
                             QString countStr=ofdIni.value(interfaceList.at(i)+"/COUNT").toString();
                             if(countStr.isEmpty()){
@@ -397,7 +392,6 @@ void MainWindow::load_OFDDefinition(){
 
     } else
     {
-        //qDebug()<<"no file";
     }
 }
 
@@ -408,20 +402,22 @@ void MainWindow::statusBar_display_fileName(){
 }
 
 void MainWindow::initFile(){
-    //开始加载文件时,设置加载状态为未完成,避免这个文件还没加载,就拖入了新的文件
-    loadCompleted=false;
+    //初始化文件时,检查配置是否加载完毕
+    if(!configLoadCompleted){
+        statusBar_disPlayMessage(tr("正在加载配置,稍后再拖入文件试试..."));
+        return;
+    }
     //首先清除原来的显示信息
     clear_oldData();
     clear_Display_Info();
     clear_Table_Info();
-    //首先获取完整的文件名
+    //获取完整的文件名
     int first = currentOpenFilePath.lastIndexOf ("/");
     QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
     //状态栏显示文件名
     statusBar_display_fileName();
     if(fileName.length()<10){
         statusBar_disPlayMessage("无法识别的文件类别,请检查");
-        loadCompleted=true;
         return;
     }
     else{
@@ -432,13 +428,11 @@ void MainWindow::initFile(){
             if(fixName.contains(".",Qt::CaseInsensitive)){
                 fixName=fixName.mid(0,fixName.indexOf("."));
             }
-            //qDebug()<<fixName;
             //OFD文件名处理完毕后，开始拆解文件名
             QStringList nameList=fixName.split("_");
             //正常的OFD文件应该有5段信息组成
             if(nameList.count()!=5){
                 statusBar_disPlayMessage("错误的文件名,参考:OFD_XX_XXX_YYYYMMDD_XX.TXT");
-                loadCompleted=true;
                 return;
             }
             else{
@@ -464,7 +458,6 @@ void MainWindow::initFile(){
                 //记录从文件里读取的文件发送信息
                 //此处开始加载OFD数据文件
                 load_ofdFile(sendCode,fileTypeCode);
-                loadCompleted=true;
                 return;
             }
         }else{
@@ -477,13 +470,11 @@ void MainWindow::initFile(){
                 if(fixName.contains(".",Qt::CaseInsensitive)){
                     fixName=fixName.mid(0,fixName.indexOf("."));
                 }
-                //qDebug()<<fixName;
                 //索引文件名处理完毕后，开始拆解文件名
                 QStringList nameList=fixName.split("_");
                 //正常的OFD文件应该有5段信息组成
                 if(nameList.count()!=4){
                     statusBar_disPlayMessage("无法识别的非OFD文件,请检查config/FileType.ini配置");
-                    loadCompleted=true;
                     return;
                 }
                 else{
@@ -508,13 +499,11 @@ void MainWindow::initFile(){
                     ui->lineEditFileDescribe->setText(fileIndexTypeName);
                     //此处开始加载索引文件
                     load_indexFile();
-                    loadCompleted=true;
                     return;
                 }
             }else{
                 //没有检索到满足的文件头标识
                 statusBar_disPlayMessage("无法识别的文件类别,请检查config/FileType.ini配置");
-                loadCompleted=true;
                 return;
             }
         }
@@ -594,7 +583,6 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
     }else{
         versionName=(info.getVersion().isEmpty()?"400":info.getVersion());
     }
-    //qDebug()<<"用于解析本文件的大版本"<<versionName;
     //读取文件结束位置
     int lineEnd=9;
     int countNumberFromFile=0;
@@ -842,7 +830,6 @@ void MainWindow::display_OFDTable(){
         }
     }
     ptr_table->resizeColumnsToContents();
-    qDebug()<<"已经加载的行数:"<<QString::number(rowHasloaded.count());
 }
 
 QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
@@ -984,11 +971,6 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
         }
     }
-}
-
-void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
-{
-    qDebug()<<index.row();
 }
 
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
