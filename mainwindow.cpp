@@ -242,6 +242,8 @@ void MainWindow::load_FileType(){
 }
 
 void MainWindow::load_Dictionary(){
+    //读取配置使用UTF-8
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
     QFile dataFile("./config/Dictionary.ini");
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
     {
@@ -522,6 +524,8 @@ void MainWindow::initFile(){
 void MainWindow::load_indexFile(){
     currentOpenFileType=0;
     QFile dataFile(currentOpenFilePath);
+    //开放式基金交换协议使用GB18030编码
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
     {
         QTextStream data(&dataFile);
@@ -668,8 +672,6 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                     //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
                     //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
                     QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
-                    //找到配置,开始解析配置,此处待优化,需改为后台读取文件
-                    //qDebug()<<"接口文档记录长度"<<ofd.getrowLength();
                     QFile dataFile(currentOpenFilePath);
                     //判断如果文件打开成功,则开始读取
                     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
