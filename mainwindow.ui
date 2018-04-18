@@ -49,7 +49,7 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QGroupBox" name="groupBoxInfo">
+     <widget class="QFrame" name="frameInfo">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -75,10 +75,22 @@
        </font>
       </property>
       <property name="autoFillBackground">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
-      <property name="title">
-       <string/>
+      <property name="styleSheet">
+       <string notr="true">.QFrame{
+border-left: 1px solid rgb(198, 198, 198);
+border-right: 1px solid rgb(198, 198, 198);
+border-top: 1px solid rgb(198, 198, 198);
+border-bottom: 1px solid rgb(198, 198, 198);
+border-radius:3px;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
       </property>
       <widget class="QLabel" name="labelFileInfo">
        <property name="geometry">
@@ -364,7 +376,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBoxTools">
+     <widget class="QFrame" name="frameTools">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -388,8 +400,23 @@
         <family>Microsoft YaHei</family>
        </font>
       </property>
-      <property name="title">
-       <string/>
+      <property name="styleSheet">
+       <string notr="true">.QFrame{
+border-left: 1px solid rgb(198, 198, 198);
+border-right: 1px solid rgb(198, 198, 198);
+border-top: 1px solid rgb(198, 198, 198);
+border-bottom: 1px solid rgb(198, 198, 198);
+border-radius:3px;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <property name="lineWidth">
+       <number>1</number>
       </property>
       <widget class="QLineEdit" name="lineTextText">
        <property name="geometry">
@@ -435,7 +462,14 @@
     <item>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
-       <widget class="QTableWidget" name="tableWidget"/>
+       <widget class="QTableWidget" name="tableWidget">
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
