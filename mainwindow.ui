@@ -422,6 +422,11 @@ border-radius:3px;
          <height>22</height>
         </rect>
        </property>
+       <property name="font">
+        <font>
+         <family>Microsoft YaHei</family>
+        </font>
+       </property>
        <property name="text">
         <string>向上搜索</string>
        </property>

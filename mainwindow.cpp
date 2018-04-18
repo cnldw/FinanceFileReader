@@ -1024,7 +1024,7 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
                 statusBar_disPlayMessage(NULL);
             }
             else{
-                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
             }
         }
         else{
