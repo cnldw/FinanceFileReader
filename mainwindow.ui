@@ -92,30 +92,12 @@ border-radius:3px;
       <property name="frameShadow">
        <enum>QFrame::Plain</enum>
       </property>
-      <widget class="QLabel" name="labelFileInfo">
+      <widget class="QLineEdit" name="currentOpenFilePathLineText">
        <property name="geometry">
         <rect>
          <x>13</x>
          <y>9</y>
-         <width>31</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>文件:</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="currentOpenFilePathLineText">
-       <property name="geometry">
-        <rect>
-         <x>50</x>
-         <y>9</y>
-         <width>740</width>
+         <width>777</width>
          <height>20</height>
         </rect>
        </property>
