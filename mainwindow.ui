@@ -16,17 +16,15 @@
     <height>640</height>
    </size>
   </property>
-  <property name="font">
-   <font>
-    <family>Microsoft YaHei</family>
-   </font>
-  </property>
   <property name="windowTitle">
    <string>基金文件阅读器</string>
   </property>
   <property name="windowIcon">
    <iconset resource="res.qrc">
     <normaloff>:/res/icon.ico</normaloff>:/res/icon.ico</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">font-family:Microsoft YaHei,Sans-serif;</string>
   </property>
   <property name="toolButtonStyle">
    <enum>Qt::ToolButtonTextOnly</enum>
@@ -67,12 +65,6 @@
         <width>16777215</width>
         <height>86</height>
        </size>
-      </property>
-      <property name="font">
-       <font>
-        <family>Microsoft YaHei</family>
-        <kerning>true</kerning>
-       </font>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -127,11 +119,6 @@ border-radius:3px;
          <height>20</height>
         </rect>
        </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
        <property name="text">
         <string>发送方代码:</string>
        </property>
@@ -154,11 +141,6 @@ border-radius:3px;
          <width>71</width>
          <height>20</height>
         </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
        </property>
        <property name="text">
         <string>发送方信息:</string>
@@ -183,11 +165,6 @@ border-radius:3px;
          <height>20</height>
         </rect>
        </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
        <property name="text">
         <string>接收方代码:</string>
        </property>
@@ -210,11 +187,6 @@ border-radius:3px;
          <width>71</width>
          <height>20</height>
         </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
        </property>
        <property name="text">
         <string>接收方信息:</string>
@@ -239,11 +211,6 @@ border-radius:3px;
          <height>20</height>
         </rect>
        </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
        <property name="text">
         <string>使用的配置:</string>
        </property>
@@ -266,11 +233,6 @@ border-radius:3px;
          <width>61</width>
          <height>20</height>
         </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
        </property>
        <property name="text">
         <string>文件类型:</string>
@@ -295,11 +257,6 @@ border-radius:3px;
          <height>20</height>
         </rect>
        </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
        <property name="text">
         <string>文件描述:</string>
        </property>
@@ -322,11 +279,6 @@ border-radius:3px;
          <width>81</width>
          <height>20</height>
         </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
        </property>
        <property name="text">
         <string>文件传递日期:</string>
@@ -377,11 +329,6 @@ border-radius:3px;
         <height>37</height>
        </size>
       </property>
-      <property name="font">
-       <font>
-        <family>Microsoft YaHei</family>
-       </font>
-      </property>
       <property name="styleSheet">
        <string notr="true">.QFrame{
 border-left: 1px solid rgb(198, 198, 198);
@@ -421,11 +368,6 @@ border-radius:3px;
          <width>74</width>
          <height>22</height>
         </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Microsoft YaHei</family>
-        </font>
        </property>
        <property name="text">
         <string>向上搜索</string>
@@ -492,11 +434,6 @@ border-radius:3px;
    <property name="text">
     <string>打开</string>
    </property>
-   <property name="font">
-    <font>
-     <family>Microsoft YaHei</family>
-    </font>
-   </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
@@ -504,12 +441,6 @@ border-radius:3px;
   <action name="aboutOpen">
    <property name="text">
     <string>关于本程序</string>
-   </property>
-   <property name="font">
-    <font>
-     <family>Microsoft YaHei</family>
-     <kerning>true</kerning>
-    </font>
    </property>
    <property name="shortcut">
     <string>F1</string>
@@ -521,11 +452,6 @@ border-radius:3px;
    </property>
    <property name="statusTip">
     <string/>
-   </property>
-   <property name="font">
-    <font>
-     <family>Microsoft YaHei</family>
-    </font>
    </property>
    <property name="shortcut">
     <string>F2</string>

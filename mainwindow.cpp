@@ -18,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(action_ShowDetails, SIGNAL(triggered()), this, SLOT(showRowDetails()));
     action_ShowCopyColum = new QAction(tr("复制此单元格"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
+    //监控表格进度条的变化
+    connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
     initStatusBar();
     //开始进行配置加载
@@ -30,8 +32,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 }
 
 void MainWindow::initStatusBar(){
-    //监控表格进度条的变化
-    connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
+    ui->statusBar->setStyleSheet("font-family:Microsoft YaHei,Sans-serif;");
     statusLabel_ptr_showCount = new QLabel;
     statusLabel_ptr_showCount->setMinimumSize(130, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showCount);
