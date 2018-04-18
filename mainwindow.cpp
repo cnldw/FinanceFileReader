@@ -837,6 +837,8 @@ QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
     if(row>=ofdFileContentQByteArrayList.count()||col>=ofd.getfieldCount()){
         return "";
     }
+    //字段类型
+    QString fileType=ofd.getfieldList().at(col).getFiledType();
     //开始获取此字段的值
     QString filed="";
     //字段长度
@@ -846,24 +848,44 @@ QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
     //获取此字段的值
     filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row).mid(ofd.getfieldList().at(col).getRowBeginIndex(),filedlength));
     //数据信息处理
-    //字符型--trim处理
-    if(ofd.getfieldList().at(col).getFiledType()=="C"){
-        filed=filed.trimmed();
+    if(fileType=="C"){
+        //C类型从右去除多余空格
+        int spaceLength=0;
+        for(int i=filed.length()-1;i>=0;i--){
+            if(filed.at(i)==' '){
+                spaceLength++;
+            }
+            else{
+                break;
+            }
+        }
+        if(spaceLength>0){
+            filed=filed.left(filed.length()-spaceLength);
+        }
     }
-    //数字字符型，限于0—9--trim处理
-    else if(ofd.getfieldList().at(col).getFiledType()=="A"){
-        filed=filed.trimmed();
+    else if(fileType=="A"){
+        //A类型从右移除多余空格,移除空格后剩余的应该是0-9的数值
+        int spaceLength=0;
+        for(int i=filed.length()-1;i>=0;i--){
+            if(filed.at(i)==' '){
+                spaceLength++;
+            }
+            else{
+                break;
+            }
+        }
+        if(spaceLength>0){
+            filed=filed.left(filed.length()-spaceLength);
+        }
     }
-    //数值型，其长度不包含小数点，可参与数值计算
-    //去除左侧的0,但是如果整数部分全是0，则至少保留一个0然后插入一个小数点
-    else  if(ofd.getfieldList().at(col).getFiledType()=="N"){
+    else if(fileType=="N"){
+        //N类型为双精度数字
         int needCheck=filedlength-filedDeclength-1;
         int needCutZero=0;
         for(int s=0;s<needCheck;s++){
             if(filed.at(s)=='0'){
                 needCutZero++;
             }
-            //如果不是0了，则跳出循环
             else{
                 break;
             }
@@ -880,9 +902,21 @@ QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
             filed=left.append(".").append(right);
         }
     }
-    //不定长文本
-    else  if(ofd.getfieldList().at(col).getFiledType()=="TEXT"){
-        filed=filed.trimmed();
+    else if(fileType=="TEXT"){
+        //TEXT类型从右去除多余空格
+        int spaceLength=0;
+        for(int i=filed.length()-1;i>=0;i--){
+            if(filed.at(i)==' '){
+                spaceLength++;
+            }
+            //遇到第一个不是空格的字段就立即退出循环
+            else{
+                break;
+            }
+        }
+        if(spaceLength>0){
+            filed=filed.left(filed.length()-spaceLength);
+        }
     }
     return filed;
 }
@@ -1007,7 +1041,7 @@ void MainWindow::copyToClipboard(){
         QString text= ptr_table->itemAt(posCurrentMenu)->text();
         QClipboard *board = QApplication::clipboard();
         board->setText(text);
-        statusBar_disPlayMessage(QString("复制数据:%1").arg(text));
+        statusBar_disPlayMessage(QString("复制数据:\"%1\"").arg(text));
     }
 }
 
