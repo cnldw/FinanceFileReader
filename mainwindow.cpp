@@ -7,6 +7,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ui->setupUi(this);
     setAcceptDrops(true);
     setWindowTitle(tr("基金文件阅读器-")+Utils::getVersion());
+    //调教字体大小差异,在linux系统上字体默认显示很大
+    #ifdef Q_OS_MAC
+    #endif
+    #ifdef Q_OS_LINUX
+    this->setStyleSheet("font-size:13px");
+    #endif
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
     ptr_table->setAlternatingRowColors(true);
