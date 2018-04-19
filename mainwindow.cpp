@@ -12,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     #endif
     #ifdef Q_OS_LINUX
     this->setStyleSheet("font-size:13px");
+    ui->statusBar->setStyleSheet("font-size:13px");
     #endif
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
@@ -1028,14 +1029,14 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
             QString text=ptr_table->item(currentRow,currentColumn)->text();
             QString dic=dictionary.getDictionary(ofd.getfieldList().at(currentColumn).getFiledName(),text);
             if(text.isEmpty()){
-                statusBar_disPlayMessage(NULL);
+                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
             }
             else{
                 statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
             }
         }
         else{
-            statusBar_disPlayMessage(NULL);
+            statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
         }
     }
     if(currentOpenFileType==0&&!isUpdateData){
@@ -1175,6 +1176,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
         return;
     }
     //OFD数据可以打开行详情
+    tablePopMenu->clear();
     if(currentOpenFileType==1){
         tablePopMenu->addAction(action_ShowDetails);
     }
