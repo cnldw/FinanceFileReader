@@ -30,7 +30,8 @@ SOURCES += \
     fielddefinition.cpp \
     codeinfo.cpp \
     dictionary.cpp \
-    dialogshowtablerow.cpp
+    dialogshowtablerow.cpp \
+    dialogshowtablefiledcheck.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,11 +40,13 @@ HEADERS += \
     fielddefinition.h \
     codeinfo.h \
     dictionary.h \
-    dialogshowtablerow.h
+    dialogshowtablerow.h \
+    dialogshowtablefiledcheck.h
 
 FORMS += \
         mainwindow.ui \
-    dialogshowtablerow.ui
+    dialogshowtablerow.ui \
+    dialogshowtablefiledcheck.ui
 
 RESOURCES += \
     res.qrc

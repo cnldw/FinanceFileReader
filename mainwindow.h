@@ -23,6 +23,7 @@
 #include<ofdfiledefinition.h>
 #include <fielddefinition.h>
 #include <dialogshowtablerow.h>
+#include <dialogshowtablefiledcheck.h>
 #include <dictionary.h>
 #include<codeinfo.h>
 #include<QByteArray>
@@ -78,6 +79,8 @@ private slots:
 
     void showRowDetails();
 
+    void showFiledAnalysis();
+
 private:
     Ui::MainWindow *ui;
     //状态栏指针变量
@@ -115,6 +118,7 @@ private:
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
     QAction *action_ShowCopyColum;
+    QAction *action_ShowAnalysis;
 
     QPoint posCurrentMenu;
 
@@ -177,6 +181,8 @@ private:
     void init_display_IndexTable();
 
     QString getValuesFromofdFileContentQByteArrayList(int row ,int col);
+
+    QString getOriginalValuesFromofdFileContentQByteArrayList(int row ,int col);
 
     void init_OFDTable();
     //仅仅渲染显示当前指定区域

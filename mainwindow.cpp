@@ -8,12 +8,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     setAcceptDrops(true);
     setWindowTitle(tr("基金文件阅读器-")+Utils::getVersion());
     //调教字体大小差异,在linux系统上字体默认显示很大
-    #ifdef Q_OS_MAC
-    #endif
-    #ifdef Q_OS_LINUX
+#ifdef Q_OS_MAC
+#endif
+#ifdef Q_OS_LINUX
     this->setStyleSheet("font-size:13px");
     ui->statusBar->setStyleSheet("font-size:13px");
-    #endif
+#endif
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
     ptr_table->setAlternatingRowColors(true);
@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(action_ShowDetails, SIGNAL(triggered()), this, SLOT(showRowDetails()));
     action_ShowCopyColum = new QAction(tr("复制此单元格"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
+    action_ShowAnalysis = new QAction(tr("字段合法分析"),this);
+    connect(action_ShowAnalysis, SIGNAL(triggered()), this, SLOT(showFiledAnalysis()));
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
@@ -929,6 +931,20 @@ QString MainWindow::getValuesFromofdFileContentQByteArrayList(int row ,int col){
     return filed;
 }
 
+QString MainWindow::getOriginalValuesFromofdFileContentQByteArrayList(int row, int col){
+    //判断越界
+    if(row>=ofdFileContentQByteArrayList.count()||col>=ofd.getfieldCount()){
+        return "";
+    }
+    //开始获取此字段的值
+    QString filed="";
+    //字段长度
+    int filedlength=ofd.getfieldList().at(col).getLength();
+    //获取此字段的值
+    filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row).mid(ofd.getfieldList().at(col).getRowBeginIndex(),filedlength));
+    return filed;
+}
+
 void MainWindow::clear_Table_Info(){
     ptr_table->clearContents();
     ptr_table->setRowCount(0);
@@ -1057,16 +1073,16 @@ void MainWindow::showRowDetails(){
     //行
     int row=ptr_table->rowAt(posCurrentMenu.y());
     int colCount=ptr_table->columnCount();
-    statusBar_disPlayMessage(QString("查看第:%1行数据").arg(row+1));
-    //定义一个Qlist存储此行的数据,将表格的列转换为行，共计三列
+    statusBar_disPlayMessage(QString("查看第%1行数据").arg(row+1));
+    //定义一个Qlist存储此行的数据,将表格的列转换为行，共计四列
     //数据内容从表格取，从原始数据取还需要转换
     QList<QStringList> rowdata;
     for(int i=0;i<colCount;i++){
         QStringList colitem;
         if(ptr_table->item(row,i)==nullptr){
-            //字段名
-            //colitem.append(ofd.getfieldList().at(i).getFiledDescribe()+"("+ofd.getfieldList().at(i).getFiledName()+")");
+            //字段中文名
             colitem.append(ofd.getfieldList().at(i).getFiledDescribe());
+            //字段英文名
             colitem.append(ofd.getfieldList().at(i).getFiledName());
             //字段值
             colitem.append(NULL);
@@ -1088,6 +1104,120 @@ void MainWindow::showRowDetails(){
     //打开窗口
     DialogShowTableRow * dialog = new DialogShowTableRow(&rowdata,this);
     dialog->setWindowTitle(QString("查看表格行记录-第%1行").arg(row+1));
+    dialog->setModal(false);
+    dialog->show();
+}
+
+void MainWindow:: showFiledAnalysis(){
+    statusBar_disPlayMessage(QString("分析第%1行第%2列数据数据").arg(rowcurrent+1).arg(colcurrent+1));
+    //字段中文名
+    QString filedDes=ofd.getfieldList().at(colcurrent).getFiledDescribe();
+    //字段英文名
+    QString filedName=ofd.getfieldList().at(colcurrent).getFiledName();
+    //字段类型
+    QString filedType=ofd.getfieldList().at(colcurrent).getFiledType();
+    //字段长度
+    int filedLength=ofd.getfieldList().at(colcurrent).getLength();
+    //字段小数长度
+    int filedDecLength=ofd.getfieldList().at(colcurrent).getDecLength();
+    //字段原始值
+    QString filedOaiginal=getOriginalValuesFromofdFileContentQByteArrayList(rowcurrent,colcurrent);
+    //字段翻译值
+    QString filedValues=getValuesFromofdFileContentQByteArrayList(rowcurrent,colcurrent);
+    QList<QStringList> data;
+    //开始存储数据
+    /////////////////////////////
+    QStringList rowfiledDes;
+    rowfiledDes.append("字段定义中文名");
+    rowfiledDes.append(filedDes);
+    data.append(rowfiledDes);
+    /////////////////////////////
+    QStringList rowfiledName;
+    rowfiledName.append("字段定义英文名");
+    rowfiledName.append(filedName);
+    data.append(rowfiledName);
+    /////////////////////////////
+    QStringList rowfiledType;
+    rowfiledType.append("字段定义类型");
+    QString type="";
+    if(filedType=="C"){
+        type=filedType+"(字符型)";
+    }
+    else if(filedType=="A"){
+        type=filedType+"(数字字符型)";
+    }
+    else if(filedType=="N"){
+        type=filedType+"(数值型)";
+    }
+    else if(filedType=="TEXT"){
+        type=filedType+"(不定长文本)";
+    }
+    rowfiledType.append(type);
+    data.append(rowfiledType);
+    /////////////////////////////
+    QStringList rowfiledLength;
+    rowfiledLength.append("字段定义总长度");
+    rowfiledLength.append(QString::number(filedLength));
+    data.append(rowfiledLength);
+    /////////////////////////////
+    QStringList rowfiledDecLength;
+    rowfiledDecLength.append("字段定义小数长度");
+    rowfiledDecLength.append(QString::number(filedDecLength));
+    data.append(rowfiledDecLength);
+    /////////////////////////////
+    QStringList rowfiledOaiginal;
+    rowfiledOaiginal.append("字段原始值");
+    rowfiledOaiginal.append(filedOaiginal);
+    data.append(rowfiledOaiginal);
+    /////////////////////////////
+    QStringList rowfiledValues;
+    rowfiledValues.append("字段解释值");
+    rowfiledValues.append(filedValues);
+    data.append(rowfiledValues);
+    /////////////合法校验/////////
+    QStringList rowfiledCheck;
+    rowfiledCheck.append("字段值合法性");
+    if(filedType=="C"){
+        rowfiledCheck.append("字段值符合接口约束");
+    }
+    else if(filedType=="A"){
+        //数字字符型
+        /*
+        1:不能包含空格数字外的任何值
+        2:不能以数字外的类型开头
+        */
+        rowfiledCheck.append("字段值符合接口约束");
+    }
+    else if(filedType=="N"){
+        //数字型
+        /*
+        1:不能包含数字外的任何值
+        */
+        //如果一个N类型的字段合法，那么肯定可以转换成一个数字
+        //首先判断是否包含空格
+        if(filedOaiginal.contains(" ")){
+            rowfiledCheck.append("数值型字段不能包含0-9外的任何字符");
+        }else{
+            bool ok;
+            QString(filedOaiginal).toLongLong(&ok);
+            if(ok){
+                rowfiledCheck.append("字段值符合接口约束");
+            }
+            else{
+                rowfiledCheck.append("数值型字段不能包含0-9外的任何字符");
+            }
+        }
+    }
+    else if(filedType=="TEXT"){
+        rowfiledCheck.append("字段值符合接口约束");
+    }
+    else{
+        rowfiledCheck.append("未知类型字段,无法分析");
+    }
+    data.append(rowfiledCheck);
+    //打开窗口
+    DialogShowTableFiledCheck * dialog = new DialogShowTableFiledCheck(&data,this);
+    dialog->setWindowTitle(QString("分析第%1行第%2列数据数据").arg(rowcurrent+1).arg(colcurrent+1));
     dialog->setModal(false);
     dialog->show();
 }
@@ -1179,6 +1309,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     tablePopMenu->clear();
     if(currentOpenFileType==1){
         tablePopMenu->addAction(action_ShowDetails);
+        tablePopMenu->addAction(action_ShowAnalysis);
     }
     tablePopMenu->addAction(action_ShowCopyColum);
     tablePopMenu->exec(QCursor::pos());

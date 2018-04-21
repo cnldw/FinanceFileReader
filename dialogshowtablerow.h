@@ -16,7 +16,6 @@ class DialogShowTableRow : public QDialog
 public:
     explicit DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent = 0);
     ~DialogShowTableRow();
-    void setData(QList<QStringList> * rowdata);
 
 private slots:
 
@@ -25,7 +24,6 @@ private slots:
     void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
 
 private:
-    QList<QStringList> * rowdata;
     Ui::DialogShowTableRow *ui;
     QTableWidget * ptr_table;
     int beginRow =0;

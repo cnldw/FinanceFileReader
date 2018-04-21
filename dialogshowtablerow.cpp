@@ -47,10 +47,6 @@ DialogShowTableRow::~DialogShowTableRow()
     delete ui;
 }
 
-void DialogShowTableRow::setData(QList<QStringList> * rowdata){
-    this->rowdata=rowdata;
-}
-
 void DialogShowTableRow::on_pushButton_clicked()
 {
     QString text=ui->lineEdit->text();
