@@ -1,6 +1,7 @@
 #include "dialogshowtablerow.h"
 #include "ui_dialogshowtablerow.h"
 #include <QDebug>
+#define UNUSED(x) (void)x
 
 DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent) :
     QDialog(parent),
@@ -85,6 +86,8 @@ void DialogShowTableRow::on_pushButton_clicked()
 
 void DialogShowTableRow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
+    UNUSED(previousRow);
+    UNUSED(previousColumn);
     this->beginRow=currentRow;
     this->beginColumn=currentColumn;
 }

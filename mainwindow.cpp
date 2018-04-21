@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#define UNUSED(x) (void)x
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -1033,6 +1034,8 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
 
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
+    UNUSED(previousRow);
+    UNUSED(previousColumn);
     if(currentOpenFileType==1&&!isUpdateData){
         //记录当前所在行
         rowcurrent=currentRow;
@@ -1211,10 +1214,10 @@ void MainWindow:: showFiledAnalysis(){
         */
         //如果一个N类型的字段合法，那么肯定可以转换成一个数字
         if(filedOaiginal.trimmed().isEmpty()){
-            rowfiledCheck.append("数值型字段不建议使用空格填充,部分系统不支持,空值建议填充0");
+            rowfiledCheck.append("数值型字段不建议使用空格填充,部分厂商系统不支持,空值建议填充0");
         }
         else if(filedOaiginal.contains(" ")){
-            rowfiledCheck.append("数值型字段不建议使用空格填充,部分系统不支持,空值建议填充0");
+            rowfiledCheck.append("数值型字段不建议使用空格填充,部分厂商系统不支持,长度补位建议填充0");
         }else{
             bool ok;
             QString(filedOaiginal).toLongLong(&ok);
