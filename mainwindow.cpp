@@ -1178,6 +1178,7 @@ void MainWindow:: showFiledAnalysis(){
     QStringList rowfiledCheck;
     rowfiledCheck.append("字段值合法性");
     if(filedType=="C"){
+        //字符型,万能接收
         rowfiledCheck.append("字段值符合接口约束");
     }
     else if(filedType=="A"){
@@ -1186,7 +1187,22 @@ void MainWindow:: showFiledAnalysis(){
         1:不能包含空格数字外的任何值
         2:不能以数字外的类型开头
         */
-        rowfiledCheck.append("字段值符合接口约束");
+        if(filedOaiginal.trimmed().isEmpty()){
+            rowfiledCheck.append("字段值符合接口约束");
+        }
+        else if(filedOaiginal.at(0)==' '){
+            rowfiledCheck.append("数字字符型字段不建议以空格开头");
+        }
+        else{
+            bool ok;
+            QString(filedOaiginal.trimmed()).toLongLong(&ok);
+            if(ok){
+                rowfiledCheck.append("字段值符合接口约束");
+            }
+            else{
+                rowfiledCheck.append("数字字符型字段不建议包含0-9外的其他字符(空格结尾除外)");
+            }
+        }
     }
     else if(filedType=="N"){
         //数字型
@@ -1194,9 +1210,11 @@ void MainWindow:: showFiledAnalysis(){
         1:不能包含数字外的任何值
         */
         //如果一个N类型的字段合法，那么肯定可以转换成一个数字
-        //首先判断是否包含空格
-        if(filedOaiginal.contains(" ")){
-            rowfiledCheck.append("数值型字段不能包含0-9外的任何字符");
+        if(filedOaiginal.trimmed().isEmpty()){
+            rowfiledCheck.append("数值型字段不建议使用空格填充,部分系统不支持,空值建议填充0");
+        }
+        else if(filedOaiginal.contains(" ")){
+            rowfiledCheck.append("数值型字段不建议使用空格填充,部分系统不支持,空值建议填充0");
         }else{
             bool ok;
             QString(filedOaiginal).toLongLong(&ok);
@@ -1204,7 +1222,7 @@ void MainWindow:: showFiledAnalysis(){
                 rowfiledCheck.append("字段值符合接口约束");
             }
             else{
-                rowfiledCheck.append("数值型字段不能包含0-9外的任何字符");
+                rowfiledCheck.append("字段内容错误,本字段不应该包含0-9外的字符");
             }
         }
     }
