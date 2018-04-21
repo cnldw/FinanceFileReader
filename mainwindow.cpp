@@ -32,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
     initStatusBar();
+    //列搜索信号连接,此处存在缺陷,如果搜索时表格获取了焦点，则回车无法连续搜索,暂不启用
+    //connect(ui->lineTextText_2, SIGNAL(returnPressed()), this, SLOT(on_pushButtonNextSearch_2_clicked()));
     //开始进行配置加载
     load_CodeInfo();
     load_FileType();
@@ -194,6 +196,12 @@ void MainWindow::clear_oldData(){
     ofdFileHeaderQStringList.clear();
     ofdFileContentQByteArrayList.clear();
     rowHasloaded.clear();
+    //记录当前所在行
+    rowcurrent=0;
+    //当前所在列
+    colcurrent=0;
+    //更新列跳转搜索开始列
+    colSearch=0;
 }
 
 void MainWindow::load_CodeInfo(){
@@ -1041,6 +1049,8 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
         rowcurrent=currentRow;
         //当前所在列
         colcurrent=currentColumn;
+        //更新列跳转搜索开始列
+        colSearch=currentColumn;
         int rowInFile=12+ofd.getfieldCount()+currentRow;
         int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
         statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
@@ -1334,4 +1344,22 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     }
     tablePopMenu->addAction(action_ShowCopyColum);
     tablePopMenu->exec(QCursor::pos());
+}
+
+void MainWindow::on_pushButtonNextSearch_2_clicked()
+{
+    QString text=ui->lineTextText_2->text();
+    if(!text.isEmpty()&&ptr_table->columnCount()>0&&ptr_table->rowCount()>0){
+        if((colSearch+1)>=(ptr_table->columnCount()-1)){
+            colSearch=-1;
+        }
+        colSearch+=1;
+        for(;colSearch<ptr_table->columnCount();colSearch++){
+            if((ptr_table->horizontalHeaderItem(colSearch)->text()).contains(text,Qt::CaseInsensitive)){
+                ptr_table->setCurrentCell(rowcurrent,colSearch);
+                ptr_table->setFocus();
+                return;
+            }
+        }
+    }
 }

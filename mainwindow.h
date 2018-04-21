@@ -81,6 +81,8 @@ private slots:
 
     void showFiledAnalysis();
 
+    void on_pushButtonNextSearch_2_clicked();
+
 private:
     Ui::MainWindow *ui;
     //状态栏指针变量
@@ -128,6 +130,8 @@ private:
     //记录table在当前界面显示的行范围,用于判断需要刷新显示到界面的元素
     int hValueBegin = 0;
     int hValueEnd = 0;
+    //列跳转模式当前搜索进度
+    int colSearch=0;
     //记录当前选中的行和列
     int rowcurrent=0;
     int colcurrent=0;
