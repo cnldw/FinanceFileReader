@@ -1350,6 +1350,8 @@ void MainWindow::on_pushButtonNextSearch_2_clicked()
 {
     QString text=ui->lineTextText_2->text();
     if(!text.isEmpty()&&ptr_table->columnCount()>0&&ptr_table->rowCount()>0){
+        bool returnSearch=false;
+        int begin=colSearch;
         if((colSearch+1)>=(ptr_table->columnCount()-1)){
             colSearch=-1;
         }
@@ -1358,7 +1360,21 @@ void MainWindow::on_pushButtonNextSearch_2_clicked()
             if((ptr_table->horizontalHeaderItem(colSearch)->text()).contains(text,Qt::CaseInsensitive)){
                 ptr_table->setCurrentCell(rowcurrent,colSearch);
                 ptr_table->setFocus();
+                if(colSearch==begin){
+                    //如果搜了一圈在开始搜索的列找到了目标列，刷新下提示
+                    on_tableWidget_currentCellChanged(rowcurrent,colcurrent,0,0);
+                }
                 return;
+            }
+            //如果是第二圈搜索且搜索到了开始位置
+            if(returnSearch&&colSearch>=begin){
+                statusBar_disPlayMessage("臣妾找不到你要搜索的列...");
+                return;
+            }
+            //搜到最后一列还没找到,则跳到第1列继续,保证搜索形成一个圆环
+            else if(colSearch>=(ptr_table->columnCount()-1)){
+                colSearch=-1;
+                returnSearch=true;
             }
         }
     }
