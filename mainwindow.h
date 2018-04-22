@@ -24,6 +24,7 @@
 #include <fielddefinition.h>
 #include <dialogshowtablerow.h>
 #include <dialogshowtablefiledcheck.h>
+#include "dialogshowtablecompareview.h"
 #include <dictionary.h>
 #include<codeinfo.h>
 #include<QByteArray>
@@ -75,6 +76,8 @@ private slots:
 
     void on_tableWidget_customContextMenuRequested(const QPoint &pos);
 
+    void editCompareData();
+
     void copyToClipboard();
 
     void showRowDetails();
@@ -82,6 +85,10 @@ private slots:
     void showFiledAnalysis();
 
     void on_pushButtonNextSearch_2_clicked();
+
+    void on_actionsOpenCompare_triggered();
+
+    void on_actionClearCompare_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -121,6 +128,7 @@ private:
     QAction *action_ShowDetails;
     QAction *action_ShowCopyColum;
     QAction *action_ShowAnalysis;
+    QAction *action_EditCompareData;
 
     QPoint posCurrentMenu;
 
@@ -145,6 +153,8 @@ private:
     bool isUpdateData=false;
 
     QList<int> rowHasloaded;
+
+    QMap<int,QStringList> compareData;
 
     void statusBar_clear_statusBar();
 

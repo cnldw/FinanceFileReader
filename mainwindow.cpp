@@ -28,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
     action_ShowAnalysis = new QAction(tr("字段合法分析"),this);
     connect(action_ShowAnalysis, SIGNAL(triggered()), this, SLOT(showFiledAnalysis()));
+    action_EditCompareData= new QAction(tr("将此行数据加入比对列表"),this);
+    connect(action_EditCompareData, SIGNAL(triggered()), this, SLOT(editCompareData()));
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
@@ -196,6 +198,7 @@ void MainWindow::clear_oldData(){
     ofdFileHeaderQStringList.clear();
     ofdFileContentQByteArrayList.clear();
     rowHasloaded.clear();
+    compareData.clear();
     //记录当前所在行
     rowcurrent=0;
     //当前所在列
@@ -1081,6 +1084,31 @@ void MainWindow::copyToClipboard(){
         statusBar_disPlayMessage(QString("复制数据:\"%1\"").arg(text));
     }
 }
+void MainWindow::editCompareData(){
+    if(compareData.value(rowcurrent).isEmpty()){
+        //数据加入
+        QStringList rowdata;
+        for(int i=0;i<ptr_table->columnCount();i++){
+            QString col="";
+            if(ptr_table->itemAt(rowcurrent,i)!=nullptr){
+                col=ptr_table->itemAt(rowcurrent,i)->text();
+            }
+            rowdata.append(col);
+        }
+        compareData.insert(rowcurrent,rowdata);
+        statusBar_disPlayMessage(QString("比对列表已加入%1行数据").arg(compareData.count()));
+    }
+    else{
+        //移除数据行
+        compareData.remove(rowcurrent);
+        if(compareData.count()>0){
+            statusBar_disPlayMessage(QString("比对列表还有%1行数据").arg(compareData.count()));
+        }
+        else{
+            statusBar_disPlayMessage(QString("比对列表已清空"));
+        }
+    }
+}
 
 void MainWindow::showRowDetails(){
     //行
@@ -1343,6 +1371,15 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
         tablePopMenu->addAction(action_ShowAnalysis);
     }
     tablePopMenu->addAction(action_ShowCopyColum);
+    if(currentOpenFileType==1){
+        if(compareData.value(ptr_table->rowAt(pos.y())).isEmpty()){
+            action_EditCompareData->setText("将此行数据加入比对列表");
+        }
+        else{
+            action_EditCompareData->setText("将此行数据从比对列表移除");
+        }
+        tablePopMenu->addAction(action_EditCompareData);
+    }
     tablePopMenu->exec(QCursor::pos());
 }
 
@@ -1378,4 +1415,47 @@ void MainWindow::on_pushButtonNextSearch_2_clicked()
             }
         }
     }
+}
+
+void MainWindow::on_actionsOpenCompare_triggered()
+{
+    if(currentOpenFileType==0){
+        if(ptr_table->rowCount()<1){
+            statusBar_disPlayMessage("没有需要比对的数据行...");
+        }
+        else{
+            statusBar_disPlayMessage("索引文件不支持使用比对器...");
+        }
+    }
+    else if(currentOpenFileType==1){
+        if(compareData.count()<1){
+            statusBar_disPlayMessage("请将需要对比的行加入比对器...");
+        }
+        else if(compareData.count()==1){
+            statusBar_disPlayMessage("只有一行数据,你让臣妾怎么比对...");
+        }
+        else{
+            //打开比对器
+            //设置表格列标题
+            QStringList title;
+            title.append("数据行号");
+            for(int i=0;i<ptr_table->columnCount();i++){
+                //仅获取列的中文备注当作列标题
+                title.append(ofd.getfieldList().at(i).getFiledDescribe());
+            }
+            //打开窗口
+            if(title.count()>0){
+                DialogShowTableCompareView * dialog = new DialogShowTableCompareView(title,&compareData,this);
+                dialog->setWindowTitle(QString("行比对器视图"));
+                dialog->setModal(false);
+                dialog->show();
+            }
+        }
+    }
+}
+
+void MainWindow::on_actionClearCompare_triggered()
+{
+    compareData.clear();
+    statusBar_disPlayMessage("清除完毕...");
 }

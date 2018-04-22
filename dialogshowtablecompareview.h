@@ -1,23 +1,25 @@
-#ifndef DIALOGSHOWTABLEROW_H
-#define DIALOGSHOWTABLEROW_H
+#ifndef DIALOGSHOWTABLECOMPAREVIEW_H
+#define DIALOGSHOWTABLECOMPAREVIEW_H
 
 #include <QDialog>
-#include<QTableWidget>
-#include<QHBoxLayout>
+#include <QStringList>
+#include<QList>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include<QClipboard>
 #include<QPoint>
 #include<QMenu>
 namespace Ui {
-class DialogShowTableRow;
+class DialogShowTableCompareView;
 }
 
-class DialogShowTableRow : public QDialog
+class DialogShowTableCompareView : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent = 0);
-    ~DialogShowTableRow();
+    explicit DialogShowTableCompareView(QStringList title,QMap<int,QStringList> * compareData,QWidget *parent = 0);
+    ~DialogShowTableCompareView();
 
 private slots:
 
@@ -25,20 +27,15 @@ private slots:
 
     void copyToClipboard();
 
-    void on_pushButton_clicked();
-
     void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
 
 private:
-    Ui::DialogShowTableRow *ui;
+    Ui::DialogShowTableCompareView *ui;
     QTableWidget * ptr_table;
     //表格菜单
     QMenu *tablePopMenu;
     QPoint posCurrentMenu;
     QAction *action_ShowCopyColum;
-    //
-    int beginRow =0;
-    int beginColumn=0;
 };
 
-#endif // DIALOGSHOWTABLEROW_H
+#endif // DIALOGSHOWTABLECOMPAREVIEW_H

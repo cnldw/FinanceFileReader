@@ -455,7 +455,15 @@ border-radius:3px;
     <addaction name="aboutOpen"/>
     <addaction name="actionAboutQt"/>
    </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>行比对器</string>
+    </property>
+    <addaction name="actionsOpenCompare"/>
+    <addaction name="actionClearCompare"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menu"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
@@ -484,6 +492,16 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>F2</string>
+   </property>
+  </action>
+  <action name="actionsOpenCompare">
+   <property name="text">
+    <string>打开比对器视图</string>
+   </property>
+  </action>
+  <action name="actionClearCompare">
+   <property name="text">
+    <string>清空比对器数据</string>
    </property>
   </action>
  </widget>

@@ -10,6 +10,7 @@ DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,Q
 
     //初始化表格
     ptr_table =ui->tableWidget;
+    ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
     ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
     ptr_table->setColumnCount(2);
@@ -17,6 +18,12 @@ DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,Q
     ptr_table->setAlternatingRowColors(true);
     ptr_table->verticalHeader()->setDefaultSectionSize(22);
     ptr_table->horizontalHeader()->setStretchLastSection(true);//关键
+
+    //表格右键菜单
+    tablePopMenu = new QMenu(ptr_table);
+    action_ShowCopyColum = new QAction(tr("复制此单元格"),this);
+    connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
+
     //设置表格列标题
     QStringList title;
     title.append("列描述");
@@ -44,6 +51,31 @@ DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,Q
                 }
             }
         }
+    }
+}
+
+void DialogShowTableFiledCheck::on_tableWidget_customContextMenuRequested(const QPoint &pos)
+{
+    posCurrentMenu=pos;
+    //判断当前鼠标位置是不是在表格单元格位置内
+    //空表
+    if(ptr_table->rowCount()<1){
+        return;
+    }
+    //如果鼠标点击的是表格得空白位置取到得行y是-1
+    if( ptr_table->rowAt(pos.y()) <0){
+        return;
+    }
+    tablePopMenu->clear();
+    tablePopMenu->addAction(action_ShowCopyColum);
+    tablePopMenu->exec(QCursor::pos());
+}
+
+void DialogShowTableFiledCheck::copyToClipboard(){
+    if(ptr_table->itemAt(posCurrentMenu)!=nullptr){
+        QString text= ptr_table->itemAt(posCurrentMenu)->text();
+        QClipboard *board = QApplication::clipboard();
+        board->setText(text);
     }
 }
 

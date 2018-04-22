@@ -4,6 +4,9 @@
 #include <QDialog>
 #include <QTableWidget>
 #include <QString>
+#include<QClipboard>
+#include<QPoint>
+#include<QMenu>
 namespace Ui {
 class DialogShowTableFiledCheck;
 }
@@ -16,9 +19,19 @@ public:
     explicit DialogShowTableFiledCheck(QList<QStringList> * data,QWidget *parent = 0);
     ~DialogShowTableFiledCheck();
 
+private slots:
+    void on_tableWidget_customContextMenuRequested(const QPoint &pos);
+
+    void copyToClipboard();
+
 private:
     Ui::DialogShowTableFiledCheck *ui;
     QTableWidget * ptr_table;
+    //表格菜单
+    QMenu *tablePopMenu;
+    QPoint posCurrentMenu;
+    QAction *action_ShowCopyColum;
+    //
 };
 
 #endif // DIALOGSHOWTABLEFILEDCHECK_H

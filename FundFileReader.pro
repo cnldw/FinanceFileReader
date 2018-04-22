@@ -31,7 +31,8 @@ SOURCES += \
     codeinfo.cpp \
     dictionary.cpp \
     dialogshowtablerow.cpp \
-    dialogshowtablefiledcheck.cpp
+    dialogshowtablefiledcheck.cpp \
+    dialogshowtablecompareview.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -41,12 +42,14 @@ HEADERS += \
     codeinfo.h \
     dictionary.h \
     dialogshowtablerow.h \
-    dialogshowtablefiledcheck.h
+    dialogshowtablefiledcheck.h \
+    dialogshowtablecompareview.h
 
 FORMS += \
         mainwindow.ui \
     dialogshowtablerow.ui \
-    dialogshowtablefiledcheck.ui
+    dialogshowtablefiledcheck.ui \
+    dialogshowtablecompareview.ui
 
 RESOURCES += \
     res.qrc
