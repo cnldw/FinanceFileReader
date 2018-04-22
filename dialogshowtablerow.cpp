@@ -51,6 +51,8 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
 
 DialogShowTableRow::~DialogShowTableRow()
 {
+    delete action_ShowCopyColum;
+    delete tablePopMenu;
     delete ui;
 }
 

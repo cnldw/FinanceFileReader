@@ -81,6 +81,8 @@ void DialogShowTableFiledCheck::copyToClipboard(){
 
 DialogShowTableFiledCheck::~DialogShowTableFiledCheck()
 {
+    delete action_ShowCopyColum;
+    delete tablePopMenu;
     delete ui;
 }
 

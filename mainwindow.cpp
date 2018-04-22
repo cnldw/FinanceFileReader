@@ -1085,22 +1085,22 @@ void MainWindow::copyToClipboard(){
     }
 }
 void MainWindow::editCompareData(){
-    if(compareData.value(rowcurrent).isEmpty()){
+    if(compareData.value(rowcurrent+1).isEmpty()){
         //数据加入
         QStringList rowdata;
-        for(int i=0;i<ptr_table->columnCount();i++){
+        for(int i=0;i<(ptr_table->columnCount());i++){
             QString col="";
-            if(ptr_table->itemAt(rowcurrent,i)!=nullptr){
-                col=ptr_table->itemAt(rowcurrent,i)->text();
+            if(ptr_table->item(rowcurrent,i)!=nullptr){
+                col=ptr_table->item(rowcurrent,i)->text();
             }
             rowdata.append(col);
         }
-        compareData.insert(rowcurrent,rowdata);
+        compareData.insert(rowcurrent+1,rowdata);
         statusBar_disPlayMessage(QString("比对列表已加入%1行数据").arg(compareData.count()));
     }
     else{
         //移除数据行
-        compareData.remove(rowcurrent);
+        compareData.remove(rowcurrent+1);
         if(compareData.count()>0){
             statusBar_disPlayMessage(QString("比对列表还有%1行数据").arg(compareData.count()));
         }

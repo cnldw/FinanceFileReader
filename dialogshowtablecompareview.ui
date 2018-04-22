@@ -1,4 +1,4 @@
-<?xml version='1.0'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>DialogShowTableCompareView</class>
  <widget class="QDialog" name="DialogShowTableCompareView">
@@ -10,13 +10,13 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>400</height>
+    <height>640</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>600</width>
-    <height>400</height>
+    <width>400</width>
+    <height>640</height>
    </size>
   </property>
   <property name="font">
@@ -25,7 +25,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>比对器试图</string>
+   <string>查看表格行记录</string>
   </property>
   <property name="windowIcon">
    <iconset resource="res.qrc">
@@ -71,11 +71,23 @@
       <property name="verticalSpacing">
        <number>0</number>
       </property>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>列跳转</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLineEdit" name="lineEdit"/>
+      </item>
      </layout>
     </widget>
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>

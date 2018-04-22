@@ -33,7 +33,7 @@
 #include<QAction>
 #include<QPoint>
 #include<QClipboard>
-
+#include<QColor>
 namespace Ui {
 class MainWindow;
 }

@@ -29,9 +29,9 @@ private:
     QTableWidget * ptr_table;
     //表格菜单
     QMenu *tablePopMenu;
-    QPoint posCurrentMenu;
     QAction *action_ShowCopyColum;
     //
+    QPoint posCurrentMenu;
 };
 
 #endif // DIALOGSHOWTABLEFILEDCHECK_H

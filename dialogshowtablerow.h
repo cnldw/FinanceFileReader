@@ -34,8 +34,8 @@ private:
     QTableWidget * ptr_table;
     //表格菜单
     QMenu *tablePopMenu;
-    QPoint posCurrentMenu;
     QAction *action_ShowCopyColum;
+    QPoint posCurrentMenu;
     //
     int beginRow =0;
     int beginColumn=0;
