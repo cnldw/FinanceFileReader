@@ -39,6 +39,8 @@ private:
     //
     int beginRow =0;
     int beginColumn=0;
+
+    bool endFlag=false;
 };
 
 #endif // DIALOGSHOWTABLEROW_H

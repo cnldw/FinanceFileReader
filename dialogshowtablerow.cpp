@@ -87,13 +87,13 @@ void DialogShowTableRow::on_pushButton_clicked()
     if(!text.isEmpty()){
         int rowcount=ptr_table->rowCount();
         int colcount=ptr_table->columnCount();
-        //如果焦点在最后一行最后一列，跳到第一个
-        if(beginRow>=rowcount-1&&beginColumn>=colcount-1){
-            beginColumn=0;
+        if(endFlag){
             beginRow=0;
+            beginColumn=0;
         }
         for(int i=beginRow;i<rowcount;i++){
-            if(beginColumn>=colcount-1){
+            //如果搜到了最后一列，跳到下一行
+            if(beginColumn>colcount-1){
                 beginColumn=0;
                 continue;
             }
@@ -101,16 +101,19 @@ void DialogShowTableRow::on_pushButton_clicked()
                 if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
                     ptr_table->setCurrentCell(i,j);
                     ptr_table->setFocus();
-                    beginColumn=j+1;
-                    beginRow=i;
+                    endFlag=false;
+                    if(j==colcount-1){
+                        beginColumn+=1;
+                    }
                     return;
                 }
-                else{
-                    if(i>=rowcount-1&&j>=colcount-1){
-                        beginColumn=0;
-                        beginRow=0;
-                    }
-                    continue;
+                //判断是否是最后一列最后一行
+                if(i==rowcount-1&&j==colcount-1){
+                    endFlag=true;
+                    break;
+                }
+                else if(j==colcount-1){
+                    beginColumn+=1;
                 }
             }
         }
@@ -122,5 +125,5 @@ void DialogShowTableRow::on_tableWidget_currentCellChanged(int currentRow, int c
     UNUSED(previousRow);
     UNUSED(previousColumn);
     this->beginRow=currentRow;
-    this->beginColumn=currentColumn;
+    this->beginColumn=currentColumn+1;
 }
