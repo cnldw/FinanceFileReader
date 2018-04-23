@@ -1372,7 +1372,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     }
     tablePopMenu->addAction(action_ShowCopyColum);
     if(currentOpenFileType==1){
-        if(compareData.value(ptr_table->rowAt(pos.y())).isEmpty()){
+        if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
             action_EditCompareData->setText("将此行数据加入比对列表");
         }
         else{
