@@ -50,6 +50,8 @@ private:
     //记录当前选中的行和列
     int rowcurrent=0;
     int colcurrent=0;
+    //差异行背景色
+    QColor backcolor;
 };
 
 #endif // DIALOGSHOWTABLECOMPAREVIEW_H

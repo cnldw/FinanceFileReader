@@ -7,7 +7,7 @@
 #include <QScrollBar>
 #include <QTableWidget>
 #include <QTableWidgetItem>
-#include<QString>
+#include <QString>
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QDir>
@@ -19,21 +19,21 @@
 #include <QDebug>
 #include <QMap>
 #include <QStringList>
-#include<utils.h>
-#include<ofdfiledefinition.h>
+#include <utils.h>
+#include <ofdfiledefinition.h>
 #include <fielddefinition.h>
 #include <dialogshowtablerow.h>
 #include <dialogshowtablefiledcheck.h>
 #include "dialogshowtablecompareview.h"
 #include <dictionary.h>
-#include<codeinfo.h>
-#include<QByteArray>
-#include<QTextCodec>
-#include<QMenu>
-#include<QAction>
-#include<QPoint>
-#include<QClipboard>
-#include<QColor>
+#include <codeinfo.h>
+#include <QByteArray>
+#include <QTextCodec>
+#include <QMenu>
+#include <QAction>
+#include <QPoint>
+#include <QClipboard>
+#include <QColor>
 namespace Ui {
 class MainWindow;
 }
@@ -117,7 +117,7 @@ private:
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
     QList<QByteArray> ofdFileContentQByteArrayList;
-    //当前打开的文件类别,0索引,1OFD数据
+    //当前打开的文件类别,目前已支持的文件类型0索引,1OFD数据(销售商和TA交互版本),2OFD数据(TA和管理人版本,暂未开发)
     int currentOpenFileType=0;
 
     //字典参数
@@ -130,6 +130,7 @@ private:
     QAction *action_ShowAnalysis;
     QAction *action_EditCompareData;
 
+    //鼠标指针位置,当鼠标点击单元格时,记录鼠标所点位置
     QPoint posCurrentMenu;
 
     /*
@@ -152,8 +153,10 @@ private:
     //数据更新状态
     bool isUpdateData=false;
 
+    //已经加载的行,用于懒加载是判断哪些行已经加载,避免重复加载
     QList<int> rowHasloaded;
 
+    //加入到比对器的数据
     QMap<int,QStringList> compareData;
 
     void statusBar_clear_statusBar();
@@ -194,10 +197,12 @@ private:
     //索引文件数据较小,不再启用懒加载
     void init_display_IndexTable();
 
-    QString getValuesFromofdFileContentQByteArrayList(int row ,int col);
-
+    //获取指定行列的解析后的数据
+    QString getFormatValuesFromofdFileContentQByteArrayList(int row ,int col);
+    //获取指定行列的原始数据
     QString getOriginalValuesFromofdFileContentQByteArrayList(int row ,int col);
 
+    //初始化OFD用的表格
     void init_OFDTable();
     //仅仅渲染显示当前指定区域
     //算法原理,当table试图发生滚动或者table控件大小发生变化时

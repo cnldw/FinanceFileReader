@@ -7,7 +7,8 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog |Qt::WindowMaximizeButtonHint| Qt::WindowCloseButtonHint);
-
+    //初始化背景色
+    this->backcolor=QColor (241,226,173);
     //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
@@ -37,6 +38,7 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
             ptr_table->setItem(i, 0, item);
             //从第二列开始为数据内容
             for(int index=0;index<(compareData->value(keys.at(i)).count())&&index<ptr_table->columnCount()-1;index++){
+                //每行的第一列为该行数据在原始记录中的行号,亲,请注意
                 QTableWidgetItem *item2= new QTableWidgetItem(compareData->value(keys.at(i)).at(index));
                 ptr_table->setItem(i, index+1, item2);
                 //从第二行开始，开始判断是否不一样，一旦有不一样的直接就标记此列有不一样的
@@ -46,21 +48,21 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
                         //插入不等标记
                         colNoEqual.append(index);
                         for(int i2=0;i2<=i;i2++){
-                            ptr_table->item(i2,index+1)->setBackgroundColor(QColor(241,226,173));
+                            ptr_table->item(i2,index+1)->setBackgroundColor(backcolor);
                         }
                     }
                 }else if(i>1){
                     //先判断前几行是否不相等,如果不相等直接更新本行颜色即可
                     if(colNoEqual.contains(index)){
-                        ptr_table->item(i,index+1)->setBackgroundColor(QColor(241,226,173));
+                        ptr_table->item(i,index+1)->setBackgroundColor(backcolor);
                     }
                     else{
-                        //前两行相等,则拿本行和上一行对比
+                        //前N行相等,则拿本行和上一行对比,并且如果检测到不一致,需从第一行开始更新背景色
                         if((compareData->value(keys.at(i)).at(index))!=(compareData->value(keys.at(i-1)).at(index))){
                             //插入不等标记
                             colNoEqual.append(index);
                             for(int i2=0;i2<=i;i2++){
-                                ptr_table->item(i2,index+1)->setBackgroundColor(QColor(241,226,173));
+                                ptr_table->item(i2,index+1)->setBackgroundColor(backcolor);
                             }
                         }
                     }
