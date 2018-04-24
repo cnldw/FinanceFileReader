@@ -36,34 +36,31 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
             QTableWidgetItem *item= new QTableWidgetItem(QString::number(keys.at(i)));
             ptr_table->setItem(i, 0, item);
             //从第二列开始为数据内容
-            for(int col=0;col<(compareData->value(keys.at(i)).count())&&col<ptr_table->columnCount();col++){
-                QTableWidgetItem *item2= new QTableWidgetItem(compareData->value(keys.at(i)).at(col));
-                ptr_table->setItem(i, col+1, item2);
+            for(int index=0;index<(compareData->value(keys.at(i)).count())&&index<ptr_table->columnCount()-1;index++){
+                QTableWidgetItem *item2= new QTableWidgetItem(compareData->value(keys.at(i)).at(index));
+                ptr_table->setItem(i, index+1, item2);
                 //从第二行开始，开始判断是否不一样，一旦有不一样的直接就标记此列有不一样的
                 if(i==1){
                     //如果第一行等于第二行
-                    if((compareData->value(keys.at(i)).at(col))!=(compareData->value(keys.at(i-1)).at(col))){
+                    if((compareData->value(keys.at(i)).at(index))!=(compareData->value(keys.at(i-1)).at(index))){
                         //插入不等标记
-                        colNoEqual.insert(col,true);
+                        colNoEqual.append(index);
                         for(int i2=0;i2<=i;i2++){
-                            ptr_table->item(i2,col+1)->setBackgroundColor(QColor(241,226,173));
+                            ptr_table->item(i2,index+1)->setBackgroundColor(QColor(241,226,173));
                         }
-                    }
-                    else{
-                        colNoEqual.insert(col,false);
                     }
                 }else if(i>1){
                     //先判断前几行是否不相等,如果不相等直接更新本行颜色即可
-                    if(colNoEqual.value(col)){
-                        ptr_table->item(i,col+1)->setBackgroundColor(QColor(241,226,173));
+                    if(colNoEqual.contains(index)){
+                        ptr_table->item(i,index+1)->setBackgroundColor(QColor(241,226,173));
                     }
                     else{
                         //前两行相等,则拿本行和上一行对比
-                        if((compareData->value(keys.at(i)).at(col))!=(compareData->value(keys.at(i-1)).at(col))){
+                        if((compareData->value(keys.at(i)).at(index))!=(compareData->value(keys.at(i-1)).at(index))){
                             //插入不等标记
-                            colNoEqual.insert(col,true);
+                            colNoEqual.append(index);
                             for(int i2=0;i2<=i;i2++){
-                                ptr_table->item(i2,col+1)->setBackgroundColor(QColor(241,226,173));
+                                ptr_table->item(i2,index+1)->setBackgroundColor(QColor(241,226,173));
                             }
                         }
                     }
@@ -148,5 +145,50 @@ void DialogShowTableCompareView::on_pushButton_clicked()
                 returnSearch=true;
             }
         }
+    }
+}
+
+void DialogShowTableCompareView::on_pushButton_2_clicked()
+{
+    if(colNoEqual.isEmpty()){
+        return;
+    }else{
+        if(colcurrent!=0){
+            for(int col=colcurrent-1;col>=0;col--){
+                if(colNoEqual.contains(col-1)){
+                    ptr_table->setCurrentCell(rowcurrent,col);
+                    ptr_table->setFocus();
+                    break;
+                }
+                //如果找到第一个结束，将光标强制显示到第一个一样的
+                if(col==0){
+                    ptr_table->setCurrentCell(rowcurrent,colNoEqual.first()+1);
+                    ptr_table->setFocus();
+                }
+            }
+        }
+
+    }
+}
+
+void DialogShowTableCompareView::on_pushButton_3_clicked()
+{
+    if(colNoEqual.isEmpty()){
+        return;
+    }else{
+        if(colcurrent<ptr_table->columnCount()-1){
+            for(int col=colcurrent+1;col<ptr_table->columnCount();col++){
+                if(colNoEqual.contains(col-1)){
+                    ptr_table->setCurrentCell(rowcurrent,col);
+                    ptr_table->setFocus();
+                    break;
+                }
+                if(col==ptr_table->columnCount()-1){
+                    ptr_table->setCurrentCell(rowcurrent,colNoEqual.last()+1);
+                    ptr_table->setFocus();
+                }
+            }
+        }
+
     }
 }

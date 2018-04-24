@@ -37,8 +37,8 @@ private:
     QAction *action_ShowCopyColum;
     QPoint posCurrentMenu;
     //
-    int beginRow =0;
-    int beginColumn=0;
+    int currentRow =0;
+    int currentColumn=0;
 
     bool endFlag=false;
 };

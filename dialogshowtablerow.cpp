@@ -44,8 +44,8 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
         }
         ptr_table->resizeColumnsToContents();
         //表格初始化完毕后，搜索默认以00开始
-        beginColumn=0;
-        beginRow=0;
+        currentColumn=0;
+        currentRow=0;
     }
 }
 
@@ -88,22 +88,22 @@ void DialogShowTableRow::on_pushButton_clicked()
         int rowcount=ptr_table->rowCount();
         int colcount=ptr_table->columnCount();
         if(endFlag){
-            beginRow=0;
-            beginColumn=0;
+            currentRow=0;
+            currentColumn=0;
         }
-        for(int i=beginRow;i<rowcount;i++){
+        for(int i=currentRow;i<rowcount;i++){
             //如果搜到了最后一列，跳到下一行
-            if(beginColumn>colcount-1){
-                beginColumn=0;
+            if(currentColumn>colcount-1){
+                currentColumn=0;
                 continue;
             }
-            for(int j=beginColumn;j<colcount;j++){
+            for(int j=currentColumn;j<colcount;j++){
                 if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
                     ptr_table->setCurrentCell(i,j);
                     ptr_table->setFocus();
                     endFlag=false;
                     if(j==colcount-1){
-                        beginColumn+=1;
+                        currentColumn+=1;
                     }
                     return;
                 }
@@ -113,7 +113,7 @@ void DialogShowTableRow::on_pushButton_clicked()
                     break;
                 }
                 else if(j==colcount-1){
-                    beginColumn+=1;
+                    currentColumn+=1;
                 }
             }
         }
@@ -124,6 +124,6 @@ void DialogShowTableRow::on_tableWidget_currentCellChanged(int currentRow, int c
 {
     UNUSED(previousRow);
     UNUSED(previousColumn);
-    this->beginRow=currentRow;
-    this->beginColumn=currentColumn+1;
+    this->currentRow=currentRow;
+    this->currentColumn=currentColumn+1;
 }

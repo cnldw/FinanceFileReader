@@ -9,6 +9,8 @@
 #include<QPoint>
 #include<QMenu>
 #include<QColor>
+#include<Qlist>
+#include<QDebug>
 namespace Ui {
 class DialogShowTableCompareView;
 }
@@ -31,13 +33,17 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_pushButton_2_clicked();
+
+    void on_pushButton_3_clicked();
+
 private:
     Ui::DialogShowTableCompareView *ui;
     QTableWidget * ptr_table;
     //表格菜单
     QMenu *tablePopMenu;
     QAction *action_ShowCopyColum;
-    QMap<int,bool> colNoEqual;
+    QList<int> colNoEqual;
     QPoint posCurrentMenu;
 
     int colSearch=0;
