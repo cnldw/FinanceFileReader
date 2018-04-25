@@ -395,6 +395,9 @@ border-radius:3px;
          <height>20</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>这里输入字段的中文或者英文名都可以跳转</string>
+       </property>
        <property name="readOnly">
         <bool>false</bool>
        </property>

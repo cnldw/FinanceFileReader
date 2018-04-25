@@ -1106,14 +1106,14 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
                 QString text=ptr_table->item(currentRow,currentColumn)->text();
                 QString dic=dictionary.getDictionary(ofd.getfieldList().at(currentColumn).getFiledName(),text);
                 if(text.isEmpty()){
-                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
+                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
                 }
                 else{
-                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
                 }
             }
             else{
-                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
+                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
             }
         }
         //***********未实现的数据类型插入点
@@ -1445,7 +1445,8 @@ void MainWindow::on_pushButtonNextSearch_2_clicked()
         }
         colSearch+=1;
         for(;colSearch<ptr_table->columnCount();colSearch++){
-            if((ptr_table->horizontalHeaderItem(colSearch)->text()).contains(text,Qt::CaseInsensitive)){
+            //兼容字段中英文名的搜索
+            if(ofd.getfieldList().at(colSearch).getFiledDescribe().contains(text,Qt::CaseInsensitive)||ofd.getfieldList().at(colSearch).getFiledName().contains(text,Qt::CaseInsensitive)){
                 ptr_table->setCurrentCell(rowcurrent,colSearch);
                 ptr_table->setFocus();
                 if(colSearch==begin){
