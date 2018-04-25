@@ -94,7 +94,6 @@ private:
     Ui::MainWindow *ui;
     //状态栏指针变量
     QLabel *statusLabel_ptr_showCount;
-    QLabel *statusLabel_ptr_showFileName;
     QLabel *statusLabel_ptr_showRowAndCol;
     QLabel *statusLabel_ptr_showMessage;
     QTableWidget *ptr_table;
@@ -164,8 +163,6 @@ private:
     void statusBar_display_rowsCount(int rowsCount);
 
     void statusBar_display_rowsAndCol(int row,int col,int length);
-
-    void statusBar_display_fileName();
 
     void statusBar_disPlayMessage(QString text);
 

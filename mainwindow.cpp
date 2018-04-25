@@ -48,26 +48,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 void MainWindow::initStatusBar(){
     ui->statusBar->setStyleSheet("font-family:Microsoft YaHei,Sans-serif;");
     statusLabel_ptr_showCount = new QLabel;
-    statusLabel_ptr_showCount->setMinimumSize(130, 20); // 设置标签最小大小
+    statusLabel_ptr_showCount->setMinimumSize(140, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showCount);
     //设置标签内容
     statusLabel_ptr_showCount->setText(tr("记录数:"));
 
-    statusLabel_ptr_showFileName = new QLabel;
-    statusLabel_ptr_showFileName->setMinimumSize(220, 20); // 设置标签最小大小
-    ui->statusBar->addWidget(statusLabel_ptr_showFileName);
-    //设置标签内容
-    statusLabel_ptr_showFileName->setText(tr("文件:"));
-
     statusLabel_ptr_showRowAndCol = new QLabel;
-    statusLabel_ptr_showRowAndCol->setMinimumSize(170, 20); // 设置标签最小大小
+    statusLabel_ptr_showRowAndCol->setMinimumSize(200, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showRowAndCol);
     //设置标签内容
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
     statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列"));
 
     statusLabel_ptr_showMessage = new QLabel;
-    statusLabel_ptr_showMessage->setMinimumSize(305, 20); // 设置标签最小大小
+    statusLabel_ptr_showMessage->setMinimumSize(495, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showMessage);
     //设置标签内容
     statusLabel_ptr_showMessage->setText(tr(""));
@@ -78,8 +72,6 @@ MainWindow::~MainWindow()
     delete ui;
     delete statusLabel_ptr_showCount;
     statusLabel_ptr_showCount=nullptr;
-    delete statusLabel_ptr_showFileName;
-    statusLabel_ptr_showFileName=nullptr;
     delete statusLabel_ptr_showRowAndCol;
     statusLabel_ptr_showRowAndCol=nullptr;
     delete statusLabel_ptr_showMessage;
@@ -154,7 +146,6 @@ void MainWindow::acceptVScrollValueChanged(int value)
 
 void MainWindow::statusBar_clear_statusBar(){
     statusLabel_ptr_showCount->setText(tr("记录数:0"));
-    statusLabel_ptr_showFileName->setText(tr("文件:"));
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
     statusLabel_ptr_showMessage->setText(NULL);
 }
@@ -417,12 +408,6 @@ void MainWindow::load_OFDDefinition(){
     }
 }
 
-void MainWindow::statusBar_display_fileName(){
-    int first = currentOpenFilePath.lastIndexOf ("/");
-    QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
-    statusLabel_ptr_showFileName->setText(tr("文件:%1").arg(fileName));
-}
-
 void MainWindow::initFile(){
     //初始化文件时,检查配置是否加载完毕
     if(!configLoadCompleted){
@@ -436,8 +421,6 @@ void MainWindow::initFile(){
     //获取完整的文件名
     int first = currentOpenFilePath.lastIndexOf ("/");
     QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
-    //状态栏显示文件名
-    statusBar_display_fileName();
     if(fileName.length()<10){
         statusBar_disPlayMessage("无法识别的文件类别,请检查");
         return;
