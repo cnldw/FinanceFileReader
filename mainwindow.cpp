@@ -624,7 +624,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
             lineList.append(line);
             //文件的第二行是文件版本
             if(lineNumber==1){
-                versionFromFile=line;
+                versionFromFile=line.trimmed();
                 //获取不到版本号，退出
                 if(versionFromFile.isEmpty()){
                     statusBar_disPlayMessage("解析失败,未从文件第2行读取到OFD文件的版本号信息");
@@ -659,6 +659,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
         defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
         QString useini="OFD_"+versionName+"_"+versionFromFile+".ini";
         ui->lineEditUseIni->setText(useini);
+        ui->lineEditUseIni->setToolTip(NULL);
         //判断对应的配置文件是否存在
         QString path="config/"+useini;
         if(Utils::isFileExist(path)){
@@ -669,10 +670,48 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                         QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n从解析的文件第10行获取到的文件字段数为["+QString::number( countNumberFromFile)+"],但是读取字段时，确只读取到了["+QString::number(filedNameFromFile.count())+"]个,请检查文件是否完整",QMessageBox::Ok,QMessageBox::Ok);
                         return;
                     }
+                    //判断文件字段数是否和定义的一致
                     if(ofd.getfieldCount()!=countNumberFromFile){
-                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件有["+QString::number(ofd.getfieldCount())+"]个字段，但是从文件第10行获取到的文件字段数为["+QString::number( countNumberFromFile)+"],请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
-                        return;
+                        //中登TA21版本04文件兼容20版本
+                        //特殊逻辑
+                        ///////////////////////////////////////////////////////////////
+                        if(fileType=="04" && versionFromFile=="21"){
+                            int filedCount21=ofd.getfieldCount();
+                            defineMapName=versionName+"_20_"+fileType;
+                            useini="OFD_"+versionName+"_20.ini(20兼容)";
+                            ofd=loadedOfdDefinitionMap.value(defineMapName);
+                            if(ofd.getuseAble()){
+                                //兼容模式也无法解析
+                                if(filedNameFromFile.count()!=countNumberFromFile){
+                                    QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n无法解析这个04文件,请检查文件是否完整正确",QMessageBox::Ok,QMessageBox::Ok);
+                                    return;
+                                }
+                                else{
+                                    //检查字段总数是否和定义一致
+                                    if(ofd.getfieldCount()!=countNumberFromFile){
+                                        QMessageBox::information(this,tr("提示"),QString("重要提示\r\n\r\n无法解析这个04文件,请检查文件是否符合接口定义,此文件目前即不满足20版本的%1个字段的要求,也不满足21版本的%2个字段的要求").arg(ofd.getfieldCount()).arg(filedCount21),QMessageBox::Ok,QMessageBox::Ok);
+                                        return;
+                                    }
+                                    else{
+                                        //确认使用兼容解析
+                                        ui->lineEditUseIni->setText(useini);
+                                        ui->lineEditUseIni->setToolTip("20兼容表示这个文件里的版本号不是20版本\r\n但是文件内容实际和20版本字段一致");
+                                    }
+                                }
+                            }
+                            else{
+                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n缺失20版本的04文件p配置,无法尝试使用兼容模式解析04,请检查配置",QMessageBox::Ok,QMessageBox::Ok);
+                                return;
+                            }
+                        }
+                        /////////////////////////////////////////////////////////////////
+                        //通用提示
+                        else{
+                            QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件有["+QString::number(ofd.getfieldCount())+"]个字段，但是从文件第10行获取到的文件字段数为["+QString::number( countNumberFromFile)+"],请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
+                            return;
+                        }
                     }
+                    //遍历比对字段是否一致
                     for(int ff=0;ff<filedNameFromFile.count();ff++){
                         if(((QString)filedNameFromFile.at(ff)).toUpper()!=ofd.getfieldList().at(ff).getFiledName().toUpper()){
                             QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件第["+QString::number(ff)+"]个字段是["+ofd.getfieldList().at(ff).getFiledName().toUpper()+"],但是从文件第["+QString::number(11+ff)+"]行获取到的字段是["+((QString)filedNameFromFile.at(ff)).toUpper()+"] 字段名(忽略大小写)不一致,请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
@@ -741,7 +780,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                         return;
                     }
                 }else{
-                    statusBar_disPlayMessage("解析失败:配置文件"+path+"中"+ofd.getMessage());
+                    statusBar_disPlayMessage("解析失败:配置文件"+path+"中"+fileType+"文件的定义存在错误"+ofd.getMessage());
                     return;
                 }
             }else{
@@ -976,6 +1015,7 @@ void MainWindow::clear_Display_Info(){
     ui->lineEditRecInfo->setText(NULL);
     ui->lineEditFileDescribe->setText(NULL);
     ui->lineEditUseIni->setText(NULL);
+    ui->lineEditUseIni->setToolTip(NULL);
     statusBar_clear_statusBar();
 }
 
