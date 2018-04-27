@@ -863,7 +863,7 @@ void MainWindow::display_OFDTable(){
         }else{
             rowHasloaded.append(row);
             for(int col=0;col<colCount;col++){
-                QString values=getFormatValuesFromofdFileContentQByteArrayList(row,col);
+                QString values=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
                 //仅对数据非空单元格赋值
                 if(!values.isEmpty()){
                     QTableWidgetItem *item= new QTableWidgetItem();
@@ -874,109 +874,6 @@ void MainWindow::display_OFDTable(){
         }
     }
     ptr_table->resizeColumnsToContents();
-}
-
-QString MainWindow::getFormatValuesFromofdFileContentQByteArrayList(int row ,int col){
-    //判断越界
-    if(row>=ofdFileContentQByteArrayList.count()||col>=ofd.getfieldCount()){
-        return "";
-    }
-    //字段类型
-    QString fileType=ofd.getfieldList().at(col).getFiledType();
-    //开始获取此字段的值
-    QString filed="";
-    //字段长度
-    int filedlength=ofd.getfieldList().at(col).getLength();
-    //小数长度
-    int filedDeclength=ofd.getfieldList().at(col).getDecLength();
-    //获取此字段的值
-    filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row).mid(ofd.getfieldList().at(col).getRowBeginIndex(),filedlength));
-    //数据信息处理
-    if(fileType=="C"){
-        //C类型从右去除多余空格
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
-    }
-    else if(fileType=="A"){
-        //A类型从右移除多余空格,移除空格后剩余的应该是0-9的数值
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
-    }
-    else if(fileType=="N"){
-        //N类型为双精度数字
-        int needCheck=filedlength-filedDeclength-1;
-        int needCutZero=0;
-        for(int s=0;s<needCheck;s++){
-            if(filed.at(s)=='0'){
-                needCutZero++;
-            }
-            else{
-                break;
-            }
-        }
-        //获取整数
-        QString left=filed.left(filedlength-filedDeclength).remove(0,needCutZero);
-        //获取小数--如果小数长度为0,就不必处理小数了
-        if(filedDeclength==0){
-            filed=left;
-        }else{
-            //获取小数
-            QString right=filed.right(filedDeclength);
-            //拼接整数部分和小数部分
-            filed=left.append(".").append(right);
-        }
-    }
-    else if(fileType=="TEXT"){
-        //TEXT类型从右去除多余空格
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            //遇到第一个不是空格的字段就立即退出循环
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
-    }
-    return filed;
-}
-
-QString MainWindow::getOriginalValuesFromofdFileContentQByteArrayList(int row, int col){
-    //判断越界
-    if(row>=ofdFileContentQByteArrayList.count()||col>=ofd.getfieldCount()){
-        return "";
-    }
-    //开始获取此字段的值
-    QString filed="";
-    //字段长度
-    int filedlength=ofd.getfieldList().at(col).getLength();
-    //获取此字段的值
-    filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row).mid(ofd.getfieldList().at(col).getRowBeginIndex(),filedlength));
-    return filed;
 }
 
 void MainWindow::clear_Table_Info(){
@@ -1190,9 +1087,9 @@ void MainWindow:: showFiledAnalysis(){
         //字段小数长度
         int filedDecLength=ofd.getfieldList().at(colcurrent).getDecLength();
         //字段原始值
-        QString filedOaiginal=getOriginalValuesFromofdFileContentQByteArrayList(rowcurrent,colcurrent);
+        QString filedOaiginal=Utils::getOriginalValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowcurrent,colcurrent);
         //字段翻译值
-        QString filedValues=getFormatValuesFromofdFileContentQByteArrayList(rowcurrent,colcurrent);
+        QString filedValues=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowcurrent,colcurrent);
         QList<QStringList> data;
         //开始存储数据
         /////////////////////////////
@@ -1334,7 +1231,7 @@ void MainWindow::on_pushButtonPreSearch_clicked()
     int beginCol=colcurrent-1;
     for(int row=rowcurrent;row>=0;row--){
         for(int col=beginCol;col>=0;col--){
-            if(getFormatValuesFromofdFileContentQByteArrayList(row,col).contains(searchText,Qt::CaseInsensitive)){
+            if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col).contains(searchText,Qt::CaseInsensitive)){
                 statusBar_disPlayMessage("在"+QString::number(row+1)+"行,"+QString::number(col+1)+"列找到你搜索的内容");
                 ptr_table->setCurrentCell(row,col);
                 ptr_table->setFocus();
@@ -1370,7 +1267,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     int beginCol=colcurrent+1;
     for(int row=rowcurrent;row<rowcount;row++){
         for(int col=beginCol;col<colCount;col++){
-            if(getFormatValuesFromofdFileContentQByteArrayList(row,col).contains(searchText,Qt::CaseInsensitive)){
+            if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col).contains(searchText,Qt::CaseInsensitive)){
                 statusBar_disPlayMessage("在"+QString::number(row+1)+"行,"+QString::number(col+1)+"列找到你搜索的内容");
                 ptr_table->setCurrentCell(row,col);
                 ptr_table->setFocus();

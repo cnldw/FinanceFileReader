@@ -24,7 +24,7 @@
 #include <fielddefinition.h>
 #include <dialogshowtablerow.h>
 #include <dialogshowtablefiledcheck.h>
-#include "dialogshowtablecompareview.h"
+#include <dialogshowtablecompareview.h>
 #include <dictionary.h>
 #include <codeinfo.h>
 #include <QByteArray>
@@ -34,6 +34,7 @@
 #include <QPoint>
 #include <QClipboard>
 #include <QColor>
+
 namespace Ui {
 class MainWindow;
 }
@@ -193,11 +194,6 @@ private:
     //初始化且显示索引文件数据
     //索引文件数据较小,不再启用懒加载
     void init_display_IndexTable();
-
-    //获取指定行列的解析后的数据
-    QString getFormatValuesFromofdFileContentQByteArrayList(int row ,int col);
-    //获取指定行列的原始数据
-    QString getOriginalValuesFromofdFileContentQByteArrayList(int row ,int col);
 
     //初始化OFD用的表格
     void init_OFDTable();
