@@ -1240,7 +1240,7 @@ void MainWindow:: showFiledAnalysis(){
         data.append(rowfiledOaiginal);
         /////////////////////////////
         QStringList rowfiledValues;
-        rowfiledValues.append("字段解释值");
+        rowfiledValues.append("字段解析值");
         rowfiledValues.append(filedValues);
         data.append(rowfiledValues);
         /////////////合法校验/////////
@@ -1493,5 +1493,5 @@ void MainWindow::on_actionsOpenCompare_triggered()
 void MainWindow::on_actionClearCompare_triggered()
 {
     compareData.clear();
-    statusBar_disPlayMessage("清除完毕...");
+    statusBar_disPlayMessage("比对器内容清除完毕...");
 }

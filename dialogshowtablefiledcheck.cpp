@@ -38,7 +38,7 @@ DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,Q
             for(int col=0;col<2;col++){
                 if(col<data->at(row).count()){
                     QString value=data->at(row).at(col);
-                    if(data->at(row).at(0)=="字段原始值"||data->at(row).at(0)=="字段解释值"){
+                    if(data->at(row).at(0)=="字段原始值"||data->at(row).at(0)=="字段解析值"){
                         if(col==0){
                             value=value+"(不包含括号)";
                         }

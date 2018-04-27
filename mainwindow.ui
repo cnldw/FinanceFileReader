@@ -501,10 +501,16 @@ border-radius:3px;
    <property name="text">
     <string>打开比对器视图</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+X</string>
+   </property>
   </action>
   <action name="actionClearCompare">
    <property name="text">
     <string>清空比对器数据</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
    </property>
   </action>
  </widget>
