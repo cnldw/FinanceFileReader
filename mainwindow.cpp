@@ -1432,7 +1432,7 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
             }
         }
         //弹出保存框
-        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Excel文件(*.xlsx);;Csv文件(Tab分割)(*.csv);;Html文件(*.html)"));
+        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Html文件(*.html);;Excel文件(*.xlsx);;Csv文件(*.csv)"));
         if(!fileNameSave.isEmpty()){
             //覆盖导出先删除原来的文件
             if(Utils::isFileExist(fileNameSave)){
@@ -1451,7 +1451,7 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
                 save2Csv(fileNameSave);
             }
             else if(fileNameSave.endsWith("html",Qt::CaseSensitive)){
-                qDebug()<<"保存为html";
+                save2Html(fileNameSave);
             }else{
                 statusBar_disPlayMessage("暂不支持的导出类型");
             }
@@ -1491,7 +1491,7 @@ void MainWindow::save2Csv(QString filename){
                 }
             }
             //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
-            //仅100行或者到最后一行时进行写入
+            //仅1000行或者到最后一行时进行写入
             if((row%1000==0)||(row==ofdFileContentQByteArrayList.count()-1)){
                 out<<sb;
                 sb.clear();
@@ -1499,6 +1499,72 @@ void MainWindow::save2Csv(QString filename){
                 qApp->processEvents();
             }
         }
+        data.close();
+        statusBar_disPlayMessage(tr("数据成功导出到%1").arg(filename));
+    }else{
+        statusBar_disPlayMessage(tr("数据导出失败,请重试"));
+    }
+    //恢复鼠标响应
+    QApplication::restoreOverrideCursor();
+}
+
+//保存为csv
+void MainWindow::save2Html (QString filename){
+    //鼠标响应进入等待
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QFile data(filename);
+    if (data.open(QFile::WriteOnly | QIODevice::Truncate)) {
+        QTextStream out(&data);
+        //开始准备待写入的数据
+        QString sb;
+        QString title="";
+        if(filename.contains("/")){
+            title=filename.mid(filename.lastIndexOf("/")+1);
+            title=title.left(title.length()-5);
+        }else{
+            title=title.left(title.length()-5);
+        }
+        //html文件头
+        sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei(793554262@qq.com)-->\r\n<head>\r\n<meta charset=\"GB18030\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
+        //内联的表格样式,内容太多,base64存储
+        sb.append(QByteArray::fromBase64("PHN0eWxlIHR5cGU9InRleHQvY3NzIj4KLnRhYmxlCnsKcGFkZGluZzogMDsKbWFyZ2luOiAwOwp9CnRoIHsKZm9udDogYm9sZCAxMnB4ICJUcmVidWNoZXQgTVMiLCBWZXJkYW5hLCBBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmOwpjb2xvcjogIzRmNmI3MjsKYm9yZGVyLXJpZ2h0OiAxcHggc29saWQgI0MxREFENzsKYm9yZGVyLWJvdHRvbTogMXB4IHNvbGlkICNDMURBRDc7CmJvcmRlci10b3A6IDFweCBzb2xpZCAjQzFEQUQ3OwpsZXR0ZXItc3BhY2luZzogMnB4Owp0ZXh0LXRyYW5zZm9ybTogdXBwZXJjYXNlOwp0ZXh0LWFsaWduOiBsZWZ0OwpwYWRkaW5nOiA2cHggNnB4IDZweCAxMnB4OwpiYWNrZ3JvdW5kOiAjQ0FFOEVBIG5vLXJlcGVhdDsKd29yZC1icmVhazoga2VlcC1hbGw7CndoaXRlLXNwYWNlOm5vd3JhcDsKfQp0ciB7CndvcmQtYnJlYWs6IGtlZXAtYWxsOwp3aGl0ZS1zcGFjZTpub3dyYXA7Cn0KdGQgewpib3JkZXItcmlnaHQ6IDFweCBzb2xpZCAjQzFEQUQ3Owpib3JkZXItYm90dG9tOiAxcHggc29saWQgI0MxREFENzsKZm9udC1zaXplOjE0cHg7CnBhZGRpbmc6IDJweCA2cHggMnB4IDZweDsKY29sb3I6ICM0ZjZiNzI7Cn0KPC9zdHlsZT4K"));
+        //标题表头
+        sb.append("<table>\r\n<tr>");
+        for(int i=0;i<ofd.getfieldCount();i++){
+            if(i<ofd.getfieldCount()-1){
+                sb.append("<th>").append(ofd.getfieldList().at(i).getFiledDescribe()).append("</th>");
+            }
+            else{
+                sb.append("<th>").append(ofd.getfieldList().at(i).getFiledDescribe()).append("</th></tr>\r\n");
+            }
+        }
+        //输出表头
+        out<<sb;
+        //文本内容
+        sb.clear();
+        for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
+            //数据写入--按行读取
+            sb.append("<tr>");
+            for(int col=0;col<ofd.getfieldCount();col++){
+                if(col<ofd.getfieldCount()-1){
+                    sb.append("<td>").append(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col)).append("</td>");
+                }
+                else{
+                    sb.append("<td>").append(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col)).append("</td></tr>\r\n");
+                }
+            }
+            //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
+            //仅1000行或者到最后一行时进行写入
+            if((row%1000==0)||(row==ofdFileContentQByteArrayList.count()-1)){
+                out<<sb;
+                sb.clear();
+                statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                qApp->processEvents();
+            }
+        }
+        //补充html剩余部分
+        sb.append("</table>\r\n</body>\r\n</html>");
+        out<<sb;
         data.close();
         statusBar_disPlayMessage(tr("数据成功导出到%1").arg(filename));
     }else{

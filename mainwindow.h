@@ -195,6 +195,8 @@ private:
 
     void save2Csv(QString filename);
 
+    void save2Html(QString filename);
+
     //初始化且显示索引文件数据
     //索引文件数据较小,不再启用懒加载
     void init_display_IndexTable();
