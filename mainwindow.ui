@@ -418,6 +418,22 @@ border-radius:3px;
         <string>列跳转</string>
        </property>
       </widget>
+      <widget class="QPushButton" name="pushButtonNextSearch_3">
+       <property name="geometry">
+        <rect>
+         <x>615</x>
+         <y>8</y>
+         <width>73</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>可以将数据导出到excel文件进行分析...</string>
+       </property>
+       <property name="text">
+        <string>数据导出</string>
+       </property>
+      </widget>
      </widget>
     </item>
     <item>

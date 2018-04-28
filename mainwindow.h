@@ -91,6 +91,8 @@ private slots:
 
     void on_actionClearCompare_triggered();
 
+    void on_pushButtonNextSearch_3_clicked();
+
 private:
     Ui::MainWindow *ui;
     //状态栏指针变量
@@ -190,6 +192,8 @@ private:
     void load_indexFile();
 
     void load_ofdFile(QString sendCode,QString fileType);
+
+    void save2Csv(QString filename);
 
     //初始化且显示索引文件数据
     //索引文件数据较小,不再启用懒加载

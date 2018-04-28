@@ -1392,3 +1392,118 @@ void MainWindow::on_actionClearCompare_triggered()
     compareData.clear();
     statusBar_disPlayMessage("比对器内容清除完毕...");
 }
+
+void MainWindow::on_pushButtonNextSearch_3_clicked()
+{
+    //预先数据判断
+    if(ptr_table->rowCount()<1){
+        statusBar_disPlayMessage("没有数据可供导出,目前表格有0行数据");
+        return;
+    }
+    //数据类型判断
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("索引数据不支持导出");
+    }
+    else if(currentOpenFileType==1){
+        //获取打开的文件的路径
+        QString openpath="./";
+        if(!currentOpenFilePath.isEmpty()){
+            if(currentOpenFilePath.contains("/",Qt::CaseSensitive)){
+                openpath=currentOpenFilePath.left(currentOpenFilePath.lastIndexOf("/")+1);
+            }
+        }
+        //获取打开的文件的名字,去除最后的格式
+        QString filename="";
+        if(currentOpenFilePath.contains("/",Qt::CaseSensitive)){
+            QString filenameall=currentOpenFilePath.right(currentOpenFilePath.length()-currentOpenFilePath.lastIndexOf("/"));
+            int index=filenameall.lastIndexOf(".");
+            if(index==-1){
+                filename=filenameall;
+            }else{
+                filename=filenameall.left(index);
+            }
+        }
+        else{
+            int index=currentOpenFilePath.lastIndexOf(".");
+            if(index==-1){
+                filename=currentOpenFilePath;
+            }else{
+                filename=currentOpenFilePath.left(index);
+            }
+        }
+        //弹出保存框
+        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Excel文件(*.xlsx);;Csv文件(Tab分割)(*.csv);;Html文件(*.html)"));
+        if(!fileNameSave.isEmpty()){
+            //覆盖导出先删除原来的文件
+            if(Utils::isFileExist(fileNameSave)){
+                QFile file(fileNameSave);
+                bool r=file.remove();
+                if(!r){
+                    statusBar_disPlayMessage("覆盖文件失败,源文件可能正在被占用...");
+                    return;
+                }
+            }
+            //根据文件类型来判断
+            if(fileNameSave.endsWith("xlsx",Qt::CaseSensitive)){
+                qDebug()<<"保存为excel";
+            }
+            else if(fileNameSave.endsWith("csv",Qt::CaseSensitive)){
+                save2Csv(fileNameSave);
+            }
+            else if(fileNameSave.endsWith("html",Qt::CaseSensitive)){
+                qDebug()<<"保存为html";
+            }else{
+                statusBar_disPlayMessage("暂不支持的导出类型");
+            }
+        }
+    }
+}
+
+//保存为csv
+void MainWindow::save2Csv(QString filename){
+    //鼠标响应进入等待
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QFile data(filename);
+    if (data.open(QFile::WriteOnly | QIODevice::Truncate)) {
+        QTextStream out(&data);
+        //开始准备待写入的数据
+        QString sb;
+        //标题
+        for(int i=0;i<ofd.getfieldCount();i++){
+            if(i<ofd.getfieldCount()-1){
+                sb.append(ofd.getfieldList().at(i).getFiledDescribe()).append("\t");
+            }
+            else{
+                sb.append(ofd.getfieldList().at(i).getFiledDescribe()).append("\r\n");
+            }
+        }
+        out<<sb;
+        //文本内容
+        sb.clear();
+        for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
+            //数据写入--按行读取
+            for(int col=0;col<ofd.getfieldCount();col++){
+                if(col<ofd.getfieldCount()-1){
+                    sb.append(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col)).append("\t");
+                }
+                else{
+                    sb.append(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col)).append("\r\n");
+                }
+            }
+            //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
+            //仅100行或者到最后一行时进行写入
+            if((row%1000==0)||(row==ofdFileContentQByteArrayList.count()-1)){
+                out<<sb;
+                sb.clear();
+                statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                qApp->processEvents();
+            }
+        }
+        data.close();
+        statusBar_disPlayMessage(tr("数据成功导出到%1").arg(filename));
+    }else{
+        statusBar_disPlayMessage(tr("数据导出失败,请重试"));
+    }
+    //恢复鼠标响应
+    QApplication::restoreOverrideCursor();
+}
