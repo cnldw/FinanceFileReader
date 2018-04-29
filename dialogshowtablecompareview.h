@@ -9,7 +9,7 @@
 #include<QPoint>
 #include<QMenu>
 #include<QColor>
-#include<Qlist>
+#include<QList>
 #include<QDebug>
 namespace Ui {
 class DialogShowTableCompareView;
