@@ -1432,7 +1432,7 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
             }
         }
         //弹出保存框
-        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Html文件(*.html);;Excel文件(*.xlsx);;Csv文件(*.csv)"));
+        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Excel文件(*.xlsx);;Html文件(*.html);;Csv文件(*.csv)"));
         if(!fileNameSave.isEmpty()){
             //覆盖导出先删除原来的文件
             if(Utils::isFileExist(fileNameSave)){
@@ -1445,7 +1445,7 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
             }
             //根据文件类型来判断
             if(fileNameSave.endsWith("xlsx",Qt::CaseSensitive)){
-                qDebug()<<"保存为excel";
+                save2Xlsx(fileNameSave);
             }
             else if(fileNameSave.endsWith("csv",Qt::CaseSensitive)){
                 save2Csv(fileNameSave);
@@ -1508,7 +1508,7 @@ void MainWindow::save2Csv(QString filename){
     QApplication::restoreOverrideCursor();
 }
 
-//保存为csv
+//保存为html
 void MainWindow::save2Html (QString filename){
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -1570,6 +1570,65 @@ void MainWindow::save2Html (QString filename){
     }else{
         statusBar_disPlayMessage(tr("数据导出失败,请重试"));
     }
+    //恢复鼠标响应
+    QApplication::restoreOverrideCursor();
+}
+
+//保存为xlsx
+void MainWindow::save2Xlsx(QString filename){
+    //鼠标响应进入等待
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QXlsx::Document xlsx;
+    //标题的样式
+    QXlsx::Format formatTitle;
+    formatTitle.setFont(QFont("SimSun"));
+    formatTitle.setFontBold(true);
+    formatTitle.setFontColor(QColor(Qt::black));
+    formatTitle.setPatternBackgroundColor(QColor(0,176,80));
+    formatTitle.setFontSize(11);
+    formatTitle.setHorizontalAlignment(QXlsx::Format::AlignHCenter);
+    formatTitle.setBorderStyle(QXlsx::Format::BorderThin);
+    //标题
+    for(int i=0;i<ofd.getfieldCount();i++){
+            xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
+    }
+    //文本样式
+    QXlsx::Format formatBody;
+    formatBody.setFont(QFont("SimSun"));
+    formatBody.setFontBold(false);
+    formatBody.setFontColor(QColor(Qt::black));
+    formatBody.setFontSize(11);
+    formatBody.setBorderStyle(QXlsx::Format::BorderThin);
+    //文本内容
+    for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
+        //数据写入--按行读取
+        for(int col=0;col<ofd.getfieldCount();col++){
+            //判断数据类型
+            if(ofd.getfieldList().at(col).getFiledType()=="N"){
+                //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
+                QString value=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
+                bool ok=false;
+                int valueInte=value.toInt(&ok);
+                if(ok){
+                    xlsx.write(row+2,col+1,valueInte,formatBody);
+                }
+                //转换数据失败依然显示原数据
+                else{
+                    xlsx.write(row+2,col+1,value,formatBody);
+                }
+            }else{
+                xlsx.write(row+2,col+1,Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col),formatBody);
+            }
+        }
+        //每100行读取下事件循环
+        //excel导出较慢
+        if((row%100==0)||(row==ofdFileContentQByteArrayList.count()-1)){
+            statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+            qApp->processEvents();
+        }
+    }
+    xlsx.saveAs(filename);
+    statusBar_disPlayMessage(tr("数据成功导出到%1").arg(filename));
     //恢复鼠标响应
     QApplication::restoreOverrideCursor();
 }

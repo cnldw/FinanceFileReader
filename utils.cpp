@@ -132,3 +132,30 @@ QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArra
     return filed;
  }
 
+//转换数字列为excel列
+QString Utils::CovertInt2ExcelCol(int col){
+    QString tmp = "";
+    int tmpInt = col % 26;
+    tmp.append((QChar)(tmpInt + 65));
+    col = col / 26;
+    while (col > 0)
+    {
+        tmpInt = col % 26;
+        col = col / 26;
+        if (tmpInt != 0)
+        {
+            tmp.insert(0, (QChar)(tmpInt + 64));
+        }
+        else
+        {
+            if(col>0)
+            {
+                tmp.insert(0, 'Z');
+                col--;
+            }
+        }
+    }
+    return tmp;
+}
+
+

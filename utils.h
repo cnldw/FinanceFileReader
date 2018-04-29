@@ -29,6 +29,7 @@ public:
       * 由于ofd文件原始记录可能非常大,需要使用指针
       */
      static QString getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
+     static QString CovertInt2ExcelCol(int number);
 };
 
 #endif // UTILS_H
