@@ -1576,6 +1576,11 @@ void MainWindow::save2Html (QString filename){
 
 //保存为xlsx
 void MainWindow::save2Xlsx(QString filename){
+    //禁止导出过大的excel文件
+    if(ofdFileContentQByteArrayList.count()>200000){
+        statusBar_disPlayMessage("文件记录数大于20万行,无法使用导出到excel功能(如有需求请联系793554262@qq.com)");
+        return;
+    }
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
     QXlsx::Document xlsx;
@@ -1590,7 +1595,7 @@ void MainWindow::save2Xlsx(QString filename){
     formatTitle.setBorderStyle(QXlsx::Format::BorderThin);
     //标题
     for(int i=0;i<ofd.getfieldCount();i++){
-            xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
+        xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
     }
     //文本样式
     QXlsx::Format formatBody;
@@ -1622,8 +1627,12 @@ void MainWindow::save2Xlsx(QString filename){
         }
         //每100行读取下事件循环
         //excel导出较慢
-        if((row%100==0)||(row==ofdFileContentQByteArrayList.count()-1)){
+        if(row%100==0){
             statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+            qApp->processEvents();
+        }
+        if(row==ofdFileContentQByteArrayList.count()-1){
+            statusBar_disPlayMessage(QString("数据产生完毕,正在写入文件,请勿进行其他操作"));
             qApp->processEvents();
         }
     }
