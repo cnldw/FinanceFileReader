@@ -1432,7 +1432,7 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
             }
         }
         //弹出保存框
-        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Excel文件(*.xlsx);;Html文件(*.html);;Csv文件(*.csv)"));
+        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Excel文件(*.xlsx);;Csv文件(*.csv);;Html文件(*.html)"));
         if(!fileNameSave.isEmpty()){
             //覆盖导出先删除原来的文件
             if(Utils::isFileExist(fileNameSave)){
