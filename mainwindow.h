@@ -94,6 +94,8 @@ private slots:
 
     void on_pushButtonNextSearch_3_clicked();
 
+    void on_pushButtonNextSearch_4_clicked();
+
 private:
     Ui::MainWindow *ui;
     //状态栏指针变量

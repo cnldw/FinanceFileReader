@@ -1578,7 +1578,7 @@ void MainWindow::save2Html (QString filename){
 void MainWindow::save2Xlsx(QString filename){
     //禁止导出过大的excel文件
     if(ofdFileContentQByteArrayList.count()>200000){
-        statusBar_disPlayMessage("文件记录数大于20万行,无法使用导出到excel功能(如有需求请联系793554262@qq.com)");
+        statusBar_disPlayMessage("记录数大于20万行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系793554262@qq.com)");
         return;
     }
     //鼠标响应进入等待
@@ -1593,9 +1593,13 @@ void MainWindow::save2Xlsx(QString filename){
     formatTitle.setFontSize(11);
     formatTitle.setHorizontalAlignment(QXlsx::Format::AlignHCenter);
     formatTitle.setBorderStyle(QXlsx::Format::BorderThin);
+    //用来记录列最宽的list
+    int colWidthArray[ofd.getfieldCount()];
     //标题
     for(int i=0;i<ofd.getfieldCount();i++){
         xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
+        //记录每列的宽度
+        colWidthArray[i]=(ofd.getfieldList().at(i).getFiledDescribe().toLocal8Bit().length()+4);
     }
     //文本样式
     QXlsx::Format formatBody;
@@ -1608,10 +1612,15 @@ void MainWindow::save2Xlsx(QString filename){
     for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
         //数据写入--按行读取
         for(int col=0;col<ofd.getfieldCount();col++){
+            QString value=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
+            //决定是否更新列宽,如果本列数据比以往的都长那就得更新列宽度
+            int widthNew=value.toLocal8Bit().length()+4;
+            if(widthNew>colWidthArray[col]){
+                colWidthArray[col]=widthNew;
+            }
             //判断数据类型
             if(ofd.getfieldList().at(col).getFiledType()=="N"){
                 //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
-                QString value=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
                 bool ok=false;
                 int valueInte=value.toInt(&ok);
                 if(ok){
@@ -1622,7 +1631,7 @@ void MainWindow::save2Xlsx(QString filename){
                     xlsx.write(row+2,col+1,value,formatBody);
                 }
             }else{
-                xlsx.write(row+2,col+1,Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col),formatBody);
+                xlsx.write(row+2,col+1,value,formatBody);
             }
         }
         //每100行读取下事件循环
@@ -1636,8 +1645,36 @@ void MainWindow::save2Xlsx(QString filename){
             qApp->processEvents();
         }
     }
+    //根据每列最大的值设置本列的宽度
+    for(int i=0;i<ofd.getfieldCount();i++){
+        xlsx.setColumnWidth(i+1,i+1,colWidthArray[i]+0.0);
+    }
     xlsx.saveAs(filename);
     statusBar_disPlayMessage(tr("数据成功导出到%1").arg(filename));
     //恢复鼠标响应
     QApplication::restoreOverrideCursor();
+}
+
+void MainWindow::on_pushButtonNextSearch_4_clicked()
+{
+    QString lineStr=ui->lineTextText_2->text();
+    if(lineStr.isEmpty()){
+        return;
+    }
+    bool ok=false;
+    int  lineNumber=lineStr.toInt(&ok);
+    if(!ok){
+        statusBar_disPlayMessage(tr("请输入有效的行号,%1不是一个有效的整数").arg(lineStr));
+        return;
+    }
+    if(lineNumber<1){
+        statusBar_disPlayMessage(tr("行号不能小于1"));
+    }
+    else if(lineNumber>ptr_table->rowCount()){
+        statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+    }
+    else{
+        ptr_table->setCurrentCell(lineNumber-1,colcurrent);
+        ptr_table->setFocus();
+    }
 }

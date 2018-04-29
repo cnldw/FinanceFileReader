@@ -412,7 +412,8 @@ border-radius:3px;
         </rect>
        </property>
        <property name="toolTip">
-        <string>将水平进度条滚动搜索的列,请输入列标题跳转</string>
+        <string>将水平进度条滚动搜索的列,请输入列标题跳转
+支持输入列中文或者英文标题~</string>
        </property>
        <property name="text">
         <string>列跳转</string>
@@ -421,7 +422,7 @@ border-radius:3px;
       <widget class="QPushButton" name="pushButtonNextSearch_3">
        <property name="geometry">
         <rect>
-         <x>615</x>
+         <x>678</x>
          <y>8</y>
          <width>73</width>
          <height>22</height>
@@ -432,6 +433,22 @@ border-radius:3px;
        </property>
        <property name="text">
         <string>数据导出</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButtonNextSearch_4">
+       <property name="geometry">
+        <rect>
+         <x>616</x>
+         <y>8</y>
+         <width>61</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>将垂直进度条滚动输入的行</string>
+       </property>
+       <property name="text">
+        <string>行跳转</string>
        </property>
       </widget>
      </widget>
