@@ -483,6 +483,9 @@ border-radius:3px;
      <string>文件</string>
     </property>
     <addaction name="fileOpen"/>
+    <addaction name="actionsss"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAS"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -505,7 +508,7 @@ border-radius:3px;
   <widget class="QStatusBar" name="statusBar"/>
   <action name="fileOpen">
    <property name="text">
-    <string>打开</string>
+    <string>打开文件</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -544,6 +547,30 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionsss">
+   <property name="text">
+    <string>重新读取文件</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>文件保存(自动备份原文件)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionSaveAS">
+   <property name="text">
+    <string>文件另存为</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+S</string>
    </property>
   </action>
  </widget>

@@ -34,7 +34,9 @@
 #include <QPoint>
 #include <QClipboard>
 #include <QColor>
+#include <QDateTime>
 #include "xlsxdocument.h"
+#include <dialogmodifycell.h>
 
 namespace Ui {
 class MainWindow;
@@ -86,6 +88,8 @@ private slots:
 
     void showFiledAnalysis();
 
+    void showModifyCell();
+
     void on_pushButtonNextSearch_2_clicked();
 
     void on_actionsOpenCompare_triggered();
@@ -95,6 +99,12 @@ private slots:
     void on_pushButtonNextSearch_3_clicked();
 
     void on_pushButtonNextSearch_4_clicked();
+
+    void on_actionsss_triggered();
+
+    void on_actionSave_triggered();
+
+    void on_actionSaveAS_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -134,6 +144,7 @@ private:
     QAction *action_ShowCopyColum;
     QAction *action_ShowAnalysis;
     QAction *action_EditCompareData;
+    QAction *action_ModifyCell;
 
     //鼠标指针位置,当鼠标点击单元格时,记录鼠标所点位置
     QPoint posCurrentMenu;
@@ -163,6 +174,8 @@ private:
 
     //加入到比对器的数据
     QMap<int,QStringList> compareData;
+
+    bool fileChanged=false;
 
     void statusBar_clear_statusBar();
 
@@ -212,6 +225,8 @@ private:
     //算法原理,当table试图发生滚动或者table控件大小发生变化时
     //探视当前屏幕显示的区间范围,从QTableWidgetItem池中获取已经不再显示的item复用，大大降低内存开销
     void display_OFDTable();
+
+    void saveOFDFile(QString filepath);
 };
 
 #endif // MAINWINDOW_H

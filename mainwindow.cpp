@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(action_ShowAnalysis, SIGNAL(triggered()), this, SLOT(showFiledAnalysis()));
     action_EditCompareData= new QAction(tr("将此行数据加入比对列表"),this);
     connect(action_EditCompareData, SIGNAL(triggered()), this, SLOT(editCompareData()));
+    action_ModifyCell= new QAction(tr("编辑此单元格"),this);
+    connect(action_ModifyCell, SIGNAL(triggered()), this, SLOT(showModifyCell()));
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
@@ -1208,6 +1210,14 @@ void MainWindow:: showFiledAnalysis(){
     //***********未实现的数据类型插入点
 }
 
+void MainWindow::showModifyCell(){
+    //打开窗口
+    DialogModifyCell * dialog = new DialogModifyCell(this);
+    dialog->setWindowTitle(QString("编辑第%1行第%2列数据数据").arg(rowcurrent+1).arg(colcurrent+1));
+    dialog->setModal(true);
+    dialog->show();
+}
+
 void MainWindow::on_pushButtonPreSearch_clicked()
 {
     //向上搜索
@@ -1293,10 +1303,11 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     }
     //OFD数据可以打开行详情
     tablePopMenu->clear();
-    //当打开的是OFD文件时,菜单里添加行预览和显示行详情的菜单
+    //当打开的是OFD文件时,菜单里添加行预览和显示行详情和编辑的菜单
     if(currentOpenFileType==1){
         tablePopMenu->addAction(action_ShowDetails);
         tablePopMenu->addAction(action_ShowAnalysis);
+        tablePopMenu->addAction(action_ModifyCell);
     }
     //***********未实现的数据类型插入点
     tablePopMenu->addAction(action_ShowCopyColum);
@@ -1431,9 +1442,21 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
                 filename=currentOpenFilePath.left(index);
             }
         }
+        //文件过滤器,用于追踪选择的保存文件类别
+        QString selectedFilter=Q_NULLPTR;
         //弹出保存框
-        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Excel文件(*.xlsx);;Csv文件(*.csv);;Html文件(*.html)"));
+        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,tr("Excel文件(*.xlsx);;Csv文件(*.csv);;Html文件(*.html)"),&selectedFilter);
         if(!fileNameSave.isEmpty()){
+            //在某些系统下（linux系统）选择要保存的文件类型时,系统并不会自动补全文件后缀名,需要咱们自己补全文件后缀
+            if(selectedFilter=="Excel文件(*.xlsx)"&&(!fileNameSave.endsWith(".xlsx"))){
+                fileNameSave.append(".xlsx");
+            }
+            else if(selectedFilter=="Csv文件(*.csv)"&&(!fileNameSave.endsWith(".xlsx"))){
+                fileNameSave.append(".csv");
+            }
+            else if(selectedFilter=="Html文件(*.html)"&&(!fileNameSave.endsWith(".xlsx"))){
+                fileNameSave.append(".html");
+            }
             //覆盖导出先删除原来的文件
             if(Utils::isFileExist(fileNameSave)){
                 QFile file(fileNameSave);
@@ -1590,9 +1613,7 @@ void MainWindow::save2Xlsx(QString filename){
     formatTitle.setFontBold(true);
     formatTitle.setFontColor(QColor(Qt::black));
     formatTitle.setPatternBackgroundColor(QColor(0,176,80));
-    formatTitle.setFontSize(11);
     formatTitle.setHorizontalAlignment(QXlsx::Format::AlignHCenter);
-    formatTitle.setBorderStyle(QXlsx::Format::BorderThin);
     //用来记录列最宽的list
     int colWidthArray[ofd.getfieldCount()];
     //标题
@@ -1606,13 +1627,15 @@ void MainWindow::save2Xlsx(QString filename){
     formatBody.setFont(QFont("SimSun"));
     formatBody.setFontBold(false);
     formatBody.setFontColor(QColor(Qt::black));
-    formatBody.setFontSize(11);
-    formatBody.setBorderStyle(QXlsx::Format::BorderThin);
     //文本内容
     for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
         //数据写入--按行读取
         for(int col=0;col<ofd.getfieldCount();col++){
             QString value=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
+            //空的单元格直接忽略
+            if(value.isEmpty()){
+                continue;
+            }
             //决定是否更新列宽,如果本列数据比以往的都长那就得更新列宽度
             int widthNew=value.toLocal8Bit().length()+4;
             if(widthNew>colWidthArray[col]){
@@ -1649,6 +1672,7 @@ void MainWindow::save2Xlsx(QString filename){
     for(int i=0;i<ofd.getfieldCount();i++){
         xlsx.setColumnWidth(i+1,i+1,colWidthArray[i]+0.0);
     }
+    //保存文件
     xlsx.saveAs(filename);
     statusBar_disPlayMessage(tr("数据成功导出到%1").arg(filename));
     //恢复鼠标响应
@@ -1676,5 +1700,114 @@ void MainWindow::on_pushButtonNextSearch_4_clicked()
     else{
         ptr_table->setCurrentCell(lineNumber-1,colcurrent);
         ptr_table->setFocus();
+    }
+}
+
+void MainWindow::on_actionsss_triggered()
+{
+    //加载数据中时忽略刷新
+    if(isUpdateData){
+        return;
+    }
+    if(!currentOpenFilePath.isEmpty()){
+        isUpdateData=true;
+        initFile();
+        isUpdateData=false;
+    }
+}
+
+void MainWindow::on_actionSave_triggered()
+{
+    if(currentOpenFilePath.isEmpty()){
+        return;
+    }
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("索引文件不支持编辑保存");
+    }
+    else if(currentOpenFileType==1){
+        if(fileChanged){
+            //先备份原文件
+            if(Utils::isFileExist(currentOpenFilePath)){
+                QFile oldfile(currentOpenFilePath);
+                QDateTime current_date_time =QDateTime::currentDateTime();
+                QString current_date =current_date_time.toString("yyyyMMdd-hhmmss");
+                bool r=oldfile.rename(oldfile.fileName()+".BAK-"+current_date);
+                if(!r){
+                    statusBar_disPlayMessage("备份原文件失败,请重试或检查文件是否被其他程序占用");
+                    return;
+                }
+            }
+            //原文件备份完毕后开始保存新的文件,文件名和之前保持一致
+            saveOFDFile(currentOpenFilePath);
+        }
+        else{
+            statusBar_disPlayMessage("文件没有被修改,无需保存");
+        }
+    }
+}
+
+void MainWindow::saveOFDFile(QString filepath)
+{
+    //检查文件是否存在,存在则覆盖
+    if(Utils::isFileExist(filepath)){
+        QFile oldfile(filepath);
+        bool r=oldfile.remove();
+        if(!r){
+            statusBar_disPlayMessage("覆盖文件失败,请重试或检查文件是否被其他程序占用");
+            return;
+        }
+    }
+    //开始执行文件写入
+    QFile newfile(filepath);
+    //鼠标响应进入等待
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    if (newfile.open(QFile::WriteOnly | QIODevice::Truncate)) {
+        QTextStream out(&newfile);
+        //开始准备待写入的数据
+        QString sb;
+        //写入文件头///////////////////////////////////////////////////////////////////
+        for(int i=0;i<ofdFileHeaderQStringList.length();i++){
+            sb.append(ofdFileHeaderQStringList.at(i)).append("\r\n");
+        }
+        out<<sb;
+        sb.clear();
+        //写入文件体//////////////////////////////////////////////////////////////////
+        for(int row=0;row<ofdFileContentQByteArrayList.length();row++){
+            //按行写入数据
+            sb.append(QString::fromLocal8Bit(ofdFileContentQByteArrayList.at(row))).append("\r\n");
+            //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
+            //仅1000行或者到最后一行时进行写入
+            if((row%1000==0)||(row==ofdFileContentQByteArrayList.count()-1)){
+                out<<sb;
+                sb.clear();
+                statusBar_disPlayMessage(QString("文件保存中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                qApp->processEvents();
+            }
+        }
+        //写入文件结束标志位//////////////////////////////////////////////////////////////////
+        out<<"OFDCFEND\r\n";
+        newfile.close();
+        statusBar_disPlayMessage(tr("文件保存完毕,保存在%1").arg(filepath));
+    }else{
+        statusBar_disPlayMessage(tr("数据保存失败,请重试"));
+    }
+    //恢复鼠标响应
+    QApplication::restoreOverrideCursor();
+}
+
+
+void MainWindow::on_actionSaveAS_triggered()
+{
+    //文件过滤器,用于追踪选择的保存文件类别
+    QString selectedFilter=Q_NULLPTR;
+    //弹出保存框
+    QString fileNameSave = QFileDialog::getSaveFileName(this,("另存为"),currentOpenFilePath,tr("OFD文本文件(*.TXT)"),&selectedFilter);
+    if(!fileNameSave.isEmpty()){
+        //在某些系统下（linux系统）选择要保存的文件类型时,系统并不会自动补全文件后缀名,需要咱们自己补全文件后缀
+        if(selectedFilter=="OFD文本文件(*.TXT)"&&(!fileNameSave.endsWith(".TXT"))){
+            fileNameSave.append(".TXT");
+        }
+        //执行文件另存
+        saveOFDFile(fileNameSave);
     }
 }
