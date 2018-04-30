@@ -1211,11 +1211,32 @@ void MainWindow:: showFiledAnalysis(){
 }
 
 void MainWindow::showModifyCell(){
+    //字段类型
+    QString filedType=ofd.getfieldList().at(colcurrent).getFiledType();
+    //字段长度
+    int filedLength=ofd.getfieldList().at(colcurrent).getLength();
+    //字段小数长度
+    int filedDecLength=ofd.getfieldList().at(colcurrent).getDecLength();
+    //字段翻译值
+    QString filedValues=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowcurrent,colcurrent);
+    //字段修改标记
+    bool modifyFlag=false;
+    QString valueNew="";
     //打开窗口
-    DialogModifyCell * dialog = new DialogModifyCell(this);
-    dialog->setWindowTitle(QString("编辑第%1行第%2列数据数据").arg(rowcurrent+1).arg(colcurrent+1));
+    DialogModifyCell * dialog = new DialogModifyCell(filedType,filedLength,filedDecLength,filedValues,this);
+    dialog->setWindowTitle(QString("编辑第%1行第%2列-"+ofd.getfieldList().at(colcurrent).getFiledDescribe()).arg(rowcurrent+1).arg(colcurrent+1));
     dialog->setModal(true);
-    dialog->show();
+    dialog->exec();
+    //获取结果
+    modifyFlag=dialog->getModifyFlag();
+    valueNew=dialog->getValueNew();
+    if(modifyFlag){
+        qDebug()<<modifyFlag;
+        qDebug()<<valueNew;
+    }
+    else{
+        statusBar_disPlayMessage("放弃编辑...");
+    }
 }
 
 void MainWindow::on_pushButtonPreSearch_clicked()
@@ -1451,10 +1472,10 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
             if(selectedFilter=="Excel文件(*.xlsx)"&&(!fileNameSave.endsWith(".xlsx"))){
                 fileNameSave.append(".xlsx");
             }
-            else if(selectedFilter=="Csv文件(*.csv)"&&(!fileNameSave.endsWith(".xlsx"))){
+            else if(selectedFilter=="Csv文件(*.csv)"&&(!fileNameSave.endsWith(".csv"))){
                 fileNameSave.append(".csv");
             }
-            else if(selectedFilter=="Html文件(*.html)"&&(!fileNameSave.endsWith(".xlsx"))){
+            else if(selectedFilter=="Html文件(*.html)"&&(!fileNameSave.endsWith(".html"))){
                 fileNameSave.append(".html");
             }
             //覆盖导出先删除原来的文件
@@ -1798,6 +1819,13 @@ void MainWindow::saveOFDFile(QString filepath)
 
 void MainWindow::on_actionSaveAS_triggered()
 {
+    if(currentOpenFilePath.isEmpty()){
+        return;
+    }
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("索引文件不支持编辑保存");
+        return;
+    }
     //文件过滤器,用于追踪选择的保存文件类别
     QString selectedFilter=Q_NULLPTR;
     //弹出保存框
