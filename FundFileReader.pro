@@ -36,7 +36,8 @@ SOURCES += \
     dialogshowtablerow.cpp \
     dialogshowtablefiledcheck.cpp \
     dialogshowtablecompareview.cpp \
-    dialogmodifycell.cpp
+    dialogmodifycell.cpp \
+    dialogaboutauthor.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -48,14 +49,16 @@ HEADERS += \
     dialogshowtablerow.h \
     dialogshowtablefiledcheck.h \
     dialogshowtablecompareview.h \
-    dialogmodifycell.h
+    dialogmodifycell.h \
+    dialogaboutauthor.h
 
 FORMS += \
         mainwindow.ui \
     dialogshowtablerow.ui \
     dialogshowtablefiledcheck.ui \
     dialogshowtablecompareview.ui \
-    dialogmodifycell.ui
+    dialogmodifycell.ui \
+    dialogaboutauthor.ui
 
 RESOURCES += \
     res.qrc

@@ -35,8 +35,9 @@
 #include <QClipboard>
 #include <QColor>
 #include <QDateTime>
-#include "xlsxdocument.h"
+#include <xlsxdocument.h>
 #include <dialogmodifycell.h>
+#include <dialogaboutauthor.h>
 
 namespace Ui {
 class MainWindow;
@@ -106,8 +107,12 @@ private slots:
 
     void on_actionSaveAS_triggered();
 
+    void on_actionaboutAuthor_triggered();
+
 private:
     Ui::MainWindow *ui;
+    //应用程序名字
+    QString appName=tr("基金文件阅读器-")+Utils::getVersion();
     //状态栏指针变量
     QLabel *statusLabel_ptr_showCount;
     QLabel *statusLabel_ptr_showRowAndCol;

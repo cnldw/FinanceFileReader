@@ -493,6 +493,7 @@ border-radius:3px;
     </property>
     <addaction name="aboutOpen"/>
     <addaction name="actionAboutQt"/>
+    <addaction name="actionaboutAuthor"/>
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">
@@ -516,7 +517,7 @@ border-radius:3px;
   </action>
   <action name="aboutOpen">
    <property name="text">
-    <string>关于本程序</string>
+    <string>关于程序</string>
    </property>
    <property name="shortcut">
     <string>F1</string>
@@ -571,6 +572,11 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+S</string>
+   </property>
+  </action>
+  <action name="actionaboutAuthor">
+   <property name="text">
+    <string>关于作者</string>
    </property>
   </action>
  </widget>
