@@ -1,5 +1,5 @@
 #include "gui/qresetbutton.h"
-
+#define UNUSED(x) (void)x
 QResetButton::QResetButton( QWidget* parent) : QLabel(parent)
 {
     setText("再来一局!");
@@ -10,4 +10,5 @@ QResetButton::QResetButton( QWidget* parent) : QLabel(parent)
 void QResetButton::mousePressEvent(QMouseEvent* event)
 {
     emit clicked();
+    UNUSED(event);
 }

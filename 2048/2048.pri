@@ -22,7 +22,6 @@ HEADERS  += \
     $$PWD/gui/qresetbutton.h \
     $$PWD/core/observer.h \
     $$PWD/core/subject.h \
-    $$PWD/gui/qgameoverwindow.h \
-    $$PWD/gui/qwinwindow.h
+    $$PWD/gui/qgameoverwindow.h
 
 FORMS +=
