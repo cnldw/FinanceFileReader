@@ -1,13 +1,7 @@
 #include "dialogaboutauthor.h"
 #include "ui_dialogaboutauthor.h"
 #include <QApplication>
-
-#include <iostream>
-#include <stdlib.h>
-#include <time.h>
-#include "core/board.h"
 #include "gui/qgameboard.h"
-#include "gui/qgameoverwindow.h"
 
 DialogAboutAuthor::DialogAboutAuthor(QWidget *parent) :
     QDialog(parent),
@@ -26,10 +20,9 @@ void DialogAboutAuthor::on_pushButton_clicked()
 {
         number++;
         if(number>=8){
-            number=0;
-            srand(time(NULL));
-            QGameBoard board;
-            board.show();
+            QGameBoard *board=new QGameBoard();
+            board->setWindowTitle("2048-欢迎来到2048彩蛋");
+            board->show();
             this->close();
         }
 }
