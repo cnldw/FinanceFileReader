@@ -1890,7 +1890,7 @@ void MainWindow::on_actionSave_triggered()
                 QFile oldfile(currentOpenFilePath);
                 QDateTime current_date_time =QDateTime::currentDateTime();
                 QString current_date =current_date_time.toString("yyyyMMdd-hhmmss");
-                bool r=oldfile.rename(oldfile.fileName()+".BAK-"+current_date);
+                bool r=oldfile.rename(oldfile.fileName()+"."+current_date+".BAK");
                 if(!r){
                     statusBar_disPlayMessage("备份原文件失败,请重试或检查文件是否被其他程序占用");
                     return;
