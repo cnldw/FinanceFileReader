@@ -13,6 +13,7 @@ DialogModifyCell::DialogModifyCell(QString filedType,int filedLength,int filedDe
     this->filedType=filedType;
     this->filedLength=filedLength;
     this->filedDecLength=filedDecLength;
+    ui->lineEdit_4->setFocus();
     //初始化界面元素
     //字段类型
     if(filedType=="C"){

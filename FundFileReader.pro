@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 #引入excel操作库
 include(xlsx/qtxlsx.pri)
+include(2048/2048.pri)
 
 SOURCES += \
         main.cpp \

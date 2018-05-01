@@ -15,8 +15,12 @@ public:
     explicit DialogAboutAuthor(QWidget *parent = 0);
     ~DialogAboutAuthor();
 
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::DialogAboutAuthor *ui;
+    int number=0;
 };
 
 #endif // DIALOGABOUTAUTHOR_H
