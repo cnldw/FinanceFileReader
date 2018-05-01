@@ -578,6 +578,9 @@ border-radius:3px;
    <property name="text">
     <string>关于作者</string>
    </property>
+   <property name="shortcut">
+    <string>F3</string>
+   </property>
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
