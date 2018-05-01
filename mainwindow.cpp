@@ -1948,6 +1948,7 @@ void MainWindow::saveOFDFile(QString filepath)
         //写入文件结束标志位//////////////////////////////////////////////////////////////////
         out<<"OFDCFEND\r\n";
         newfile.close();
+        fileChanged=false;
         statusBar_disPlayMessage(tr("文件保存完毕,保存在%1").arg(filepath));
         this->setWindowTitle(tr("基金文件阅读器-")+Utils::getVersion());
     }else{
