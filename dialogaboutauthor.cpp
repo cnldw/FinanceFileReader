@@ -18,10 +18,11 @@ DialogAboutAuthor::~DialogAboutAuthor()
 
 void DialogAboutAuthor::on_pushButton_clicked()
 {
+        //2048游戏彩蛋,当点击作者头像超过4次时触发打开此游戏
         number++;
-        if(number>=8){
+        if(number>=4){
             QGameBoard *board=new QGameBoard();
-            board->setWindowTitle("2048-欢迎来到2048彩蛋");
+            board->setWindowTitle("2048-恭喜你发现了2048彩蛋,来玩一局吧~");
             board->show();
             this->close();
         }
