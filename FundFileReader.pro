@@ -73,4 +73,6 @@ RC_ICONS =res/icon.ico
 macx{
 #macOS下应用图标
 ICON = res/icon.icns
+#macoOS下自动打包配置文件到Resources目录
+QMAKE_POST_LINK = cp $$PWD/config/*.* $$OUT_PWD/FFReader-x64.app/Contents/Resources/
 }
