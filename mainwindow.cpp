@@ -8,8 +8,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ui->setupUi(this);
     setAcceptDrops(true);
     setWindowTitle(appName);
-    //调教字体大小差异,在linux系统上字体默认显示很大
+    //调教字体大小差异,在mac/linux系统上字体默认显示很大，强制缩放下
 #ifdef Q_OS_MAC
+    this->setStyleSheet("font-size:12px");
+    ui->statusBar->setStyleSheet("font-size:12px");
 #endif
 #ifdef Q_OS_LINUX
     this->setStyleSheet("font-size:13px");
@@ -186,6 +188,7 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
 }
 
 QString MainWindow::getConfigPath(){
+    //为了更好的兼容各个操作系统,设立不同的配置文件目录规则
 #ifdef Q_OS_MAC
     return QApplication::applicationDirPath() + "/../Resources/";
 #endif

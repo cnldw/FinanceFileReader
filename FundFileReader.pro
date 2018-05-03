@@ -66,6 +66,11 @@ RESOURCES += \
     res.qrc
 
 DISTFILES +=
-#应用图标
+win32{
+#windows下应用图标
 RC_ICONS =res/icon.ico
-
+}
+macx{
+#macOS下应用图标
+ICON = res/icon.icns
+}
