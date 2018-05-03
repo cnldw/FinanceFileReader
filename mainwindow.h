@@ -119,6 +119,7 @@ private:
     QLabel *statusLabel_ptr_showMessage;
     QTableWidget *ptr_table;
     QString currentOpenFilePath;
+    QString getConfigPath();
     //已经加载的code信息,记录销售商和TA的代码信息
     QMap<QString, CodeInfo> loadedCodeInfo;
     //已经加载的索引文件信息,记录各种索引文件的文件名开头三个字符

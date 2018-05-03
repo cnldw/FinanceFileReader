@@ -185,6 +185,20 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
     }
 }
 
+QString MainWindow::getConfigPath(){
+#ifdef Q_OS_MAC
+    return QApplication::applicationDirPath() + "/../Resources/";
+#endif
+
+#ifdef Q_OS_LINUX
+    return "./config/";
+#endif
+
+#ifdef Q_OS_WIN32
+    return "./config/";
+#endif
+}
+
 void MainWindow::clear_oldData(){
     indexFileHeaderMap.clear();
     indexFileDataList.clear();
@@ -201,7 +215,7 @@ void MainWindow::clear_oldData(){
 }
 
 void MainWindow::load_CodeInfo(){
-    QString codeInipath="./config/CodeInfo.ini";
+    QString codeInipath=getConfigPath()+"CodeInfo.ini";
     if(Utils::isFileExist(codeInipath)){
         //加载ini文件
         QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,0);
@@ -217,12 +231,12 @@ void MainWindow::load_CodeInfo(){
             loadedCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),info);
         }
     }else{
-        statusBar_disPlayMessage(tr("config/CodeInfo.ini配置丢失"));
+        statusBar_disPlayMessage(getConfigPath()+tr("CodeInfo.ini配置丢失"));
     }
 }
 
 void MainWindow::load_FileType(){
-    QString fileTypeInipath="./config/FileType.ini";
+    QString fileTypeInipath=getConfigPath()+"FileType.ini";
     if(Utils::isFileExist(fileTypeInipath)){
         //加载ini文件
         QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,0);
@@ -249,7 +263,7 @@ void MainWindow::load_FileType(){
         }
         fileTypeIni.endGroup();}
     else{
-        statusBar_disPlayMessage(tr("config/FileType.ini配置丢失"));
+        statusBar_disPlayMessage(getConfigPath()+tr("FileType.ini配置丢失"));
     }
 }
 
@@ -257,7 +271,7 @@ void MainWindow::load_Dictionary(){
     //读取配置使用UTF-8
     //字典解析直接按行解析即可,不再使用QSettings
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
-    QFile dataFile("./config/Dictionary.ini");
+    QFile dataFile(getConfigPath()+"Dictionary.ini");
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
     {
         QTextStream data(&dataFile);
@@ -274,7 +288,7 @@ void MainWindow::load_Dictionary(){
 }
 
 void MainWindow::load_OFDDefinition(){
-    QDir dirPath("./config/");
+    QDir dirPath(getConfigPath());
     QStringList filters;
     filters << "OFD_*.ini";//设置过滤类型
     dirPath.setNameFilters(filters);//设置文件名的过滤
@@ -296,7 +310,7 @@ void MainWindow::load_OFDDefinition(){
                 if(nameList.count()==3){
                     //加载ini文件
                     QString prefixName=nameList.at(1)+"_"+nameList.at(2);
-                    QSettings ofdIni("./config/"+fileName,QSettings::IniFormat,0);
+                    QSettings ofdIni(getConfigPath()+fileName,QSettings::IniFormat,0);
                     //目前仅接收UTF-8编码的配置文件
                     ofdIni.setIniCodec("UTF-8");
                     QStringList interfaceList=ofdIni.childGroups();
@@ -483,7 +497,7 @@ void MainWindow::initFile(){
                 QStringList nameList=fixName.split("_");
                 //正常的OFD索引文件应该有5段信息组成
                 if(nameList.count()!=4){
-                    statusBar_disPlayMessage("无法识别的非OFD文件,请检查config/FileType.ini配置");
+                    statusBar_disPlayMessage("无法识别的非OFD文件,请检查"+getConfigPath()+"FileType.ini配置");
                     return;
                 }
                 else{
@@ -512,7 +526,7 @@ void MainWindow::initFile(){
                 }
             }else{
                 //没有检索到满足的文件头标识
-                statusBar_disPlayMessage("无法识别的文件类别,请检查config/FileType.ini配置");
+                statusBar_disPlayMessage("无法识别的文件类别,请检查"+getConfigPath()+"FileType.ini配置");
                 return;
             }
         }
@@ -648,7 +662,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
         ui->lineEditUseIni->setText(useini);
         ui->lineEditUseIni->setToolTip(NULL);
         //判断对应的配置文件是否存在
-        QString path="config/"+useini;
+        QString path=getConfigPath()+useini;
         if(Utils::isFileExist(path)){
             ofd=loadedOfdDefinitionMap.value(defineMapName);
             if(loadedOfdDefinitionMap.contains(defineMapName)) {
