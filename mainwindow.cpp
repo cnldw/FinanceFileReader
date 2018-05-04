@@ -1775,6 +1775,7 @@ void MainWindow::save2Html (QString filename){
 
 //保存为xlsx
 void MainWindow::save2Xlsx(QString filename){
+
     //禁止导出过大的excel文件
     if(ofdFileContentQByteArrayList.count()>200000){
         statusBar_disPlayMessage("记录数大于20万行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系793554262@qq.com)");
@@ -1792,11 +1793,38 @@ void MainWindow::save2Xlsx(QString filename){
     formatTitle.setHorizontalAlignment(QXlsx::Format::AlignHCenter);
     //用来记录列最宽的list
     int colWidthArray[ofd.getfieldCount()];
-    //标题
+    //标题和是否是数值列,数值列需要设置列格式
+    QMap<int,QXlsx::Format> numberFormat;
     for(int i=0;i<ofd.getfieldCount();i++){
         xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
         //记录每列的宽度
         colWidthArray[i]=(ofd.getfieldList().at(i).getFiledDescribe().toLocal8Bit().length()+4);
+        if(ofd.getfieldList().at(i).getFiledType()=="N"){
+            QXlsx::Format formatNumber;
+            formatNumber.setFont(QFont("SimSun"));
+            formatNumber.setFontBold(false);
+            formatNumber.setFontColor(QColor(Qt::black));
+            //构造数值长度
+            QString zj="#";
+            QString z="0";
+            QString xj="";
+            QString x="";
+
+            int lengthx=ofd.getfieldList().at(i).getDecLength();
+            int ix=0;
+            while(ix<lengthx){
+                x.append("0");
+                xj.append("#");
+                ix++;
+            }
+            if(x.length()>0){
+                formatNumber.setNumberFormat(zj+","+xj+z+"."+x);
+            }
+            else{
+                formatNumber.setNumberFormat(zj+z);
+            }
+            numberFormat.insert(i,formatNumber);
+        }
     }
     //文本样式
     QXlsx::Format formatBody;
@@ -1820,12 +1848,16 @@ void MainWindow::save2Xlsx(QString filename){
             //判断数据类型
             if(ofd.getfieldList().at(col).getFiledType()=="N"){
                 //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
-                bool ok=false;
-                int valueInte=value.toInt(&ok);
-                if(ok){
-                    xlsx.write(row+2,col+1,valueInte,formatBody);
+                if(numberFormat.contains(col)){
+                    bool okNb=false;
+                    double number=value.toDouble(&okNb);
+                    if(okNb){
+                        xlsx.write(row+2,col+1,number,numberFormat.value(col));
+                    }
+                    else{
+                        xlsx.write(row+2,col+1,value,numberFormat.value(col));
+                    }
                 }
-                //转换数据失败依然显示原数据
                 else{
                     xlsx.write(row+2,col+1,value,formatBody);
                 }
