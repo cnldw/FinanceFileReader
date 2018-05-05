@@ -19,6 +19,7 @@ public:
      static bool isDirExist(QString fullPath);
      static bool isFileExist(QString fullFileName);
      static QString getVersion();
+     static QString getCompileDate();
      /**
       * 获取指定行列的解析后的数据
       * 由于ofd文件原始记录可能非常大,需要使用指针

@@ -27,6 +27,10 @@ QString Utils::getVersion()
     return "V1.3.5";
 }
 
+QString Utils::getCompileDate(){
+    return "2018-05-05";
+}
+
 QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
 {
     //判断越界
@@ -118,7 +122,7 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
 }
 
 QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
- {
+{
     //判断越界
     if(row>=ofdFileContentQByteArrayList->count()||col>=ofd->getfieldCount()){
         return "";
@@ -130,7 +134,7 @@ QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArra
     //获取此字段的值
     filed=QString::fromLocal8Bit(ofdFileContentQByteArrayList->at(row).mid(ofd->getfieldList().at(col).getRowBeginIndex(),filedlength));
     return filed;
- }
+}
 
 //转换数字列为excel列
 QString Utils::CovertInt2ExcelCol(int col){
