@@ -481,6 +481,11 @@ void MainWindow::initFile(){
                 ui->lineEditSenfInfo->setText(sendName);
                 ui->lineEditRecInfo->setText(recName);
                 ui->lineEditFileDescribe->setText(fileTypeName);
+                //判断是否是ok文件
+                if(currentOpenFilePath.toUpper().endsWith("OK")){
+                    statusBar_disPlayMessage("这是一个OK文件...");
+                    return;
+                }
                 //记录从文件里读取的文件发送信息
                 //此处开始加载OFD数据文件
                 load_ofdFile(sendCode,fileTypeCode);
@@ -588,6 +593,11 @@ void MainWindow::load_indexFile(){
             }
             lineNumber++;
         }
+        //判断文件是否为空
+        if(lineNumber<2){
+            statusBar_disPlayMessage("无效的文件,请检查文件是否满足索引文件规范...");
+            return;
+        }
         //处理最后一行
         QString lastLine=indexFileDataList.last().at(0);
         if(lastLine.startsWith("OFDCFEND")){
@@ -660,6 +670,11 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
             }
         }
         dataFile.close();
+        //判断是否读取到了一个空的文件
+        if(lineNumber<2){
+            statusBar_disPlayMessage("无效的文件,请检查文件是否满足OFD文件规范...");
+            return;
+        }
         defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
         QString useini="OFD_"+versionName+"_"+versionFromFile+".ini";
         ui->lineEditUseIni->setText(useini);
