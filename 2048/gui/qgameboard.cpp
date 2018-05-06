@@ -60,6 +60,7 @@ QGameBoard::QGameBoard(QWidget *parent) :
 void QGameBoard::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
+    //方向键盘
     case Qt::Key_Up:
         game->move(UP);
         break;
@@ -70,6 +71,19 @@ void QGameBoard::keyPressEvent(QKeyEvent *event)
         game->move(RIGHT);
         break;
     case Qt::Key_Down:
+        game->move(DOWN);
+        break;
+    //WADS键盘
+    case Qt::Key_W:
+        game->move(UP);
+        break;
+    case Qt::Key_A:
+        game->move(LEFT);
+        break;
+    case Qt::Key_D:
+        game->move(RIGHT);
+        break;
+    case Qt::Key_S:
         game->move(DOWN);
         break;
     }
