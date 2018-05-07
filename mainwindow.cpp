@@ -1397,6 +1397,21 @@ void MainWindow::showModifyCell(){
             }
             //重新校准列宽
             ptr_table->resizeColumnsToContents();
+            //如果这行数据在比对器,需要更新////////////////////////////////////////////////
+            if(compareData.contains(editRow+1)){
+                //移除原数据
+                compareData.remove(editRow+1);
+                //数据重新加入
+                QStringList rowdata;
+                for(int i=0;i<(ptr_table->columnCount());i++){
+                    QString col="";
+                    if(ptr_table->item(editRow,i)!=nullptr){
+                        col=ptr_table->item(editRow,i)->text();
+                    }
+                    rowdata.append(col);
+                }
+                compareData.insert(editRow+1,rowdata);
+            }
             //提示用户保存//////////////////////////////////////////////////////////////
             statusBar_disPlayMessage("单元格数据修改成功,请记得保存文件哟...");
             this->setWindowTitle(appName+"-修改待保存");
