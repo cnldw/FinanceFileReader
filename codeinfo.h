@@ -2,7 +2,6 @@
 #define CODEINFO_H
 
 #include<QString>
-
 class CodeInfo
 {
 public:
