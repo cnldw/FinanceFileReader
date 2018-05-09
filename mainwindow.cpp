@@ -482,8 +482,23 @@ void MainWindow::initFile(){
                 ui->lineEditRecInfo->setText(recName);
                 ui->lineEditFileDescribe->setText(fileTypeName);
                 //判断是否是ok文件
-                if(currentOpenFilePath.toUpper().endsWith("OK")){
-                    statusBar_disPlayMessage("这是一个OK文件...");
+                if(currentOpenFilePath.toUpper().endsWith(".OK")){
+                    statusBar_disPlayMessage("这是一个OK文件,请解析原始数据文件...");
+                    return;
+                }
+                //判断是否是恒生系统sqllder导入时生成的bad文件
+                if(currentOpenFilePath.toUpper().endsWith(".BAD")){
+                    statusBar_disPlayMessage("这是一个sqlldr导入生成的bad文件,请解析原始数据文件...");
+                    return;
+                }
+                //判断是否是恒生系统sqllder导入时的控制文件
+                if(currentOpenFilePath.toUpper().endsWith(".CTL")){
+                    statusBar_disPlayMessage("是一个sqlldr导入使用的控制文件,请解析原始数据文件...");
+                    return;
+                }
+                //判断是否是快捷方式
+                if(currentOpenFilePath.toUpper().endsWith(".LNK")){
+                    statusBar_disPlayMessage("我没猜错的话这是一个文件快捷方式,请解析原始数据文件...");
                     return;
                 }
                 //记录从文件里读取的文件发送信息
@@ -857,6 +872,7 @@ void MainWindow::init_OFDTable(){
             //仅获取列的中文备注当作列标题
             title.append(ofd.getfieldList().at(i).getFiledDescribe());
         }
+        //设置标题
         ptr_table->setHorizontalHeaderLabels(title);
         //设置表格的选择方式
         ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
@@ -871,6 +887,10 @@ void MainWindow::init_OFDTable(){
             hValueBegin=0;
             hValueEnd=hValueBegin+(higth/rowHight);
             display_OFDTable();
+        }
+        else{
+            //如果没有数据,也执行下自动设置列宽,增加空数据的显示美感
+            ptr_table->resizeColumnsToContents();
         }
         statusBar_display_rowsCount(rowCount);
         statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
