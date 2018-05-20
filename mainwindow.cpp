@@ -2052,6 +2052,9 @@ void MainWindow::saveOFDFile(QString filepath)
         fileChanged=false;
         statusBar_disPlayMessage(tr("文件保存完毕,保存在%1").arg(filepath));
         this->setWindowTitle(tr("基金文件阅读器-")+Utils::getVersion());
+        //当执行文件保存后更新上下文文件路径
+        currentOpenFilePath=filepath;
+        ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
     }else{
         statusBar_disPlayMessage(tr("数据保存失败,请重试"));
     }
@@ -2072,7 +2075,7 @@ void MainWindow::on_actionSaveAS_triggered()
     //文件过滤器,用于追踪选择的保存文件类别
     QString selectedFilter=Q_NULLPTR;
     //弹出保存框
-    QString fileNameSave = QFileDialog::getSaveFileName(this,("另存为"),currentOpenFilePath,tr("OFD文本文件(*.TXT)"),&selectedFilter);
+    QString fileNameSave = QFileDialog::getSaveFileName(this,("另存为"),currentOpenFilePath,tr("OFD文本文件(*.TXT);;自定义扩展名(*.*)"),&selectedFilter);
     if(!fileNameSave.isEmpty()){
         //在某些系统下（linux系统）选择要保存的文件类型时,系统并不会自动补全文件后缀名,需要咱们自己补全文件后缀
         if(selectedFilter=="OFD文本文件(*.TXT)"&&(!fileNameSave.endsWith(".TXT"))){
