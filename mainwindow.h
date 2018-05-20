@@ -109,6 +109,8 @@ private slots:
 
     void on_actionaboutAuthor_triggered();
 
+    void on_tableWidget_cellDoubleClicked(int row, int column);
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字

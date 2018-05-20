@@ -1092,7 +1092,7 @@ void MainWindow::editCompareData(){
 
 void MainWindow::showRowDetails(){
     //行
-    int row=ptr_table->rowAt(posCurrentMenu.y());
+    int row=rowcurrent;
     int colCount=ptr_table->columnCount();
     statusBar_disPlayMessage(QString("查看第%1行数据").arg(row+1));
     //定义一个Qlist存储此行的数据,将表格的列转换为行，共计四列
@@ -2086,4 +2086,14 @@ void MainWindow::on_actionaboutAuthor_triggered()
     DialogAboutAuthor * dialog = new DialogAboutAuthor(this);
     dialog->setModal(false);
     dialog->show();
+}
+
+void MainWindow::on_tableWidget_cellDoubleClicked(int row, int column)
+{
+    //文件类型判断点
+    rowcurrent=row;
+    colcurrent=column;
+    if(currentOpenFileType==1){
+        showRowDetails();
+    }
 }
