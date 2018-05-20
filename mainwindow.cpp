@@ -22,6 +22,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ptr_table->setAlternatingRowColors(true);
     tableHeight=ptr_table->height();
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
+    //强制让表格获取焦点,避免在mac上打开工具时第一个输入框获取焦点显得很难看
+    ptr_table->setFocus();
     //初始化表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
     action_ShowDetails = new QAction(tr("查看此行记录"),this);
