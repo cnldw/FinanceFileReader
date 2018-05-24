@@ -412,8 +412,11 @@ border-radius:3px;
         </rect>
        </property>
        <property name="toolTip">
-        <string>将水平进度条滚动搜索的列,请输入列标题跳转
-支持输入列中文或者英文标题~</string>
+        <string>+++++++++++++++++++++++++++++++++++++++++++
+此功能用于快速跳转到你要查看的列
+将水平进度条滚动到搜索的列,请输入列标题跳转
+支持输入列中文或者英文标题
++++++++++++++++++++++++++++++++++++++++++++</string>
        </property>
        <property name="text">
         <string>列跳转</string>
@@ -445,7 +448,7 @@ border-radius:3px;
         </rect>
        </property>
        <property name="toolTip">
-        <string>将垂直进度条滚动输入的行</string>
+        <string>此功能为快速行跳转功能,将垂直进度条滚动到输入的行</string>
        </property>
        <property name="text">
         <string>行跳转</string>
