@@ -1,5 +1,5 @@
 #include "dictionary.h"
-#include <QDebug>
+
 Dictionary::Dictionary()
 {
 

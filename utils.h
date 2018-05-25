@@ -1,10 +1,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include<QString>
-#include<QDir>
-#include<QFileInfo>
-#include<QList>
+#include <QString>
+#include <QDir>
+#include <QFileInfo>
+#include <QList>
 #include <ofdfiledefinition.h>
 #include <fielddefinition.h>
 

@@ -1,6 +1,6 @@
+#include <QApplication>
 #include "dialogaboutauthor.h"
 #include "ui_dialogaboutauthor.h"
-#include <QApplication>
 #include "gui/qgameboard.h"
 
 DialogAboutAuthor::DialogAboutAuthor(QWidget *parent) :

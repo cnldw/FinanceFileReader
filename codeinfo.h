@@ -1,7 +1,8 @@
 #ifndef CODEINFO_H
 #define CODEINFO_H
 
-#include<QString>
+#include <QString>
+
 class CodeInfo
 {
 public:

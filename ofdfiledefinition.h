@@ -1,9 +1,10 @@
 #ifndef OFDFILEDEFINITION_H
 #define OFDFILEDEFINITION_H
 
-#include<QList>
-#include<QString>
-#include<fielddefinition.h>
+#include <QList>
+#include <QString>
+#include <fielddefinition.h>
+
 class OFDFileDefinition
 {
 

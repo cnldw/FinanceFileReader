@@ -5,12 +5,13 @@
 #include <QStringList>
 #include <QTableWidget>
 #include <QTableWidgetItem>
-#include<QClipboard>
-#include<QPoint>
-#include<QMenu>
-#include<QColor>
-#include<QList>
-#include<QDebug>
+#include <QClipboard>
+#include <QPoint>
+#include <QMenu>
+#include <QColor>
+#include <QList>
+#include <QDebug>
+
 namespace Ui {
 class DialogShowTableCompareView;
 }

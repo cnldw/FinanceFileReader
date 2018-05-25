@@ -1,6 +1,5 @@
 #include "dialogmodifycell.h"
 #include "ui_dialogmodifycell.h"
-#include <QDebug>
 
 DialogModifyCell::DialogModifyCell(QString filedType,int filedLength,int filedDecLength,QString value,QWidget *parent) :
     QDialog(parent),

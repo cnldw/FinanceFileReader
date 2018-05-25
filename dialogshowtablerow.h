@@ -2,11 +2,12 @@
 #define DIALOGSHOWTABLEROW_H
 
 #include <QDialog>
-#include<QTableWidget>
-#include<QHBoxLayout>
-#include<QClipboard>
-#include<QPoint>
-#include<QMenu>
+#include <QTableWidget>
+#include <QHBoxLayout>
+#include <QClipboard>
+#include <QPoint>
+#include <QMenu>
+
 namespace Ui {
 class DialogShowTableRow;
 }

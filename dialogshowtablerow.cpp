@@ -1,6 +1,5 @@
 #include "dialogshowtablerow.h"
 #include "ui_dialogshowtablerow.h"
-#include <QDebug>
 #define UNUSED(x) (void)x
 
 DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent) :

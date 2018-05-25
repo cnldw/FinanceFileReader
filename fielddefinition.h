@@ -1,7 +1,7 @@
 #ifndef FIELDDEFINITION_H
 #define FIELDDEFINITION_H
 
-#include<QString>
+#include <QString>
 
 class FieldDefinition
 {

@@ -1,6 +1,7 @@
 #include "dialogshowtablecompareview.h"
 #include "ui_dialogshowtablecompareview.h"
 #define UNUSED(x) (void)x
+
 DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<int,QStringList> * compareData,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogShowTableCompareView)

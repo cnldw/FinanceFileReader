@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QTextCodec>
+
 namespace Ui {
 class DialogModifyCell;
 }

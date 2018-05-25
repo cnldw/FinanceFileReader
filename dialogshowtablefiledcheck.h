@@ -4,9 +4,10 @@
 #include <QDialog>
 #include <QTableWidget>
 #include <QString>
-#include<QClipboard>
-#include<QPoint>
-#include<QMenu>
+#include <QClipboard>
+#include <QPoint>
+#include <QMenu>
+
 namespace Ui {
 class DialogShowTableFiledCheck;
 }
