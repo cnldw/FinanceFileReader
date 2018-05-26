@@ -2106,7 +2106,6 @@ void MainWindow::on_tableWidget_cellDoubleClicked(int row, int column)
 
 void MainWindow::randomTips(){
     QList<QString> tips;
-    tips.append("随机提示,给你更多指导~~...");
     tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
     tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
     tips.append("导出数据到Html,可以在浏览器中浏览数据,或者发送给其他人便捷浏览数据...");
@@ -2114,13 +2113,13 @@ void MainWindow::randomTips(){
     tips.append("输入你要直达的行号,点击行跳转,直接跳到你要查找的行...");
     tips.append("双击任意单元格,可以将本行数据以列模式显示,自带字典翻译,任意搜索...");
     tips.append("向上向下搜索,快速找到你要的数据...");
-    tips.append("外部编辑文件后,使用文件读取功能,或者按F5键,极速重新加载数据...");
+    tips.append("外部编辑文件后,使用重新读取文件功能,或者按F5键,极速重新加载数据...");
     tips.append("右键将任意行加入比对器,找到需要比对的行,再加入比对器,就能打开比对器以比对模式查看各行数据的差异了...");
     tips.append("比对器支持任意多行同时比对哟...");
     tips.append("右键菜单有不少小功能哟...");
     tips.append("数据修改后点击保存,程序会自动创建备份,避免找不回原文件...");
     tips.append("数据修改后点击另存保存,可以覆盖保存或者保存文件到其他位置...");
-    tips.append("你可以在config目录下进行配置文件修改,可以让工具支持新增的文件类别...");
+    tips.append("你可以在"+getConfigPath()+"目录下进行配置文件修改,可以让工具支持新增的各种OFD文件...");
     tips.append("拖放文件到程序主窗口,即可打开文件,又快又省心...");
     tips.append("程序里有一个彩蛋哟,快去找一下...");
     tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
