@@ -2107,9 +2107,9 @@ void MainWindow::on_tableWidget_cellDoubleClicked(int row, int column)
 void MainWindow::randomTips(){
     QList<QString> tips;
     tips.append("随机提示,给你更多指导~~...");
-    tips.append("导出数据到Excel文档,可以使用excel进行强大的筛选、统计、分析...");
-    tips.append("导出数据到Csv文档,可以方便的进行数据交换,导入到别的系统...");
-    tips.append("导出数据到Html文档,可以可以在浏览器中浏览数据,或者发送给其他人不借助工具浏览数据...");
+    tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
+    tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
+    tips.append("导出数据到Html,可以在浏览器中浏览数据,或者发送给其他人便捷浏览数据...");
     tips.append("输入你要查找的字段中文名或者英文名,点击列跳转可以快速跳到你要查找的字段,避免横着拖动滚动条寻找...");
     tips.append("输入你要直达的行号,点击行跳转,直接跳到你要查找的行...");
     tips.append("双击任意单元格,可以将本行数据以列模式显示,自带字典翻译,任意搜索...");
