@@ -24,11 +24,11 @@ bool Utils::isFileExist(QString fullFileName)
 
 QString Utils::getVersion()
 {
-    return "V1.3.9";
+    return "V1.4.0";
 }
 
 QString Utils::getCompileDate(){
-    return "2018-05-20";
+    return "2018-05-26";
 }
 
 QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
