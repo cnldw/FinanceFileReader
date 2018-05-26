@@ -235,6 +235,9 @@ private:
     void display_OFDTable();
 
     void saveOFDFile(QString filepath);
+
+    void randomTips();
+
 };
 
 #endif // MAINWINDOW_H
