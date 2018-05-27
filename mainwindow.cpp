@@ -193,7 +193,7 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
 QString MainWindow::getConfigPath(){
     //为了更好的兼容各个操作系统,设立不同的配置文件目录规则
 #ifdef Q_OS_MAC
-    return QApplication::applicationDirPath() + "/../Resources/";
+    return QApplication::applicationDirPath().remove(QApplication::applicationDirPath().lastIndexOf("MacOS"),6) + "Resources/";
 #endif
 
 #ifdef Q_OS_LINUX
@@ -764,37 +764,92 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                     {
                         QTextStream data(&dataFile);
                         int lineNumber=0;
-                        //数据行开始的位置
+                        //数据行开始的位置,10行文件头,1行行记录标识+字段行数
                         int beginIndex=11+ofd.getfieldCount();
                         QString line;
-                        bool sucessFalg=true;
+                        bool sucessFlag=true;
+                        bool mergeSucessFlag=false;
+                        bool mergeFlag=false;
                         QApplication::setOverrideCursor(Qt::WaitCursor);
                         while (!data.atEnd())
                         {
-                            //如果此行记录小于数据开始行,则认为是文件头
+                            //如果此行记录小于数据开始行,则认为是文件头,存入文件头
                             if(lineNumber<beginIndex){
                                 line = data.readLine();
                                 line=line.remove('\r').remove('\n');
                                 ofdFileHeaderQStringList.append(line);
                             }
-                            //数据行
+                            //数据行,进行数据行分析
                             else{
                                 line = data.readLine();
                                 line=line.remove('\r').remove('\n');
+                                //分析是否读取到了OFDCFEND结束标记,是的话直接跳出循环
+                                if(line.length()==8&&QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
+                                    break;
+                                }
                                 //获取本行的QByteArray
                                 QByteArray qbyteArrayRow=line.toLocal8Bit();
                                 //本行记录和接口约束的一致,存入
                                 if(qbyteArrayRow.size()==ofd.getrowLength()){
                                     ofdFileContentQByteArrayList.append(qbyteArrayRow);
-                                }else{
-                                    //如果行长度为8且内容为OFDCFEND跳过
-                                    if(line.length()==8&&QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
-                                        break;
-                                    }else{
-                                        sucessFalg=false;
+                                }
+                                //如果本行数据长度和接口定义不一致,则尝试读取下一行,分析是否进行数据合并
+                                else{
+                                    //读取下一行
+                                    QString nextLine = data.readLine();
+                                    //如果下一行是文件结束标志,则不再进行合并尝试,直接报错
+                                    if(nextLine.length()==8&&QString::compare(nextLine,"OFDCFEND",Qt::CaseInsensitive)==0){
+                                        sucessFlag=false;
                                         statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
                                         QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                         break;
+                                    }
+                                    //如果下一行不是结束标志OFDCFEND,则尝试进行数据合并
+                                    else{
+                                        //弹窗确认--只弹窗一次
+                                        if(!mergeFlag){
+                                            DialogMergeTip * dialog2 = new DialogMergeTip(this);
+                                            dialog2->setWindowTitle("数据异常换行修复提示");
+                                            dialog2->setModal(true);
+                                            dialog2->exec();
+                                            //从弹窗中获取结果
+                                            mergeFlag=dialog2->getMergeFlag();
+                                        }
+                                        //如果确认需要合并
+                                        //需要合并分三种情况上一行的长度+下一行的长度等于定义长度（人为插入的换行）
+                                        //异常加入的换行符计入了长度,可能为/r /n /r/n三种情况，占用长度为1，2
+                                        if (mergeFlag){
+                                            if((line+nextLine).toLocal8Bit().size()==(ofd.getrowLength()-0)){
+                                                ofdFileContentQByteArrayList.append((line+nextLine).toLocal8Bit());
+                                                mergeSucessFlag=true;
+                                                fileChanged=true;
+
+                                            }else if((line+nextLine).toLocal8Bit().size()==(ofd.getrowLength()-1)){
+                                                ofdFileContentQByteArrayList.append((line.append(" ").append(nextLine)).toLocal8Bit());
+                                                mergeSucessFlag=true;
+                                                fileChanged=true;
+                                            }
+                                            else if((line+nextLine).toLocal8Bit().size()==(ofd.getrowLength()-2)){
+                                                ofdFileContentQByteArrayList.append((line.append("  ").append(nextLine)).toLocal8Bit());
+                                                mergeSucessFlag=true;
+                                                fileChanged=true;
+                                            }
+                                            //合并
+                                            else{
+                                                sucessFlag=false;
+                                                mergeSucessFlag=false;
+                                                statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
+                                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                                break;
+                                            }
+                                        }
+                                        //如果放弃合并,则放弃读取
+                                        else{
+                                            sucessFlag=false;
+                                            statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
+                                            QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getrowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -808,9 +863,19 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                         }
                         QApplication::restoreOverrideCursor();
                         dataFile.close();
-                        if(sucessFalg){
+                        //如果读取是成功的则开始解析
+                        if(sucessFlag){
+                            //是否发生了合并
+                            if(mergeSucessFlag){
+                                this->setWindowTitle(appName+"-文件修复待保存");
+                            }
                             statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行");
                             init_OFDTable();
+                        }
+                        //如果失败了,则释放内存
+                        else{
+                            ofdFileHeaderQStringList.clear();
+                            ofdFileContentQByteArrayList.clear();
                         }
                     }else{
                         statusBar_disPlayMessage("解析失败:文件读取失败,请重试...");

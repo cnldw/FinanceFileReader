@@ -38,6 +38,7 @@
 #include <xlsxdocument.h>
 #include <dialogmodifycell.h>
 #include <dialogaboutauthor.h>
+#include "dialogmergetip.h"
 
 namespace Ui {
 class MainWindow;
