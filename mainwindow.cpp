@@ -873,6 +873,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                             init_OFDTable();
                         }
                         //如果失败了,则释放内存
+                        //此处很重要,是否启用文件另存使用了ofdFileHeaderQStringList是否为空的判断
                         else{
                             ofdFileHeaderQStringList.clear();
                             ofdFileContentQByteArrayList.clear();
@@ -2136,6 +2137,10 @@ void MainWindow::on_actionSaveAS_triggered()
     }
     if(currentOpenFileType==0){
         statusBar_disPlayMessage("索引文件不支持编辑保存");
+        return;
+    }
+    if(ofdFileHeaderQStringList.size()<1){
+        statusBar_disPlayMessage("未打开有效的OFD文件,无法使用另存功能,请尝试打开一个有效的文件...");
         return;
     }
     //文件过滤器,用于追踪选择的保存文件类别
