@@ -45,7 +45,7 @@
     <string>放弃读取</string>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="textBrowser">
+  <widget class="QTextEdit" name="textEdit">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -64,7 +64,9 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'SimSun'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;文件内数据发生了异常换行,这种情况一般发生在录入业务数据时,某个字段不小心复制进去了换行符,而系统没有去除,导致导出的OFD数据发生了异常换行,本程序可以尝试进行两行数据合并（目前不支持一行数据发生多次换行的合并）,是否需要尝试进行异常换行的修复?...&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;注意:如果说数据异常换行了,通过本修复功能修复后请审核文件的正确性,建议从原始数据库中,将异常存在的多余换行符删除,避免后续再次导出这种错误的数据...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;注意1:如果说数据异常换行了,通过本修复功能修复后请审核文件的正确性,建议从原始数据库中,将字段中异常存在的多余换行符(可能是\r,也可能是\n也可能是\r\n)删除,避免后续再次导出这种错误的数据...&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;注意2:将原始OFD数据文件使用文本编辑器打开并显示换行符,可以快速定位哪里发生了异常换行截断...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
  </widget>
