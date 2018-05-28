@@ -970,6 +970,14 @@ void MainWindow::init_OFDTable(){
     }
 }
 
+/**
+ * @brief MainWindow::display_OFDTable
+ *
+ * 数据懒加载机制,当数据量很多时,仅仅加载界面显示的这些行,未显示的不加载,当拖动滚动条时,重复调用此方法进行重新补充显示
+ *
+ * 无bug万岁
+ */
+
 void MainWindow::display_OFDTable(){
     int rowCount=ptr_table->rowCount();
     int colCount=ptr_table->columnCount();
