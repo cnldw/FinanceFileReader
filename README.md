@@ -19,7 +19,7 @@
 * 2：本程序推荐使用GCC编译（win下可使用 MinGW-W64）,macOS下使用clang编译器  
 
 ## 程序界面截图
-![截图](https://gitee.com/zzunet/HuangYingPicture/blob/master/screenshots/FFReader/001.png)  
+![截图]("https://gitee.com/zzunet/HuangYingPicture/blob/master/screenshots/FFReader/001.png")  
 ![截图](https://gitee.com/zzunet/HuangYingPicture/blob/master/screenshots/FFReader/002.png)  
 ![截图](https://gitee.com/zzunet/HuangYingPicture/blob/master/screenshots/FFReader/003.png)  
 ![截图](https://gitee.com/zzunet/HuangYingPicture/blob/master/screenshots/FFReader/004.png)  
