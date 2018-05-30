@@ -72,6 +72,18 @@ DISTFILES +=
 win32{
 #windows下应用图标
 RC_ICONS =res/icon.ico
+
+#版本号
+VERSION = 1.4.0
+# 语言
+# 0x0004 表示 简体中文
+RC_LANG = 0x0004
+# 产品名称
+QMAKE_TARGET_PRODUCT = FFReader
+# 详细描述
+QMAKE_TARGET_DESCRIPTION = Fund File Reader
+# 版权
+QMAKE_TARGET_COPYRIGHT = Copyright(C) 2018 Liudewei
 }
 macx{
 #macOS下应用图标
