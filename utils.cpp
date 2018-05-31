@@ -24,7 +24,7 @@ bool Utils::isFileExist(QString fullFileName)
 
 QString Utils::getVersion()
 {
-    return "V1.4.0";
+    return "V1.5.0";
 }
 
 QString Utils::getCompileDate(){
