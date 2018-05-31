@@ -1958,6 +1958,7 @@ void MainWindow::save2Xlsx(QString filename){
     formatBody.setFont(QFont("SimSun"));
     formatBody.setFontBold(false);
     formatBody.setFontColor(QColor(Qt::black));
+    formatBody.setNumberFormat("@");
     //文本内容
     for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
         //数据写入--按行读取
