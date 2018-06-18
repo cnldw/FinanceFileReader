@@ -92,6 +92,8 @@ private slots:
 
     void showModifyCell();
 
+    void showModifyCellBatch();
+
     void on_pushButtonNextSearch_2_clicked();
 
     void on_actionsOpenCompare_triggered();
@@ -154,6 +156,7 @@ private:
     QAction *action_ShowAnalysis;
     QAction *action_EditCompareData;
     QAction *action_ModifyCell;
+    QAction *action_ModifyCellBatch;
 
     //鼠标指针位置,当鼠标点击单元格时,记录鼠标所点位置
     QPoint posCurrentMenu;
