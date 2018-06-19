@@ -1626,6 +1626,8 @@ void MainWindow::showModifyCellBatch(){
             int updateBegin=ofd.getfieldList().at(itemsRange.at(0).leftColumn()).getRowBeginIndex();
             int updateEnd=updateBegin+filedLength;
             //遍历多个range
+            int updatedRow=0;
+            QApplication::setOverrideCursor(Qt::WaitCursor);
             for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                 //遍历本range的多行,从上往下逐行修改
                 for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
@@ -1664,8 +1666,14 @@ void MainWindow::showModifyCellBatch(){
                         }
                         compareData.insert(editRow+1,rowdata);
                     }
+                    updatedRow++;
+                    if((updatedRow%1000==0)){
+                        statusBar_disPlayMessage(QString("批量更新中,请勿进行其他操作,已更新%1行").arg(QString::number(updatedRow)));
+                        qApp->processEvents();
+                    }
                 }
             }
+            QApplication::restoreOverrideCursor();
             //提示用户保存//////////////////////////////////////////////////////////////
             statusBar_disPlayMessage("单元格数据修改成功,请记得保存文件哟...");
             this->setWindowTitle(appName+"-修改待保存");
