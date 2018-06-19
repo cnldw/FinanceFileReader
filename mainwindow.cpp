@@ -1399,7 +1399,7 @@ void MainWindow::showModifyCell(){
                     }
                     //超过填写的参数的部分使用空格补充
                     else{
-                        valueNewArrayRow[i]=QString(" ").toLocal8Bit().at(0);
+                        valueNewArrayRow[i]=' ';
                     }
                 }
             }
@@ -1478,7 +1478,7 @@ void MainWindow::showModifyCell(){
                     }
                     //超过填写的参数的部分使用空格补充
                     else{
-                        valueNewArrayRow[i]=QString(" ").toLocal8Bit().at(0);
+                        valueNewArrayRow[i]=' ';
                     }
                 }
             }
@@ -1551,10 +1551,11 @@ void MainWindow::showModifyCellBatch(){
         //判断数据类型处理
         //数值字符型,字符型,长文本型对于长度不够的情况直接补充空格即可
         if(filedType=="C"||filedType=="TEXT"||filedType=="A"){
+            int addLength=filedLength-valueNewArray.length();
             if(valueNewArray.length()<filedLength){
-                for(int i=0;i<(filedLength-valueNewArray.length());i++){
-                    valueNewArray.append(QString(" ").toLocal8Bit().at(0));
-                }
+                    for(int i=0;i<addLength;i++){
+                        valueNewArray.append(' ');
+                    }
             }
         }
         //数值型
@@ -1614,8 +1615,9 @@ void MainWindow::showModifyCellBatch(){
         //其他未知类型，填充空格
         else{
             if(valueNewArray.length()<filedLength){
-                for(int i=0;i<(filedLength-valueNewArray.length());i++){
-                    valueNewArray.append(QString(" ").toLocal8Bit().at(0));
+                int addLength=filedLength-valueNewArray.length();
+                for(int i=0;i<addLength;i++){
+                    valueNewArray.append(' ');
                 }
             }
         }
@@ -1623,7 +1625,7 @@ void MainWindow::showModifyCellBatch(){
         QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
         if(itemsRange.count()>=1){
             //要更新的列范围
-            int updateBegin=ofd.getfieldList().at(itemsRange.at(0).leftColumn()).getRowBeginIndex();
+            int updateBegin=ofd.getfieldList().at(editCol).getRowBeginIndex();
             int updateEnd=updateBegin+filedLength;
             //遍历多个range
             int updatedRow=0;
@@ -1639,9 +1641,12 @@ void MainWindow::showModifyCellBatch(){
                         valueNewArrayRow[i]=valueNewArray.at(index);
                         index++;
                     }
+                    //qDebug()<<valueNewArrayRow;
                     //将新的行记录写入原ofdFileContentQByteArrayList/////////////////////////////
                     ofdFileContentQByteArrayList.replace(editRow,valueNewArrayRow);
                     //更新界面/////////////////////////////////////////////////////////////////
+                    //暂不考虑本行是否已加载
+                    //if(rowHasloaded.contains(editRow)){
                     if(ptr_table->item(editRow,colcurrent)!=nullptr){
                         ptr_table->item(editRow,colcurrent)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
                     }
@@ -1651,6 +1656,7 @@ void MainWindow::showModifyCellBatch(){
                         ptr_table->setItem(rowcurrent, colcurrent, item);
                         item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
                     }
+                    //}
                     //如果这行数据在比对器,需要更新////////////////////////////////////////////////
                     if(compareData.contains(editRow+1)){
                         //移除原数据

@@ -28,7 +28,7 @@ QString Utils::getVersion()
 }
 
 QString Utils::getCompileDate(){
-    return "2018-06-19";
+    return "2018-06-20";
 }
 
 QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
