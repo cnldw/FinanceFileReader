@@ -1646,17 +1646,15 @@ void MainWindow::showModifyCellBatch(){
                     ofdFileContentQByteArrayList.replace(editRow,valueNewArrayRow);
                     //更新界面/////////////////////////////////////////////////////////////////
                     //暂不考虑本行是否已加载
-                    //if(rowHasloaded.contains(editRow)){
-                    if(ptr_table->item(editRow,colcurrent)!=nullptr){
-                        ptr_table->item(editRow,colcurrent)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
+                    if(ptr_table->item(editRow,editCol)!=nullptr){
+                        ptr_table->item(editRow,editCol)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
                     }
                     //如果这个单元格未填充过数据,则QTableWidgetItem不存在
                     else if(!valueNew.isEmpty()){
                         QTableWidgetItem *item= new QTableWidgetItem();
-                        ptr_table->setItem(rowcurrent, colcurrent, item);
+                        ptr_table->setItem(editRow, editCol, item);
                         item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
                     }
-                    //}
                     //如果这行数据在比对器,需要更新////////////////////////////////////////////////
                     if(compareData.contains(editRow+1)){
                         //移除原数据
@@ -2408,6 +2406,7 @@ void MainWindow::randomTips(){
     tips.append("拖放文件到程序主窗口,即可打开文件,又快又省心...");
     tips.append("程序里有一个彩蛋哟,快去找一下...");
     tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
+    tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
     srand((unsigned)time(NULL));
     int index =rand()%tips.count();
     statusBar_disPlayMessage("温馨提示:"+tips.at(index));
