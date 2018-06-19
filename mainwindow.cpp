@@ -1535,7 +1535,6 @@ void MainWindow::showModifyCellBatch(){
     //字段修改标记
     bool modifyFlag=false;
     //修改后的值
-    QString valueNew="";
     //打开窗口
     DialogModifyCell * dialog = new DialogModifyCell(filedType,filedLength,filedDecLength,"",this);
     dialog->setWindowTitle(QString("批量编辑第%1列多个单元格-"+ofd.getfieldList().at(colcurrent).getFiledDescribe()).arg(colcurrent+1));
@@ -1543,116 +1542,100 @@ void MainWindow::showModifyCellBatch(){
     dialog->exec();
     //从弹窗中获取结果
     modifyFlag=dialog->getModifyFlag();
-    valueNew=dialog->getValueNew();
+    QString valueNew=dialog->getValueNew();
     //开始处理是否需要更新
     if(modifyFlag){
+        //新的单元格值的字节数组
+        QByteArray valueNewArray=valueNew.toLocal8Bit();
+        //新的单元格数据补齐/////////////
+        //判断数据类型处理
+        //数值字符型,字符型,长文本型对于长度不够的情况直接补充空格即可
+        if(filedType=="C"||filedType=="TEXT"||filedType=="A"){
+            if(valueNewArray.length()<filedLength){
+                for(int i=0;i<(filedLength-valueNewArray.length());i++){
+                    valueNewArray.append(QString(" ").toLocal8Bit().at(0));
+                }
+            }
+        }
+        //数值型
+        else if(filedType=="N"){
+            //全空数据自动补充0
+            if(valueNew.isEmpty()){
+                for(int i=0;i<filedLength;i++){
+                    valueNewArray.append(QString("0").toLocal8Bit().at(0));
+                }
+            }
+            //仅包含整数部分
+            else if(!valueNew.contains("."))
+            {
+                //合成整数和小数部分
+                int zLength=filedLength-filedDecLength;
+                //整数部分不够前补0,缺少多少补多少
+                QString intS=valueNew;
+                if(intS.length()<zLength){
+                    int zeroAdd=zLength-intS.length();
+                    for(int zz=0;zz<zeroAdd;zz++){
+                        intS.insert(0,'0');
+                    }
+                }
+                //小数部分直接全部补0
+                QString intD="";
+                for(int zz=0;zz<filedDecLength;zz++){
+                    intD.append('0');
+                }
+                //整数和小数补充缺少的0结束后合并
+                QString number=intS.append(intD);
+                valueNewArray=number.toLocal8Bit();
+            }
+            //整数部分和小数部分都有值
+            else{
+                //分别获取整数和小数
+                int zLength=filedLength-filedDecLength;
+                QString intS=valueNew.mid(0,valueNew.indexOf("."));
+                if(intS.length()<zLength){
+                    int zeroAdd=zLength-intS.length();
+                    for(int zz=0;zz<zeroAdd;zz++){
+                        intS.insert(0,'0');
+                    }
+                }
+                //小数部分后补0
+                QString intD=valueNew.mid(valueNew.indexOf(".")+1,-1);
+                if(intD.length()<filedDecLength){
+                    int zeroAdd=filedDecLength-intD.length();
+                    for(int zz=0;zz<zeroAdd;zz++){
+                        intD.append('0');
+                    }
+                }
+                //整数和小数补充缺少的0结束后合并
+                QString number=intS.append(intD);
+                valueNewArray=number.toLocal8Bit();
+            }
+        }
+        //其他未知类型，填充空格
+        else{
+            if(valueNewArray.length()<filedLength){
+                for(int i=0;i<(filedLength-valueNewArray.length());i++){
+                    valueNewArray.append(QString(" ").toLocal8Bit().at(0));
+                }
+            }
+        }
+        //RangeList
         QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
         if(itemsRange.count()>=1){
-            //更新原始记录//////////////////////////////////////////////////////
-            //要更新的范围
-            int updateBegin=ofd.getfieldList().at(colcurrent).getRowBeginIndex();
+            //要更新的列范围
+            int updateBegin=ofd.getfieldList().at(itemsRange.at(0).leftColumn()).getRowBeginIndex();
             int updateEnd=updateBegin+filedLength;
-            //新的单元格值的字节数组
-            QByteArray valueNewArray=valueNew.toLocal8Bit();
             //遍历多个range
             for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                 //遍历本range的多行,从上往下逐行修改
                 for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
                     //本行记录原始内容
                     QByteArray valueNewArrayRow=ofdFileContentQByteArrayList.at(editRow);
-                    //判断数据类型处理
-                    //数值字符型,字符型,长文本型对于长度不够的情况直接补充空格即可
-                    if(filedType=="C"||filedType=="TEXT"||filedType=="A"){
-                        int index=0;
-                        for(int i=updateBegin;i<updateEnd;i++){
-                            if(index<valueNewArray.length()){
-                                valueNewArrayRow[i]=valueNewArray[index];
-                                index++;
-                            }
-                            //超过填写的参数的部分使用空格补充
-                            else{
-                                valueNewArrayRow[i]=QString(" ").toLocal8Bit().at(0);
-                            }
-                        }
-                    }
-                    //数值型
-                    else if(filedType=="N"){
-                        //全空数据自动补充0
-                        if(valueNew.isEmpty()){
-                            for(int i=updateBegin;i<updateEnd;i++){
-                                valueNewArrayRow[i]=QString("0").toLocal8Bit().at(0);
-                            }
-                        }
-                        //仅包含整数部分
-                        else if(!valueNew.contains("."))
-                        {
-                            //合成整数和小数部分
-                            int zLength=filedLength-filedDecLength;
-                            //整数部分不够前补0,缺少多少补多少
-                            QString intS=valueNew;
-                            if(intS.length()<zLength){
-                                int zeroAdd=zLength-intS.length();
-                                for(int zz=0;zz<zeroAdd;zz++){
-                                    intS.insert(0,'0');
-                                }
-                            }
-                            //小数部分直接全部补0
-                            QString intD="";
-                            if(intD.length()<filedDecLength){
-                                int zeroAdd=filedDecLength-intD.length();
-                                for(int zz=0;zz<zeroAdd;zz++){
-                                    intD.append('0');
-                                }
-                            }
-                            //整数和小数补充缺少的0结束后开始填充数据
-                            QString number=intS+intD;
-                            int index=0;
-                            for(int i=updateBegin;i<updateEnd;i++){
-                                valueNewArrayRow[i]=number.toLocal8Bit().at(index);
-                                index++;
-                            }
-                        }
-                        //整数部分和小数部分都有值
-                        else{
-                            //分别获取整数和小数
-                            int zLength=filedLength-filedDecLength;
-                            QString intS=valueNew.mid(0,valueNew.indexOf("."));
-                            if(intS.length()<zLength){
-                                int zeroAdd=zLength-intS.length();
-                                for(int zz=0;zz<zeroAdd;zz++){
-                                    intS.insert(0,'0');
-                                }
-                            }
-                            //小数部分后补0
-                            QString intD=valueNew.mid(valueNew.indexOf(".")+1,-1);
-                            if(intD.length()<filedDecLength){
-                                int zeroAdd=filedDecLength-intD.length();
-                                for(int zz=0;zz<zeroAdd;zz++){
-                                    intD.append('0');
-                                }
-                            }
-                            //整数和小数补充缺少的0结束后开始填充数据
-                            QString number=intS+intD;
-                            int index=0;
-                            for(int i=updateBegin;i<updateEnd;i++){
-                                valueNewArrayRow[i]=number.toLocal8Bit().at(index);
-                                index++;
-                            }
-                        }
-                    }
-                    //其他未知类型
-                    else{
-                        int index=0;
-                        for(int i=updateBegin;i<updateEnd;i++){
-                            if(index<valueNewArray.length()){
-                                valueNewArrayRow[i]=valueNewArray[index];
-                                index++;
-                            }
-                            //超过填写的参数的部分使用空格补充
-                            else{
-                                valueNewArrayRow[i]=QString(" ").toLocal8Bit().at(0);
-                            }
-                        }
+                    //更新字段值
+                    int index=0;
+                    for(int i=updateBegin;i<updateEnd;i++){
+                        valueNewArrayRow[i]=valueNewArray.at(index);
+                        index++;
                     }
                     //将新的行记录写入原ofdFileContentQByteArrayList/////////////////////////////
                     ofdFileContentQByteArrayList.replace(editRow,valueNewArrayRow);
@@ -1666,8 +1649,6 @@ void MainWindow::showModifyCellBatch(){
                         ptr_table->setItem(rowcurrent, colcurrent, item);
                         item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
                     }
-                    //重新校准列宽
-                    ptr_table->resizeColumnsToContents();
                     //如果这行数据在比对器,需要更新////////////////////////////////////////////////
                     if(compareData.contains(editRow+1)){
                         //移除原数据
@@ -1691,7 +1672,8 @@ void MainWindow::showModifyCellBatch(){
             //更新文件修改标记//////////////////////////////////////////////////////////
             fileChanged=true;
         }
-
+        //重新校准列宽
+        ptr_table->resizeColumnsToContents();
     }
     else{
         statusBar_disPlayMessage("取消编辑...");
