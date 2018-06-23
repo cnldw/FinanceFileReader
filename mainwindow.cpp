@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ptr_table->setAlternatingRowColors(true);
     tableHeight=ptr_table->height();
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
-    //强制让表格获取焦点,避免在mac上打开工具时第一个输入框获取焦点显得很难看
+    //强制让表格获取焦点,避免在mac上打开工具时第一个输入框获取焦点显得很难看,强迫症系列
     ptr_table->setFocus();
     //初始化表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
@@ -67,7 +67,7 @@ void MainWindow::initStatusBar(){
     ui->statusBar->addWidget(statusLabel_ptr_showRowAndCol);
     //设置标签内容
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
-    statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列"));
+    statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列(中文计两列)"));
 
     statusLabel_ptr_showMessage = new QLabel;
     statusLabel_ptr_showMessage->setMinimumSize(495, 20); // 设置标签最小大小
@@ -114,7 +114,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     //判断是否是文件夹
     QFileInfo fileinfo(fileName);
     if(fileinfo.isDir()){
-        statusBar_disPlayMessage(tr("拖进来一个文件试试~,不接受文件夹"));
+        statusBar_disPlayMessage(tr("拖进来一个文件试试~,不接受读取文件夹"));
         return;
     }
     if (!fileName.isEmpty())
@@ -154,7 +154,7 @@ void MainWindow::acceptVScrollValueChanged(int value)
 }
 
 void MainWindow::statusBar_clear_statusBar(){
-    statusLabel_ptr_showCount->setText(tr("记录数:0"));
+    statusLabel_ptr_showCount->setText(tr("记录数:"));
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
     statusLabel_ptr_showMessage->setText(NULL);
 }
@@ -192,8 +192,12 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
     }
 }
 
+/**
+ * 针对不通平台设计获取配置目录的方法,windows和linux返回程序当前目录下的config目录,macOS返回程序包的Resources目录
+ * @brief MainWindow::getConfigPath
+ * @return
+ */
 QString MainWindow::getConfigPath(){
-    //为了更好的兼容各个操作系统,设立不同的配置文件目录规则
 #ifdef Q_OS_MAC
     return QApplication::applicationDirPath().remove(QApplication::applicationDirPath().lastIndexOf("MacOS"),6) + "Resources/";
 #endif
@@ -276,23 +280,29 @@ void MainWindow::load_FileType(){
 }
 
 void MainWindow::load_Dictionary(){
-    //读取配置使用UTF-8
-    //字典解析直接按行解析即可,不再使用QSettings
-    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
-    QFile dataFile(getConfigPath()+"Dictionary.ini");
-    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
-    {
-        QTextStream data(&dataFile);
-        QString line;
-        while (!data.atEnd())
-        {   QStringList lineList;
-            line = data.readLine();
-            line=line.remove('\r').remove('\n');
-            dictionary.addDictionary(line);
+    QString dictionaryInipath=getConfigPath()+"Dictionary.ini";
+    if(Utils::isFileExist(dictionaryInipath)){
+        //读取配置使用UTF-8
+        //字典解析直接按行解析即可,不再使用QSettings
+        QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+        QFile dataFile(dictionaryInipath);
+        if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+        {
+            QTextStream data(&dataFile);
+            QString line;
+            while (!data.atEnd())
+            {
+                line = data.readLine();
+                line=line.remove('\r').remove('\n');
+                dictionary.addDictionary(line);
+            }
+            dataFile.close();
         }
-        dataFile.close();
+        return;
     }
-    return;
+    else{
+        statusBar_disPlayMessage(getConfigPath()+tr("Dictionary.ini配置丢失"));
+    }
 }
 
 void MainWindow::load_OFDDefinition(){
@@ -368,7 +378,7 @@ void MainWindow::load_OFDDefinition(){
                                         bool lengthOk;
                                         int length=((QString)iniStrList.at(1)).toInt(&lengthOk,10);
                                         if(!lengthOk){
-                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的长度定义竟然不是整数";
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的长度定义不是整数";
                                             okFlag=false;
                                             break;
                                         }
@@ -376,7 +386,7 @@ void MainWindow::load_OFDDefinition(){
                                         bool declengthOk;
                                         int declength=((QString)iniStrList.at(2)).toInt(&declengthOk,10);
                                         if(!declengthOk){
-                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义竟然不是整数";
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义不是整数";
                                             okFlag=false;
                                             break;
                                         }
@@ -399,10 +409,9 @@ void MainWindow::load_OFDDefinition(){
                                         //更新记录为成功
                                         okFlag=true;
                                     }
-                                    //读取结束要关闭组
                                 }
                                 else{
-                                    message=interfaceList.at(i)+"文件的字段总数配置不是有效的整数";
+                                    message=interfaceList.at(i)+"文件的字段总数配置COUNT标记不是有效的整数";
                                     okFlag=false;
                                 }
                             }
@@ -461,7 +470,7 @@ void MainWindow::initFile(){
             }
             //OFD文件名处理完毕后，开始拆解文件名
             QStringList nameList=fixName.split("_");
-            //正常的OFD文件应该至少有5段信息组成,中登TA和管理人交互的文件还有批次号
+            //正常的OFD文件应该至少有5段信息组成,另外中登TA和管理人交互的文件还有批次号
             if(nameList.count()<5){
                 statusBar_disPlayMessage("错误的文件名,参考:OFD_XX_XXX_YYYYMMDD_XX.TXT");
                 return;
@@ -474,7 +483,7 @@ void MainWindow::initFile(){
                 QString recCode=nameList.at(2);
                 QString dateInfo=nameList.at(3);
                 QString fileTypeCode=nameList.at(4);
-                //con从配置文件获取名称信息
+                //从配置文件获取名称信息
                 QString sendName=(loadedCodeInfo.value(sendCode)).getName();
                 QString recName=(loadedCodeInfo.value(recCode)).getName();
                 QString fileTypeName=loadedOfdFileInfo.value(fileTypeCode);
@@ -739,7 +748,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                                 }
                             }
                             else{
-                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n缺失20版本的04文件p配置,无法尝试使用兼容模式解析04,请检查配置",QMessageBox::Ok,QMessageBox::Ok);
+                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n缺失20版本的04文件配置,无法尝试使用兼容模式解析04,请检查配置",QMessageBox::Ok,QMessageBox::Ok);
                                 return;
                             }
                         }
@@ -1155,16 +1164,16 @@ void MainWindow::editCompareData(){
             rowdata.append(col);
         }
         compareData.insert(rowcurrent+1,rowdata);
-        statusBar_disPlayMessage(QString("比对列表已加入%1行数据").arg(compareData.count()));
+        statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(compareData.count()));
     }
     else{
         //移除数据行
         compareData.remove(rowcurrent+1);
         if(compareData.count()>0){
-            statusBar_disPlayMessage(QString("比对列表还有%1行数据").arg(compareData.count()));
+            statusBar_disPlayMessage(QString("比对器内还有%1行数据").arg(compareData.count()));
         }
         else{
-            statusBar_disPlayMessage(QString("比对列表已清空"));
+            statusBar_disPlayMessage(QString("比对器已清空"));
         }
     }
 }
@@ -1553,9 +1562,9 @@ void MainWindow::showModifyCellBatch(){
         if(filedType=="C"||filedType=="TEXT"||filedType=="A"){
             int addLength=filedLength-valueNewArray.length();
             if(valueNewArray.length()<filedLength){
-                    for(int i=0;i<addLength;i++){
-                        valueNewArray.append(' ');
-                    }
+                for(int i=0;i<addLength;i++){
+                    valueNewArray.append(' ');
+                }
             }
         }
         //数值型
@@ -1708,6 +1717,9 @@ void MainWindow::on_pushButtonPreSearch_clicked()
     }
     //开始搜索
     statusBar_disPlayMessage("正在搜索,请耐心等待...");
+    ui->pushButtonPreSearch->setEnabled(false);
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    qApp->processEvents();
     QString searchText=ui->lineTextText->text();
     //判断是否是当前搜索行,如果是则从焦点单元格前一个单元格搜索,否则从行记录的最后一个单元格搜索
     int colCount=ofd.getfieldCount();
@@ -1719,12 +1731,19 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 statusBar_disPlayMessage("在"+QString::number(row+1)+"行,"+QString::number(col+1)+"列找到你搜索的内容");
                 ptr_table->setCurrentCell(row,col);
                 ptr_table->setFocus();
+                ui->pushButtonPreSearch->setEnabled(true);
+                QApplication::restoreOverrideCursor();
                 return;
+            }
+            else if(row%500==0){
+                qApp->processEvents();
             }
         }
         beginCol=colCount-1;
     }
     statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
+    ui->pushButtonPreSearch->setEnabled(true);
+    QApplication::restoreOverrideCursor();
 }
 
 void MainWindow::on_pushButtonNextSearch_clicked()
@@ -1746,6 +1765,9 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     }
     //开始搜索
     statusBar_disPlayMessage("正在搜索,请耐心等待...");
+    ui->pushButtonNextSearch->setEnabled(false);
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    qApp->processEvents();
     QString searchText=ui->lineTextText->text();
     //是否是当前搜索行,如果是则从焦点单元格后一个单元格搜索,否则从行记录的第一个单元格搜索
     int beginCol=colcurrent+1;
@@ -1755,12 +1777,19 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 statusBar_disPlayMessage("在"+QString::number(row+1)+"行,"+QString::number(col+1)+"列找到你搜索的内容");
                 ptr_table->setCurrentCell(row,col);
                 ptr_table->setFocus();
+                ui->pushButtonNextSearch->setEnabled(true);
+                QApplication::restoreOverrideCursor();
                 return;
+            }
+            else if(row%500==0){
+                qApp->processEvents();
             }
         }
         beginCol=0;
     }
     statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
+    ui->pushButtonNextSearch->setEnabled(true);
+    QApplication::restoreOverrideCursor();
 }
 
 void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)

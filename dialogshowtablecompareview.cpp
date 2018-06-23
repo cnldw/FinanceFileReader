@@ -34,7 +34,7 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
     //数据显示
     if(compareData->count()>0){
         for(int i=0;i<compareData->count();i++){
-            //第一列行号
+            //第一列显示数据的原始行号
             QTableWidgetItem *item= new QTableWidgetItem(QString::number(keys.at(i)));
             ptr_table->setItem(i, 0, item);
             //从第二列开始为数据内容
@@ -89,7 +89,7 @@ void DialogShowTableCompareView::on_tableWidget_customContextMenuRequested(const
     if(ptr_table->rowCount()<1){
         return;
     }
-    //如果鼠标点击的是表格得空白位置取到得行y是-1
+    //如果鼠标点击的是表格的空白位置取到得行y是-1
     if( ptr_table->rowAt(pos.y()) <0){
         return;
     }
@@ -138,7 +138,7 @@ void DialogShowTableCompareView::on_pushButton_clicked()
                 }
                 return;
             }
-            //如果是第二圈搜索且搜索到了开始位置
+            //如果是第二圈搜索且搜索到了开始位置,则终止搜索
             if(returnSearch&&colSearch>=begin){
                 return;
             }
