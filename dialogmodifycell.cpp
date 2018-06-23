@@ -25,7 +25,7 @@ DialogModifyCell::DialogModifyCell(QString filedType,int filedLength,int filedDe
         ui->lineEdit->setText("N(数值型)");
     }
     else if(filedType=="TEXT"){
-        ui->lineEdit->setText("TEXT(字符型)");
+        ui->lineEdit->setText("TEXT(文本型)");
     }
     else{
         ui->lineEdit->setText(filedType);
@@ -67,7 +67,7 @@ void DialogModifyCell::on_pushButton_clicked()
     QString text=ui->lineEdit_4->text();
     //长度
     int textLength=text.toLocal8Bit().length();
-    //字符类的只需要判断长度
+    //字符类和文本类的只需要判断长度
     if(filedType=="C"||filedType=="TEXT"){
         //长度校验
         if(textLength>filedLength){
@@ -164,7 +164,7 @@ void DialogModifyCell::on_pushButton_clicked()
             }
         }
     }
-    //其他未知类型
+    //其他未知类型,仅校验长度
     else{
         if(textLength>filedLength){
             ui->textEdit->setText(tr("长度不能超过%1,请检查").arg(filedLength));

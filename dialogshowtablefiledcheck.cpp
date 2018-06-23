@@ -62,7 +62,7 @@ void DialogShowTableFiledCheck::on_tableWidget_customContextMenuRequested(const 
     if(ptr_table->rowCount()<1){
         return;
     }
-    //如果鼠标点击的是表格得空白位置取到得行y是-1
+    //如果鼠标点击的是表格的空白位置取到得行y是-1
     if( ptr_table->rowAt(pos.y()) <0){
         return;
     }
