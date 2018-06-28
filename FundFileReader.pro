@@ -40,7 +40,8 @@ SOURCES += \
     dialogshowtablecompareview.cpp \
     dialogmodifycell.cpp \
     dialogaboutauthor.cpp \
-    dialogmergetip.cpp
+    dialogmergetip.cpp \
+    dialogaboutthis.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -54,7 +55,8 @@ HEADERS += \
     dialogshowtablecompareview.h \
     dialogmodifycell.h \
     dialogaboutauthor.h \
-    dialogmergetip.h
+    dialogmergetip.h \
+    dialogaboutthis.h
 
 FORMS += \
         mainwindow.ui \
@@ -63,7 +65,8 @@ FORMS += \
     dialogshowtablecompareview.ui \
     dialogmodifycell.ui \
     dialogaboutauthor.ui \
-    dialogmergetip.ui
+    dialogmergetip.ui \
+    dialogaboutthis.ui
 
 RESOURCES += \
     res.qrc

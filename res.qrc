@@ -4,5 +4,6 @@
         <file>qm/qt_zh_CN.qm</file>
         <file>res/author.jpg</file>
         <file>res/icon.icns</file>
+        <file>res/hundusn.jpg</file>
     </qresource>
 </RCC>
