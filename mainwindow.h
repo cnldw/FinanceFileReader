@@ -158,8 +158,8 @@ private:
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
     QList<QByteArray> ofdFileContentQByteArrayList;
-    //当前打开的文件类别,目前已支持的文件类型0索引,1OFD数据(销售商和TA交互版本),2OFD数据(TA和管理人版本,暂未开发)
-    int currentOpenFileType=0;
+    //当前打开的文件类别,目前已支持的文件类型0索引,1OFD数据(销售商和TA交互版本),-1未打开文件
+    int currentOpenFileType=-1;
 
     //字典参数
     Dictionary dictionary;
@@ -195,6 +195,9 @@ private:
     bool configLoadCompleted=false;
     //数据更新状态
     bool isUpdateData=false;
+
+    //阻断的操作
+    bool dataBlocked=false;
 
     //已经加载的行,用于懒加载是判断哪些行已经加载,避免重复加载
     QList<int> rowHasloaded;
