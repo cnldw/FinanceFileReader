@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.8.0_162"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="libs/requests-4.9.1.jar" sourcepath="C:/Users/liu/.m2/repository/net/dongliu/requests/4.9.1/requests-4.9.1-sources.jar"/>
+	<classpathentry kind="lib" path="libs/commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="libs/jsoup-1.9.2.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

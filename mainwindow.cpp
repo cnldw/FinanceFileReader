@@ -120,9 +120,16 @@ void MainWindow::dropEvent(QDropEvent *event)
         statusBar_disPlayMessage(tr("有正在加载的任务,稍后再拖入文件试试..."));
         return;
     }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    dataBlocked=true;
     QList<QUrl> urls = event->mimeData()->urls();
     if(urls.count()>1){
         statusBar_disPlayMessage(tr("拖进来一个文件试试~,文件太多啦"));
+        dataBlocked=false;
         return;
     }
     QString fileName = urls.first().toLocalFile();
@@ -130,6 +137,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     QFileInfo fileinfo(fileName);
     if(fileinfo.isDir()){
         statusBar_disPlayMessage(tr("拖进来一个文件试试~,不接受读取文件夹"));
+        dataBlocked=false;
         return;
     }
     if (!fileName.isEmpty())
@@ -139,13 +147,13 @@ void MainWindow::dropEvent(QDropEvent *event)
         isUpdateData=true;
         initFile();
         isUpdateData=false;
-        return;
     }
+    dataBlocked=false;
 }
 
 void MainWindow:: resizeEvent (QResizeEvent * event ){
     event->ignore();
-    if(tableHeight!=ptr_table->height()&&!isUpdateData&&currentOpenFileType!=0){
+    if(tableHeight!=ptr_table->height()&&!isUpdateData&&currentOpenFileType==1){
         //获取当前table的高度
         int higth=ptr_table->size().height();
         //窗口变大不会影响起始行
@@ -157,7 +165,7 @@ void MainWindow:: resizeEvent (QResizeEvent * event ){
 void MainWindow::acceptVScrollValueChanged(int value)
 {
     //正在更新表/数据源时不开启自动加载
-    if(!isUpdateData&&currentOpenFileType!=0){
+    if(!isUpdateData&&currentOpenFileType==1){
         //新的起始位置
         hValueBegin=value;
         //获取当前table的高度
@@ -175,6 +183,12 @@ void MainWindow::statusBar_clear_statusBar(){
 }
 
 void MainWindow::open_file_Dialog(){
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    dataBlocked=true;
     QString openpath="./";
     if(!currentOpenFilePath.isEmpty()){
         if(currentOpenFilePath.contains("/",Qt::CaseSensitive)){
@@ -191,6 +205,7 @@ void MainWindow::open_file_Dialog(){
     } else {
         //放弃了读取文件
     }
+    dataBlocked=false;
 }
 
 void MainWindow::statusBar_display_rowsCount(int rowsCount){
@@ -1718,6 +1733,16 @@ void MainWindow::showModifyCellBatch(){
 
 void MainWindow::on_pushButtonPreSearch_clicked()
 {
+    if(currentOpenFileType==-1){
+        return;
+    }
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("不支持索引文件使用此功能...");
+        return;
+    }
+    if(ofdFileContentQByteArrayList.size()<1){
+        return;
+    }
     //向上搜索
     if(ui->lineTextText->text().isEmpty()){
         statusBar_disPlayMessage("请填写你要搜索的内容...");
@@ -1730,6 +1755,12 @@ void MainWindow::on_pushButtonPreSearch_clicked()
     if(ofdFileContentQByteArrayList.count()<1){
         return;
     }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再搜索...");
+        return;
+    }
+    dataBlocked=true;
     //开始搜索
     statusBar_disPlayMessage("正在搜索,请耐心等待...");
     ui->pushButtonPreSearch->setEnabled(false);
@@ -1748,22 +1779,34 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 ptr_table->setFocus();
                 ui->pushButtonPreSearch->setEnabled(true);
                 QApplication::restoreOverrideCursor();
+                dataBlocked=false;
                 return;
             }
             else if(row%500==0){
+                statusBar_disPlayMessage("正在搜索,请耐心等待...");
                 qApp->processEvents();
             }
         }
         beginCol=colCount-1;
     }
     statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
+    dataBlocked=false;
     ui->pushButtonPreSearch->setEnabled(true);
     QApplication::restoreOverrideCursor();
 }
 
 void MainWindow::on_pushButtonNextSearch_clicked()
 {
-
+    if(currentOpenFileType==-1){
+        return;
+    }
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("不支持索引文件使用此功能...");
+        return;
+    }
+    if(ofdFileContentQByteArrayList.size()<1){
+        return;
+    }
     int rowcount=ofdFileContentQByteArrayList.count();
     int colCount=ofd.getfieldCount();
     //向下搜索
@@ -1778,6 +1821,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     if(ofdFileContentQByteArrayList.count()<1){
         return;
     }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再搜索...");
+        return;
+    }
+    dataBlocked=true;
     //开始搜索
     statusBar_disPlayMessage("正在搜索,请耐心等待...");
     ui->pushButtonNextSearch->setEnabled(false);
@@ -1794,15 +1843,18 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 ptr_table->setFocus();
                 ui->pushButtonNextSearch->setEnabled(true);
                 QApplication::restoreOverrideCursor();
+                dataBlocked=false;
                 return;
             }
             else if(row%500==0){
+                statusBar_disPlayMessage("正在搜索,请耐心等待...");
                 qApp->processEvents();
             }
         }
         beginCol=0;
     }
     statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
+    dataBlocked=false;
     ui->pushButtonNextSearch->setEnabled(true);
     QApplication::restoreOverrideCursor();
 }
@@ -1878,6 +1930,22 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 
 void MainWindow::on_pushButtonNextSearch_2_clicked()
 {
+    if(currentOpenFileType==-1){
+        return;
+    }
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("不支持索引文件使用此功能...");
+        return;
+    }
+    if(ofdFileContentQByteArrayList.size()<1){
+        return;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    dataBlocked=true;
     QString text=ui->lineTextText_2->text();
     if(!text.isEmpty()&&ptr_table->columnCount()>0&&ptr_table->rowCount()>0){
         bool returnSearch=false;
@@ -1895,20 +1963,25 @@ void MainWindow::on_pushButtonNextSearch_2_clicked()
                     //如果搜了一圈在开始搜索的列找到了目标列，刷新下提示
                     on_tableWidget_currentCellChanged(rowcurrent,colcurrent,0,0);
                 }
+                dataBlocked=false;
                 return;
             }
             //如果是第二圈搜索且搜索到了开始位置
             if(returnSearch&&colSearch>=begin){
                 statusBar_disPlayMessage("臣妾找不到你要搜索的列...");
+                dataBlocked=false;
                 return;
             }
             //搜到最后一列还没找到,则跳到第1列继续,保证搜索形成一个圆环
             else if(colSearch>=(ptr_table->columnCount()-1)){
                 colSearch=-1;
                 returnSearch=true;
+                dataBlocked=false;
+                return;
             }
         }
     }
+    dataBlocked=false;
 }
 
 void MainWindow::on_actionsOpenCompare_triggered()
@@ -1957,14 +2030,25 @@ void MainWindow::on_actionClearCompare_triggered()
 
 void MainWindow::on_pushButtonNextSearch_3_clicked()
 {
-    //预先数据判断
-    if(ptr_table->rowCount()<1){
-        statusBar_disPlayMessage("没有数据可供导出,目前表格有0行数据");
+    if(currentOpenFileType==-1){
         return;
     }
     //数据类型判断
     if(currentOpenFileType==0){
         statusBar_disPlayMessage("索引数据不支持导出");
+        dataBlocked=false;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    dataBlocked=true;
+    //预先数据判断
+    if(ptr_table->rowCount()<1){
+        statusBar_disPlayMessage("没有数据可供导出,目前表格有0行数据");
+        dataBlocked=false;
+        return;
     }
     else if(currentOpenFileType==1){
         //获取打开的文件的路径
@@ -2014,6 +2098,7 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
                 bool r=file.remove();
                 if(!r){
                     statusBar_disPlayMessage("覆盖文件失败,源文件可能正在被占用...");
+                    dataBlocked=false;
                     return;
                 }
             }
@@ -2031,6 +2116,7 @@ void MainWindow::on_pushButtonNextSearch_3_clicked()
             }
         }
     }
+    dataBlocked=false;
 }
 
 //保存为csv
@@ -2150,7 +2236,6 @@ void MainWindow::save2Html (QString filename){
 
 //保存为xlsx
 void MainWindow::save2Xlsx(QString filename){
-
     //禁止导出过大的excel文件
     if(ofdFileContentQByteArrayList.count()>200000){
         statusBar_disPlayMessage("记录数大于20万行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系793554262@qq.com)");
@@ -2265,6 +2350,21 @@ void MainWindow::save2Xlsx(QString filename){
 
 void MainWindow::on_pushButtonNextSearch_4_clicked()
 {
+    if(currentOpenFileType==-1){
+        return;
+    }
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("不支持索引文件使用此功能...");
+        return;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    if(ofdFileContentQByteArrayList.size()<1){
+        return;
+    }
     QString lineStr=ui->lineTextText_2->text();
     if(lineStr.isEmpty()){
         return;
@@ -2293,11 +2393,18 @@ void MainWindow::on_actionsss_triggered()
     if(isUpdateData){
         return;
     }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    dataBlocked=true;
     if(!currentOpenFilePath.isEmpty()){
         isUpdateData=true;
         initFile();
         isUpdateData=false;
     }
+    dataBlocked=false;
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -2308,7 +2415,13 @@ void MainWindow::on_actionSave_triggered()
     if(currentOpenFileType==0){
         statusBar_disPlayMessage("索引文件不支持编辑保存");
     }
-    else if(currentOpenFileType==1){
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    dataBlocked=true;
+    if(currentOpenFileType==1){
         if(fileChanged){
             //先备份原文件
             if(Utils::isFileExist(currentOpenFilePath)){
@@ -2328,16 +2441,24 @@ void MainWindow::on_actionSave_triggered()
             statusBar_disPlayMessage("文件没有被修改,无需保存");
         }
     }
+    dataBlocked=false;
 }
 
 void MainWindow::saveOFDFile(QString filepath)
 {
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    dataBlocked=true;
     //检查文件是否存在,存在则覆盖
     if(Utils::isFileExist(filepath)){
         QFile oldfile(filepath);
         bool r=oldfile.remove();
         if(!r){
             statusBar_disPlayMessage("覆盖文件失败,请重试或检查文件是否被其他程序占用");
+            dataBlocked=false;
             return;
         }
     }
@@ -2383,6 +2504,7 @@ void MainWindow::saveOFDFile(QString filepath)
         statusBar_disPlayMessage(tr("数据保存失败,请重试"));
     }
     //恢复鼠标响应
+    dataBlocked=false;
     QApplication::restoreOverrideCursor();
 }
 
@@ -2398,6 +2520,11 @@ void MainWindow::on_actionSaveAS_triggered()
     }
     if(ofdFileHeaderQStringList.size()<1){
         statusBar_disPlayMessage("未打开有效的OFD文件,无法使用另存功能,请尝试打开一个有效的文件...");
+        return;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
         return;
     }
     //文件过滤器,用于追踪选择的保存文件类别

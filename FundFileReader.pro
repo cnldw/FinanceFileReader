@@ -74,7 +74,7 @@ win32{
 RC_ICONS =res/icon.ico
 
 #版本号
-VERSION = 1.5.2
+VERSION = 1.5.3
 # 语言
 # 0x0004 表示 简体中文
 RC_LANG = 0x0004
