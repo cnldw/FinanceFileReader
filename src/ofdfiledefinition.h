@@ -1,0 +1,55 @@
+/***********************************************************************
+*Copyright [2018] [Liudewei(793554262@qq.com)]
+*
+*Licensed under the Apache License, Version 2.0 (the "License");
+*you may not use this file except in compliance with the License.
+*You may obtain a copy of the License at
+*
+*    http:*www.apache.org/licenses/LICENSE-2.0
+*
+*Unless required by applicable law or agreed to in writing, software
+*distributed under the License is distributed on an "AS IS" BASIS,
+*WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*See the License for the specific language governing permissions and
+*limitations under the License.
+************************************************************************/
+#ifndef OFDFILEDEFINITION_H
+#define OFDFILEDEFINITION_H
+
+#include <QList>
+#include <QString>
+#include "src/fielddefinition.h"
+
+class OFDFileDefinition
+{
+
+private:
+
+    //配置是否可用
+    bool useAble;
+    //配置不可用原因
+    QString message;
+    //字段总和
+    int fieldCount;
+    //每行长度
+    int rowLength;
+    //字段信息
+    QList <FieldDefinition> fieldList;
+
+public:
+    OFDFileDefinition();
+    ~OFDFileDefinition();
+    bool getuseAble()const;
+    QString getMessage()const;
+    int getfieldCount()const;
+    int getrowLength()const;
+    QList <FieldDefinition>  getfieldList()const;
+    void setfieldCount(int count);
+    void setrowLength(int length);
+    void setuseAble(bool useAble);
+    void setMessage(QString message);
+    void setfieldList(QList <FieldDefinition> list);
+
+};
+
+#endif // OFDFILEDEFINITION_H

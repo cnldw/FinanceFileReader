@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DialogAboutAuthor</class>
+ <widget class="QDialog" name="DialogAboutAuthor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>487</width>
+    <height>213</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>487</width>
+    <height>213</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>487</width>
+    <height>213</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>关于作者</string>
+  </property>
+  <widget class="QPlainTextEdit" name="plainTextEdit">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>5</y>
+     <width>271</width>
+     <height>201</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei</family>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+   <property name="plainText">
+    <string>作者:刘德位(幻舞奇影)
+
+2015年毕业于郑州大学
+</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton">
+   <property name="geometry">
+    <rect>
+     <x>5</x>
+     <y>5</y>
+     <width>201</width>
+     <height>201</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset resource="../res.qrc">
+     <normaloff>:/res/author.jpg</normaloff>:/res/author.jpg</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>201</width>
+     <height>201</height>
+    </size>
+   </property>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../res.qrc"/>
+ </resources>
+ <connections/>
+</ui>
