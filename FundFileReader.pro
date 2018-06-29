@@ -23,52 +23,53 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 #引入excel操作库
-include(xlsx/qtxlsx.pri)
+include(src/xlsx/qtxlsx.pri)
 #引入2048小游戏
-include(2048/2048.pri)
+include(src/2048/2048.pri)
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
-    utils.cpp \
-    ofdfiledefinition.cpp \
-    fielddefinition.cpp \
-    codeinfo.cpp \
-    dictionary.cpp \
-    dialogshowtablerow.cpp \
-    dialogshowtablefiledcheck.cpp \
-    dialogshowtablecompareview.cpp \
-    dialogmodifycell.cpp \
-    dialogaboutauthor.cpp \
-    dialogmergetip.cpp \
-    dialogaboutthis.cpp
+        src/main.cpp \
+        src/mainwindow.cpp \
+    src/utils.cpp \
+    src/ofdfiledefinition.cpp \
+    src/fielddefinition.cpp \
+    src/codeinfo.cpp \
+    src/dictionary.cpp \
+    src/dialogshowtablerow.cpp \
+    src/dialogshowtablefiledcheck.cpp \
+    src/dialogshowtablecompareview.cpp \
+    src/dialogmodifycell.cpp \
+    src/dialogaboutauthor.cpp \
+    src/dialogmergetip.cpp \
+    src/dialogaboutthis.cpp
 
 HEADERS += \
-        mainwindow.h \
-    utils.h \
-    ofdfiledefinition.h \
-    fielddefinition.h \
-    codeinfo.h \
-    dictionary.h \
-    dialogshowtablerow.h \
-    dialogshowtablefiledcheck.h \
-    dialogshowtablecompareview.h \
-    dialogmodifycell.h \
-    dialogaboutauthor.h \
-    dialogmergetip.h \
-    dialogaboutthis.h
+        src/mainwindow.h \
+    src/utils.h \
+    src/ofdfiledefinition.h \
+    src/fielddefinition.h \
+    src/codeinfo.h \
+    src/dictionary.h \
+    src/dialogshowtablerow.h \
+    src/dialogshowtablefiledcheck.h \
+    src/dialogshowtablecompareview.h \
+    src/dialogmodifycell.h \
+    src/dialogaboutauthor.h \
+    src/dialogmergetip.h \
+    src/dialogaboutthis.h
 
 FORMS += \
-        mainwindow.ui \
-    dialogshowtablerow.ui \
-    dialogshowtablefiledcheck.ui \
-    dialogshowtablecompareview.ui \
-    dialogmodifycell.ui \
-    dialogaboutauthor.ui \
-    dialogmergetip.ui \
-    dialogaboutthis.ui
+        src/mainwindow.ui \
+    src/dialogshowtablerow.ui \
+    src/dialogshowtablefiledcheck.ui \
+    src/dialogshowtablecompareview.ui \
+    src/dialogmodifycell.ui \
+    src/dialogaboutauthor.ui \
+    src/dialogmergetip.ui \
+    src/dialogaboutthis.ui
 
 RESOURCES += \
+    res.qrc \
     res.qrc
 
 DISTFILES +=
