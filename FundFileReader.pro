@@ -3,8 +3,10 @@
 # Project created by QtCreator 2018-03-24T10:23:52
 #
 #-------------------------------------------------
-
 QT       += core gui
+
+#静态编译声明
+CONFIG += static
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
