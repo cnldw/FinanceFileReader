@@ -367,7 +367,7 @@ void MainWindow::load_OFDDefinition(){
                         /*-----------------第二重循环，遍历OFD文件内的文件定义----------------------*/
                         /* /////////////////////////开始解析本文件可用接口文件定义////////// */
                         for(int i=0;i<interfaceList.count();i++){
-                            //存入Qmap使用的key
+                            //存入QHash使用的key
                             QString name=prefixName+"_"+interfaceList.at(i);
                             OFDFileDefinition ofd;
                             QList<FieldDefinition> fieldList;
@@ -2256,7 +2256,7 @@ void MainWindow::save2Xlsx(QString filename){
     //用来记录列最宽的list
     int colWidthArray[ofd.getfieldCount()];
     //标题和是否是数值列,数值列需要设置列格式
-    QMap<int,QXlsx::Format> numberFormat;
+    QHash<int,QXlsx::Format> numberFormat;
     for(int i=0;i<ofd.getfieldCount();i++){
         xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
         //记录每列的宽度

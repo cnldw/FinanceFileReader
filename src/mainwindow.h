@@ -32,7 +32,7 @@
 #include <QLabel>
 #include <QSettings>
 #include <QDebug>
-#include <QMap>
+#include <QHash>
 #include <QStringList>
 #include <QByteArray>
 #include <QTextCodec>
@@ -142,15 +142,15 @@ private:
     QString currentOpenFilePath;
     QString getConfigPath();
     //已经加载的code信息,记录销售商和TA的代码信息
-    QMap<QString, CodeInfo> loadedCodeInfo;
+    QHash<QString, CodeInfo> loadedCodeInfo;
     //已经加载的索引文件信息,记录各种索引文件的文件名开头三个字符
-    QMap<QString, QString> loadedIndexFileInfo;
+    QHash<QString, QString> loadedIndexFileInfo;
     //已经加载的OFD文件的文件名结尾两个字符和文件名的对应关系,比如04,交易类确认
-    QMap<QString, QString> loadedOfdFileInfo;
+    QHash<QString, QString> loadedOfdFileInfo;
     //已经加载的各种OFD文件的定义,比如400_21_01,代表V400,第21版本的01文件的定义
-    QMap<QString,OFDFileDefinition>loadedOfdDefinitionMap;
+    QHash<QString,OFDFileDefinition>loadedOfdDefinitionMap;
     //用来记录文件头部内容的map,此信息用于文件检查
-    QMap<QString,QString> indexFileHeaderMap;
+    QHash<QString,QString> indexFileHeaderMap;
     //用来记录文件标题和内容的list,解析索引类文件时使用
     QList<QStringList> indexFileDataList;
     //当前正在使用的ofd定义,打开哪个文件,就切换到改文件的ofd定义

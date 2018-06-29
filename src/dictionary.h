@@ -16,7 +16,7 @@
 #ifndef DICTIONARY_H
 #define DICTIONARY_H
 
-#include <QMap>
+#include <QHash>
 #include <QString>
 
 class Dictionary
@@ -27,7 +27,7 @@ public:
     void addDictionary(QString line);
 
 private:
-    QMap <QString,QMap<QString,QString>> map;
+    QHash <QString,QHash<QString,QString>> hash;
 };
 
 #endif // DICTIONARY_H
