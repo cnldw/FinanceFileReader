@@ -5,9 +5,14 @@
 #-------------------------------------------------
 QT       += core gui
 
-#静态编译声明
-CONFIG += static
-
+#静态编译声明-windows,unix like
+#macOS下使用动态链接库,基于macdeployqt打包即可
+unix{
+    CONFIG += static
+}
+win32{
+    CONFIG += static
+}
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = FFReader-x64
