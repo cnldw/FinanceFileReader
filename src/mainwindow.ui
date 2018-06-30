@@ -422,23 +422,7 @@ border-radius:3px;
         <string>列搜索跳转</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="pushButtonExport">
-       <property name="geometry">
-        <rect>
-         <x>790</x>
-         <y>8</y>
-         <width>71</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="toolTip">
-        <string>可以将数据导出到excel文件进行分析...</string>
-       </property>
-       <property name="text">
-        <string>数据导出</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButtonRowJump">
+	  <widget class="QPushButton" name="pushButtonRowJump">
        <property name="geometry">
         <rect>
          <x>636</x>
@@ -474,6 +458,22 @@ border-radius:3px;
        </property>
        <property name="text">
         <string>源文件行跳转</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButtonExport">
+       <property name="geometry">
+        <rect>
+         <x>790</x>
+         <y>8</y>
+         <width>71</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>可以将数据导出到excel文件进行分析...</string>
+       </property>
+       <property name="text">
+        <string>数据导出</string>
        </property>
       </widget>
      </widget>
