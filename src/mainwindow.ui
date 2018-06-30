@@ -6,13 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>880</width>
+    <width>920</width>
     <height>640</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>880</width>
+    <width>920</width>
     <height>640</height>
    </size>
   </property>
@@ -89,7 +89,7 @@ border-radius:3px;
         <rect>
          <x>13</x>
          <y>9</y>
-         <width>777</width>
+         <width>817</width>
          <height>20</height>
         </rect>
        </property>
@@ -100,7 +100,7 @@ border-radius:3px;
       <widget class="QPushButton" name="pushButtonOpenFile">
        <property name="geometry">
         <rect>
-         <x>792</x>
+         <x>832</x>
          <y>8</y>
          <width>71</width>
          <height>22</height>
@@ -151,7 +151,7 @@ border-radius:3px;
         <rect>
          <x>216</x>
          <y>34</y>
-         <width>211</width>
+         <width>231</width>
          <height>20</height>
         </rect>
        </property>
@@ -159,7 +159,7 @@ border-radius:3px;
       <widget class="QLabel" name="labelRecCode">
        <property name="geometry">
         <rect>
-         <x>430</x>
+         <x>450</x>
          <y>34</y>
          <width>71</width>
          <height>20</height>
@@ -172,7 +172,7 @@ border-radius:3px;
       <widget class="QLineEdit" name="lineEditRecCode">
        <property name="geometry">
         <rect>
-         <x>504</x>
+         <x>524</x>
          <y>34</y>
          <width>50</width>
          <height>20</height>
@@ -182,7 +182,7 @@ border-radius:3px;
       <widget class="QLabel" name="labeTRecInfo">
        <property name="geometry">
         <rect>
-         <x>560</x>
+         <x>580</x>
          <y>34</y>
          <width>71</width>
          <height>20</height>
@@ -195,9 +195,9 @@ border-radius:3px;
       <widget class="QLineEdit" name="lineEditRecInfo">
        <property name="geometry">
         <rect>
-         <x>634</x>
+         <x>654</x>
          <y>34</y>
-         <width>228</width>
+         <width>248</width>
          <height>20</height>
         </rect>
        </property>
@@ -266,7 +266,7 @@ border-radius:3px;
         <rect>
          <x>406</x>
          <y>58</y>
-         <width>148</width>
+         <width>188</width>
          <height>20</height>
         </rect>
        </property>
@@ -274,7 +274,7 @@ border-radius:3px;
       <widget class="QLabel" name="labelFileTransferDate">
        <property name="geometry">
         <rect>
-         <x>560</x>
+         <x>600</x>
          <y>58</y>
          <width>81</width>
          <height>20</height>
@@ -287,7 +287,7 @@ border-radius:3px;
       <widget class="QLineEdit" name="lineEditFileTransferDate">
        <property name="geometry">
         <rect>
-         <x>642</x>
+         <x>682</x>
          <y>58</y>
          <width>148</width>
          <height>20</height>
@@ -297,7 +297,7 @@ border-radius:3px;
       <widget class="QPushButton" name="pushButtonOpenFile_2">
        <property name="geometry">
         <rect>
-         <x>792</x>
+         <x>832</x>
          <y>57</y>
          <width>71</width>
          <height>22</height>
@@ -402,12 +402,12 @@ border-radius:3px;
         <bool>false</bool>
        </property>
       </widget>
-      <widget class="QPushButton" name="pushButtonNextSearch_2">
+      <widget class="QPushButton" name="pushButtonColumnJump">
        <property name="geometry">
         <rect>
          <x>554</x>
          <y>8</y>
-         <width>61</width>
+         <width>81</width>
          <height>22</height>
         </rect>
        </property>
@@ -419,15 +419,15 @@ border-radius:3px;
 +++++++++++++++++++++++++++++++++++++++++++</string>
        </property>
        <property name="text">
-        <string>列跳转</string>
+        <string>列搜索跳转</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="pushButtonNextSearch_3">
+      <widget class="QPushButton" name="pushButtonExport">
        <property name="geometry">
         <rect>
-         <x>678</x>
+         <x>790</x>
          <y>8</y>
-         <width>73</width>
+         <width>71</width>
          <height>22</height>
         </rect>
        </property>
@@ -438,10 +438,10 @@ border-radius:3px;
         <string>数据导出</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="pushButtonNextSearch_4">
+      <widget class="QPushButton" name="pushButtonRowJump">
        <property name="geometry">
         <rect>
-         <x>616</x>
+         <x>636</x>
          <y>8</y>
          <width>61</width>
          <height>22</height>
@@ -452,6 +452,28 @@ border-radius:3px;
        </property>
        <property name="text">
         <string>行跳转</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButtonRowJump2">
+       <property name="geometry">
+        <rect>
+         <x>698</x>
+         <y>8</y>
+         <width>91</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>+++++++++++++++++++++++++++++++++++++++++++
+此功能为快速行跳转功能,将垂直进度条滚动到输
+入的源文件行,比如你使用文本编辑器打开数据文
+件,发现文件第100行内容有问题,你可以在这里直
+接输入100跳转到该行（文件第100行并不是记录第
+100行）
++++++++++++++++++++++++++++++++++++++++++++</string>
+       </property>
+       <property name="text">
+        <string>源文件行跳转</string>
        </property>
       </widget>
      </widget>
@@ -477,7 +499,7 @@ border-radius:3px;
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>880</width>
+     <width>920</width>
      <height>23</height>
     </rect>
    </property>
@@ -495,8 +517,8 @@ border-radius:3px;
      <string>帮助</string>
     </property>
     <addaction name="aboutOpen"/>
-    <addaction name="actionAboutQt"/>
     <addaction name="actionaboutAuthor"/>
+    <addaction name="actionAboutQt"/>
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">

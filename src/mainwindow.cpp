@@ -82,7 +82,7 @@ void MainWindow::initStatusBar(){
     ui->statusBar->addWidget(statusLabel_ptr_showRowAndCol);
     //设置标签内容
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
-    statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列(中文计两列)"));
+    statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列(每个中文字符计两列)"));
 
     statusLabel_ptr_showMessage = new QLabel;
     statusLabel_ptr_showMessage->setMinimumSize(495, 20); // 设置标签最小大小
@@ -1155,7 +1155,7 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
             colcurrent=currentColumn;
             //更新列跳转搜索开始列
             colSearch=currentColumn;
-            int rowInFile=12+ofd.getfieldCount()+currentRow;
+            int rowInFile=ofdFileHeaderQStringList.count()+currentRow+1;
             int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
             statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
             if(ptr_table->item(currentRow,currentColumn)!=nullptr){
@@ -1930,7 +1930,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     tablePopMenu->exec(QCursor::pos());
 }
 
-void MainWindow::on_pushButtonNextSearch_2_clicked()
+void MainWindow::on_pushButtonColumnJump_clicked()
 {
     if(currentOpenFileType==-1){
         return;
@@ -1940,6 +1940,7 @@ void MainWindow::on_pushButtonNextSearch_2_clicked()
         return;
     }
     if(ofdFileContentQByteArrayList.size()<1){
+        statusBar_disPlayMessage("打开的文件没有数据记录...");
         return;
     }
     //检测阻断的任务
@@ -1989,12 +1990,7 @@ void MainWindow::on_pushButtonNextSearch_2_clicked()
 void MainWindow::on_actionsOpenCompare_triggered()
 {
     if(currentOpenFileType==0){
-        if(ptr_table->rowCount()<1){
-            statusBar_disPlayMessage("没有需要比对的数据行...");
-        }
-        else{
-            statusBar_disPlayMessage("索引文件不支持使用比对器...");
-        }
+        statusBar_disPlayMessage("索引文件不支持使用比对器...");
     }
     else if(currentOpenFileType==1){
         if(compareData.count()<1){
@@ -2030,7 +2026,7 @@ void MainWindow::on_actionClearCompare_triggered()
     statusBar_disPlayMessage("比对器内容清除完毕...");
 }
 
-void MainWindow::on_pushButtonNextSearch_3_clicked()
+void MainWindow::on_pushButtonExport_clicked()
 {
     if(currentOpenFileType==-1){
         return;
@@ -2350,7 +2346,7 @@ void MainWindow::save2Xlsx(QString filename){
     QApplication::restoreOverrideCursor();
 }
 
-void MainWindow::on_pushButtonNextSearch_4_clicked()
+void MainWindow::on_pushButtonRowJump_clicked()
 {
     if(currentOpenFileType==-1){
         return;
@@ -2365,6 +2361,7 @@ void MainWindow::on_pushButtonNextSearch_4_clicked()
         return;
     }
     if(ofdFileContentQByteArrayList.size()<1){
+        statusBar_disPlayMessage("打开的文件没有数据记录...");
         return;
     }
     QString lineStr=ui->lineTextText_2->text();
@@ -2422,7 +2419,6 @@ void MainWindow::on_actionSave_triggered()
         statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
         return;
     }
-    dataBlocked=true;
     if(currentOpenFileType==1){
         if(fileChanged){
             //先备份原文件
@@ -2443,7 +2439,6 @@ void MainWindow::on_actionSave_triggered()
             statusBar_disPlayMessage("文件没有被修改,无需保存");
         }
     }
-    dataBlocked=false;
 }
 
 void MainWindow::saveOFDFile(QString filepath)
@@ -2579,8 +2574,62 @@ void MainWindow::randomTips(){
     tips.append("拖放文件到程序主窗口,即可打开文件,又快又省心...");
     tips.append("程序里有一个彩蛋哟,快去找一下...");
     tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
+    tips.append("源文件某行数据在解析器的第几行?,试试源文件行跳转功能,一键直达...");
     tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
     srand((unsigned)time(NULL));
     int index =rand()%tips.count();
     statusBar_disPlayMessage("温馨提示:"+tips.at(index));
+}
+
+void MainWindow::on_pushButtonRowJump2_clicked()
+{
+    if(currentOpenFileType==-1){
+        return;
+    }
+    if(currentOpenFileType==0){
+        statusBar_disPlayMessage("不支持索引文件使用此功能...");
+        return;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage("有正在进行的任务请稍后再使用此功能...");
+        return;
+    }
+    if(ofdFileContentQByteArrayList.size()<1){
+        statusBar_disPlayMessage("打开的文件没有数据记录...");
+        return;
+    }
+    QString lineStr=ui->lineTextText_2->text();
+    if(lineStr.isEmpty()){
+        return;
+    }
+    bool ok=false;
+    int  lineNumber=lineStr.toInt(&ok);
+    if(!ok){
+        statusBar_disPlayMessage(tr("请输入有效的行号,%1不是一个有效的整数").arg(lineStr));
+        return;
+    }
+    if(lineNumber<1){
+        statusBar_disPlayMessage(tr("行号不能小于1"));
+    }
+    else {
+        int headerCount=ofdFileHeaderQStringList.count();
+        if(lineNumber<=headerCount){
+            statusBar_disPlayMessage(tr("你输入的行号所在行在源文件中记录的是文件头:[%1]").arg(ofdFileHeaderQStringList.at(lineNumber-1)));
+            return;
+        }
+        //重新计算数据行位置
+        lineNumber-=headerCount;
+        if(lineNumber==ptr_table->rowCount()+1){
+            statusBar_disPlayMessage(tr("你输入的行号所在行应该是OFD文件结束标记[OFDCFEND]"));
+            return;
+        }
+        else if(lineNumber>ptr_table->rowCount()+1){
+            statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+        }
+        else{
+            ptr_table->setCurrentCell(lineNumber-1,colcurrent);
+            ptr_table->setFocus();
+        }
+    }
 }

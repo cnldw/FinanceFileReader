@@ -110,15 +110,13 @@ private slots:
 
     void showModifyCellBatch();
 
-    void on_pushButtonNextSearch_2_clicked();
-
     void on_actionsOpenCompare_triggered();
 
     void on_actionClearCompare_triggered();
 
-    void on_pushButtonNextSearch_3_clicked();
+    void on_pushButtonExport_clicked();
 
-    void on_pushButtonNextSearch_4_clicked();
+    void on_pushButtonRowJump_clicked();
 
     void on_actionsss_triggered();
 
@@ -129,6 +127,10 @@ private slots:
     void on_actionaboutAuthor_triggered();
 
     void on_tableWidget_cellDoubleClicked(int row, int column);
+
+    void on_pushButtonColumnJump_clicked();
+
+    void on_pushButtonRowJump2_clicked();
 
 private:
     Ui::MainWindow *ui;

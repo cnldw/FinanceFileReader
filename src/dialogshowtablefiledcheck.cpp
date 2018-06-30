@@ -36,7 +36,7 @@ DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,Q
 
     //表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
-    action_ShowCopyColum = new QAction(tr("复制此单元格"),this);
+    action_ShowCopyColum = new QAction(tr("复制光标所在单元格"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
 
     //设置表格列标题
