@@ -422,7 +422,7 @@ border-radius:3px;
         <string>列搜索跳转</string>
        </property>
       </widget>
-	  <widget class="QPushButton" name="pushButtonRowJump">
+      <widget class="QPushButton" name="pushButtonRowJump">
        <property name="geometry">
         <rect>
          <x>636</x>
@@ -556,7 +556,7 @@ border-radius:3px;
     <string/>
    </property>
    <property name="shortcut">
-    <string>F2</string>
+    <string>F3</string>
    </property>
   </action>
   <action name="actionsOpenCompare">
@@ -604,7 +604,7 @@ border-radius:3px;
     <string>关于作者</string>
    </property>
    <property name="shortcut">
-    <string>F3</string>
+    <string>F2</string>
    </property>
   </action>
  </widget>
