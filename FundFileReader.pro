@@ -7,9 +7,11 @@ QT       += core gui
 
 #静态编译声明-windows,unix like
 #macOS下使用动态链接库,基于macdeployqt打包即可
+#macOS/Linux公用下面的配置,mac下编译如果不需要静态编译注意关闭
 unix{
     CONFIG += static
 }
+#windows下静态编译开关
 win32{
     CONFIG += static
 }
@@ -85,7 +87,7 @@ win32{
 RC_ICONS =res/icon.ico
 
 #版本号
-VERSION = 1.5.3
+VERSION = 1.5.5
 # 语言
 # 0x0004 表示 简体中文
 RC_LANG = 0x0004
