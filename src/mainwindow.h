@@ -132,6 +132,8 @@ private slots:
 
     void on_pushButtonRowJump2_clicked();
 
+    void on_viewMode_triggered();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字

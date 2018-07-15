@@ -2576,6 +2576,7 @@ void MainWindow::randomTips(){
     tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
     tips.append("源文件某行数据在解析器的第几行?,试试源文件行跳转功能,一键直达...");
     tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
+    tips.append("按Ctrl+G切换视图模式,可以隐藏或者显示文件头信息...");
     srand((unsigned)time(NULL));
     int index =rand()%tips.count();
     statusBar_disPlayMessage("温馨提示:"+tips.at(index));
@@ -2631,5 +2632,27 @@ void MainWindow::on_pushButtonRowJump2_clicked()
             ptr_table->setCurrentCell(lineNumber-1,colcurrent);
             ptr_table->setFocus();
         }
+    }
+}
+
+void MainWindow::on_viewMode_triggered()
+{
+    int addHight=ui->frameInfo->height();
+    bool isHidden=ui->frameInfo->isHidden();
+    if(!isHidden){
+        ui->frameInfo->setHidden(true);
+        ui->viewMode->setText("标准视图");
+        //切换到精简模式后，界面可视区域变大，要重新显示范围
+        if(tableHeight!=ptr_table->height()&&!isUpdateData&&currentOpenFileType==1){
+            //获取当前table的高度
+            int higth=ptr_table->size().height()+addHight;
+            //窗口变大不会影响起始行
+            hValueEnd=hValueBegin+(higth/rowHight);
+            display_OFDTable();
+        }
+    }
+    else{
+        ui->frameInfo->setHidden(false);
+        ui->viewMode->setText("精简视图");
     }
 }

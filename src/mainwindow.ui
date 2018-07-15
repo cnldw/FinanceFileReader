@@ -527,8 +527,15 @@ border-radius:3px;
     <addaction name="actionsOpenCompare"/>
     <addaction name="actionClearCompare"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>视图</string>
+    </property>
+    <addaction name="viewMode"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menu"/>
+   <addaction name="menu_2"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
@@ -605,6 +612,14 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>F2</string>
+   </property>
+  </action>
+  <action name="viewMode">
+   <property name="text">
+    <string>精简视图</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
    </property>
   </action>
  </widget>
