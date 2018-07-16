@@ -164,10 +164,11 @@ void MainWindow:: resizeEvent (QResizeEvent * event ){
 
 void MainWindow::acceptVScrollValueChanged(int value)
 {
+    UNUSED (value);
     //正在更新表/数据源时不开启自动加载
     if(!isUpdateData&&currentOpenFileType==1){
         //新的起始位置
-        hValueBegin=value;
+        hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
         //获取当前table的高度
         int higth=ptr_table->size().height();
         //计算要结束的行
