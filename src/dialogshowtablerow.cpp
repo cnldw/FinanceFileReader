@@ -22,7 +22,7 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
     ui(new Ui::DialogShowTableRow)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMinMaxButtonsHint);
+    this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
 
     //初始化表格
     ptr_table =ui->tableWidget;

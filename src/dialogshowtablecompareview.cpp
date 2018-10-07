@@ -22,7 +22,7 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
     ui(new Ui::DialogShowTableCompareView)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMinMaxButtonsHint);
+    this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     //初始化背景色
     this->backcolor=QColor (241,226,173);
     //初始化表格
