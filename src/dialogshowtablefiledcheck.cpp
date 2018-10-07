@@ -21,7 +21,7 @@ DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,Q
     ui(new Ui::DialogShowTableFiledCheck)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    this->setWindowFlags(Qt::Dialog /*| Qt::WindowCloseButtonHint 删除屏蔽最大化按钮，否则在macos下不能拖拉窗口放大*/);
 
     //初始化表格
     ptr_table =ui->tableWidget;

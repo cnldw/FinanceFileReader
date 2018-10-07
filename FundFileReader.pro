@@ -8,9 +8,10 @@ QT       += core gui
 #静态编译声明-windows,unix like
 #macOS下使用动态链接库,基于macdeployqt打包即可
 #macOS/Linux公用下面的配置,mac下编译如果不需要静态编译注意关闭
-unix{
-    CONFIG += static
-}
+#在linux下编译时，如果需要静态编译，请放开下面的注释
+#unix{
+#    CONFIG += static
+#}
 #windows下静态编译开关
 win32{
     CONFIG += static
