@@ -22,7 +22,7 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
     ui(new Ui::DialogShowTableRow)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Dialog /*| Qt::WindowCloseButtonHint 删除屏蔽最大化按钮，否则在macos下不能拖拉窗口放大*/);
+    this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMinMaxButtonsHint);
 
     //初始化表格
     ptr_table =ui->tableWidget;

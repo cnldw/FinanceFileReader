@@ -21,8 +21,7 @@ DialogModifyCell::DialogModifyCell(QString filedType,int filedLength,int filedDe
     ui(new Ui::DialogModifyCell)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Dialog /*| Qt::WindowCloseButtonHint 删除屏蔽最大化按钮，否则在macos下不能拖拉窗口放大*/);
-
+    this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint);
     ui->textEdit->setTextColor(QColor("#FF0000"));
     this->filedType=filedType;
     this->filedLength=filedLength;
