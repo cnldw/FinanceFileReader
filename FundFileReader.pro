@@ -103,6 +103,6 @@ QMAKE_TARGET_COPYRIGHT = Copyright(C) 2018 Liudewei
 macx{
 #macOS下应用图标
 ICON = res/icon.icns
-#macoOS下自动打包配置文件到Resources目录
-QMAKE_POST_LINK = cp $$PWD/config/*.* $$OUT_PWD/FFReader-x64.app/Contents/Resources/
+#macoOS下自动删除上次打包产生的配置文件和打包产生的镜像后，打包配置文件到Resources目录
+QMAKE_POST_LINK = rm -rf $$OUT_PWD/FFReader-x64.app/Contents/Resources/*.ini $$OUT_PWD/FFReader-x64.dmg && cp $$PWD/config/*.* $$OUT_PWD/FFReader-x64.app/Contents/Resources/
 }
