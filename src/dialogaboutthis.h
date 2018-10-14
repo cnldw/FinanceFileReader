@@ -27,7 +27,7 @@ class DialogAboutThis : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogAboutThis(QWidget *parent = 0);
+    explicit DialogAboutThis(QWidget *parent = nullptr);
     ~DialogAboutThis();
 
 private:

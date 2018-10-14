@@ -36,10 +36,10 @@ void Dictionary::addDictionary(QString line)
             QString dic=line.mid(index+1);
             if(dic.contains(":")){
                 QHash<QString,QString>dictionaryItem;
-                QStringList list=dic.split("|");
+                QList <QString>list=dic.split("|");
                 if(list.count()>0){
                     for(int i=0;i<list.count();i++){
-                        QString item=((QString)list.at(i));
+                        QString item=list.at(i);
                         if(item.contains(":")){
                             int sp=item.indexOf(':');
                             dictionaryItem.insert(item.left(sp),item.mid(sp+1));

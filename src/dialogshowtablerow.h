@@ -32,7 +32,7 @@ class DialogShowTableRow : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent = 0);
+    explicit DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent = nullptr);
     ~DialogShowTableRow();
 
 private slots:

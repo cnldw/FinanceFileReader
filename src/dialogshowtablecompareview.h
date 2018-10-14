@@ -36,7 +36,7 @@ class DialogShowTableCompareView : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogShowTableCompareView(QStringList title,QMap<int,QStringList> * compareData,QWidget *parent = 0);
+    explicit DialogShowTableCompareView(QStringList title,QMap<int,QStringList> * compareData,QWidget *parent = nullptr);
     ~DialogShowTableCompareView();
 
 private slots:

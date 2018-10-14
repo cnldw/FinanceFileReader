@@ -32,7 +32,7 @@ class DialogShowTableFiledCheck : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogShowTableFiledCheck(QList<QStringList> * data,QWidget *parent = 0);
+    explicit DialogShowTableFiledCheck(QList<QStringList> * data,QWidget *parent = nullptr);
     ~DialogShowTableFiledCheck();
 
 private slots:

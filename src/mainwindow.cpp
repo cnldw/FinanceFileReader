@@ -261,7 +261,7 @@ void MainWindow::load_CodeInfo(){
     QString codeInipath=getConfigPath()+"CodeInfo.ini";
     if(Utils::isFileExist(codeInipath)){
         //加载ini文件
-        QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,0);
+        QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,nullptr);
         //目前仅接收UTF-8编码的配置文件
         loadedCodeInfoIni.setIniCodec("UTF-8");
         QStringList agencyInfo=loadedCodeInfoIni.childGroups();
@@ -282,7 +282,7 @@ void MainWindow::load_FileType(){
     QString fileTypeInipath=getConfigPath()+"FileType.ini";
     if(Utils::isFileExist(fileTypeInipath)){
         //加载ini文件
-        QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,0);
+        QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,nullptr);
         //目前仅接收UTF-8编码的配置文件
         fileTypeIni.setIniCodec("UTF-8");
         //读取INDEXFILE
@@ -359,7 +359,7 @@ void MainWindow::load_OFDDefinition(){
                 if(nameList.count()==3){
                     //加载ini文件
                     QString prefixName=nameList.at(1)+"_"+nameList.at(2);
-                    QSettings ofdIni(getConfigPath()+fileName,QSettings::IniFormat,0);
+                    QSettings ofdIni(getConfigPath()+fileName,QSettings::IniFormat,nullptr);
                     //目前仅接收UTF-8编码的配置文件
                     ofdIni.setIniCodec("UTF-8");
                     QStringList interfaceList=ofdIni.childGroups();
@@ -738,7 +738,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
         defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
         QString useini="OFD_"+versionName+"_"+versionFromFile+".ini";
         ui->lineEditUseIni->setText(useini);
-        ui->lineEditUseIni->setToolTip(NULL);
+        ui->lineEditUseIni->setToolTip(nullptr);
         //判断对应的配置文件是否存在
         QString path=getConfigPath()+useini;
         if(Utils::isFileExist(path)){
@@ -1062,15 +1062,15 @@ void MainWindow::statusBar_disPlayMessage(QString text){
 }
 
 void MainWindow::clear_Display_Info(){
-    ui->lineEditSendCode->setText(NULL);
-    ui->lineEditRecCode->setText(NULL);
-    ui->lineEditFileTransferDate->setText(NULL);
-    ui->lineEditFileType->setText(NULL);
-    ui->lineEditSenfInfo->setText(NULL);
-    ui->lineEditRecInfo->setText(NULL);
-    ui->lineEditFileDescribe->setText(NULL);
-    ui->lineEditUseIni->setText(NULL);
-    ui->lineEditUseIni->setToolTip(NULL);
+    ui->lineEditSendCode->setText(nullptr);
+    ui->lineEditRecCode->setText(nullptr);
+    ui->lineEditFileTransferDate->setText(nullptr);
+    ui->lineEditFileType->setText(nullptr);
+    ui->lineEditSenfInfo->setText(nullptr);
+    ui->lineEditRecInfo->setText(nullptr);
+    ui->lineEditFileDescribe->setText(nullptr);
+    ui->lineEditUseIni->setText(nullptr);
+    ui->lineEditUseIni->setToolTip(nullptr);
     statusBar_clear_statusBar();
 }
 
@@ -1227,9 +1227,9 @@ void MainWindow::showRowDetails(){
             //字段英文名
             colitem.append(ofd.getfieldList().at(i).getFiledName());
             //字段值
-            colitem.append(NULL);
+            colitem.append(nullptr);
             //字典翻译
-            colitem.append(NULL);
+            colitem.append(nullptr);
         }
         else{
             QString colvalue=ptr_table->item(row,i)->text();
@@ -2578,7 +2578,7 @@ void MainWindow::randomTips(){
     tips.append("源文件某行数据在解析器的第几行?,试试源文件行跳转功能,一键直达...");
     tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
     tips.append("按Ctrl+G切换视图模式,可以隐藏或者显示文件头信息...");
-    srand((unsigned)time(NULL));
+    srand((unsigned)time(nullptr));
     int index =rand()%tips.count();
     statusBar_disPlayMessage("温馨提示:"+tips.at(index));
 }

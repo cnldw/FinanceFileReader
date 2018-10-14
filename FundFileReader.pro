@@ -4,7 +4,8 @@
 #
 #-------------------------------------------------
 QT       += core gui
-
+#要求使用的最低c++版本
+CONFIG += c++11
 #静态编译声明-windows,unix like
 #macOS下使用动态链接库,基于macdeployqt打包即可
 #macOS/Linux公用下面的配置,mac下编译如果不需要静态编译注意关闭
