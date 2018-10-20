@@ -210,44 +210,131 @@ private:
     //加入到比对器的数据
     QMap<int,QStringList> compareData;
 
+    //文件变化标志，如果打开了一个文件并且编辑修改了，则此标志为真
     bool fileChanged=false;
 
+    /**
+     * @brief statusBar_clear_statusBar
+     * 状态栏信息清除方法
+     */
     void statusBar_clear_statusBar();
 
+    /**
+     * @brief statusBar_display_rowsCount
+     * @param rowsCount
+     * 状态栏显示目前打开的文件总记录数的方法
+     */
     void statusBar_display_rowsCount(int rowsCount);
 
+    /**
+     * @brief statusBar_display_rowsAndCol
+     * @param row
+     * @param col
+     * @param length
+     * 状态栏显示目前打开的文件鼠标所在的行和列的方法
+     */
     void statusBar_display_rowsAndCol(int row,int col,int length);
 
+    /**
+     * @brief statusBar_disPlayMessage
+     * @param text
+     * 状态栏显示消息的方法
+     */
     void statusBar_disPlayMessage(QString text);
 
+    /**
+     * @brief clear_Table_Info
+     * 清理表格的方法如果你要新打开一个文件/一个新的类型的文件，请先调用此方法清理上次打开的文件的数据
+     */
     void clear_Table_Info();
 
+    /**
+     * @brief clear_Display_Info
+     * 清理文件标示栏目的方法，诸如文件的发送方接收方的信息等，如果你要打开一个新的文件，先调用此方法
+     */
     void clear_Display_Info();
 
+    /**
+     * @brief clear_oldData
+     * 刷新文件时调用，清理上次的数据
+     */
     void clear_oldData();
 
+    /**
+     * @brief initFile
+     * 文件初始化方法
+     */
     void initFile();
 
+    /**
+     * @brief initStatusBar
+     * 无需关注的一个方法，用于程序启动时初始化状态栏
+     */
     void initStatusBar();
 
+    /**
+     * @brief open_file_Dialog
+     * 弹出选择文件的选择框
+     */
     void open_file_Dialog();
 
+    /**
+     * @brief load_CodeInfo
+     *针对OFD文件，用于加载文件发送方和接受方的代码和名称信息，读取OFD_CodeInfo.ini
+     */
     void load_CodeInfo();
 
+    /**
+     * @brief load_FileType
+     * 加载文件类别标示
+     */
     void load_FileType();
 
+    /**
+     * @brief load_Dictionary
+     * 加载OFD文件的字典信息
+     */
     void load_Dictionary();
 
+    /**
+     * @brief load_OFDDefinition
+     * 加载所有的OFD文件的配置，各个版本的各个文件
+     */
     void load_OFDDefinition();
 
+    /**
+     * @brief load_indexFile
+     * 索引文件的加载
+     */
     void load_indexFile();
 
+    /**
+     * @brief load_ofdFile
+     * @param sendCode
+     * @param fileType
+     * OFD文件的加载
+     */
     void load_ofdFile(QString sendCode,QString fileType);
 
+    /**
+     * @brief save2Csv
+     * @param filename
+     * 保存文件到csv
+     */
     void save2Csv(QString filename);
 
+    /**
+     * @brief save2Html
+     * @param filename
+     * 保存文件到html
+     */
     void save2Html(QString filename);
 
+    /**
+     * @brief save2Xlsx
+     * @param filename
+     * 保存文件到csv
+     */
     void save2Xlsx(QString filename);
 
     //初始化且显示索引文件数据
@@ -261,8 +348,17 @@ private:
     //探视当前屏幕显示的区间范围,从QTableWidgetItem池中获取已经不再显示的item复用，大大降低内存开销
     void display_OFDTable();
 
+    /**
+     * @brief saveOFDFile
+     * @param filepath
+     * OFD文件的保存方法
+     */
     void saveOFDFile(QString filepath);
 
+    /**
+     * @brief randomTips
+     * 启动程序时候的随机提醒信息
+     */
     void randomTips();
 
 };

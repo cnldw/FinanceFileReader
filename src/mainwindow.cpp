@@ -258,7 +258,7 @@ void MainWindow::clear_oldData(){
 }
 
 void MainWindow::load_CodeInfo(){
-    QString codeInipath=getConfigPath()+"CodeInfo.ini";
+    QString codeInipath=getConfigPath()+"OFD_CodeInfo.ini";
     if(Utils::isFileExist(codeInipath)){
         //加载ini文件
         QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,nullptr);
@@ -274,7 +274,7 @@ void MainWindow::load_CodeInfo(){
             loadedCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),info);
         }
     }else{
-        statusBar_disPlayMessage(getConfigPath()+tr("CodeInfo.ini配置丢失"));
+        statusBar_disPlayMessage(getConfigPath()+tr("OFD_CodeInfo.ini配置丢失"));
     }
 }
 
@@ -285,8 +285,8 @@ void MainWindow::load_FileType(){
         QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,nullptr);
         //目前仅接收UTF-8编码的配置文件
         fileTypeIni.setIniCodec("UTF-8");
-        //读取INDEXFILE
-        fileTypeIni.beginGroup("INDEXFILE");
+        //读取OFDINDEXFILE
+        fileTypeIni.beginGroup("OFDINDEXFILE");
         QStringList info =fileTypeIni.childKeys();
         //开始加载可用的索引文件类别
         if(info.count()>0){
@@ -295,10 +295,10 @@ void MainWindow::load_FileType(){
             }
         }
         fileTypeIni.endGroup();
-        //读取DATAFILE
-        fileTypeIni.beginGroup("DATAFILE");
+        //读取OFDDATAFILE
+        fileTypeIni.beginGroup("OFDDATAFILE");
         QStringList info2 =fileTypeIni.childKeys();
-        //开始加载可用的索引文件类别
+        //开始加载可用的OFD数据文件类别
         if(info2.count()>0){
             for(int i=0;i<info2.count();i++){
                 loadedOfdFileInfo.insert(info2.at(i),fileTypeIni.value(info2.at(i)).toString());
@@ -311,7 +311,7 @@ void MainWindow::load_FileType(){
 }
 
 void MainWindow::load_Dictionary(){
-    QString dictionaryInipath=getConfigPath()+"Dictionary.ini";
+    QString dictionaryInipath=getConfigPath()+"OFD_Dictionary.ini";
     if(Utils::isFileExist(dictionaryInipath)){
         //读取配置使用UTF-8
         //字典解析直接按行解析即可,不再使用QSettings
@@ -332,7 +332,7 @@ void MainWindow::load_Dictionary(){
         return;
     }
     else{
-        statusBar_disPlayMessage(getConfigPath()+tr("Dictionary.ini配置丢失"));
+        statusBar_disPlayMessage(getConfigPath()+tr("OFD_Dictionary.ini配置丢失"));
     }
 }
 
