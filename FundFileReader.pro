@@ -52,7 +52,9 @@ SOURCES += \
     src/dialogmodifycell.cpp \
     src/dialogaboutauthor.cpp \
     src/dialogmergetip.cpp \
-    src/dialogaboutthis.cpp
+    src/dialogaboutthis.cpp \
+    src/csvfielddefinition.cpp \
+    src/csvfiledefinition.cpp
 
 HEADERS += \
         src/mainwindow.h \
@@ -67,7 +69,9 @@ HEADERS += \
     src/dialogmodifycell.h \
     src/dialogaboutauthor.h \
     src/dialogmergetip.h \
-    src/dialogaboutthis.h
+    src/dialogaboutthis.h \
+    src/csvfielddefinition.h \
+    src/csvfiledefinition.h
 
 FORMS += \
         src/mainwindow.ui \

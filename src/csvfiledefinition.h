@@ -1,0 +1,50 @@
+#ifndef CSVFILEDEFINITION_H
+#define CSVFILEDEFINITION_H
+#include <QString>
+#include <QList>
+#include "src/csvfielddefinition.h"
+
+class CsvFileDefinition
+{
+private:
+    QString fileName;
+    //配置是否可用
+    bool useAble;
+    //配置不可用原因
+    QString message;
+    //版本
+    QString version;
+    //分隔符
+    QString split;
+    //数据起始行
+    int databeginrowindex;
+    //编码信息
+    QString ecoding;
+    //字段总和
+    int fieldCount;
+    //字段信息
+    QList <CsvFieldDefinition> fieldList;
+
+public:
+    CsvFileDefinition();
+    bool getUseAble() const;
+    void setUseAble(bool value);
+    QString getMessage() const;
+    void setMessage(const QString &value);
+    int getFieldCount() const;
+    void setFieldCount(int value);
+    QList<CsvFieldDefinition> getFieldList() const;
+    void setFieldList(const QList<CsvFieldDefinition> &value);
+    QString getFileName() const;
+    void setFileName(const QString &value);
+    QString getVersion() const;
+    void setVersion(const QString &value);
+    QString getSplit() const;
+    void setSplit(const QString &value);
+    int getDatabeginrowindex() const;
+    void setDatabeginrowindex(int value);
+    QString getEcoding() const;
+    void setEcoding(const QString &value);
+};
+
+#endif // CSVFILEDEFINITION_H

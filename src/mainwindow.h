@@ -55,6 +55,7 @@
 #include "src/dialogaboutauthor.h"
 #include "src/dialogaboutthis.h"
 #include "src/dialogmergetip.h"
+#include "src/csvfiledefinition.h"
 
 namespace Ui {
 class MainWindow;
@@ -151,8 +152,14 @@ private:
     QHash<QString, QString> loadedIndexFileInfo;
     //已经加载的OFD文件的文件名结尾两个字符和文件名的对应关系,比如04,交易类确认
     QHash<QString, QString> loadedOfdFileInfo;
+    //csv
+    QHash<QString, QString> loadedCsvFileInfo;
+    //已经加载的定长文件类别信息
+    QHash<QString, QString> loadedFixedFileInfo;
     //已经加载的各种OFD文件的定义,比如400_21_01,代表V400,第21版本的01文件的定义
     QHash<QString,OFDFileDefinition>loadedOfdDefinitionMap;
+    //已经加载的CSV文件类别信息,csv文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
+    QList<CsvFileDefinition> loadedCsvDefinitionList;
     //用来记录文件头部内容的map,此信息用于文件检查
     QHash<QString,QString> indexFileHeaderMap;
     //用来记录文件标题和内容的list,解析索引类文件时使用
@@ -301,6 +308,12 @@ private:
      * 加载所有的OFD文件的配置，各个版本的各个文件
      */
     void load_OFDDefinition();
+
+    /**
+     * @brief load_CSVDefinition
+     * 加载所有csv类文件的定义
+     */
+    void load_CSVDefinition();
 
     /**
      * @brief load_indexFile

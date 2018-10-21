@@ -63,6 +63,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     load_CodeInfo();
     load_FileType();
     load_OFDDefinition();
+    load_CSVDefinition();
     load_Dictionary();
     //配置加载完毕
     configLoadCompleted=true;
@@ -180,7 +181,7 @@ void MainWindow::acceptVScrollValueChanged(int value)
 void MainWindow::statusBar_clear_statusBar(){
     statusLabel_ptr_showCount->setText(tr("记录数:"));
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
-    statusLabel_ptr_showMessage->setText(NULL);
+    statusLabel_ptr_showMessage->setText(nullptr);
 }
 
 void MainWindow::open_file_Dialog(){
@@ -287,24 +288,45 @@ void MainWindow::load_FileType(){
         fileTypeIni.setIniCodec("UTF-8");
         //读取OFDINDEXFILE
         fileTypeIni.beginGroup("OFDINDEXFILE");
-        QStringList info =fileTypeIni.childKeys();
-        //开始加载可用的索引文件类别
-        if(info.count()>0){
-            for(int i=0;i<info.count();i++){
-                loadedIndexFileInfo.insert(info.at(i),fileTypeIni.value(info.at(i)).toString());
+        QStringList infoList =fileTypeIni.childKeys();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                loadedIndexFileInfo.insert(infoList.at(i),fileTypeIni.value(infoList.at(i)).toString());
             }
         }
         fileTypeIni.endGroup();
+        infoList.clear();
         //读取OFDDATAFILE
         fileTypeIni.beginGroup("OFDDATAFILE");
-        QStringList info2 =fileTypeIni.childKeys();
-        //开始加载可用的OFD数据文件类别
-        if(info2.count()>0){
-            for(int i=0;i<info2.count();i++){
-                loadedOfdFileInfo.insert(info2.at(i),fileTypeIni.value(info2.at(i)).toString());
+        infoList =fileTypeIni.childKeys();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                loadedOfdFileInfo.insert(infoList.at(i),fileTypeIni.value(infoList.at(i)).toString());
             }
         }
-        fileTypeIni.endGroup();}
+        fileTypeIni.endGroup();
+        infoList.clear();
+        //读取CSV数据文件类别
+        fileTypeIni.beginGroup("CSVFILE");
+        infoList =fileTypeIni.childKeys();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                loadedCsvFileInfo.insert(infoList.at(i),fileTypeIni.value(infoList.at(i)).toString());
+            }
+        }
+        fileTypeIni.endGroup();
+        infoList.clear();
+        //读取定长文件类别
+        fileTypeIni.beginGroup("FIXEDFILE");
+        infoList =fileTypeIni.childKeys();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                loadedFixedFileInfo.insert(infoList.at(i),fileTypeIni.value(infoList.at(i)).toString());
+            }
+        }
+        fileTypeIni.endGroup();
+        infoList.clear();
+    }
     else{
         statusBar_disPlayMessage(getConfigPath()+tr("FileType.ini配置丢失"));
     }
@@ -472,6 +494,91 @@ void MainWindow::load_OFDDefinition(){
     }
 }
 
+void MainWindow::load_CSVDefinition(){
+    QString codeInipath=getConfigPath()+"CSVFile.ini";
+    if(Utils::isFileExist(codeInipath)){
+        //加载ini文件
+        QSettings loadedCsvInfoIni(codeInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        loadedCsvInfoIni.setIniCodec("UTF-8");
+        QStringList csvInfo=loadedCsvInfoIni.childGroups();
+        //获取所有csv文件的配置信息，循环存储
+        for(int i=0;i<csvInfo.count();i++){
+            QString csvType=(QString)csvInfo.at(i);
+            if(csvType.contains("|",Qt::CaseSensitive)){
+                CsvFileDefinition fileDef;
+                QStringList list=csvType.split("|");
+                fileDef.setFileName((QString) list.at(0));
+                bool flag;
+                int fieldCount=(list.at(1)).toInt(&flag,10);
+                //字段描述值正确
+                if(flag&&fieldCount>0){
+                    QString splitflag=loadedCsvInfoIni.value(csvType+"/splitflag").toString();
+                    if(splitflag.isEmpty()){
+                        fileDef.setUseAble(false);
+                        fileDef.setMessage("配置文件不存在有效的分割符描述");
+                    }
+                    else{
+                        ////////////////加载头部信息//////////////////
+                        //字段总数
+                        fileDef.setFieldCount(fieldCount);
+                        //分隔符
+                        fileDef.setSplit(splitflag);
+                        //版本
+                        QString version=loadedCsvInfoIni.value(csvType+"/version").toString();
+                        fileDef.setVersion(version);
+                        //数据起始行
+                        bool beginflagok;
+                        int  beginrowindex=loadedCsvInfoIni.value(csvType+"/version").toInt(&beginflagok);
+                        if(!beginflagok){
+                            fileDef.setDatabeginrowindex(0);
+                        }
+                        else if(beginrowindex<1){
+                            fileDef.setDatabeginrowindex(0);
+                        }else{
+                            fileDef.setDatabeginrowindex(beginrowindex);
+                        }
+                        //编码信息
+                        QString encoding=loadedCsvInfoIni.value(csvType+"/encoding").toString();
+                        if(encoding.isEmpty()){
+                            fileDef.setEcoding("UTF-8");
+                        }
+                        else{
+                            fileDef.setEcoding(encoding);
+                        }
+                        //
+                        QList <CsvFieldDefinition> fieldList;
+                        //开始循环加载本文件类型的字段信息///////////////
+                        for(int r=0;r<fieldCount;r++){
+                           CsvFieldDefinition fieldItem;
+                           QString name=loadedCsvInfoIni.value(csvType+"/"+(QString::number(r+1,10))).toString();
+                           if(name.isEmpty()){
+                                fieldItem.setFieldName("未定义的字段名");
+                           }
+                           else{
+                               fieldItem.setFieldName(name);
+                           }
+                           //添加此字段信息到文件定义
+                           fieldList.append(fieldItem);
+                        }
+                        fileDef.setFieldList(fieldList);
+                    }
+                }
+                else{
+                    fileDef.setUseAble(false);
+                    fileDef.setMessage("字段总数描述不是正确可用的数值（字段数需大于0）");
+                    loadedCsvDefinitionList.append(fileDef);
+                }
+
+            }
+            else{
+                //不包含字段数量信息的不属于正确的csv文件配置，跳过
+                continue;
+            }
+        }
+    }else{
+    }
+}
 void MainWindow::initFile(){
     //初始化文件时,检查配置是否加载完毕
     if(!configLoadCompleted){
