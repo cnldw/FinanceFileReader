@@ -259,7 +259,7 @@ void MainWindow::clear_oldData(){
     ofdFileHeaderQStringList.clear();
     ofdFileContentQByteArrayList.clear();
     csvFileHeaderQStringList.clear();
-    csvFileHeaderQStringList.clear();
+    csvFileContentQStringList.clear();
     rowHasloaded.clear();
     compareData.clear();
     //记录当前所在行
@@ -596,7 +596,6 @@ void MainWindow::load_CSVDefinition(){
                     fileDef.setMessage("字段总数描述不是正确可用的数值（字段数需大于0）");
                     loadedCsvDefinitionList.append(fileDef);
                 }
-
             }
             else{
                 //不包含字段数量信息的不属于正确的csv文件配置，跳过
@@ -1151,27 +1150,25 @@ void MainWindow::load_csvFile(QString fileType){
                     }
                 }
                 //查找可用配置结束，开始分析文件到底是哪个版本
+                //最大化获取文件内的样本数据，
+                while (!data.atEnd())
+                {   QStringList lineList;
+                    line = data.readLine();
+                    line=line.remove('\r').remove('\n').trimmed();
+                    csvData.append(line);
+                    row++;
+                    if(row>=maxDataBginRow){
+                        break;
+                    }
+                }
+                dataFile.close();
                 //分析方案是取一行数据或者标题行，看看这个文件到底有多少列，来识别这个文件的版本，优先识别标题，如果是无标题的csv文件，则识别第一行，如果没有标题没有数据行，则跳过
                 if(useAbleVersion.count()<1){
-                    dataFile.close();
                     statusBar_disPlayMessage("CSVFile.ini中未找到关于"+fileType+"文件的配置，请配置后再使用");
                     return;
                 }
                 //存在该类型文件的配置
                 else{
-                    //分两类情况，文件内存在标题行，和不存在标题行
-                    //获取文件内的样本数据
-                    while (!data.atEnd())
-                    {   QStringList lineList;
-                        line = data.readLine();
-                        line=line.remove('\r').remove('\n').trimmed();
-                        csvData.append(line);
-                        row++;
-                        if(row>=maxDataBginRow){
-                            break;
-                        }
-                    }
-                    dataFile.close();
                     //采集到样本数据后开始分析到底是哪个版本的
                     for(int cc=0;cc<useAbleVersion.count();cc++){
                         QString coding=loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getEcoding();
@@ -1197,8 +1194,7 @@ void MainWindow::load_csvFile(QString fileType){
                                         int lineNumber=0;
                                         while (!data2.atEnd())
                                         {
-                                            line2 = data2.readLine();
-                                            line2=line.remove('\r').remove('\n').trimmed();
+                                            line2 = data2.readLine().remove('\r').remove('\n');
                                             if(lineNumber<csv.getDatabeginrowindex()-1){
                                                 csvFileHeaderQStringList.append(line2);
                                             }
@@ -1229,7 +1225,7 @@ void MainWindow::load_csvFile(QString fileType){
                             }
                             //存在数据,以第一行数据分析
                             else{
-                                int fieldCount=csvData.at(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()-1).split(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getSplit()).count();
+                                int fieldCount=csvData.at(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getDatabeginrowindex()-1).split(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getSplit()).count();
                                 //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
                                 if(fieldCount==loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getFieldCount()){
                                     //开始加载数据
@@ -1246,8 +1242,7 @@ void MainWindow::load_csvFile(QString fileType){
                                         int lineNumber=0;
                                         while (!data2.atEnd())
                                         {
-                                            line2 = data2.readLine();
-                                            line2=line.remove('\r').remove('\n').trimmed();
+                                            line2 = data2.readLine().remove('\r').remove('\n');
                                             if(lineNumber<csv.getDatabeginrowindex()-1){
                                                 csvFileHeaderQStringList.append(line2);
                                             }
