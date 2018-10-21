@@ -166,11 +166,17 @@ private:
     QList<QStringList> indexFileDataList;
     //当前正在使用的ofd定义,打开哪个文件,就切换到改文件的ofd定义
     OFDFileDefinition ofd;
+    //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到改文件的csv定义
+    CsvFileDefinition csv;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
     QList<QByteArray> ofdFileContentQByteArrayList;
-    //当前打开的文件类别,目前已支持的文件类型0索引,1OFD数据(销售商和TA交互版本),-1未打开文件
+    //打开的CSV文件的文件头
+    QList<QString> csvFileHeaderQStringList;
+    //打开的CSV文件的数据体
+    QList<QString> csvFileContentQStringList;
+    //当前打开的文件类别,目前已支持的文件类型0索引,1 OFD数据,2CSV文件,-1未打开文件
     int currentOpenFileType=-1;
 
     //字典参数
@@ -330,6 +336,12 @@ private:
     void load_ofdFile(QString sendCode,QString fileType);
 
     /**
+     * @brief load_csvFile
+     * @param fileType
+     * CSV文件的加载
+     */
+    void load_csvFile(QString fileType);
+    /**
      * @brief save2Csv
      * @param filename
      * 保存文件到csv
@@ -356,11 +368,13 @@ private:
 
     //初始化OFD用的表格
     void init_OFDTable();
+    void init_CSVTable(QStringList title);
     //仅仅渲染显示当前指定区域
     //算法原理,当table试图发生滚动或者table控件大小发生变化时
     //探视当前屏幕显示的区间范围,从QTableWidgetItem池中获取已经不再显示的item复用，大大降低内存开销
     void display_OFDTable();
 
+    void display_CSVTable();
     /**
      * @brief saveOFDFile
      * @param filepath

@@ -154,12 +154,17 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow:: resizeEvent (QResizeEvent * event ){
     event->ignore();
-    if(tableHeight!=ptr_table->height()&&!isUpdateData&&currentOpenFileType==1){
+    if(tableHeight!=ptr_table->height()&&!isUpdateData){
         //获取当前table的高度
         int higth=ptr_table->size().height();
         //窗口变大不会影响起始行
         hValueEnd=hValueBegin+(higth/rowHight);
-        display_OFDTable();
+        if(currentOpenFileType==1){
+            display_OFDTable();
+        }
+        if(currentOpenFileType==2){
+            display_CSVTable();
+        }
     }
 }
 
@@ -167,14 +172,19 @@ void MainWindow::acceptVScrollValueChanged(int value)
 {
     UNUSED (value);
     //正在更新表/数据源时不开启自动加载
-    if(!isUpdateData&&currentOpenFileType==1){
+    if(!isUpdateData){
         //新的起始位置
         hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
         //获取当前table的高度
         int higth=ptr_table->size().height();
         //计算要结束的行
         hValueEnd=hValueBegin+(higth/rowHight);
-        display_OFDTable();
+        if(currentOpenFileType==1){
+            display_OFDTable();
+        }
+        if(currentOpenFileType==2){
+            display_CSVTable();
+        }
     }
 }
 
@@ -248,6 +258,8 @@ void MainWindow::clear_oldData(){
     indexFileDataList.clear();
     ofdFileHeaderQStringList.clear();
     ofdFileContentQByteArrayList.clear();
+    csvFileHeaderQStringList.clear();
+    csvFileHeaderQStringList.clear();
     rowHasloaded.clear();
     compareData.clear();
     //记录当前所在行
@@ -529,14 +541,27 @@ void MainWindow::load_CSVDefinition(){
                         fileDef.setVersion(version);
                         //数据起始行
                         bool beginflagok;
-                        int  beginrowindex=loadedCsvInfoIni.value(csvType+"/version").toInt(&beginflagok);
+                        int  beginrowindex=loadedCsvInfoIni.value(csvType+"/datarowbeginndex").toInt(&beginflagok);
                         if(!beginflagok){
                             fileDef.setDatabeginrowindex(0);
                         }
+                        //如果数据起始行小于1，则强制为1
                         else if(beginrowindex<1){
-                            fileDef.setDatabeginrowindex(0);
+                            fileDef.setDatabeginrowindex(1);
                         }else{
                             fileDef.setDatabeginrowindex(beginrowindex);
+                        }
+                        //标题行
+                        bool titleflagok;
+                        int  titlerowindex=loadedCsvInfoIni.value(csvType+"/titlerowindex").toInt(&titleflagok);
+                        if(!titleflagok){
+                            fileDef.setTitlerowindex(0);
+                        }
+                        //如果不存在标题栏目，则标题行强制设置为0
+                        else if(titlerowindex<1){
+                            fileDef.setTitlerowindex(0);
+                        }else{
+                            fileDef.setTitlerowindex(titlerowindex);
                         }
                         //编码信息
                         QString encoding=loadedCsvInfoIni.value(csvType+"/encoding").toString();
@@ -550,18 +575,20 @@ void MainWindow::load_CSVDefinition(){
                         QList <CsvFieldDefinition> fieldList;
                         //开始循环加载本文件类型的字段信息///////////////
                         for(int r=0;r<fieldCount;r++){
-                           CsvFieldDefinition fieldItem;
-                           QString name=loadedCsvInfoIni.value(csvType+"/"+(QString::number(r+1,10))).toString();
-                           if(name.isEmpty()){
+                            CsvFieldDefinition fieldItem;
+                            QString name=loadedCsvInfoIni.value(csvType+"/"+(QString::number(r+1,10))).toString();
+                            if(name.isEmpty()){
                                 fieldItem.setFieldName("未定义的字段名");
-                           }
-                           else{
-                               fieldItem.setFieldName(name);
-                           }
-                           //添加此字段信息到文件定义
-                           fieldList.append(fieldItem);
+                            }
+                            else{
+                                fieldItem.setFieldName(name);
+                            }
+                            //添加此字段信息到文件定义
+                            fieldList.append(fieldItem);
                         }
                         fileDef.setFieldList(fieldList);
+                        fileDef.setUseAble(true);
+                        loadedCsvDefinitionList.append(fileDef);
                     }
                 }
                 else{
@@ -594,24 +621,86 @@ void MainWindow::initFile(){
     //获取完整的文件名
     int first = currentOpenFilePath.lastIndexOf ("/");
     QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
-    if(fileName.length()<10){
-        statusBar_disPlayMessage("无法识别的文件类别,请检查");
-        return;
+    /*
+        文件判断逻辑，先判断是不是OFD，再判断是不是索引，如果都校验失败，则进入非OF体系的判断
+        在明确的确定下，则return完成判断，不明确的情况下，则goto到通用的csv和定长文件判断逻辑去
+    */
+    ////////////////OFD数据文件的判断////////////////////////////
+    if(fileName.startsWith("OFD",Qt::CaseInsensitive)){
+        //开始拆解文件名
+        QString fixName=fileName;
+        if(fixName.contains(".",Qt::CaseInsensitive)){
+            fixName=fixName.mid(0,fixName.indexOf("."));
+        }
+        //OFD文件名处理完毕后，开始拆解文件名
+        QStringList nameList=fixName.split("_");
+        //正常的OFD文件应该至少有5段信息组成,另外中登TA和管理人交互的文件还有批次号,如果不是，则跳转到非OF文件检查
+        if(nameList.count()<5){
+            goto NOT_OF_FILE;
+        }
+        else{
+            /*开始初步分析文件*/
+            //从文件头获取各种信息
+            //Code
+            QString sendCode=nameList.at(1);
+            QString recCode=nameList.at(2);
+            QString dateInfo=nameList.at(3);
+            QString fileTypeCode=nameList.at(4);
+            //从配置文件获取名称信息
+            QString sendName=(loadedCodeInfo.value(sendCode)).getName();
+            QString recName=(loadedCodeInfo.value(recCode)).getName();
+            QString fileTypeName=loadedOfdFileInfo.value(fileTypeCode);
+            //刷新UI
+            ui->lineEditSendCode->setText(sendCode);
+            ui->lineEditRecCode->setText(recCode);
+            ui->lineEditFileTransferDate->setText(dateInfo);
+            ui->lineEditFileType->setText(fileTypeCode);
+            ui->lineEditSenfInfo->setText(sendName);
+            ui->lineEditRecInfo->setText(recName);
+            ui->lineEditFileDescribe->setText(fileTypeName);
+            //判断是否是ok文件
+            if(currentOpenFilePath.toUpper().endsWith(".OK")){
+                statusBar_disPlayMessage("这是一个OFD文件的OK文件,请解析原始数据文件...");
+                return;
+            }
+            //判断是否是恒生系统sqllder导入时生成的bad文件
+            if(currentOpenFilePath.toUpper().endsWith(".BAD")){
+                statusBar_disPlayMessage("这是一个sqlldr导入生成的bad文件,请解析原始数据文件...");
+                return;
+            }
+            //判断是否是恒生系统sqllder导入时的控制文件
+            if(currentOpenFilePath.toUpper().endsWith(".CTL")){
+                statusBar_disPlayMessage("是一个sqlldr导入使用的控制文件,请解析原始数据文件...");
+                return;
+            }
+            //判断是否是快捷方式
+            if(currentOpenFilePath.toUpper().endsWith(".LNK")){
+                statusBar_disPlayMessage("我没猜错的话这是一个文件快捷方式,请解析原始数据文件...");
+                return;
+            }
+            //记录从文件里读取的文件发送信息
+            //此处开始加载OFD数据文件
+            load_ofdFile(sendCode,fileTypeCode);
+            return;
+        }
     }
-    else{
-        //数据文件
-        if(fileName.startsWith("OFD",Qt::CaseInsensitive)){
+    /////////////判断索引文件///////////
+    if(fileName.length()>10&&fileName.startsWith("OF",Qt::CaseInsensitive))
+    {
+        //开始解析非OFD文件
+        QString nameBegin=fileName.left(3);
+        if(!loadedIndexFileInfo.value(nameBegin).isEmpty()){
+            //检索到了文件头标识
             //开始拆解文件名
             QString fixName=fileName;
             if(fixName.contains(".",Qt::CaseInsensitive)){
                 fixName=fixName.mid(0,fixName.indexOf("."));
             }
-            //OFD文件名处理完毕后，开始拆解文件名
+            //索引文件名处理完毕后，开始拆解文件名
             QStringList nameList=fixName.split("_");
-            //正常的OFD文件应该至少有5段信息组成,另外中登TA和管理人交互的文件还有批次号
-            if(nameList.count()<5){
-                statusBar_disPlayMessage("错误的文件名,参考:OFD_XX_XXX_YYYYMMDD_XX.TXT");
-                return;
+            //正常的OFD索引文件应该有5段信息组成
+            if(nameList.count()!=4){
+                goto NOT_OF_FILE;
             }
             else{
                 /*开始初步分析文件*/
@@ -620,92 +709,54 @@ void MainWindow::initFile(){
                 QString sendCode=nameList.at(1);
                 QString recCode=nameList.at(2);
                 QString dateInfo=nameList.at(3);
-                QString fileTypeCode=nameList.at(4);
-                //从配置文件获取名称信息
-                QString sendName=(loadedCodeInfo.value(sendCode)).getName();
-                QString recName=(loadedCodeInfo.value(recCode)).getName();
-                QString fileTypeName=loadedOfdFileInfo.value(fileTypeCode);
+                QString fileIndexTypeCode=nameBegin;
+                //名称信息
+                QString sendName=loadedCodeInfo.value(sendCode).getName();
+                QString recName=loadedCodeInfo.value(recCode).getName();
+                QString fileIndexTypeName=loadedIndexFileInfo.value(fileIndexTypeCode);
                 //刷新UI
                 ui->lineEditSendCode->setText(sendCode);
                 ui->lineEditRecCode->setText(recCode);
                 ui->lineEditFileTransferDate->setText(dateInfo);
-                ui->lineEditFileType->setText(fileTypeCode);
+                ui->lineEditFileType->setText(fileIndexTypeCode);
                 ui->lineEditSenfInfo->setText(sendName);
                 ui->lineEditRecInfo->setText(recName);
-                ui->lineEditFileDescribe->setText(fileTypeName);
-                //判断是否是ok文件
-                if(currentOpenFilePath.toUpper().endsWith(".OK")){
-                    statusBar_disPlayMessage("这是一个OK文件,请解析原始数据文件...");
-                    return;
-                }
-                //判断是否是恒生系统sqllder导入时生成的bad文件
-                if(currentOpenFilePath.toUpper().endsWith(".BAD")){
-                    statusBar_disPlayMessage("这是一个sqlldr导入生成的bad文件,请解析原始数据文件...");
-                    return;
-                }
-                //判断是否是恒生系统sqllder导入时的控制文件
-                if(currentOpenFilePath.toUpper().endsWith(".CTL")){
-                    statusBar_disPlayMessage("是一个sqlldr导入使用的控制文件,请解析原始数据文件...");
-                    return;
-                }
-                //判断是否是快捷方式
-                if(currentOpenFilePath.toUpper().endsWith(".LNK")){
-                    statusBar_disPlayMessage("我没猜错的话这是一个文件快捷方式,请解析原始数据文件...");
-                    return;
-                }
-                //记录从文件里读取的文件发送信息
-                //此处开始加载OFD数据文件
-                load_ofdFile(sendCode,fileTypeCode);
-                return;
-            }
-        }else{
-            //开始解析非OFD文件
-            QString nameBegin=fileName.left(3);
-            if(!loadedIndexFileInfo.value(nameBegin).isEmpty()){
-                //检索到了文件头标识
-                //开始拆解文件名
-                QString fixName=fileName;
-                if(fixName.contains(".",Qt::CaseInsensitive)){
-                    fixName=fixName.mid(0,fixName.indexOf("."));
-                }
-                //索引文件名处理完毕后，开始拆解文件名
-                QStringList nameList=fixName.split("_");
-                //正常的OFD索引文件应该有5段信息组成
-                if(nameList.count()!=4){
-                    statusBar_disPlayMessage("无法识别的非OFD文件,请检查"+getConfigPath()+"FileType.ini配置");
-                    return;
-                }
-                else{
-                    /*开始初步分析文件*/
-                    //从文件头获取各种信息
-                    //Code
-                    QString sendCode=nameList.at(1);
-                    QString recCode=nameList.at(2);
-                    QString dateInfo=nameList.at(3);
-                    QString fileIndexTypeCode=nameBegin;
-                    //名称信息
-                    QString sendName=loadedCodeInfo.value(sendCode).getName();
-                    QString recName=loadedCodeInfo.value(recCode).getName();
-                    QString fileIndexTypeName=loadedIndexFileInfo.value(fileIndexTypeCode);
-                    //刷新UI
-                    ui->lineEditSendCode->setText(sendCode);
-                    ui->lineEditRecCode->setText(recCode);
-                    ui->lineEditFileTransferDate->setText(dateInfo);
-                    ui->lineEditFileType->setText(fileIndexTypeCode);
-                    ui->lineEditSenfInfo->setText(sendName);
-                    ui->lineEditRecInfo->setText(recName);
-                    ui->lineEditFileDescribe->setText(fileIndexTypeName);
-                    //此处开始加载索引文件
-                    load_indexFile();
-                    return;
-                }
-            }else{
-                //没有检索到满足的文件头标识
-                statusBar_disPlayMessage("无法识别的文件类别,请检查"+getConfigPath()+"FileType.ini配置");
+                ui->lineEditFileDescribe->setText(fileIndexTypeName);
+                //此处开始加载索引文件
+                load_indexFile();
                 return;
             }
         }
     }
+    //非OF体系的文件，既不是OFD数据文件，又不是索引文件，则不放弃，检测下是否是csv或者定长文件
+NOT_OF_FILE:
+    //开始判断是不是csv类别的文件
+    //对文件名做全长的递减for循环，最长匹配满足原则
+    QString resultType="";
+    int nameLength=fileName.length();
+    for(int le=nameLength;le>0;le--){
+        if(loadedCsvFileInfo.contains(fileName.left(nameLength-le))){
+            resultType=fileName.left(nameLength-le);
+        }
+    }
+    if(!resultType.isEmpty()){
+        //如果匹配到了，则进行加载csv文件
+        load_csvFile(resultType);
+        return;
+    }
+    //开始判断是不是定长文件
+    for(int le=nameLength;le>0;le--){
+        if(loadedFixedFileInfo.contains(fileName.left(nameLength-le))){
+            resultType=fileName.left(nameLength-le);
+        }
+    }
+    if(!resultType.isEmpty()){
+        //如果匹配到了，则进行加载定长文件文件
+        qDebug()<<loadedFixedFileInfo.value(resultType);
+        return;
+    }
+    statusBar_disPlayMessage("未被配置的文件类别,请检查"+getConfigPath()+"FileType.ini配置");
+    return;
 }
 
 void MainWindow::load_indexFile(){
@@ -1046,6 +1097,184 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
     }
 }
 
+void MainWindow::load_csvFile(QString fileType){
+    currentOpenFileType=2;
+    //使用的配置
+    ui->lineEditUseIni->setText("CSVFile.ini");
+    //文件描述
+    ui->lineEditFileDescribe->setText(loadedCsvFileInfo.value(fileType));
+    //由于csv文件有可能同一个文件名，但是实际文件版本不同，所以需要做版本校验
+    QFile dataFile(currentOpenFilePath);
+    //优先做空文件判断
+    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    {
+        QTextStream data(&dataFile);
+        QList<QString>csvData;
+        QString line;
+        //当前读取到的行数
+        int row=0;
+        while (!data.atEnd())
+        {   QStringList lineList;
+            line = data.readLine();
+            line=line.remove('\r').remove('\n').trimmed();
+            csvData.append(line);
+            if(row>0){
+                break;
+            }
+            row++;
+        }
+        //如果一行数据都没读到，则提示是空文件
+        if(row==0){
+            dataFile.close();
+            statusBar_disPlayMessage("空的CSV文件,没有任何数据记录");
+            return;
+        }
+        //如果至少读取到了一行，则不是空文件开始判断所属版本，遍历当前文件类型的版本
+        else{
+            int dd=0;
+            //关于此文件类型可用的版本
+            if(loadedCsvDefinitionList.count()<1){
+                dataFile.close();
+                statusBar_disPlayMessage("CSVFile.ini中无任何CSV文件的配置，请配置后再使用");
+                return;
+            }
+            else{
+                QList<int> useAbleVersion;
+                int maxDataBginRow=0;
+                for(;dd<loadedCsvDefinitionList.count();dd++){
+                    //如果文件名可用且配置可用，则加入
+                    if(loadedCsvDefinitionList.at(dd).getFileName()==fileType&&loadedCsvDefinitionList.at(dd).getUseAble()){
+                        useAbleVersion.append(dd);
+                        if(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()>maxDataBginRow){
+                            maxDataBginRow=loadedCsvDefinitionList.at(dd).getDatabeginrowindex();
+                        }
+                    }
+                }
+                //查找可用配置结束，开始分析文件到底是哪个版本
+                //分析方案是取一行数据或者标题行，看看这个文件到底有多少列，来识别这个文件的版本，优先识别标题，如果是无标题的csv文件，则识别第一行，如果没有标题没有数据行，则跳过
+                if(useAbleVersion.count()<1){
+                    dataFile.close();
+                    statusBar_disPlayMessage("CSVFile.ini中未找到关于"+fileType+"文件的配置，请配置后再使用");
+                    return;
+                }
+                //存在该类型文件的配置
+                else{
+                    //分两类情况，文件内存在标题行，和不存在标题行
+                    //获取文件内的样本数据
+                    while (!data.atEnd())
+                    {   QStringList lineList;
+                        line = data.readLine();
+                        line=line.remove('\r').remove('\n').trimmed();
+                        csvData.append(line);
+                        row++;
+                        if(row>=maxDataBginRow){
+                            break;
+                        }
+                    }
+                    dataFile.close();
+                    //采集到样本数据后开始分析到底是哪个版本的
+                    for(int cc=0;cc<useAbleVersion.count();cc++){
+                        QString coding=loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getEcoding();
+                        qDebug()<<coding;
+                        QTextCodec::setCodecForLocale(QTextCodec::codecForName(coding.toLocal8Bit()));
+                        //存在标题行
+                        if(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()>0){
+                            //存在标题行但是文件内的数据行数低于标题所在行，无内容，无法判断
+                            if(csvData.count()<loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()){
+                                continue;
+                            }
+                            //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
+                            else{
+                                QStringList fieldTitle=csvData.at(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()-1).split(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getSplit());
+                                //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
+                                if(fieldTitle.count()==loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getFieldCount()){
+                                    //开始加载数据
+                                    csv=loadedCsvDefinitionList.at(useAbleVersion.at(cc));
+                                    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                                    {
+                                        QTextStream data2(&dataFile);
+                                        QString line2;
+                                        int lineNumber=0;
+                                        while (!data2.atEnd())
+                                        {
+                                            line2 = data2.readLine();
+                                            line2=line.remove('\r').remove('\n').trimmed();
+                                            if(lineNumber<csv.getDatabeginrowindex()-1){
+                                                csvFileHeaderQStringList.append(line2);
+                                            }
+                                            else{
+                                                csvFileContentQStringList.append(line2);
+                                            }
+                                            lineNumber++;
+                                        }
+                                        dataFile.close();
+                                    }
+                                    for(int xx=0;xx<csvFileContentQStringList.count();xx++){
+                                        qDebug()<<csvFileContentQStringList.at(xx);
+                                    }
+                                    //初始化表格
+                                    init_CSVTable(fieldTitle);
+                                    return;
+                                }
+                                else{
+                                    continue;
+                                }
+                            }
+                        }
+                        //如果不存在标题行
+                        else{
+                            //不存在标题并且文件内的数据行数低于第一行数据，无内容，无法判断
+                            if(csvData.count()<loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getDatabeginrowindex()){
+                                continue;
+                            }
+                            //存在数据,以第一行数据分析
+                            else{
+                                int fieldCount=csvData.at(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()-1).split(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getSplit()).count();
+                                //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
+                                if(fieldCount==loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getFieldCount()){
+                                    //开始加载数据
+                                    csv=loadedCsvDefinitionList.at(useAbleVersion.at(cc));
+                                    //文件内没标题的从配置读取
+                                    QStringList fieldTitle;
+                                    for(int tc=0;tc<csv.getFieldList().count();tc++){
+                                       fieldTitle.append(csv.getFieldList().at(tc).getFieldName());
+                                    }
+                                    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                                    {
+                                        QTextStream data2(&dataFile);
+                                        QString line2;
+                                        int lineNumber=0;
+                                        while (!data2.atEnd())
+                                        {
+                                            line2 = data2.readLine();
+                                            line2=line.remove('\r').remove('\n').trimmed();
+                                            if(lineNumber<csv.getDatabeginrowindex()-1){
+                                                csvFileHeaderQStringList.append(line2);
+                                            }
+                                            else{
+                                                csvFileContentQStringList.append(line2);
+                                            }
+                                            lineNumber++;
+                                        }
+                                        dataFile.close();
+                                    }
+                                    //初始化表格
+                                    init_CSVTable(fieldTitle);
+                                    return;
+                                }
+                                else{
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    statusBar_disPlayMessage("未找到"+fileType+"文件合适的版本配置或者文件为无数据记录的空文件");
+                }
+            }
+        }
+    }
+
+}
 void MainWindow::init_display_IndexTable(){
     if(!indexFileDataList.empty()){
         int colCount=1;
@@ -1119,6 +1348,35 @@ void MainWindow::init_OFDTable(){
     }
 }
 
+void MainWindow::init_CSVTable(QStringList title){
+    int colCount=title.count();
+    int rowCount=csvFileContentQStringList.count();
+    ptr_table->setColumnCount(colCount);
+    ptr_table->setRowCount(rowCount);
+    //设置标题
+    ptr_table->setHorizontalHeaderLabels(title);
+    //设置表格的选择方式
+    ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
+    //设置编辑方式
+    ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
+    //设置表格的内容
+    //按行读取ofdFileContentQByteArrayList,边读取边解析
+    if(rowCount>0){
+        //获取当前table的高度
+        int higth=ptr_table->size().height();
+        hValueBegin=0;
+        hValueEnd=hValueBegin+(higth/rowHight);
+        display_CSVTable();
+    }
+    else{
+        //如果没有数据,也执行下自动设置列宽,增加空数据的显示美感
+        ptr_table->resizeColumnsToContents();
+    }
+    statusBar_display_rowsCount(rowCount);
+    statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
+}
+
 /**
  * @brief MainWindow::display_OFDTable
  *
@@ -1146,6 +1404,38 @@ void MainWindow::display_OFDTable(){
             rowHasloaded.append(row);
             for(int col=0;col<colCount;col++){
                 QString values=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
+                //仅对数据非空单元格赋值
+                if(!values.isEmpty()){
+                    QTableWidgetItem *item= new QTableWidgetItem();
+                    ptr_table->setItem(row, col, item);
+                    item->setText(values);
+                }
+            }
+        }
+    }
+    ptr_table->resizeColumnsToContents();
+}
+
+void MainWindow::display_CSVTable(){
+    int rowCount=ptr_table->rowCount();
+    int colCount=ptr_table->columnCount();
+    //防止渲染边界超过表总行数
+    if(hValueBegin<0){
+        hValueBegin=0;
+    }
+    if(hValueEnd>=rowCount){
+        hValueEnd=rowCount-1;
+    }
+    for (int row = hValueBegin; row <= hValueEnd; ++row)
+    {
+        //如果此行已经加载过了,则不再加载
+        if(rowHasloaded.contains(row)){
+            continue;
+        }else{
+            rowHasloaded.append(row);
+            QStringList rowdata=csvFileContentQStringList.at(row).split(csv.getSplit());
+            for(int col=0;col<colCount&&col<rowdata.count();col++){
+                QString values=rowdata.at(col);
                 //仅对数据非空单元格赋值
                 if(!values.isEmpty()){
                     QTableWidgetItem *item= new QTableWidgetItem();
@@ -2751,12 +3041,17 @@ void MainWindow::on_viewMode_triggered()
         ui->frameInfo->setHidden(true);
         ui->viewMode->setText("标准视图");
         //切换到精简模式后，界面可视区域变大，要重新显示范围
-        if(tableHeight!=ptr_table->height()&&!isUpdateData&&currentOpenFileType==1){
+        if(tableHeight!=ptr_table->height()&&!isUpdateData){
             //获取当前table的高度
             int higth=ptr_table->size().height()+addHight;
             //窗口变大不会影响起始行
             hValueEnd=hValueBegin+(higth/rowHight);
-            display_OFDTable();
+            if(currentOpenFileType==1){
+                display_OFDTable();
+            }
+            if(currentOpenFileType==2){
+                display_CSVTable();
+            }
         }
     }
     else{

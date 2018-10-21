@@ -90,6 +90,16 @@ void CsvFileDefinition::setEcoding(const QString &value)
     ecoding = value;
 }
 
+int CsvFileDefinition::getTitlerowindex() const
+{
+    return titlerowindex;
+}
+
+void CsvFileDefinition::setTitlerowindex(int value)
+{
+    titlerowindex = value;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
 

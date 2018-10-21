@@ -16,6 +16,7 @@ private:
     QString version;
     //分隔符
     QString split;
+    int titlerowindex;
     //数据起始行
     int databeginrowindex;
     //编码信息
@@ -45,6 +46,8 @@ public:
     void setDatabeginrowindex(int value);
     QString getEcoding() const;
     void setEcoding(const QString &value);
+    int getTitlerowindex() const;
+    void setTitlerowindex(int value);
 };
 
 #endif // CSVFILEDEFINITION_H
