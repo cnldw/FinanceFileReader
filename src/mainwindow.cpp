@@ -541,6 +541,9 @@ void MainWindow::load_CSVDefinition(){
                                 fileDef.setFieldCount(fieldCount);
                                 //分隔符
                                 fileDef.setSplit(splitflag);
+                                //是否以分隔符做结尾
+                                QString endwithflag=loadedCsvInfoIni.value(csvType+"/endwithflag").toString();
+                                fileDef.setEndwithflag(endwithflag);
                                 //版本
                                 QString version=loadedCsvInfoIni.value(csvType+"/version").toString();
                                 fileDef.setVersion(version);
@@ -737,28 +740,23 @@ void MainWindow::initFile(){
     //非OF体系的文件，既不是OFD数据文件，又不是索引文件，则不放弃，检测下是否是csv或者定长文件
 NOT_OF_FILE:
     //开始判断是不是csv类别的文件
-    //对文件名做全长的递减for循环，最长匹配满足原则
+    //对文件名做正则匹配
     QString resultType="";
-    int nameLength=fileName.length();
-    for(int le=nameLength;le>0;le--){
-        if(loadedCsvFileInfo.contains(fileName.left(nameLength-le))){
-            resultType=fileName.left(nameLength-le);
+    QHash<QString, QString>::iterator h;
+    for(h=loadedCsvFileInfo.begin(); h!=loadedCsvFileInfo.end(); ++h){
+        QString Name=h.key();
+        Name.replace("*","\\S*");
+        QString pattern(Name);
+        QRegExp rx(pattern);
+        bool match = rx.exactMatch(fileName);
+        if(match){
+            resultType=h.key();
         }
     }
+    //TODO 这里待优化匹配逻辑
     if(!resultType.isEmpty()){
         //如果匹配到了，则进行加载csv文件
         load_csvFile(resultType);
-        return;
-    }
-    //开始判断是不是定长文件
-    for(int le=nameLength;le>0;le--){
-        if(loadedFixedFileInfo.contains(fileName.left(nameLength-le))){
-            resultType=fileName.left(nameLength-le);
-        }
-    }
-    if(!resultType.isEmpty()){
-        //如果匹配到了，则进行加载定长文件文件
-        qDebug()<<loadedFixedFileInfo.value(resultType);
         return;
     }
     statusBar_disPlayMessage("未被配置的文件类别,无法解析...");
@@ -1158,7 +1156,12 @@ void MainWindow::load_csvFile(QString fileType){
                             }
                             //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
                             else{
-                                QStringList fieldTitle=csvData.at(loadedCsvDefinitionList.at(dd).getTitlerowindex()-1).split(loadedCsvDefinitionList.at(dd).getSplit());
+                                QString titleRowString=csvData.at(loadedCsvDefinitionList.at(dd).getTitlerowindex()-1);
+                                //如果需要忽略最后一个多余的分隔符
+                                if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
+                                       titleRowString= titleRowString.left(titleRowString.length()-1);
+                                }
+                                QStringList fieldTitle=titleRowString.split(loadedCsvDefinitionList.at(dd).getSplit());
                                 //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
                                 if(fieldTitle.count()==loadedCsvDefinitionList.at(dd).getFieldCount()){
                                     //开始加载数据
@@ -1179,7 +1182,12 @@ void MainWindow::load_csvFile(QString fileType){
                             }
                             //存在数据,以第一行数据分析
                             else{
-                                int fieldCount=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1).split(loadedCsvDefinitionList.at(dd).getSplit()).count();
+                                QString firstDataRowString=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1);
+                                //如果需要忽略最后一个多余的分隔符
+                                if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
+                                       firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
+                                }
+                                int fieldCount=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
                                 //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
                                 if(fieldCount==loadedCsvDefinitionList.at(dd).getFieldCount()){
                                     //开始加载数据

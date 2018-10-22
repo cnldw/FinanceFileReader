@@ -110,6 +110,16 @@ void CsvFileDefinition::setFileIni(const QString &value)
     fileIni = value;
 }
 
+QString CsvFileDefinition::getEndwithflag() const
+{
+    return endwithflag;
+}
+
+void CsvFileDefinition::setEndwithflag(const QString &value)
+{
+    endwithflag = value;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
 
