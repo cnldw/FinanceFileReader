@@ -23,6 +23,8 @@ private:
     QString ecoding;
     //字段总和
     int fieldCount;
+    //所属配置文件
+    QString fileIni;
     //字段信息
     QList <CsvFieldDefinition> fieldList;
 
@@ -48,6 +50,8 @@ public:
     void setEcoding(const QString &value);
     int getTitlerowindex() const;
     void setTitlerowindex(int value);
+    QString getFileIni() const;
+    void setFileIni(const QString &value);
 };
 
 #endif // CSVFILEDEFINITION_H

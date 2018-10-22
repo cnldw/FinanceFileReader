@@ -100,6 +100,16 @@ void CsvFileDefinition::setTitlerowindex(int value)
     titlerowindex = value;
 }
 
+QString CsvFileDefinition::getFileIni() const
+{
+    return fileIni;
+}
+
+void CsvFileDefinition::setFileIni(const QString &value)
+{
+    fileIni = value;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
 
