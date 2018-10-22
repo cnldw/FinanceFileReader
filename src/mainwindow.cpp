@@ -159,6 +159,7 @@ void MainWindow:: resizeEvent (QResizeEvent * event ){
         int higth=ptr_table->size().height();
         //窗口变大不会影响起始行
         hValueEnd=hValueBegin+(higth/rowHight);
+        //不同数据类型插入点
         if(currentOpenFileType==1){
             display_OFDTable();
         }
@@ -179,6 +180,7 @@ void MainWindow::acceptVScrollValueChanged(int value)
         int higth=ptr_table->size().height();
         //计算要结束的行
         hValueEnd=hValueBegin+(higth/rowHight);
+        //不同数据类型插入点
         if(currentOpenFileType==1){
             display_OFDTable();
         }
@@ -229,6 +231,9 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
     if(length==-1){
         statusLabel_ptr_showRowAndCol->setText(tr("源文件%1行").arg(QString::number(row)));
     }
+    else if(length==0){
+        statusLabel_ptr_showRowAndCol->setText("源文件"+QString::number(row)+"行,"+QString::number(col)+"列");
+    }
     else{
         statusLabel_ptr_showRowAndCol->setText("源文件"+QString::number(row)+"行,"+QString::number(col)+"列,长度为"+QString::number(length));
     }
@@ -254,6 +259,7 @@ QString MainWindow::getConfigPath(){
 }
 
 void MainWindow::clear_oldData(){
+    //不同数据类型插入点
     indexFileHeaderMap.clear();
     indexFileDataList.clear();
     ofdFileHeaderQStringList.clear();
@@ -314,26 +320,6 @@ void MainWindow::load_FileType(){
         if(infoList.count()>0){
             for(int i=0;i<infoList.count();i++){
                 loadedOfdFileInfo.insert(infoList.at(i),fileTypeIni.value(infoList.at(i)).toString());
-            }
-        }
-        fileTypeIni.endGroup();
-        infoList.clear();
-        //读取CSV数据文件类别
-        fileTypeIni.beginGroup("CSVFILE");
-        infoList =fileTypeIni.childKeys();
-        if(infoList.count()>0){
-            for(int i=0;i<infoList.count();i++){
-                loadedCsvFileInfo.insert(infoList.at(i),fileTypeIni.value(infoList.at(i)).toString());
-            }
-        }
-        fileTypeIni.endGroup();
-        infoList.clear();
-        //读取定长文件类别
-        fileTypeIni.beginGroup("FIXEDFILE");
-        infoList =fileTypeIni.childKeys();
-        if(infoList.count()>0){
-            for(int i=0;i<infoList.count();i++){
-                loadedFixedFileInfo.insert(infoList.at(i),fileTypeIni.value(infoList.at(i)).toString());
             }
         }
         fileTypeIni.endGroup();
@@ -1104,112 +1090,61 @@ void MainWindow::load_csvFile(QString fileType){
     ui->lineEditFileDescribe->setText(loadedCsvFileInfo.value(fileType));
     //由于csv文件有可能同一个文件名，但是实际文件版本不同，所以需要做版本校验
     QFile dataFile(currentOpenFilePath);
-    //优先做空文件判断
-    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
-    {
-        QTextStream data(&dataFile);
-        QList<QString>csvData;
-        QString line;
-        //当前读取到的行数
-        int row=0;
-        while (!data.atEnd())
-        {   QStringList lineList;
-            line = data.readLine();
-            line=line.remove('\r').remove('\n').trimmed();
-            csvData.append(line);
-            if(row>0){
-                break;
-            }
-            row++;
-        }
-        //如果一行数据都没读到，则提示是空文件
-        if(row==0){
-            dataFile.close();
-            statusBar_disPlayMessage("空的CSV文件,没有任何数据记录");
-            return;
-        }
-        //如果至少读取到了一行，则不是空文件开始判断所属版本，遍历当前文件类型的版本
-        else{
-            int dd=0;
-            //关于此文件类型可用的版本
-            if(loadedCsvDefinitionList.count()<1){
-                dataFile.close();
-                statusBar_disPlayMessage("CSVFile.ini中无任何CSV文件的配置，请配置后再使用");
-                return;
-            }
-            else{
-                QList<int> useAbleVersion;
-                int maxDataBginRow=0;
-                for(;dd<loadedCsvDefinitionList.count();dd++){
-                    //如果文件名可用且配置可用，则加入
-                    if(loadedCsvDefinitionList.at(dd).getFileName()==fileType&&loadedCsvDefinitionList.at(dd).getUseAble()){
-                        useAbleVersion.append(dd);
-                        if(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()>maxDataBginRow){
-                            maxDataBginRow=loadedCsvDefinitionList.at(dd).getDatabeginrowindex();
-                        }
+    //关于CSV文件类型可用的版本
+    if(loadedCsvDefinitionList.count()<1){
+        statusBar_disPlayMessage("CSVFile.ini中无任何CSV文件的配置，请配置后再使用");
+        return;
+    }
+    else{
+        QList<int> useAbleVersion;
+        int dd=0;
+        for(;dd<loadedCsvDefinitionList.count();dd++){
+            //如果文件名可用且配置可用，则加入
+            if(loadedCsvDefinitionList.at(dd).getFileName()==fileType&&loadedCsvDefinitionList.at(dd).getUseAble()){
+                useAbleVersion.append(dd);
+                //设置文件编码
+                QString coding=loadedCsvDefinitionList.at(dd).getEcoding();
+                QTextCodec::setCodecForLocale(QTextCodec::codecForName(coding.toLocal8Bit()));
+                //打开并开始探测文件内容
+                if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                {
+                    int dataBeginRow=loadedCsvDefinitionList.at(dd).getDatabeginrowindex();
+                    //查找可用配置结束，开始分析文件到底是哪个版本
+                    //最大化获取文件内的样本数据
+                    QTextStream data(&dataFile);
+                    QList<QString>csvData;
+                    QString line;
+                    //当前读取到的行数
+                    int row=0;
+                    while (!data.atEnd()&&row<dataBeginRow)
+                    {   QStringList lineList;
+                        line = data.readLine();
+                        line=line.remove('\r').remove('\n').trimmed();
+                        csvData.append(line);
+                        row++;
                     }
-                }
-                //查找可用配置结束，开始分析文件到底是哪个版本
-                //最大化获取文件内的样本数据，
-                while (!data.atEnd())
-                {   QStringList lineList;
-                    line = data.readLine();
-                    line=line.remove('\r').remove('\n').trimmed();
-                    csvData.append(line);
-                    row++;
-                    if(row>=maxDataBginRow){
-                        break;
+                    dataFile.close();
+                    //如果一行数据都没读到，则提示是空文件，结束探测
+                    if(row==0){
+                        dataFile.close();
+                        statusBar_disPlayMessage("空的CSV文件,没有任何数据记录");
+                        return;
                     }
-                }
-                dataFile.close();
-                //分析方案是取一行数据或者标题行，看看这个文件到底有多少列，来识别这个文件的版本，优先识别标题，如果是无标题的csv文件，则识别第一行，如果没有标题没有数据行，则跳过
-                if(useAbleVersion.count()<1){
-                    statusBar_disPlayMessage("CSVFile.ini中未找到关于"+fileType+"文件的配置，请配置后再使用");
-                    return;
-                }
-                //存在该类型文件的配置
-                else{
-                    //采集到样本数据后开始分析到底是哪个版本的
-                    for(int cc=0;cc<useAbleVersion.count();cc++){
-                        QString coding=loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getEcoding();
-                        qDebug()<<coding;
-                        QTextCodec::setCodecForLocale(QTextCodec::codecForName(coding.toLocal8Bit()));
+                    else{
                         //存在标题行
-                        if(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()>0){
+                        if(loadedCsvDefinitionList.at(dd).getTitlerowindex()>0){
                             //存在标题行但是文件内的数据行数低于标题所在行，无内容，无法判断
-                            if(csvData.count()<loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()){
+                            if(csvData.count()<loadedCsvDefinitionList.at(dd).getTitlerowindex()){
                                 continue;
                             }
                             //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
                             else{
-                                QStringList fieldTitle=csvData.at(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getTitlerowindex()-1).split(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getSplit());
+                                QStringList fieldTitle=csvData.at(loadedCsvDefinitionList.at(dd).getTitlerowindex()-1).split(loadedCsvDefinitionList.at(dd).getSplit());
                                 //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
-                                if(fieldTitle.count()==loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getFieldCount()){
+                                if(fieldTitle.count()==loadedCsvDefinitionList.at(dd).getFieldCount()){
                                     //开始加载数据
-                                    csv=loadedCsvDefinitionList.at(useAbleVersion.at(cc));
-                                    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
-                                    {
-                                        QTextStream data2(&dataFile);
-                                        QString line2;
-                                        int lineNumber=0;
-                                        while (!data2.atEnd())
-                                        {
-                                            line2 = data2.readLine().remove('\r').remove('\n');
-                                            if(lineNumber<csv.getDatabeginrowindex()-1){
-                                                csvFileHeaderQStringList.append(line2);
-                                            }
-                                            else{
-                                                csvFileContentQStringList.append(line2);
-                                            }
-                                            lineNumber++;
-                                        }
-                                        dataFile.close();
-                                    }
-                                    for(int xx=0;xx<csvFileContentQStringList.count();xx++){
-                                        qDebug()<<csvFileContentQStringList.at(xx);
-                                    }
-                                    //初始化表格
-                                    init_CSVTable(fieldTitle);
+                                    csv=loadedCsvDefinitionList.at(dd);
+                                    load_csvFileData(fieldTitle);
                                     return;
                                 }
                                 else{
@@ -1220,41 +1155,22 @@ void MainWindow::load_csvFile(QString fileType){
                         //如果不存在标题行
                         else{
                             //不存在标题并且文件内的数据行数低于第一行数据，无内容，无法判断
-                            if(csvData.count()<loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getDatabeginrowindex()){
+                            if(csvData.count()<loadedCsvDefinitionList.at(dd).getDatabeginrowindex()){
                                 continue;
                             }
                             //存在数据,以第一行数据分析
                             else{
-                                int fieldCount=csvData.at(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getDatabeginrowindex()-1).split(loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getSplit()).count();
+                                int fieldCount=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1).split(loadedCsvDefinitionList.at(dd).getSplit()).count();
                                 //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
-                                if(fieldCount==loadedCsvDefinitionList.at(useAbleVersion.at(cc)).getFieldCount()){
+                                if(fieldCount==loadedCsvDefinitionList.at(dd).getFieldCount()){
                                     //开始加载数据
-                                    csv=loadedCsvDefinitionList.at(useAbleVersion.at(cc));
+                                    csv=loadedCsvDefinitionList.at(dd);
                                     //文件内没标题的从配置读取
                                     QStringList fieldTitle;
                                     for(int tc=0;tc<csv.getFieldList().count();tc++){
-                                       fieldTitle.append(csv.getFieldList().at(tc).getFieldName());
+                                        fieldTitle.append(csv.getFieldList().at(tc).getFieldName());
                                     }
-                                    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
-                                    {
-                                        QTextStream data2(&dataFile);
-                                        QString line2;
-                                        int lineNumber=0;
-                                        while (!data2.atEnd())
-                                        {
-                                            line2 = data2.readLine().remove('\r').remove('\n');
-                                            if(lineNumber<csv.getDatabeginrowindex()-1){
-                                                csvFileHeaderQStringList.append(line2);
-                                            }
-                                            else{
-                                                csvFileContentQStringList.append(line2);
-                                            }
-                                            lineNumber++;
-                                        }
-                                        dataFile.close();
-                                    }
-                                    //初始化表格
-                                    init_CSVTable(fieldTitle);
+                                    load_csvFileData(fieldTitle);
                                     return;
                                 }
                                 else{
@@ -1263,13 +1179,55 @@ void MainWindow::load_csvFile(QString fileType){
                             }
                         }
                     }
-                    statusBar_disPlayMessage("未找到"+fileType+"文件合适的版本配置或者文件为无数据记录的空文件");
+                }
+                else{
+                    statusBar_disPlayMessage("文件:"+currentOpenFilePath+"打开失败,请重试");
+                    return;
                 }
             }
         }
+        //如果遍历完还没找到合适的配置，则提示
+        statusBar_disPlayMessage("解析失败,未在CSVFile.ini中找到适合该版本文件的有效配置，或者文件无有效数据记录");
+        return;
     }
-
 }
+
+void MainWindow::load_csvFileData(QStringList fieldTitle){
+    QFile dataFile(currentOpenFilePath);
+    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    {
+        QTextStream data2(&dataFile);
+        QString line2;
+        int lineNumber=0;
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        while (!data2.atEnd())
+        {
+            line2 = data2.readLine().remove('\r').remove('\n');
+            if(lineNumber<csv.getDatabeginrowindex()-1){
+                csvFileHeaderQStringList.append(line2);
+            }
+            else{
+                csvFileContentQStringList.append(line2);
+            }
+            lineNumber++;
+            //为了防止UI卡死,进行循环读取文件时,考虑支持下窗口事件接收
+            //每读取1000行更新下窗口事件
+            if((lineNumber%1000)==0){
+                statusBar_disPlayMessage(QString("文件读取中,已读取数据记录%1行").arg(QString::number(lineNumber)));
+                qApp->processEvents();
+            }
+        }
+        QApplication::restoreOverrideCursor();
+        dataFile.close();
+    }
+    //初始化表格
+    init_CSVTable(fieldTitle);
+}
+
+/**
+ * @brief MainWindow::init_display_IndexTable
+ * OFD索引数据的表格显示
+ */
 void MainWindow::init_display_IndexTable(){
     if(!indexFileDataList.empty()){
         int colCount=1;
@@ -1443,6 +1401,7 @@ void MainWindow::display_CSVTable(){
     ptr_table->resizeColumnsToContents();
 }
 
+
 void MainWindow::clear_Table_Info(){
     ptr_table->clearContents();
     ptr_table->setRowCount(0);
@@ -1530,7 +1489,7 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
         }
     }
-    //***********未实现的数据类型插入点
+    //数据类型插入点
 }
 
 void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
@@ -1563,6 +1522,23 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
             }
             else{
                 statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
+            }
+        }
+        else if(currentOpenFileType==2){
+            //记录当前所在行
+            rowcurrent=currentRow;
+            //当前所在列
+            colcurrent=currentColumn;
+            //更新列跳转搜索开始列
+            colSearch=currentColumn;
+            int rowInFile=csvFileHeaderQStringList.count()+currentRow+1;
+            int colInFile=currentColumn+1;
+            statusBar_display_rowsAndCol(rowInFile,colInFile,0);
+            if(ptr_table->item(currentRow,currentColumn)!=nullptr){
+                QString text=ptr_table->item(currentRow,currentColumn)->text();
+                if(!text.isEmpty()){
+                    statusBar_disPlayMessage(text);
+                }
             }
         }
         //***********未实现的数据类型插入点
