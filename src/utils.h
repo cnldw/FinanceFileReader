@@ -21,7 +21,7 @@
 #include <QFileInfo>
 #include <QList>
 #include "src/ofdfiledefinition.h"
-#include "src/fielddefinition.h"
+#include "src/csvfiledefinition.h"
 
 namespace Ui {
 class Utils;
@@ -45,6 +45,15 @@ public:
       * 由于ofd文件原始记录可能非常大,需要使用指针
       */
      static QString getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
+     /**
+      * @brief getRowCsvValuesFromcsvFileContentQStringList
+      * @param csvFileContentQStringList
+      * @param csv
+      * @param row
+      * @return
+      * csv文件的数据行分隔方法
+      */
+     static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QString> * csvFileContentQStringList,CsvFileDefinition * csv,int row);
      static QString CovertInt2ExcelCol(int number);
 };
 

@@ -218,7 +218,8 @@ private:
     bool dataBlocked=false;
 
     //已经加载的行,用于懒加载是判断哪些行已经加载,避免重复加载
-    QList<int> rowHasloaded;
+    //优化，使用QHash提高大文件下多行数据加载后的查找效率
+    QHash <int,bool> rowHasloaded;
 
     //加入到比对器的数据
     QMap<int,QStringList> compareData;

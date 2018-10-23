@@ -7,7 +7,9 @@
 class CsvFileDefinition
 {
 private:
+    //使用的正则匹配文件名
     QString fileName;
+    QString fileDescribe;
     //配置是否可用
     bool useAble;
     //配置不可用原因
@@ -57,6 +59,8 @@ public:
     void setFileIni(const QString &value);
     QString getEndwithflag() const;
     void setEndwithflag(const QString &value);
+    QString getFileDescribe() const;
+    void setFileDescribe(const QString &value);
 };
 
 #endif // CSVFILEDEFINITION_H

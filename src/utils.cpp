@@ -151,6 +151,16 @@ QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArra
     return filed;
 }
 
+QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QString> *  csvFileContentQStringList,CsvFileDefinition * csv,int row){
+    //判断越界
+    QStringList rowData;
+    if(row>=csvFileContentQStringList->count()){
+        return rowData;
+    }else{
+        return csvFileContentQStringList->at(row).split(csv->getSplit());
+    }
+}
+
 //转换数字列为excel列
 QString Utils::CovertInt2ExcelCol(int col){
     QString tmp = "";
