@@ -2575,7 +2575,7 @@ void MainWindow::on_actionsOpenCompare_triggered()
         statusBar_disPlayMessage("索引文件不支持使用比对器...");
     }
     //数据类型插入点
-    else if(currentOpenFileType==1|currentOpenFileType==2){
+    else if(currentOpenFileType==1||currentOpenFileType==2){
         if(compareData.count()<1){
             statusBar_disPlayMessage("请将需要对比的行加入比对器...");
         }
