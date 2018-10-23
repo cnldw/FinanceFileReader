@@ -2450,6 +2450,14 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     if(currentOpenFileType==2){
         tablePopMenu->addAction(action_ShowDetails);
         tablePopMenu->addAction(action_ShowCopyColum);
+        tablePopMenu->addAction(action_EditCompareData);
+        //行比对齐文字描述的替换
+        if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
+            action_EditCompareData->setText("将此行数据加入比对器");
+        }
+        else{
+            action_EditCompareData->setText("将此行数据从比对器移除");
+        }
     }
     tablePopMenu->exec(QCursor::pos());
 }
@@ -2566,7 +2574,8 @@ void MainWindow::on_actionsOpenCompare_triggered()
     if(currentOpenFileType==0){
         statusBar_disPlayMessage("索引文件不支持使用比对器...");
     }
-    else if(currentOpenFileType==1){
+    //数据类型插入点
+    else if(currentOpenFileType==1|currentOpenFileType==2){
         if(compareData.count()<1){
             statusBar_disPlayMessage("请将需要对比的行加入比对器...");
         }
@@ -2580,7 +2589,7 @@ void MainWindow::on_actionsOpenCompare_triggered()
             title.append("数据行号");
             for(int i=0;i<ptr_table->columnCount();i++){
                 //仅获取列的中文备注当作列标题
-                title.append(ofd.getfieldList().at(i).getFiledDescribe());
+                title.append(ptr_table->horizontalHeaderItem(i)->text());
             }
             //打开窗口
             if(title.count()>0){
