@@ -536,11 +536,7 @@ void MainWindow::load_CSVDefinition(){
                             QString splitflag=loadedCsvInfoIni.value(csvType+"/splitflag").toString();
                             //注意不要乱删除这几行代码，qt有个bug，ini配置里某个字段的值是,(英文逗号)获取时会获取到空值，坑！
                             //如果列分割为配置符号为空，则分隔符配置设置为,
-                            if(loadedCsvInfoIni.contains("splitflag")&&splitflag.isEmpty()){
-                                splitflag=",";
-                            }
-                            //如果压根不存在splitflag配置，也设置为，
-                            if(loadedCsvInfoIni.contains("splitflag")){
+                            if(splitflag.isEmpty()){
                                 splitflag=",";
                             }
                             ////////////////加载头部信息//////////////////
@@ -1112,7 +1108,7 @@ void MainWindow::load_csvFile(QString fileType){
     QFile dataFile(currentOpenFilePath);
     //关于CSV文件类型可用的版本
     if(loadedCsvDefinitionList.count()<1){
-        statusBar_disPlayMessage("CSVFile.ini中无任何CSV文件的配置，请配置后再使用");
+        statusBar_disPlayMessage("配置目录中，无任何关于CSV文件的配置，请配置后再使用");
         return;
     }
     else{
@@ -1217,7 +1213,7 @@ void MainWindow::load_csvFile(QString fileType){
             }
         }
         //如果遍历完还没找到合适的配置，则提示
-        statusBar_disPlayMessage("解析失败,未在CSVFile.ini中找到适合该版本文件的有效配置，或者文件无有效数据记录");
+        statusBar_disPlayMessage("解析失败,未找到适合该版本文件的有效配置，或者文件无有效数据记录");
         return;
     }
 }
