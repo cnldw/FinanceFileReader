@@ -14,8 +14,6 @@ private:
     bool useAble;
     //配置不可用原因
     QString message;
-    //版本
-    QString version;
     //分隔符
     QString split;
     //是不是使用分隔符做行尾部

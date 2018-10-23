@@ -50,16 +50,6 @@ void CsvFileDefinition::setFileName(const QString &value)
     fileName = value;
 }
 
-QString CsvFileDefinition::getVersion() const
-{
-    return version;
-}
-
-void CsvFileDefinition::setVersion(const QString &value)
-{
-    version = value;
-}
-
 QString CsvFileDefinition::getSplit() const
 {
     return split;
