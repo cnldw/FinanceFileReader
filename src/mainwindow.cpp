@@ -550,7 +550,7 @@ void MainWindow::load_CSVDefinition(){
                                 fileDef.setVersion(version);
                                 //数据起始行
                                 bool beginflagok;
-                                int  beginrowindex=loadedCsvInfoIni.value(csvType+"/datarowbeginndex").toInt(&beginflagok);
+                                int  beginrowindex=loadedCsvInfoIni.value(csvType+"/datarowbeginindex").toInt(&beginflagok);
                                 if(!beginflagok){
                                     fileDef.setDatabeginrowindex(0);
                                 }
