@@ -16,6 +16,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <time.h>
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QMessageBox>
