@@ -43,8 +43,6 @@ public:
     void setFieldList(const QList<CsvFieldDefinition> &value);
     QString getFileName() const;
     void setFileName(const QString &value);
-    QString getVersion() const;
-    void setVersion(const QString &value);
     QString getSplit() const;
     void setSplit(const QString &value);
     int getDatabeginrowindex() const;
