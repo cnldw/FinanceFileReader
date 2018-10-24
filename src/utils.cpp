@@ -53,7 +53,7 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
         return "";
     }
     //字段类型
-    QString fileType=ofd->getfieldList().at(col).getFiledType();
+    QString fileType=ofd->getfieldList().at(col).getFieldType();
     //开始获取此字段的值
     QString filed="";
     //字段长度

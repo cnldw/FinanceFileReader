@@ -67,7 +67,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     load_Dictionary();
     //配置加载完毕
     configLoadCompleted=true;
+    //随机提醒
     randomTips();
+    //判断是否启动时读取文件
+    if(!startUpfile.isEmpty()){
+        currentOpenFilePath=startUpfile;
+        ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
+        isUpdateData=true;
+        initFile();
+        isUpdateData=false;
+    }
+}
+
+
+void MainWindow:: setStartupFile(QString filePath){
+    this->startUpfile=filePath;
 }
 
 void MainWindow::initStatusBar(){
@@ -453,7 +467,7 @@ void MainWindow::load_OFDDefinition(){
                                         rowLength+=length;
                                         ofdfiled.setLength(length);
                                         ofdfiled.setDecLength(declength);
-                                        ofdfiled.setFiledType(filedType);
+                                        ofdfiled.setFieldType(filedType);
                                         ofdfiled.setFiledName((QString)iniStrList.at(4));
                                         ofdfiled.setFiledDescribe((QString)iniStrList.at(3));
                                         fieldList.append(ofdfiled);
@@ -1552,14 +1566,14 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
                 QString text=ptr_table->item(currentRow,currentColumn)->text();
                 QString dic=dictionary.getDictionary(ofd.getfieldList().at(currentColumn).getFiledName(),text);
                 if(text.isEmpty()){
-                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
+                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()));
                 }
                 else{
-                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
                 }
             }
             else{
-                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFiledType()));
+                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()));
             }
         }
         else if(currentOpenFileType==2){
@@ -1693,7 +1707,7 @@ void MainWindow:: showFiledAnalysis(){
         //字段英文名
         QString filedName=ofd.getfieldList().at(colcurrent).getFiledName();
         //字段类型
-        QString filedType=ofd.getfieldList().at(colcurrent).getFiledType();
+        QString filedType=ofd.getfieldList().at(colcurrent).getFieldType();
         //字段长度
         int filedLength=ofd.getfieldList().at(colcurrent).getLength();
         //字段小数长度
@@ -1831,7 +1845,7 @@ void MainWindow::showModifyCell(){
     int editRow=rowcurrent;
     int editCol=colcurrent;
     //字段类型
-    QString filedType=ofd.getfieldList().at(editCol).getFiledType();
+    QString filedType=ofd.getfieldList().at(editCol).getFieldType();
     //字段长度
     int filedLength=ofd.getfieldList().at(editCol).getLength();
     //字段小数长度
@@ -2004,7 +2018,7 @@ void MainWindow::showModifyCellBatch(){
     //标记要编辑的列
     int editCol=colcurrent;
     //字段类型
-    QString filedType=ofd.getfieldList().at(editCol).getFiledType();
+    QString filedType=ofd.getfieldList().at(editCol).getFieldType();
     //字段长度
     int filedLength=ofd.getfieldList().at(editCol).getLength();
     //字段小数长度
@@ -2918,7 +2932,7 @@ void MainWindow::save2Xlsx(QString filename){
             xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
             //记录每列的宽度
             colWidthArray[i]=(ofd.getfieldList().at(i).getFiledDescribe().toLocal8Bit().length()+4);
-            if(ofd.getfieldList().at(i).getFiledType()=="N"){
+            if(ofd.getfieldList().at(i).getFieldType()=="N"){
                 QXlsx::Format formatNumber;
                 formatNumber.setFont(QFont("SimSun"));
                 formatNumber.setFontBold(false);
@@ -2966,7 +2980,7 @@ void MainWindow::save2Xlsx(QString filename){
                     colWidthArray[col]=widthNew;
                 }
                 //判断数据类型
-                if(ofd.getfieldList().at(col).getFiledType()=="N"){
+                if(ofd.getfieldList().at(col).getFieldType()=="N"){
                     //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
                     if(numberFormat.contains(col)){
                         bool okNb=false;

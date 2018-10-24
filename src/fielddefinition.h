@@ -23,8 +23,8 @@ class FieldDefinition
 public:
     FieldDefinition();
 
-    QString getFiledType() const;
-    void setFiledType( QString value);
+    QString getFieldType() const;
+    void setFieldType( QString value);
 
     int getLength() const;
     void setLength(int value);
@@ -42,7 +42,7 @@ public:
     void setRowBeginIndex(int value);
 
 private:
-    QString filedType;
+    QString fieldType;
     int rowBeginIndex;
     int length;
     int decLength;

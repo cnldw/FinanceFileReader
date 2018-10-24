@@ -16,6 +16,8 @@
 #include "src/mainwindow.h"
 #include <QApplication>
 #include <QTranslator>
+#include <QStringList>
+#include "src/utils.h"
 
 //曲径通幽处，禅房花木深
 //从此处---开启新世界的大门
@@ -33,6 +35,13 @@ int main(int argc, char *argv[])
     translator.load(":/qm/qt_zh_CN.qm");
     app.installTranslator(&translator);
     MainWindow w;
+    //获取启动参数
+    QStringList arguments = QCoreApplication::arguments();
+    if(arguments.count()==1){
+        if(Utils::isFileExist(arguments.at(0))){
+            w.setStartupFile(arguments.at(0));
+        }
+    }
     w.show();
     return app.exec();
 }

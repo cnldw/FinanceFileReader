@@ -20,14 +20,14 @@ FieldDefinition::FieldDefinition()
 
 }
 
-QString FieldDefinition::getFiledType() const
+QString FieldDefinition::getFieldType() const
 {
-    return filedType;
+    return fieldType;
 }
 
-void FieldDefinition::setFiledType( QString value)
+void FieldDefinition::setFieldType( QString value)
 {
-    filedType = value;
+    fieldType = value;
 }
 
 int FieldDefinition::getLength() const

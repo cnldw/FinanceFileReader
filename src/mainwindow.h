@@ -69,6 +69,12 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    /**
+     * @brief setStartupFile
+     * @param filePath
+     * 设置程序启动时立即要读取的文件
+     */
+    void setStartupFile(QString filePath);
 
 protected:
     //文件拖拽支持
@@ -147,6 +153,7 @@ private:
     QTableWidget *ptr_table;
     QString currentOpenFilePath;
     QString getConfigPath();
+    QString startUpfile="";
     //已经加载的code信息,记录销售商和TA的代码信息
     QHash<QString, CodeInfo> loadedCodeInfo;
     //已经加载的索引文件信息,记录各种索引文件的文件名开头三个字符
@@ -212,10 +219,10 @@ private:
     const int rowHight=22;
     //配置文件加载的状态
     bool configLoadCompleted=false;
-    //数据更新状态
+    //数据更新状态,比如当前正在加载文件，正在重新刷新文件
     bool isUpdateData=false;
 
-    //阻断的操作
+    //阻断的操作，比如当前正在导出文件，正在搜索，和isUpdatedata类似
     bool dataBlocked=false;
 
     //已经加载的行,用于懒加载是判断哪些行已经加载,避免重复加载
