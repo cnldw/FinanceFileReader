@@ -250,11 +250,11 @@ QString MainWindow::getConfigPath(){
 #endif
 
 #ifdef Q_OS_LINUX
-    return "./config/";
+    return QApplication::applicationDirPath()+"config/";
 #endif
 
 #ifdef Q_OS_WIN32
-    return "./config/";
+    return QApplication::applicationDirPath()+"config/";
 #endif
 }
 
