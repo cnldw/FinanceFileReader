@@ -1347,37 +1347,42 @@ void MainWindow::init_OFDTable(){
     }
     else
     {
-        statusBar_disPlayMessage(tr("空的数据记录,没有数据可供显示..."));
+        statusBar_disPlayMessage(ofd.getMessage());
     }
 }
 
 void MainWindow::init_CSVTable(QStringList title){
-    int colCount=title.count();
-    int rowCount=csvFileContentQStringList.count();
-    ptr_table->setColumnCount(colCount);
-    ptr_table->setRowCount(rowCount);
-    //设置标题
-    ptr_table->setHorizontalHeaderLabels(title);
-    //设置表格的选择方式
-    ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
-    //设置编辑方式
-    ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
-    //设置表格的内容
-    //按行读取ofdFileContentQByteArrayList,边读取边解析
-    if(rowCount>0){
-        //获取当前table的高度
-        int higth=ptr_table->size().height();
-        hValueBegin=0;
-        hValueEnd=hValueBegin+(higth/rowHight);
-        display_CSVTable();
+    if(csv.getUseAble()){
+        int colCount=title.count();
+        int rowCount=csvFileContentQStringList.count();
+        ptr_table->setColumnCount(colCount);
+        ptr_table->setRowCount(rowCount);
+        //设置标题
+        ptr_table->setHorizontalHeaderLabels(title);
+        //设置表格的选择方式
+        ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
+        //设置编辑方式
+        ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
+        //设置表格的内容
+        //按行读取ofdFileContentQByteArrayList,边读取边解析
+        if(rowCount>0){
+            //获取当前table的高度
+            int higth=ptr_table->size().height();
+            hValueBegin=0;
+            hValueEnd=hValueBegin+(higth/rowHight);
+            display_CSVTable();
+        }
+        else{
+            //如果没有数据,也执行下自动设置列宽,增加空数据的显示美感
+            ptr_table->resizeColumnsToContents();
+        }
+        statusBar_display_rowsCount(rowCount);
+        statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
     }
     else{
-        //如果没有数据,也执行下自动设置列宽,增加空数据的显示美感
-        ptr_table->resizeColumnsToContents();
+        statusBar_disPlayMessage(csv.getMessage());
     }
-    statusBar_display_rowsCount(rowCount);
-    statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
 }
 
 /**
