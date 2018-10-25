@@ -75,10 +75,12 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     if(argc>1){
         QStringList arglist;
         //读取第一个可读取的文件参数
+        QTextCodec *codec = QTextCodec::codecForName("System");
+        QTextCodec::setCodecForLocale(codec);
         for(int i=1;i<argc;i++){
-            if(Utils::isFileExist(QLatin1String(argv[1])))
+            if(Utils::isFileExist(QString::fromLocal8Bit(argv[i])))
             {
-                startUpfile=QLatin1String(argv[1]);
+                startUpfile=QString::fromLocal8Bit(argv[i]);
                 break;
             }
         }
