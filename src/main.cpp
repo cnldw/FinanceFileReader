@@ -34,14 +34,7 @@ int main(int argc, char *argv[])
     //翻译文件取自Qt的translations目录版本为5.10.0
     translator.load(":/qm/qt_zh_CN.qm");
     app.installTranslator(&translator);
-    MainWindow w;
-    //获取启动参数
-    QStringList arguments = QCoreApplication::arguments();
-    if(arguments.count()==1){
-        if(Utils::isFileExist(arguments.at(0))){
-            w.setStartupFile(arguments.at(0));
-        }
-    }
+    MainWindow w(argc,argv);
     w.show();
     return app.exec();
 }

@@ -67,14 +67,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(int argc, char *argv[],QWidget *parent = nullptr);
     ~MainWindow();
-    /**
-     * @brief setStartupFile
-     * @param filePath
-     * 设置程序启动时立即要读取的文件
-     */
-    void setStartupFile(QString filePath);
 
 protected:
     //文件拖拽支持

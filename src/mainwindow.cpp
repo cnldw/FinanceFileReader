@@ -17,7 +17,7 @@
 #include "ui_mainwindow.h"
 #define UNUSED(x) (void)x
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
+MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -70,18 +70,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     //随机提醒
     randomTips();
     //判断是否启动时读取文件
-    if(!startUpfile.isEmpty()){
-        currentOpenFilePath=startUpfile;
-        ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
-        isUpdateData=true;
-        initFile();
-        isUpdateData=false;
+    //获取启动参数--如果参数中有文件路径，则稍后在窗口初始化完毕后打开文件
+    //需要注意的是，程序启动时，窗口还未初始化完毕的时候打开文件会出现问题，所以这里只加载文件的路径，不打开文件，打开文件的动作放到窗口的resizeEvent事件中去
+    if(argc>1){
+        startUpfile=QLatin1String(argv[1]);
+        if(Utils::isFileExist(startUpfile)){
+            currentOpenFilePath=startUpfile;
+            ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
+        }
     }
-}
-
-
-void MainWindow:: setStartupFile(QString filePath){
-    this->startUpfile=filePath;
 }
 
 void MainWindow::initStatusBar(){
@@ -167,6 +164,13 @@ void MainWindow::dropEvent(QDropEvent *event)
 }
 
 void MainWindow:: resizeEvent (QResizeEvent * event ){
+    //注意！！！这段代码请勿随意修改，否则可能会导致程序启动时加载文件的功能失效
+    if(!startUpfile.isEmpty()){
+        startUpfile="";
+        isUpdateData=true;
+        initFile();
+        isUpdateData=false;
+    }
     event->ignore();
     if(tableHeight!=ptr_table->height()&&!isUpdateData){
         //获取当前table的高度
@@ -1365,7 +1369,6 @@ void MainWindow::init_CSVTable(QStringList title){
         ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
         ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
         //设置表格的内容
-        //按行读取ofdFileContentQByteArrayList,边读取边解析
         if(rowCount>0){
             //获取当前table的高度
             int higth=ptr_table->size().height();
