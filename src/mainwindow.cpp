@@ -76,6 +76,9 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
         startUpfile=QLatin1String(argv[1]);
         if(Utils::isFileExist(startUpfile)){
             currentOpenFilePath=startUpfile;
+#ifdef Q_OS_WIN32
+            currentOpenFilePath=currentOpenFilePath.replace("\\","/");
+#endif
             ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
             statusBar_disPlayMessage("文件加载中...");
         }
@@ -659,6 +662,10 @@ void MainWindow::initFile(){
     clear_Display_Info();
     clear_Table_Info();
     //获取完整的文件名
+    //将windows下的反斜杠的路径替换为标准的右斜杠
+#ifdef Q_OS_WIN32
+    currentOpenFilePath=currentOpenFilePath.replace("\\","/");
+#endif
     int first = currentOpenFilePath.lastIndexOf ("/");
     QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
     /*
