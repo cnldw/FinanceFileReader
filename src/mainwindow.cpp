@@ -73,7 +73,15 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     //获取启动参数--如果参数中有文件路径，则稍后在窗口初始化完毕后打开文件
     //需要注意的是，程序启动时，窗口还未初始化完毕的时候打开文件会出现问题，所以这里只加载文件的路径，不打开文件，打开文件的动作放到窗口的resizeEvent事件中去
     if(argc>1){
-        startUpfile=QLatin1String(argv[1]);
+        QStringList arglist;
+        //读取第一个可读取的文件参数
+        for(int i=1;i<argc;i++){
+            if(Utils::isFileExist(QLatin1String(argv[1])))
+            {
+                startUpfile=QLatin1String(argv[1]);
+                break;
+            }
+        }
         if(Utils::isFileExist(startUpfile)){
             currentOpenFilePath=startUpfile;
 #ifdef Q_OS_WIN32
@@ -797,7 +805,7 @@ NOT_OF_FILE:
         load_csvFile(resultType);
         return;
     }
-    statusBar_disPlayMessage("未被配置的文件类别,无法解析...");
+    statusBar_disPlayMessage(currentOpenFilePath+"文件无法识别,请尝试配置文件解析规则");
     return;
 }
 
