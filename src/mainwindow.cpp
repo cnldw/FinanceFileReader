@@ -77,7 +77,28 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
         if(Utils::isFileExist(startUpfile)){
             currentOpenFilePath=startUpfile;
             ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
+            statusBar_disPlayMessage("文件加载中...");
         }
+    }
+    //启动一个定时器在窗口启动完毕后检查是否需要在启动程序时读取文件
+    loadFiletimer = new QTimer(this);
+    connect(loadFiletimer,SIGNAL(timeout()),this,SLOT(loadFileOnWindowisOpen()));
+    loadFiletimer->start(50);
+}
+
+/**
+ * @brief MainWindow::loadFileOnWindowisOpen
+ * 启动窗口后决定是否需要加载文件的槽函数
+ */
+void MainWindow::loadFileOnWindowisOpen(){
+    if(!startUpfile.isEmpty()){
+        startUpfile="";
+        isUpdateData=true;
+        initFile();
+        isUpdateData=false;
+        loadFiletimer->stop();
+    }else{
+        loadFiletimer->stop();
     }
 }
 
@@ -164,18 +185,11 @@ void MainWindow::dropEvent(QDropEvent *event)
 }
 
 void MainWindow:: resizeEvent (QResizeEvent * event ){
-    //注意！！！这段代码请勿随意修改，否则可能会导致程序启动时加载文件的功能失效
-    if(!startUpfile.isEmpty()){
-        startUpfile="";
-        isUpdateData=true;
-        initFile();
-        isUpdateData=false;
-    }
     event->ignore();
     if(tableHeight!=ptr_table->height()&&!isUpdateData){
         //获取当前table的高度
         int higth=ptr_table->size().height();
-        //窗口变大不会影响起始行
+        hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
         hValueEnd=hValueBegin+(higth/rowHight);
         //不同数据类型插入点
         if(currentOpenFileType==1){
@@ -1338,7 +1352,7 @@ void MainWindow::init_OFDTable(){
         if(rowCount>0){
             //获取当前table的高度
             int higth=ptr_table->size().height();
-            hValueBegin=0;
+            hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
             hValueEnd=hValueBegin+(higth/rowHight);
             display_OFDTable();
         }
@@ -1372,7 +1386,7 @@ void MainWindow::init_CSVTable(QStringList title){
         if(rowCount>0){
             //获取当前table的高度
             int higth=ptr_table->size().height();
-            hValueBegin=0;
+            hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
             hValueEnd=hValueBegin+(higth/rowHight);
             display_CSVTable();
         }

@@ -18,6 +18,7 @@
 
 #include <time.h>
 #include <QMainWindow>
+#include <QTimer>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QScrollBar>
@@ -110,6 +111,8 @@ private slots:
 
     void showModifyCell();
 
+    void loadFileOnWindowisOpen();
+
     void showModifyCellBatch();
 
     void on_actionsOpenCompare_triggered();
@@ -148,6 +151,7 @@ private:
     QString currentOpenFilePath;
     QString getConfigPath();
     QString startUpfile="";
+    QTimer *loadFiletimer;
     //已经加载的code信息,记录销售商和TA的代码信息
     QHash<QString, CodeInfo> loadedCodeInfo;
     //已经加载的索引文件信息,记录各种索引文件的文件名开头三个字符
