@@ -227,6 +227,9 @@ private:
     //优化，使用QHash提高大文件下多行数据加载后的查找效率
     QHash <int,bool> rowHasloaded;
 
+    //优化器，记录每列表格最宽记录，当异步下次加载数据时，根据是否发生了变化来决定是否需要更新列宽度
+    QHash <int,int> columnWidth;
+
     //加入到比对器的数据
     QMap<int,QStringList> compareData;
 

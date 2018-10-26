@@ -313,6 +313,7 @@ void MainWindow::clear_oldData(){
     csvFileContentQStringList.clear();
     rowHasloaded.clear();
     compareData.clear();
+    columnWidth.clear();
     //记录当前所在行
     rowcurrent=0;
     //当前所在列
@@ -1355,7 +1356,9 @@ void MainWindow::init_OFDTable(){
         QStringList title;
         for(int i=0;i<colCount;i++){
             //仅获取列的中文备注当作列标题
-            title.append(ofd.getfieldList().at(i).getFiledDescribe());
+            QString t=ofd.getfieldList().at(i).getFiledDescribe();
+            columnWidth.insert(i,t.length());
+            title.append(t);
         }
         //设置标题
         ptr_table->setHorizontalHeaderLabels(title);
@@ -1372,6 +1375,7 @@ void MainWindow::init_OFDTable(){
             hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
             hValueEnd=hValueBegin+(higth/rowHight);
             display_OFDTable();
+            ptr_table->resizeColumnsToContents();
         }
         else{
             //如果没有数据,也执行下自动设置列宽,增加空数据的显示美感
@@ -1428,6 +1432,7 @@ void MainWindow::init_CSVTable(QStringList title){
  */
 
 void MainWindow::display_OFDTable(){
+    QList<int> needRestwitdh;
     int rowCount=ptr_table->rowCount();
     int colCount=ptr_table->columnCount();
     //防止渲染边界超过表总行数
@@ -1448,6 +1453,14 @@ void MainWindow::display_OFDTable(){
                 QString values=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
                 //仅对数据非空单元格赋值
                 if(!values.isEmpty()){
+                    int colLength=values.length();
+                    if(!columnWidth.contains(col)){
+                        columnWidth.insert(col,colLength);
+                    }
+                    if(colLength>columnWidth.value(col)){
+                        needRestwitdh.append(col);
+                        columnWidth.insert(col,colLength);
+                    }
                     QTableWidgetItem *item= new QTableWidgetItem();
                     ptr_table->setItem(row, col, item);
                     item->setText(values);
@@ -1455,7 +1468,11 @@ void MainWindow::display_OFDTable(){
             }
         }
     }
-    ptr_table->resizeColumnsToContents();
+    //分析判断是否需要重新设置列宽
+    int count=needRestwitdh.count();
+    for(int cc=0;cc<count;cc++){
+        ptr_table->resizeColumnToContents(needRestwitdh.at(cc));
+    }
 }
 
 void MainWindow::display_CSVTable(){
@@ -1489,7 +1506,7 @@ void MainWindow::display_CSVTable(){
             }
         }
     }
-    ptr_table->resizeColumnsToContents();
+    //ptr_table->resizeColumnsToContents();
 }
 
 
