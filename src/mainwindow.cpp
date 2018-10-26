@@ -1459,7 +1459,7 @@ void MainWindow::display_OFDTable(){
                 if(!values.isEmpty()){
                     int colLength=values.length();
                     if(!columnWidth.contains(col)){
-                        columnWidth.insert(col,colLength);
+                        needRestwitdh.append(col);
                         columnWidth.insert(col,colLength);
                     }else
                         if(colLength>columnWidth.value(col)){
@@ -1507,7 +1507,7 @@ void MainWindow::display_CSVTable(){
                 if(!values.isEmpty()){
                     int colLength=values.length();
                     if(!columnWidth.contains(col)){
-                        columnWidth.insert(col,colLength);
+                        needRestwitdh.append(col);
                         columnWidth.insert(col,colLength);
                     }else
                         if(colLength>columnWidth.value(col)){
