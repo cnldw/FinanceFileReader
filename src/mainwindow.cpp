@@ -1398,6 +1398,9 @@ void MainWindow::init_CSVTable(QStringList title){
         ptr_table->setRowCount(rowCount);
         //设置标题
         ptr_table->setHorizontalHeaderLabels(title);
+        for(int i=0;i<title.count();i++){
+            columnWidth.insert(i,title.at(i).length());
+        }
         //设置表格的选择方式
         ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
         //设置编辑方式
@@ -1409,6 +1412,7 @@ void MainWindow::init_CSVTable(QStringList title){
             int higth=ptr_table->size().height();
             hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
             hValueEnd=hValueBegin+(higth/rowHight);
+            ptr_table->resizeColumnsToContents();
             display_CSVTable();
         }
         else{
@@ -1456,11 +1460,12 @@ void MainWindow::display_OFDTable(){
                     int colLength=values.length();
                     if(!columnWidth.contains(col)){
                         columnWidth.insert(col,colLength);
-                    }
-                    if(colLength>columnWidth.value(col)){
-                        needRestwitdh.append(col);
                         columnWidth.insert(col,colLength);
-                    }
+                    }else
+                        if(colLength>columnWidth.value(col)){
+                            needRestwitdh.append(col);
+                            columnWidth.insert(col,colLength);
+                        }
                     QTableWidgetItem *item= new QTableWidgetItem();
                     ptr_table->setItem(row, col, item);
                     item->setText(values);
@@ -1476,6 +1481,7 @@ void MainWindow::display_OFDTable(){
 }
 
 void MainWindow::display_CSVTable(){
+    QList<int> needRestwitdh;
     int rowCount=ptr_table->rowCount();
     int colCount=ptr_table->columnCount();
     //防止渲染边界超过表总行数
@@ -1499,6 +1505,15 @@ void MainWindow::display_CSVTable(){
                 QString values=rowdata.at(col);
                 //仅对数据非空单元格赋值
                 if(!values.isEmpty()){
+                    int colLength=values.length();
+                    if(!columnWidth.contains(col)){
+                        columnWidth.insert(col,colLength);
+                        columnWidth.insert(col,colLength);
+                    }else
+                        if(colLength>columnWidth.value(col)){
+                            needRestwitdh.append(col);
+                            columnWidth.insert(col,colLength);
+                        }
                     QTableWidgetItem *item= new QTableWidgetItem();
                     ptr_table->setItem(row, col, item);
                     item->setText(values);
@@ -1506,7 +1521,11 @@ void MainWindow::display_CSVTable(){
             }
         }
     }
-    //ptr_table->resizeColumnsToContents();
+    //分析判断是否需要重新设置列宽
+    int count=needRestwitdh.count();
+    for(int cc=0;cc<count;cc++){
+        ptr_table->resizeColumnToContents(needRestwitdh.at(cc));
+    }
 }
 
 
