@@ -58,6 +58,7 @@
 #include "src/dialogaboutthis.h"
 #include "src/dialogmergetip.h"
 #include "src/csvfiledefinition.h"
+#include "src/csvfaultcause.h"
 
 namespace Ui {
 class MainWindow;

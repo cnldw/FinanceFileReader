@@ -54,7 +54,8 @@ SOURCES += \
     src/dialogmergetip.cpp \
     src/dialogaboutthis.cpp \
     src/csvfielddefinition.cpp \
-    src/csvfiledefinition.cpp
+    src/csvfiledefinition.cpp \
+    src/csvfaultcause.cpp
 
 HEADERS += \
         src/mainwindow.h \
@@ -71,7 +72,8 @@ HEADERS += \
     src/dialogmergetip.h \
     src/dialogaboutthis.h \
     src/csvfielddefinition.h \
-    src/csvfiledefinition.h
+    src/csvfiledefinition.h \
+    src/csvfaultcause.h
 
 FORMS += \
         src/mainwindow.ui \

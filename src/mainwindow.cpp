@@ -1162,103 +1162,127 @@ void MainWindow::load_csvFile(QString fileType){
         return;
     }
     else{
-        QList<int> useAbleVersion;
+        //在这里记录下各个配置文件失败无法使用的原因，如果全部匹配失败无法解析，则给用户一个交代！
+        QList<CsvFaultCause> faultList;
         int dd=0;
         for(;dd<loadedCsvDefinitionList.count();dd++){
             //如果文件名可用且配置可用，则加入
-            if(loadedCsvDefinitionList.at(dd).getFileName()==fileType&&loadedCsvDefinitionList.at(dd).getUseAble()){
-                useAbleVersion.append(dd);
-                //设置文件编码
-                QString coding=loadedCsvDefinitionList.at(dd).getEcoding();
-                QTextCodec::setCodecForLocale(QTextCodec::codecForName(coding.toLocal8Bit()));
-                //打开并开始探测文件内容
-                if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
-                {
-                    int dataBeginRow=loadedCsvDefinitionList.at(dd).getDatabeginrowindex();
-                    //查找可用配置结束，开始分析文件到底是哪个版本
-                    //最大化获取文件内的样本数据
-                    QTextStream data(&dataFile);
-                    QList<QString>csvData;
-                    QString line;
-                    //当前读取到的行数
-                    int row=0;
-                    while (!data.atEnd()&&row<dataBeginRow)
-                    {   QStringList lineList;
-                        line = data.readLine();
-                        line=line.remove('\r').remove('\n').trimmed();
-                        csvData.append(line);
-                        row++;
-                    }
-                    dataFile.close();
-                    //如果一行数据都没读到，则提示是空文件，结束探测
-                    if(row==0){
+            if(loadedCsvDefinitionList.at(dd).getFileName()==fileType){
+                if(loadedCsvDefinitionList.at(dd).getUseAble()){
+                    //设置文件编码
+                    QString coding=loadedCsvDefinitionList.at(dd).getEcoding();
+                    QTextCodec::setCodecForLocale(QTextCodec::codecForName(coding.toLocal8Bit()));
+                    //打开并开始探测文件内容
+                    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                    {
+                        int dataBeginRow=loadedCsvDefinitionList.at(dd).getDatabeginrowindex();
+                        //查找可用配置结束，开始分析文件到底是哪个版本
+                        //最大化获取文件内的样本数据
+                        QTextStream data(&dataFile);
+                        QList<QString>csvData;
+                        QString line;
+                        //当前读取到的行数
+                        int row=0;
+                        while (!data.atEnd()&&row<dataBeginRow)
+                        {   QStringList lineList;
+                            line = data.readLine();
+                            line=line.remove('\r').remove('\n').trimmed();
+                            csvData.append(line);
+                            row++;
+                        }
                         dataFile.close();
-                        statusBar_disPlayMessage("空的CSV文件,没有任何数据记录");
-                        return;
+                        //如果一行数据都没读到，则提示是空文件，结束探测
+                        if(row==0){
+                            dataFile.close();
+                            statusBar_disPlayMessage("空的CSV文件,没有任何数据记录可工解析");
+                            return;
+                        }
+                        else{
+                            //存在标题行
+                            if(loadedCsvDefinitionList.at(dd).getTitlerowindex()>0){
+                                //存在标题行但是文件内的数据行数低于标题所在行，无内容，无法判断
+                                if(csvData.count()<loadedCsvDefinitionList.at(dd).getTitlerowindex()){
+                                    CsvFaultCause item;
+                                    item.setConfigIndex(dd);
+                                    item.setCause("未在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到有效标题行");
+                                    faultList.append(item);
+                                    continue;
+                                }
+                                //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
+                                else{
+                                    QString titleRowString=csvData.at(loadedCsvDefinitionList.at(dd).getTitlerowindex()-1);
+                                    //如果需要忽略最后一个多余的分隔符
+                                    if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
+                                        titleRowString= titleRowString.left(titleRowString.length()-1);
+                                    }
+                                    QStringList fieldTitle=titleRowString.split(loadedCsvDefinitionList.at(dd).getSplit());
+                                    //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
+                                    if(fieldTitle.count()==loadedCsvDefinitionList.at(dd).getFieldCount()){
+                                        //开始加载数据
+                                        csv=loadedCsvDefinitionList.at(dd);
+                                        load_csvFileData(fieldTitle);
+                                        return;
+                                    }
+                                    else{
+                                        CsvFaultCause item;
+                                        item.setConfigIndex(dd);
+                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到的标题列数["+QString::number(fieldTitle.count())+"]和配置文件中的["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致，可能不是本版本的文件，无法解析");
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                }
+                            }
+                            //如果不存在标题行
+                            else{
+                                //不存在标题并且文件内的数据行数低于第一行数据，无内容，无法判断
+                                if(csvData.count()<loadedCsvDefinitionList.at(dd).getDatabeginrowindex()){
+                                    CsvFaultCause item;
+                                    item.setConfigIndex(dd);
+                                    item.setCause("配置文件中说文件从第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行就是数据行了，但是打开的文件只有["+QString::number(csvData.count())+"]行，无有效数据,无法解析");
+                                    faultList.append(item);
+                                    continue;
+                                }
+                                //存在数据,以第一行数据分析
+                                else{
+                                    QString firstDataRowString=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1);
+                                    //如果需要忽略最后一个多余的分隔符
+                                    if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
+                                        firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
+                                    }
+                                    int fieldCount=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
+                                    //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
+                                    if(fieldCount==loadedCsvDefinitionList.at(dd).getFieldCount()){
+                                        //开始加载数据
+                                        csv=loadedCsvDefinitionList.at(dd);
+                                        //文件内没标题的从配置读取
+                                        QStringList fieldTitle;
+                                        for(int tc=0;tc<csv.getFieldList().count();tc++){
+                                            fieldTitle.append(csv.getFieldList().at(tc).getFieldName());
+                                        }
+                                        load_csvFileData(fieldTitle);
+                                        return;
+                                    }
+                                    else{
+                                        CsvFaultCause item;
+                                        item.setConfigIndex(dd);
+                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行找到的数据有["+QString::number(fieldCount)+"]列数据和配置文件中的["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
                     }
                     else{
-                        //存在标题行
-                        if(loadedCsvDefinitionList.at(dd).getTitlerowindex()>0){
-                            //存在标题行但是文件内的数据行数低于标题所在行，无内容，无法判断
-                            if(csvData.count()<loadedCsvDefinitionList.at(dd).getTitlerowindex()){
-                                continue;
-                            }
-                            //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
-                            else{
-                                QString titleRowString=csvData.at(loadedCsvDefinitionList.at(dd).getTitlerowindex()-1);
-                                //如果需要忽略最后一个多余的分隔符
-                                if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
-                                    titleRowString= titleRowString.left(titleRowString.length()-1);
-                                }
-                                QStringList fieldTitle=titleRowString.split(loadedCsvDefinitionList.at(dd).getSplit());
-                                //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
-                                if(fieldTitle.count()==loadedCsvDefinitionList.at(dd).getFieldCount()){
-                                    //开始加载数据
-                                    csv=loadedCsvDefinitionList.at(dd);
-                                    load_csvFileData(fieldTitle);
-                                    return;
-                                }
-                                else{
-                                    continue;
-                                }
-                            }
-                        }
-                        //如果不存在标题行
-                        else{
-                            //不存在标题并且文件内的数据行数低于第一行数据，无内容，无法判断
-                            if(csvData.count()<loadedCsvDefinitionList.at(dd).getDatabeginrowindex()){
-                                continue;
-                            }
-                            //存在数据,以第一行数据分析
-                            else{
-                                QString firstDataRowString=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1);
-                                //如果需要忽略最后一个多余的分隔符
-                                if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
-                                    firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
-                                }
-                                int fieldCount=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
-                                //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
-                                if(fieldCount==loadedCsvDefinitionList.at(dd).getFieldCount()){
-                                    //开始加载数据
-                                    csv=loadedCsvDefinitionList.at(dd);
-                                    //文件内没标题的从配置读取
-                                    QStringList fieldTitle;
-                                    for(int tc=0;tc<csv.getFieldList().count();tc++){
-                                        fieldTitle.append(csv.getFieldList().at(tc).getFieldName());
-                                    }
-                                    load_csvFileData(fieldTitle);
-                                    return;
-                                }
-                                else{
-                                    continue;
-                                }
-                            }
-                        }
+                        statusBar_disPlayMessage("文件:"+currentOpenFilePath+"打开失败,请重试");
+                        return;
                     }
                 }
                 else{
-                    statusBar_disPlayMessage("文件:"+currentOpenFilePath+"打开失败,请重试");
-                    return;
+                    CsvFaultCause item;
+                    item.setConfigIndex(dd);
+                    item.setCause("配置文件不可用");
+                    faultList.append(item);
                 }
             }
         }
