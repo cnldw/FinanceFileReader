@@ -214,7 +214,7 @@ private:
     int colcurrent=0;
     //表格当前高度
     int tableHeight;
-    //表格行高度,常量
+    //表格行高度,常量-用于数据展示
     const int rowHight=22;
     //配置文件加载的状态
     bool configLoadCompleted=false;

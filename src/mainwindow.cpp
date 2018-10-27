@@ -136,7 +136,7 @@ void MainWindow::initStatusBar(){
     statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列(每个中文字符计两列)"));
 
     statusLabel_ptr_showMessage = new QLabel;
-    statusLabel_ptr_showMessage->setMinimumSize(495, 20); // 设置标签最小大小
+    statusLabel_ptr_showMessage->setMinimumSize(500, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showMessage);
     //设置标签内容
     statusLabel_ptr_showMessage->setText(tr(""));
@@ -1764,6 +1764,20 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             }else{
                 info.append("读取文件字段数错误");
             }
+            QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
+        }else{
+            QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
+        }
+    }
+    else if(currentOpenFileType==2){
+        if(csvFileContentQStringList.count()>0){
+            //组织要显示的内容
+            QString info;
+            info.append("文件解析情况如下:\r\n");
+            info.append("使用的配置文件:").append(csv.getFileIni()).append("\r\n");
+            info.append("使用的解析器配置:[").append(csv.getFileNameWithCount()).append("]\r\n");
+            info.append("加载的文件头行数").append(QString::number(csvFileHeaderQStringList.count())).append("\r\n");
+            info.append("加载的数据行数(含文件结尾行)").append(QString::number(csvFileContentQStringList.count())).append("\r\n");
             QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
         }else{
             QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
@@ -3545,6 +3559,7 @@ void MainWindow::randomTips(){
     tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
     tips.append("按Ctrl+G切换视图模式,可以隐藏或者显示文件头信息...");
     tips.append("尝试使用本工具解析各种固定分隔符文件吧，比excel更好的数据展示方式,且支持导出excel...");
+    tips.append("创建一个本软件的桌面图标,直接拖放文件到图标上即可打开文件,只需一步即可直达");
     srand((unsigned)time(nullptr));
     int index =rand()%tips.count();
     statusBar_disPlayMessage("温馨提示:"+tips.at(index));
