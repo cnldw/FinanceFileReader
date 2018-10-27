@@ -388,6 +388,8 @@ private:
     void display_OFDTable();
 
     void display_CSVTable();
+
+    void display_CSVFaultCause(QList<CsvFaultCause> faultList);
     /**
      * @brief saveOFDFile
      * @param filepath

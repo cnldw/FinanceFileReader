@@ -24,8 +24,3 @@ void CsvFaultCause::setCause(const QString &value)
 {
     cause = value;
 }
-
-QString CsvFaultCause::getCause() const
-{
-    return cause;
-}

@@ -60,11 +60,16 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     //列搜索信号连接,此处存在缺陷,如果搜索时表格获取了焦点，则回车无法连续搜索,暂不启用
     //connect(ui->lineTextText_2, SIGNAL(returnPressed()), this, SLOT(on_pushButtonNextSearch_2_clicked()));
     //开始进行配置加载
+    //加载基金销售商和TA代码信息
     load_CodeInfo();
+    //加载OFD文件类别信息
     load_FileType();
+    //加载各类OFD文件的定义
     load_OFDDefinition();
-    load_CSVDefinition();
+    //加载OFD字典
     load_Dictionary();
+    //加载各类CSV文件的定义
+    load_CSVDefinition();
     //配置加载完毕
     configLoadCompleted=true;
     //随机提醒
@@ -565,6 +570,7 @@ void MainWindow::load_CSVDefinition(){
                         fileDef.setFileIni(fileName);
                         QStringList list=csvType.split("|");
                         fileDef.setFileName((QString) list.at(0));
+                        fileDef.setFileNameWithCount(csvType);
                         //文件描述
                         QString filedescribe=loadedCsvInfoIni.value(csvType+"/filedescribe").toString();
                         if(filedescribe.isEmpty()){
@@ -808,7 +814,8 @@ NOT_OF_FILE:
         load_csvFile(resultType);
         return;
     }
-    statusBar_disPlayMessage(currentOpenFilePath+"文件无法识别,请尝试配置文件解析规则");
+    //完全无法识别的文件
+    statusBar_disPlayMessage(fileName+"文件当前无法识别,请尝试配置文件解析规则");
     return;
 }
 
@@ -1226,7 +1233,7 @@ void MainWindow::load_csvFile(QString fileType){
                                     else{
                                         CsvFaultCause item;
                                         item.setConfigIndex(dd);
-                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到的标题列数["+QString::number(fieldTitle.count())+"]和配置文件中的["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致，可能不是本版本的文件，无法解析");
+                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到的标题列数["+QString::number(fieldTitle.count())+"]和配置文件中的["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致,可能不是本版本的文件,无法解析,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
                                         faultList.append(item);
                                         continue;
                                     }
@@ -1238,7 +1245,7 @@ void MainWindow::load_csvFile(QString fileType){
                                 if(csvData.count()<loadedCsvDefinitionList.at(dd).getDatabeginrowindex()){
                                     CsvFaultCause item;
                                     item.setConfigIndex(dd);
-                                    item.setCause("配置文件中说文件从第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行就是数据行了，但是打开的文件只有["+QString::number(csvData.count())+"]行，无有效数据,无法解析");
+                                    item.setCause("配置文件中说文件从第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行就是数据行了，但是打开的文件只有["+QString::number(csvData.count())+"]行哟，无有效数据,无法解析");
                                     faultList.append(item);
                                     continue;
                                 }
@@ -1265,7 +1272,7 @@ void MainWindow::load_csvFile(QString fileType){
                                     else{
                                         CsvFaultCause item;
                                         item.setConfigIndex(dd);
-                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行找到的数据有["+QString::number(fieldCount)+"]列数据和配置文件中的["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行找到的数据有["+QString::number(fieldCount)+"]列数据,和配置文件中定义的列数["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
                                         faultList.append(item);
                                         continue;
                                     }
@@ -1274,7 +1281,9 @@ void MainWindow::load_csvFile(QString fileType){
                         }
                     }
                     else{
-                        statusBar_disPlayMessage("文件:"+currentOpenFilePath+"打开失败,请重试");
+                        int first = currentOpenFilePath.lastIndexOf ("/");
+                        QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
+                        statusBar_disPlayMessage("文件:"+fileName+"打开失败,请重试");
                         return;
                     }
                 }
@@ -1286,12 +1295,132 @@ void MainWindow::load_csvFile(QString fileType){
                 }
             }
         }
+        display_CSVFaultCause(faultList);
         //如果遍历完还没找到合适的配置，则提示
-        statusBar_disPlayMessage("解析失败,未找到适合该版本文件的有效配置，或者文件无有效数据记录");
+        statusBar_disPlayMessage("解析失败,请查看具体解析失败原因后修正配置或者确认是否文件格式错误");
         return;
     }
 }
 
+void MainWindow::display_CSVFaultCause(QList<CsvFaultCause> faultList){
+    if(faultList.count()>0){
+        //配置文件，配置文件是否可用，配置文件不可用原因，分隔符，是不是使用分隔符做行尾部，标题行，数据起始行，编码信息，字段总和，解析失败原因
+        int colCount=12;
+        int rowCount=faultList.count();
+        ptr_table->setColumnCount(colCount);
+        ptr_table->setRowCount(rowCount);
+        //设置表格列标题
+        QStringList title;
+        title.append("CSV配置文件");
+        title.append("文件匹配解析器");
+        title.append("文件用途解释");
+        title.append("配置文件是否可用");
+        title.append("配置文件不可用原因");
+        title.append("字段分隔符");
+        title.append("每行行尾以分隔符结束");
+        title.append("字段标题所在行");
+        title.append("数据内容起始行");
+        title.append("文件编码方式");
+        title.append("每行字段数");
+        title.append("解析匹配失败原因");
+        ptr_table->setHorizontalHeaderLabels(title);
+        //设置表格的选择方式
+        ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
+        //设置编辑方式
+        ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
+        //设置表格的内容
+        for (int row = 0; row < rowCount; ++row)
+        {
+            CsvFileDefinition csvfileDefinition=loadedCsvDefinitionList.at(faultList.at(row).getConfigIndex());
+            //配置文件
+            if(!csvfileDefinition.getFileIni().isEmpty()){
+                QTableWidgetItem *item0= new QTableWidgetItem(csvfileDefinition.getFileIni());
+                ptr_table->setItem(row, 0, item0);
+            }
+            //解析器
+            if(!csvfileDefinition.getFileNameWithCount().isEmpty()){
+                QTableWidgetItem *item1= new QTableWidgetItem("["+csvfileDefinition.getFileNameWithCount()+"]");
+                ptr_table->setItem(row, 1, item1);
+            }
+            //文件解释
+            if(!csvfileDefinition.getFileDescribe().isEmpty()){
+                QTableWidgetItem *item2= new QTableWidgetItem(csvfileDefinition.getFileDescribe());
+                ptr_table->setItem(row, 2, item2);
+            }
+            //配置是否可用
+            QString u="不可用";
+            if(csvfileDefinition.getUseAble()){
+                u="可用";
+            }
+            QTableWidgetItem *item3= new QTableWidgetItem(u);
+            ptr_table->setItem(row, 3, item3);
+            //不可用原因
+            if(!csvfileDefinition.getMessage().isEmpty()){
+                QTableWidgetItem *item4= new QTableWidgetItem(csvfileDefinition.getMessage());
+                ptr_table->setItem(row, 4, item4);
+            }
+            if(csvfileDefinition.getUseAble()){
+                //字段分隔符
+                QString split=csvfileDefinition.getSplit();
+                if(!split.isEmpty()){
+                    if(split==" "){
+                        split=split+"(空格)";
+                    }
+                    if(split=="\t"){
+                        split=split+"(制表符)";
+                    }
+                    if(split==","){
+                        split=split+"(英文逗号)";
+                    }
+                    if(split=="，"){
+                        split=split+"(中文逗号)";
+                    }
+                    if(split=="|"){
+                        split=split+"(竖线)";
+                    }
+                    QTableWidgetItem *item5= new QTableWidgetItem(split);
+                    ptr_table->setItem(row, 5, item5);
+                }
+                //分隔符结尾
+                QString s="否";
+                if(csvfileDefinition.getEndwithflag()==1){
+                    s="行尾为分隔符"+csvfileDefinition.getSplit();
+                }
+                QTableWidgetItem *item6= new QTableWidgetItem(s);
+                ptr_table->setItem(row, 6, item6);
+                //标题所在行
+                if(csvfileDefinition.getTitlerowindex()<1){
+                    QTableWidgetItem *item7= new QTableWidgetItem("文件内不包含标题行");
+                    ptr_table->setItem(row, 7, item7);
+                }
+                else{
+                    QTableWidgetItem *item7= new QTableWidgetItem(QString::number(csvfileDefinition.getTitlerowindex()));
+                    ptr_table->setItem(row, 7, item7);
+                }
+                //数据起始行
+                QTableWidgetItem *item8= new QTableWidgetItem(QString::number(csvfileDefinition.getDatabeginrowindex()));
+                ptr_table->setItem(row, 8, item8);
+                //文件编码
+                if(!csvfileDefinition.getEcoding().isEmpty()){
+                    QTableWidgetItem *item9= new QTableWidgetItem(csvfileDefinition.getEcoding());
+                    ptr_table->setItem(row, 9, item9);
+                }
+                //每行字段数
+                QTableWidgetItem *item10= new QTableWidgetItem(QString::number(csvfileDefinition.getFieldCount()));
+                ptr_table->setItem(row, 10, item10);
+            }
+            //解析失败原因
+            if(!faultList.at(row).getCause().isEmpty()){
+                QTableWidgetItem *item11= new QTableWidgetItem(faultList.at(row).getCause());
+                ptr_table->setItem(row, 11, item11);
+            }
+        }
+        ptr_table->resizeColumnsToContents();
+        statusBar_display_rowsCount(rowCount);
+        currentOpenFileType=-1;
+    }
+}
 void MainWindow::load_csvFileData(QStringList fieldTitle){
     //使用的ini配置
     ui->lineEditUseIni->setText(csv.getFileIni());
@@ -2572,6 +2701,10 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
             action_EditCompareData->setText("将此行数据从比对器移除");
         }
     }
+    //为打开文件或者打开失败时，有可能表格显示了失败原因，开启复制功能
+    if(currentOpenFileType==-1){
+        tablePopMenu->addAction(action_ShowCopyColum);
+    }
     tablePopMenu->exec(QCursor::pos());
 }
 
@@ -3411,6 +3544,7 @@ void MainWindow::randomTips(){
     tips.append("源文件某行数据在解析器的第几行?,试试源文件行跳转功能,一键直达...");
     tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
     tips.append("按Ctrl+G切换视图模式,可以隐藏或者显示文件头信息...");
+    tips.append("尝试使用本工具解析各种固定分隔符文件吧，比excel更好的数据展示方式,且支持导出excel...");
     srand((unsigned)time(nullptr));
     int index =rand()%tips.count();
     statusBar_disPlayMessage("温馨提示:"+tips.at(index));

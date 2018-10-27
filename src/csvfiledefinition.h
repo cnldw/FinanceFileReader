@@ -9,6 +9,7 @@ class CsvFileDefinition
 private:
     //使用的正则匹配文件名
     QString fileName;
+    QString fileNameWithCount;
     QString fileDescribe;
     //配置是否可用
     bool useAble;
@@ -57,6 +58,8 @@ public:
     void setEndwithflag(const QString &value);
     QString getFileDescribe() const;
     void setFileDescribe(const QString &value);
+    QString getFileNameWithCount() const;
+    void setFileNameWithCount(const QString &value);
 };
 
 #endif // CSVFILEDEFINITION_H

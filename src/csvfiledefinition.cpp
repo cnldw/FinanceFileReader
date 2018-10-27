@@ -120,7 +120,17 @@ void CsvFileDefinition::setFileDescribe(const QString &value)
     fileDescribe = value;
 }
 
+QString CsvFileDefinition::getFileNameWithCount() const
+{
+    return fileNameWithCount;
+}
+
+void CsvFileDefinition::setFileNameWithCount(const QString &value)
+{
+    fileNameWithCount = value;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
-
+    
 }
