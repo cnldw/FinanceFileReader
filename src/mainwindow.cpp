@@ -566,12 +566,17 @@ void MainWindow::load_CSVDefinition(){
                 for(int i=0;i<csvInfo.count();i++){
                     QString csvType=(QString)csvInfo.at(i);
                     if(csvType.contains("|",Qt::CaseSensitive)){
+                        //建立一个定义变量
                         CsvFileDefinition fileDef;
+                        //本配置来自的配置文件
                         fileDef.setFileIni(fileName);
+                        //分割文件名和字段数
                         QStringList list=csvType.split("|");
+                        //1解析器可接受的文件名
                         fileDef.setFileName((QString) list.at(0));
+                        //2解析器配置全名
                         fileDef.setFileNameWithCount(csvType);
-                        //文件描述
+                        //3文件描述信息
                         QString filedescribe=loadedCsvInfoIni.value(csvType+"/filedescribe").toString();
                         if(filedescribe.isEmpty()){
                             fileDef.setFileDescribe("未说明的CSV文件");
@@ -580,60 +585,60 @@ void MainWindow::load_CSVDefinition(){
                             fileDef.setFileDescribe(filedescribe);
                             loadedCsvFileInfo.insert(list.at(0),filedescribe);
                         }
-                        //字段总数
+                        //5分隔符
+                        QString splitflag=loadedCsvInfoIni.value(csvType+"/splitflag").toString();
+                        //注意不要乱删除这几行代码，qt有个bug，ini配置里某个字段的值是,(英文逗号)获取时会获取到空值，坑！
+                        //如果列分割为配置符号为空，则分隔符配置设置为,
+                        if(splitflag.isEmpty()){
+                            splitflag=",";
+                        }
+                        fileDef.setSplit(splitflag);
+                        //5是否以分隔符做结尾
+                        QString endwithflag=loadedCsvInfoIni.value(csvType+"/endwithflag").toString();
+                        fileDef.setEndwithflag(endwithflag);
+                        //6数据起始行
+                        bool beginflagok;
+                        int  beginrowindex=loadedCsvInfoIni.value(csvType+"/datarowbeginindex").toInt(&beginflagok);
+                        if(!beginflagok){
+                            fileDef.setDatabeginrowindex(0);
+                        }
+                        //如果数据起始行小于1，则强制为1
+                        else if(beginrowindex<1){
+                            fileDef.setDatabeginrowindex(1);
+                        }else{
+                            fileDef.setDatabeginrowindex(beginrowindex);
+                        }
+                        //7标题行
+                        bool titleflagok;
+                        int  titlerowindex=loadedCsvInfoIni.value(csvType+"/titlerowindex").toInt(&titleflagok);
+                        if(!titleflagok){
+                            fileDef.setTitlerowindex(0);
+                        }
+                        //如果不存在标题栏目，则标题行强制设置为0
+                        else if(titlerowindex<1){
+                            fileDef.setTitlerowindex(0);
+                        }else{
+                            fileDef.setTitlerowindex(titlerowindex);
+                        }
+                        //8编码信息
+                        QString encoding=loadedCsvInfoIni.value(csvType+"/encoding").toString();
+                        if(encoding.isEmpty()){
+                            fileDef.setEcoding("UTF-8");
+                        }
+                        else{
+                            fileDef.setEcoding(encoding);
+                        }
+                        //////////////////////////////////////
+                        //9字段总数
                         bool flag;
+                        QString fieldCcountStr=list.at(1);
                         int fieldCount=(list.at(1)).toInt(&flag,10);
                         //字段描述值正确
                         if(flag&&fieldCount>0){
-                            QString splitflag=loadedCsvInfoIni.value(csvType+"/splitflag").toString();
-                            //注意不要乱删除这几行代码，qt有个bug，ini配置里某个字段的值是,(英文逗号)获取时会获取到空值，坑！
-                            //如果列分割为配置符号为空，则分隔符配置设置为,
-                            if(splitflag.isEmpty()){
-                                splitflag=",";
-                            }
-                            ////////////////加载头部信息//////////////////
-                            //字段总数
+                            //4字段总数
                             fileDef.setFieldCount(fieldCount);
-                            //分隔符
-                            fileDef.setSplit(splitflag);
-                            //是否以分隔符做结尾
-                            QString endwithflag=loadedCsvInfoIni.value(csvType+"/endwithflag").toString();
-                            fileDef.setEndwithflag(endwithflag);
-                            //数据起始行
-                            bool beginflagok;
-                            int  beginrowindex=loadedCsvInfoIni.value(csvType+"/datarowbeginindex").toInt(&beginflagok);
-                            if(!beginflagok){
-                                fileDef.setDatabeginrowindex(0);
-                            }
-                            //如果数据起始行小于1，则强制为1
-                            else if(beginrowindex<1){
-                                fileDef.setDatabeginrowindex(1);
-                            }else{
-                                fileDef.setDatabeginrowindex(beginrowindex);
-                            }
-                            //标题行
-                            bool titleflagok;
-                            int  titlerowindex=loadedCsvInfoIni.value(csvType+"/titlerowindex").toInt(&titleflagok);
-                            if(!titleflagok){
-                                fileDef.setTitlerowindex(0);
-                            }
-                            //如果不存在标题栏目，则标题行强制设置为0
-                            else if(titlerowindex<1){
-                                fileDef.setTitlerowindex(0);
-                            }else{
-                                fileDef.setTitlerowindex(titlerowindex);
-                            }
-                            //编码信息
-                            QString encoding=loadedCsvInfoIni.value(csvType+"/encoding").toString();
-                            if(encoding.isEmpty()){
-                                fileDef.setEcoding("UTF-8");
-                            }
-                            else{
-                                fileDef.setEcoding(encoding);
-                            }
-                            //
                             QList <CsvFieldDefinition> fieldList;
-                            //开始循环加载本文件类型的字段信息///////////////
+                            //10开始循环加载本文件类型的字段信息///////////////
                             for(int r=0;r<fieldCount;r++){
                                 CsvFieldDefinition fieldItem;
                                 QString name=loadedCsvInfoIni.value(csvType+"/"+(QString::number(r+1,10))).toString();
@@ -650,9 +655,17 @@ void MainWindow::load_CSVDefinition(){
                             fileDef.setUseAble(true);
                             loadedCsvDefinitionList.append(fileDef);
                         }
+                        //如果字段数是AUTO，则字段总和设置为-1，在进行文件解析是自动分析标题数量来进行解析
+                        //这种模式在带文件标题的情况下，自动解析标题，如果不带标题，则解析是标题全部描述为第XX列
+                        else if(fieldCcountStr.toUpper()=="AUTO"){
+                            fileDef.setFieldCount(-1);
+                            fileDef.setUseAble(true);
+                            loadedCsvDefinitionList.append(fileDef);
+                        }
                         else{
+                            //10,文件配置是否可用
                             fileDef.setUseAble(false);
-                            fileDef.setMessage("字段总数描述不是正确可用的数值（字段数需为大于0的整数）");
+                            fileDef.setMessage("字段总数描述不是正确可用的数值(字段数需为大于0的整数)或者为AUTO(自动解析列数形式)");
                             loadedCsvDefinitionList.append(fileDef);
                         }
                     }
@@ -693,6 +706,10 @@ void MainWindow::initFile(){
     if(fileName.startsWith("OFD",Qt::CaseInsensitive)){
         //开始拆解文件名
         QString fixName=fileName;
+        //FFreader导出的csv文件，直接跳转到非OFD文件去解析
+        if(fixName.endsWith(".csv")){
+            goto NOT_OF_FILE;
+        }
         if(fixName.contains(".",Qt::CaseInsensitive)){
             fixName=fixName.mid(0,fixName.indexOf("."));
         }
@@ -1198,7 +1215,7 @@ void MainWindow::load_csvFile(QString fileType){
                             row++;
                         }
                         dataFile.close();
-                        //如果一行数据都没读到，则提示是空文件，结束探测
+                        //如果一行数据都没读到，则提示是空文件，结束探测--不再做任何解析尝试
                         if(row==0){
                             dataFile.close();
                             statusBar_disPlayMessage("空的CSV文件,没有任何数据记录可工解析");
@@ -1211,20 +1228,62 @@ void MainWindow::load_csvFile(QString fileType){
                                 if(csvData.count()<loadedCsvDefinitionList.at(dd).getTitlerowindex()){
                                     CsvFaultCause item;
                                     item.setConfigIndex(dd);
-                                    item.setCause("未在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到有效标题行");
+                                    item.setCause("未在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到有效标题行,无法认定文件属于此类型");
                                     faultList.append(item);
                                     continue;
                                 }
                                 //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
                                 else{
                                     QString titleRowString=csvData.at(loadedCsvDefinitionList.at(dd).getTitlerowindex()-1);
+                                    if(titleRowString.length()<0){
+                                        CsvFaultCause item;
+                                        item.setConfigIndex(dd);
+                                        item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到的标题内容为空，无法提取接口文件列名信息");
+                                        faultList.append(item);
+                                        continue;
+                                    }
                                     //如果需要忽略最后一个多余的分隔符
                                     if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
                                         titleRowString= titleRowString.left(titleRowString.length()-1);
                                     }
                                     QStringList fieldTitle=titleRowString.split(loadedCsvDefinitionList.at(dd).getSplit());
+                                    //如果文件字段数是-1.则代表根据标题或者第一行数据自动分析列数和列标题，以标题行或者第一行数据自己造标题数据为准来更新列数
+                                    if(loadedCsvDefinitionList.at(dd).getFieldCount()==-1){
+                                        int countFromtitle=fieldTitle.count();
+                                        if(countFromtitle<0){
+                                            CsvFaultCause item;
+                                            item.setConfigIndex(dd);
+                                            item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行使用分隔符["+loadedCsvDefinitionList.at(dd).getSplit()+"]找到的标题列数为0，无法解析列数为0的文件");
+                                            faultList.append(item);
+                                            continue;
+                                        }
+                                        else{
+                                            //开始加载配置文件
+                                            csv=loadedCsvDefinitionList.at(dd);
+                                            //开始更新文件列数到临时csv配置变量
+                                            csv.setFieldCount(fieldTitle.count());
+                                            //开始更新列标题到临时csv配置变量
+                                            QList <CsvFieldDefinition> fieldList;
+                                            //10开始循环加载本文件类型的字段信息///////////////
+                                            for(int r=0;r<fieldTitle.count();r++){
+                                                CsvFieldDefinition fieldItem;
+                                                QString name=fieldTitle.at(r);
+                                                if(name.isEmpty()){
+                                                    fieldItem.setFieldName("未定义的字段名(第"+QString::number(r+1)+"列)");
+                                                }
+                                                else{
+                                                    fieldItem.setFieldName(name);
+                                                }
+                                                //添加此字段信息到文件定义
+                                                fieldList.append(fieldItem);
+                                            }
+                                            csv.setFieldList(fieldList);
+                                            load_csvFileData(fieldTitle);
+                                            return;
+                                        }
+                                    }
                                     //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
-                                    if(fieldTitle.count()==loadedCsvDefinitionList.at(dd).getFieldCount()){
+                                    else if(fieldTitle.count()==loadedCsvDefinitionList.at(dd).getFieldCount()){
                                         //开始加载数据
                                         csv=loadedCsvDefinitionList.at(dd);
                                         load_csvFileData(fieldTitle);
@@ -1248,6 +1307,44 @@ void MainWindow::load_csvFile(QString fileType){
                                     item.setCause("配置文件中说文件从第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行就是数据行了，但是打开的文件只有["+QString::number(csvData.count())+"]行哟，无有效数据,无法解析");
                                     faultList.append(item);
                                     continue;
+                                }
+                                //如果文件字段数是-1.则代表根据标题或者第一行数据自动分析列数和列标题，以标题行或者第一行数据自己造标题数据为准来更新列数
+                                else if(loadedCsvDefinitionList.at(dd).getFieldCount()==-1){
+                                    QString firstDataRowString=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1);
+                                    //如果需要忽略最后一个多余的分隔符
+                                    if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
+                                        firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
+                                    }
+                                    int fieldCountFirstRow=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
+                                    if(fieldCountFirstRow<0){
+                                        CsvFaultCause item;
+                                        item.setConfigIndex(dd);
+                                        item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行使用分隔符["+loadedCsvDefinitionList.at(dd).getSplit()+"]找到的数据列数为0，无法解析列数为0的文件");
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                    else{
+                                        //开始加载配置文件
+                                        csv=loadedCsvDefinitionList.at(dd);
+                                        //开始更新文件列数到临时csv配置变量
+                                        csv.setFieldCount(fieldCountFirstRow);
+                                        //开始更新列标题到临时csv配置变量
+                                        QList <CsvFieldDefinition> fieldList;
+                                        QStringList fieldTitle;
+                                        //开始循环设置本文件类型的字段信息///////////////
+                                        //对于不带标题的并且字段数是auto的，直接设置标题
+                                        for(int r=0;r<fieldCountFirstRow;r++){
+                                            CsvFieldDefinition fieldItem;
+                                            QString name="未定义的字段名(第"+QString::number(r+1)+"列)";
+                                            fieldTitle.append(name);
+                                            fieldItem.setFieldName(name);
+                                            //添加此字段信息到文件定义
+                                            fieldList.append(fieldItem);
+                                        }
+                                        csv.setFieldList(fieldList);
+                                        load_csvFileData(fieldTitle);
+                                        return;
+                                    }
                                 }
                                 //存在数据,以第一行数据分析
                                 else{
@@ -1430,7 +1527,7 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
     ui->lineEditFileType->setText("CSV文件");
     //当加载的文件类别是csv时，传递日期栏目改为文件正则匹配到的配置;
     ui->labelFileTransferDate->setText("解析器配置");
-    ui->lineEditFileTransferDate->setText("["+csv.getFileName()+"|"+QString::number(csv.getFieldCount())+"]");
+    ui->lineEditFileTransferDate->setText("["+csv.getFileNameWithCount()+"]");
 
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
