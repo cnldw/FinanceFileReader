@@ -1384,7 +1384,7 @@ void MainWindow::display_CSVFaultCause(QList<CsvFaultCause> faultList){
                 }
                 //分隔符结尾
                 QString s="否";
-                if(csvfileDefinition.getEndwithflag()==1){
+                if(csvfileDefinition.getEndwithflag()=="1"){
                     s="行尾为分隔符"+csvfileDefinition.getSplit();
                 }
                 QTableWidgetItem *item6= new QTableWidgetItem(s);
