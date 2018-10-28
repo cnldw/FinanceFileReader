@@ -351,7 +351,7 @@ private:
      * @param fileType
      * CSV文件的加载
      */
-    void load_csvFile(QString fileType);
+    void load_csvFile(QStringList fileType);
 
     void load_csvFileData(QStringList title);
     /**

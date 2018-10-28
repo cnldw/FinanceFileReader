@@ -677,6 +677,27 @@ void MainWindow::load_CSVDefinition(){
             }else{
             }
         }
+        //对加载到信息进行按通配符号的数量进行排序
+        //优先适配通配符少的更明确的文件
+        int listcount=loadedCsvDefinitionList.count();
+        if(listcount>1){
+            for(int nn=0;nn<listcount-1;nn++){
+                int lastsmallIndex=nn;
+                int small=nn;
+                for(int vv=nn;vv<listcount-1;vv++){
+                    if(loadedCsvDefinitionList.at(vv+1).getFileName().count("*")<loadedCsvDefinitionList.at(lastsmallIndex).getFileName().count("*")){
+                        lastsmallIndex=vv+1;
+                        small=vv+1;
+                    }
+                }
+                //如果发生了交换
+                if(small!=nn){
+                    CsvFileDefinition exchange=loadedCsvDefinitionList.at(nn);
+                    loadedCsvDefinitionList.replace(nn,loadedCsvDefinitionList.at(small));
+                    loadedCsvDefinitionList.replace(small,exchange);
+                }
+            }
+        }
     }
 }
 void MainWindow::initFile(){
@@ -813,7 +834,7 @@ void MainWindow::initFile(){
 NOT_OF_FILE:
     //开始判断是不是csv类别的文件
     //对文件名做正则匹配
-    QString resultType="";
+    QStringList resultType;
     QHash<QString, QString>::iterator h;
     for(h=loadedCsvFileInfo.begin(); h!=loadedCsvFileInfo.end(); ++h){
         QString Name=h.key();
@@ -822,11 +843,11 @@ NOT_OF_FILE:
         QRegExp rx(pattern);
         bool match = rx.exactMatch(fileName);
         if(match){
-            resultType=h.key();
+            resultType.append(h.key());
         }
     }
     //TODO 这里待优化匹配逻辑
-    if(!resultType.isEmpty()){
+    if(resultType.count()>0){
         //如果匹配到了，则进行加载csv文件
         load_csvFile(resultType);
         return;
@@ -1176,7 +1197,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
     }
 }
 
-void MainWindow::load_csvFile(QString fileType){
+void MainWindow::load_csvFile(QStringList fileType){
     currentOpenFileType=2;
     //由于csv文件有可能同一个文件名，但是实际文件版本不同，所以需要做版本校验
     QFile dataFile(currentOpenFilePath);
@@ -1191,7 +1212,7 @@ void MainWindow::load_csvFile(QString fileType){
         int dd=0;
         for(;dd<loadedCsvDefinitionList.count();dd++){
             //如果文件名可用且配置可用，则加入
-            if(loadedCsvDefinitionList.at(dd).getFileName()==fileType){
+            if(fileType.contains(loadedCsvDefinitionList.at(dd).getFileName())){
                 if(loadedCsvDefinitionList.at(dd).getUseAble()){
                     //设置文件编码
                     QString coding=loadedCsvDefinitionList.at(dd).getEcoding();
