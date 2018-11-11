@@ -53,12 +53,14 @@
 #include "src/dictionary.h"
 #include "src/codeinfo.h"
 #include "src/xlsx/xlsxdocument.h"
+#include "src/xlsx/xlsxcellrange.h"
 #include "src/dialogmodifycell.h"
 #include "src/dialogaboutauthor.h"
 #include "src/dialogaboutthis.h"
 #include "src/dialogmergetip.h"
 #include "src/csvfiledefinition.h"
 #include "src/csvfaultcause.h"
+#include "fieldisnumber.h"
 
 namespace Ui {
 class MainWindow;
@@ -140,6 +142,8 @@ private slots:
 
     void on_viewMode_triggered();
 
+    void on_tableWidget_itemSelectionChanged();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
@@ -175,6 +179,8 @@ private:
     OFDFileDefinition ofd;
     //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到改文件的csv定义
     CsvFileDefinition csv;
+    //用于记录csv等类别文件哪些列是数值的变量，注意，这个是否是数值是猜出来的
+    QHash<int,FieldIsNumber> fieldIsNumberOrNot;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray

@@ -22,6 +22,7 @@
 #include <QClipboard>
 #include <QPoint>
 #include <QMenu>
+#include <QMessageBox>
 
 namespace Ui {
 class DialogShowTableRow;

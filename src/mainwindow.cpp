@@ -43,7 +43,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tablePopMenu = new QMenu(ptr_table);
     action_ShowDetails = new QAction(tr("查看此行记录"),this);
     connect(action_ShowDetails, SIGNAL(triggered()), this, SLOT(showRowDetails()));
-    action_ShowCopyColum = new QAction(tr("复制光标所在单元格"),this);
+    action_ShowCopyColum = new QAction(tr("复制"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
     action_ShowAnalysis = new QAction(tr("字段合法分析"),this);
     connect(action_ShowAnalysis, SIGNAL(triggered()), this, SLOT(showFiledAnalysis()));
@@ -319,6 +319,7 @@ void MainWindow::clear_oldData(){
     rowHasloaded.clear();
     compareData.clear();
     columnWidth.clear();
+    fieldIsNumberOrNot.clear();
     //记录当前所在行
     rowcurrent=0;
     //当前所在列
@@ -470,7 +471,7 @@ void MainWindow::load_OFDDefinition(){
                                             break;
                                         }
                                         //获取字符类型参数
-                                        QString filedType=((QString)iniStrList.at(0));
+                                        QString filedType=(QString(iniStrList.at(0)));
                                         if(filedType.length()<1){
                                             message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的类型定义缺失,请配置";
                                             okFlag=false;
@@ -478,7 +479,7 @@ void MainWindow::load_OFDDefinition(){
                                         }
                                         //字段长度
                                         bool lengthOk;
-                                        int length=((QString)iniStrList.at(1)).toInt(&lengthOk,10);
+                                        int length=(QString(iniStrList.at(1))).toInt(&lengthOk,10);
                                         if(!lengthOk){
                                             message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的长度定义不是整数";
                                             okFlag=false;
@@ -486,7 +487,7 @@ void MainWindow::load_OFDDefinition(){
                                         }
                                         //字段小数长度
                                         bool declengthOk;
-                                        int declength=((QString)iniStrList.at(2)).toInt(&declengthOk,10);
+                                        int declength=(QString(iniStrList.at(2))).toInt(&declengthOk,10);
                                         if(!declengthOk){
                                             message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义不是整数";
                                             okFlag=false;
@@ -505,8 +506,8 @@ void MainWindow::load_OFDDefinition(){
                                         ofdfiled.setLength(length);
                                         ofdfiled.setDecLength(declength);
                                         ofdfiled.setFieldType(filedType);
-                                        ofdfiled.setFiledName((QString)iniStrList.at(4));
-                                        ofdfiled.setFiledDescribe((QString)iniStrList.at(3));
+                                        ofdfiled.setFiledName(QString(iniStrList.at(4)));
+                                        ofdfiled.setFiledDescribe(QString(iniStrList.at(3)));
                                         fieldList.append(ofdfiled);
                                         //更新记录为成功
                                         okFlag=true;
@@ -564,7 +565,7 @@ void MainWindow::load_CSVDefinition(){
                 QStringList csvInfo=loadedCsvInfoIni.childGroups();
                 //获取所有csv文件的配置信息，循环存储
                 for(int i=0;i<csvInfo.count();i++){
-                    QString csvType=(QString)csvInfo.at(i);
+                    QString csvType=QString(csvInfo.at(i));
                     if(csvType.contains("|",Qt::CaseSensitive)){
                         //建立一个定义变量
                         CsvFileDefinition fileDef;
@@ -573,7 +574,7 @@ void MainWindow::load_CSVDefinition(){
                         //分割文件名和字段数
                         QStringList list=csvType.split("|");
                         //1解析器可接受的文件名
-                        fileDef.setFileName((QString) list.at(0));
+                        fileDef.setFileName(QString (list.at(0)));
                         //2解析器配置全名
                         fileDef.setFileNameWithCount(csvType);
                         //3文件描述信息
@@ -1050,8 +1051,8 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                     }
                     //遍历比对字段是否一致
                     for(int ff=0;ff<filedNameFromFile.count();ff++){
-                        if(((QString)filedNameFromFile.at(ff)).toUpper()!=ofd.getfieldList().at(ff).getFiledName().toUpper()){
-                            QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件第["+QString::number(ff)+"]个字段是["+ofd.getfieldList().at(ff).getFiledName().toUpper()+"],但是从文件第["+QString::number(11+ff)+"]行获取到的字段是["+((QString)filedNameFromFile.at(ff)).toUpper()+"] 字段名(忽略大小写)不一致,请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
+                        if((QString(filedNameFromFile.at(ff))).toUpper()!=ofd.getfieldList().at(ff).getFiledName().toUpper()){
+                            QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件第["+QString::number(ff)+"]个字段是["+ofd.getfieldList().at(ff).getFiledName().toUpper()+"],但是从文件第["+QString::number(11+ff)+"]行获取到的字段是["+(QString(filedNameFromFile.at(ff))).toUpper()+"] 字段名(忽略大小写)不一致,请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
                             return;
                         }
                     }
@@ -1663,6 +1664,71 @@ void MainWindow::init_OFDTable(){
 
 void MainWindow::init_CSVTable(QStringList title){
     if(csv.getUseAble()){
+        ///////////////////////CSV数值类型判断///////////////////////////////////////////
+        //判断哪些列是否是数值,判断10行数据或者低于10行判读所有行，全部是数值的才认为是数值、
+        //仅仅判断包含小数点的小数，整数暂时不管，大部分整数列都是字典值，不是数值，没必要
+        for(int rowIndex=0;rowIndex<10&&rowIndex<csvFileContentQStringList.count();rowIndex++){
+            //获取本行数据
+            QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQStringList,&csv,rowIndex);
+            //循环识别每列的数据类型
+            for(int colIndex=0;colIndex<title.count();colIndex++){
+                FieldIsNumber isnumber;
+                if(rowIndex==0){
+                    bool convertOk=false;
+                    QString vav="";
+                    //注意不能去掉判断，csv文件如果列残缺会取不到所有列
+                    if(colIndex<rowdata.count()){
+                        vav=rowdata.at(colIndex);
+                    }
+                    vav.toDouble(&convertOk);
+                    if(convertOk){
+                        //识别识别带小数点的小数
+                        if(vav.contains(".",Qt::CaseSensitive)){
+                            isnumber.setIsNumber(true);
+                            isnumber.setDecimalLength(vav.split(".")[1].length());
+                        }
+                        //纯数字字符串暂不考虑
+                        else{
+                            isnumber.setIsNumber(false);
+                        }
+                        fieldIsNumberOrNot.insert(colIndex,isnumber);
+                    }
+                    else{
+                        isnumber.setIsNumber(false);
+                        fieldIsNumberOrNot.insert(colIndex,isnumber);
+                    }
+                }
+                //非第一行，只判断之前是数值的,并且决定是否要更新小数长度
+                else{
+                    if(fieldIsNumberOrNot.value(colIndex).getIsNumber()){
+                        bool convertOk=false;
+                        QString vav="";
+                        //注意不能去掉判断，csv文件如果列残缺会取不到所有列
+                        if(colIndex<rowdata.count()){
+                            vav=rowdata.at(colIndex);
+                        }
+                        vav.toDouble(&convertOk);
+                        if(convertOk){
+                            //识别小数长度
+                            int len=0;
+                            if(vav.contains(".",Qt::CaseSensitive)){
+                                len=vav.split(".")[1].length();
+                            }
+                            //本行小数长度位数比上一行长
+                            if(len>fieldIsNumberOrNot.value(colIndex).getDecimalLength()){
+                                isnumber.setIsNumber(true);
+                                isnumber.setDecimalLength(len);
+                                fieldIsNumberOrNot.insert(colIndex,isnumber);
+                            }
+                        }
+                        else{
+                            isnumber.setIsNumber(false);
+                            fieldIsNumberOrNot.insert(colIndex,isnumber);
+                        }
+                    }
+                }
+            }
+        }
         int colCount=title.count();
         int rowCount=csvFileContentQStringList.count();
         ptr_table->setColumnCount(colCount);
@@ -1921,19 +1987,45 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
             colSearch=currentColumn;
             int rowInFile=ofdFileHeaderQStringList.count()+currentRow+1;
             int colInFile=ofd.getfieldList().at(currentColumn).getRowBeginIndex()+1;
+            //显示当前行列
             statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getfieldList().at(currentColumn).getLength());
-            if(ptr_table->item(currentRow,currentColumn)!=nullptr){
-                QString text=ptr_table->item(currentRow,currentColumn)->text();
-                QString dic=dictionary.getDictionary(ofd.getfieldList().at(currentColumn).getFiledName(),text);
-                if(text.isEmpty()){
-                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()));
+            //显示当前选择的字段信息//这里要做一个判断，如果选择的是多个单元格并且选择的是数字类的，则显示平均数等统计信息
+            bool disPlayMessage=false;
+            QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+            int rangeCount=itemsRange.count();
+            //只有一个区间，并且只选择了一个单元格才显示此字段信息，其余情况则显示统计信息
+            if(rangeCount==1&&itemsRange.at(0).leftColumn()==itemsRange.at(0).rightColumn()&&itemsRange.at(0).topRow()==itemsRange.at(0).bottomRow()){
+                disPlayMessage=true;
+            }
+            else if(rangeCount>=1){
+                if(itemsRange.at(0).leftColumn()!=itemsRange.at(0).rightColumn()){
+                    disPlayMessage=true;
                 }
                 else{
-                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+                    //循环遍历选择的范围区间，从第二个开始，第一个已统计
+                    for(int i=1;i<rangeCount;i++){
+                        //选择范围跨列,与上一个范围区间列不等这两种情况,不进行数据统计
+                        if((itemsRange.at(i).leftColumn()!=itemsRange.at(i).rightColumn())||(itemsRange.at(i).leftColumn()!=itemsRange.at(i-1).leftColumn())){
+                            disPlayMessage=true;
+                            break;
+                        }
+                    }
                 }
             }
-            else{
-                statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()));
+            if(disPlayMessage){
+                if(ptr_table->item(currentRow,currentColumn)!=nullptr){
+                    QString text=ptr_table->item(currentRow,currentColumn)->text();
+                    QString dic=dictionary.getDictionary(ofd.getfieldList().at(currentColumn).getFiledName(),text);
+                    if(text.isEmpty()){
+                        statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()));
+                    }
+                    else{
+                        statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+                    }
+                }
+                else{
+                    statusBar_disPlayMessage(ofd.getfieldList().at(currentColumn).getFiledDescribe().append("/").append(ofd.getfieldList().at(currentColumn).getFiledName()).append("|").append(ofd.getfieldList().at(currentColumn).getFieldType()));
+                }
             }
         }
         else if(currentOpenFileType==2){
@@ -1946,10 +2038,35 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
             int rowInFile=csvFileHeaderQStringList.count()+currentRow+1;
             int colInFile=currentColumn+1;
             statusBar_display_rowsAndCol(rowInFile,colInFile,0);
-            if(ptr_table->item(currentRow,currentColumn)!=nullptr){
-                QString text=ptr_table->item(currentRow,currentColumn)->text();
-                if(!text.isEmpty()){
-                    statusBar_disPlayMessage(text);
+            //显示当前选择的字段信息//这里要做一个判断，如果选择的是多个单元格并且选择的是数字类的，则显示平均数等统计信息
+            bool disPlayMessage=false;
+            QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+            int rangeCount=itemsRange.count();
+            //只有一个区间，并且只选择了一个单元格才显示此字段信息，其余情况则显示统计信息
+            if(rangeCount==1&&itemsRange.at(0).leftColumn()==itemsRange.at(0).rightColumn()&&itemsRange.at(0).topRow()==itemsRange.at(0).bottomRow()){
+                disPlayMessage=true;
+            }
+            else if(rangeCount>=1){
+                if(itemsRange.at(0).leftColumn()!=itemsRange.at(0).rightColumn()){
+                    disPlayMessage=true;
+                }
+                else{
+                    //循环遍历选择的范围区间，从第二个开始，第一个已统计
+                    for(int i=1;i<rangeCount;i++){
+                        //选择范围跨列,与上一个范围区间列不等这两种情况,不进行数据统计
+                        if((itemsRange.at(i).leftColumn()!=itemsRange.at(i).rightColumn())||(itemsRange.at(i).leftColumn()!=itemsRange.at(i-1).leftColumn())){
+                            disPlayMessage=true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if(disPlayMessage){
+                if(ptr_table->item(currentRow,currentColumn)!=nullptr){
+                    QString text=ptr_table->item(currentRow,currentColumn)->text();
+                    if(!text.isEmpty()){
+                        statusBar_disPlayMessage(text);
+                    }
                 }
             }
         }
@@ -1957,12 +2074,96 @@ void MainWindow::on_tableWidget_currentCellChanged(int currentRow, int currentCo
     }
 }
 
+/**
+ * @brief MainWindow::copyToClipboard
+ * 数据复制
+ */
 void MainWindow::copyToClipboard(){
-    if(ptr_table->itemAt(posCurrentMenu)!=nullptr){
-        QString text= ptr_table->itemAt(posCurrentMenu)->text();
-        QClipboard *board = QApplication::clipboard();
-        board->setText(text);
-        statusBar_disPlayMessage(QString("复制数据:\"%1\"").arg(text));
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    int rangeCount=itemsRange.count();
+    if(rangeCount==1){
+        int topRow=itemsRange.at(0).topRow();
+        int bottomRow=itemsRange.at(0).bottomRow();
+        int leftColumn=itemsRange.at(0).leftColumn();
+        int rigthColumn=itemsRange.at(0).rightColumn();
+        //单个单元格复制
+        if(topRow==bottomRow&&leftColumn==rigthColumn){
+            QString text="";
+            QClipboard *board = QApplication::clipboard();
+            if(ptr_table->item(topRow,leftColumn)!=nullptr){
+                text= ptr_table->item(topRow,leftColumn)->text();
+            }
+            board->setText(text);
+            statusBar_disPlayMessage(QString("复制数据:\"%1\"").arg(text));
+        }
+        //多个单元格复制
+        else{
+            int selectSum=(rigthColumn-leftColumn+1)*(bottomRow-topRow+1);
+            if(selectSum>1000000){
+                statusBar_disPlayMessage("警告:选择的单元格超过1,000,000,无法复制!");
+            }
+            else{
+                QString value="";
+                //在错误展示和OFD索引文件模式下复制取表格数据
+                if(currentOpenFileType==-1||currentOpenFileType==0){
+                    for(int row=topRow;row<=bottomRow;row++){
+                        for(int col=leftColumn;col<=rigthColumn;col++){
+                            if(ptr_table->item(row,col)==nullptr){
+                                value.append("");
+                            }
+                            else{
+                                value.append(ptr_table->item(row,col)->text());
+                            }
+                            if(col<rigthColumn){
+                                value.append("\t");
+                            }else if(row<bottomRow){
+                                value.append("\r\n");
+                            }
+                        }
+                    }
+                }
+                //OFD模式下的复制
+                else if(currentOpenFileType==1){
+                    for(int row=topRow;row<=bottomRow;row++){
+                        for(int col=leftColumn;col<=rigthColumn;col++){
+                            //数据不能取自表格，表格数据基于懒加载机制的情况下数据会不全
+                            value.append(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col));
+                            if(col<rigthColumn){
+                                value.append("\t");
+                            }else if(row<bottomRow){
+                                value.append("\r\n");
+                            }
+                        }
+                    }
+                }
+                //CSV文件下的复制
+                else if(currentOpenFileType==2){
+                    for(int row=topRow;row<=bottomRow;row++){
+                        QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQStringList,&csv,row);
+                        for(int col=leftColumn;col<=rigthColumn;col++){
+                            //数据不能取自表格，表格数据基于懒加载机制的情况下数据会不全
+                            //预防csv行不足的情况
+                            if(col<rowdata.count()){
+                                value.append(rowdata.at(col));
+                            }else{
+                                value.append("");
+                            }
+                            if(col<rigthColumn){
+                                value.append("\t");
+                            }else if(row<bottomRow){
+                                value.append("\r\n");
+                            }
+                        }
+                    }
+                }
+                QClipboard *board = QApplication::clipboard();
+                board->setText(value);
+                statusBar_disPlayMessage("复制"+QString::number(selectSum)+"个单元格数据完毕～");
+            }
+        }
+    }
+    else if(rangeCount>1){
+        statusBar_disPlayMessage("警告:无法对多重选择区域执行复制!");
     }
 }
 void MainWindow::editCompareData(){
@@ -2256,10 +2457,10 @@ void MainWindow::showModifyCell(){
             }
             //数值型
             else if(filedType=="N"){
-                //全空数据自动补充0
+                //空数据自动补充为空格，0自动补充为全0，不再强制将空补充为0
                 if(valueNew.isEmpty()){
                     for(int i=updateBegin;i<updateEnd;i++){
-                        valueNewArrayRow[i]=QString("0").toLocal8Bit().at(0);
+                        valueNewArrayRow[i]=QString(" ").toLocal8Bit().at(0);
                     }
                 }
                 //仅包含整数部分
@@ -2775,68 +2976,193 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     //文件类型插入点
     //当打开的是OFD文件时,菜单里添加行预览和显示行详情和编辑的菜单
     if(currentOpenFileType==1){
-        tablePopMenu->addAction(action_ShowDetails);
-        tablePopMenu->addAction(action_ShowAnalysis);
-        tablePopMenu->addAction(action_ShowCopyColum);
-        tablePopMenu->addAction(action_ModifyCell);
-        tablePopMenu->addAction(action_ModifyCellBatch);
-        tablePopMenu->addAction(action_EditCompareData);
-        //行比对齐文字描述的替换
-        if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
-            action_EditCompareData->setText("将此行数据加入比对器");
-        }
-        else{
-            action_EditCompareData->setText("将此行数据从比对器移除");
-        }
-        //检索选中的单元格是否是同一列，如果不是则禁用批量编辑
+        /////////////////////动态右键菜单///////////////////////////////////////////
+        //分模式启用不同的菜单
+        //判断启用批量编辑还是使用单个单元格编辑器
         //不能使用selectedItems作为选择范围,因为懒加载机制下部分没有数据的单元格并没有填充item
         QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
-        action_ModifyCellBatch->setEnabled(true);
         int rangeCount=itemsRange.count();
         int selectedRow=0;
+        bool allSelectIsOneColumn=true;
         if(rangeCount>=1){
             selectedRow=itemsRange.at(0).bottomRow()-itemsRange.at(0).topRow()+1;
-            //选择范围跨列,不允许列模式编辑
+            //第一个选择范围就跨列
             if(itemsRange.at(0).leftColumn()!=itemsRange.at(0).rightColumn()){
-                action_ModifyCellBatch->setEnabled(false);
+                allSelectIsOneColumn=false;
             }
-            else{
-                //循环遍历选择的范围区间
-                for(int i=1;i<rangeCount;i++){
-                    selectedRow+=(itemsRange.at(i).bottomRow()-itemsRange.at(i).topRow()+1);
-                    //选择范围跨列,与上一个范围区间列不等,不允许列模式编辑
-                    if((itemsRange.at(i).leftColumn()!=itemsRange.at(i).rightColumn())||(itemsRange.at(i).leftColumn()!=itemsRange.at(i-1).leftColumn())){
-                        action_ModifyCellBatch->setEnabled(false);
-                        break;
+            //如果存在第二个选择区间
+            //循环从第第二个遍历选择的范围区间
+            for(int i=1;i<rangeCount;i++){
+                selectedRow+=(itemsRange.at(i).bottomRow()-itemsRange.at(i).topRow()+1);
+                //选择范围跨列,与上一个范围区间列不等,不允许列模式编辑
+                if((itemsRange.at(i).leftColumn()!=itemsRange.at(i).rightColumn())||(itemsRange.at(i).leftColumn()!=itemsRange.at(i-1).leftColumn())){
+                    allSelectIsOneColumn=false;
+                    break;
+                }
+            }
+            //单行
+            if(selectedRow<2){
+                //只选择一行的情况下分为选择了多列和一列
+                //单行单列
+                if(allSelectIsOneColumn){
+                    tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_ShowAnalysis);
+                    tablePopMenu->addAction(action_ShowCopyColum);
+                    tablePopMenu->addAction(action_ModifyCell);
+                    //比对器
+                    tablePopMenu->addAction(action_EditCompareData);
+                    //行比对齐文字描述的替换
+                    if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
+                        action_EditCompareData->setText("将此行数据加入比对器");
+                    }
+                    else{
+                        action_EditCompareData->setText("将此行数据从比对器移除");
                     }
                 }
-                //如果只选择了一个单元格,不允许使用批量模式
-                if(selectedRow<2){
-                    action_ModifyCellBatch->setEnabled(false);
+                //单行多列
+                else{
+                    tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_ShowCopyColum);
+                    //比对器
+                    tablePopMenu->addAction(action_EditCompareData);
+                    //行比对齐文字描述的替换
+                    if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
+                        action_EditCompareData->setText("将此行数据加入比对器");
+                    }
+                    else{
+                        action_EditCompareData->setText("将此行数据从比对器移除");
+                    }
                 }
             }
-        }
-        else {
-            action_ModifyCellBatch->setEnabled(false);
+            //多行
+            else {
+                //多行单列
+                if(allSelectIsOneColumn){
+                    //单个选择器
+                    if(rangeCount==1){
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                        tablePopMenu->addAction(action_ModifyCellBatch);
+
+                    }
+                    //多个选择器
+                    else{
+                        //将会弹出复制错误
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                        tablePopMenu->addAction(action_ModifyCellBatch);
+                    }
+                }
+                //多行多列
+                else{
+                    //单个选择器
+                    if(rangeCount==1){
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                    }
+                    //多个选择器
+                    else{
+                        //将会弹出复制错误
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                    }
+                }
+            }
         }
     }
     //csv类型的文件
     if(currentOpenFileType==2){
-        tablePopMenu->addAction(action_ShowDetails);
-        tablePopMenu->addAction(action_ShowCopyColum);
-        tablePopMenu->addAction(action_EditCompareData);
-        //行比对齐文字描述的替换
-        if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
-            action_EditCompareData->setText("将此行数据加入比对器");
-        }
-        else{
-            action_EditCompareData->setText("将此行数据从比对器移除");
+        /////////////////////动态右键菜单///////////////////////////////////////////
+        //分模式启用不同的菜单
+        //判断启用批量编辑还是使用单个单元格编辑器
+        //不能使用selectedItems作为选择范围,因为懒加载机制下部分没有数据的单元格并没有填充item
+        QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+        int rangeCount=itemsRange.count();
+        int selectedRow=0;
+        bool allSelectIsOneColumn=true;
+        if(rangeCount>=1){
+            selectedRow=itemsRange.at(0).bottomRow()-itemsRange.at(0).topRow()+1;
+            //第一个选择范围就跨列
+            if(itemsRange.at(0).leftColumn()!=itemsRange.at(0).rightColumn()){
+                allSelectIsOneColumn=false;
+            }
+            //如果存在第二个选择区间
+            //循环从第第二个遍历选择的范围区间
+            for(int i=1;i<rangeCount;i++){
+                selectedRow+=(itemsRange.at(i).bottomRow()-itemsRange.at(i).topRow()+1);
+                //选择范围跨列,与上一个范围区间列不等,不允许列模式编辑
+                if((itemsRange.at(i).leftColumn()!=itemsRange.at(i).rightColumn())||(itemsRange.at(i).leftColumn()!=itemsRange.at(i-1).leftColumn())){
+                    allSelectIsOneColumn=false;
+                    break;
+                }
+            }
+            //单行
+            if(selectedRow<2){
+                //只选择一行的情况下分为选择了多列和一列
+                //单行单列
+                if(allSelectIsOneColumn){
+                    tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_ShowCopyColum);
+                    //csv文件暂不支持编辑
+                    //tablePopMenu->addAction(action_ModifyCell);
+                    //比对器
+                    tablePopMenu->addAction(action_EditCompareData);
+                    //行比对齐文字描述的替换
+                    if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
+                        action_EditCompareData->setText("将此行数据加入比对器");
+                    }
+                    else{
+                        action_EditCompareData->setText("将此行数据从比对器移除");
+                    }
+                }
+                //单行多列
+                else{
+                    tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_ShowCopyColum);
+                    //比对器
+                    tablePopMenu->addAction(action_EditCompareData);
+                    //行比对齐文字描述的替换
+                    if(compareData.value(ptr_table->rowAt(pos.y())+1).isEmpty()){
+                        action_EditCompareData->setText("将此行数据加入比对器");
+                    }
+                    else{
+                        action_EditCompareData->setText("将此行数据从比对器移除");
+                    }
+                }
+            }
+            //多行
+            else {
+                //多行单列
+                if(allSelectIsOneColumn){
+                    //单个选择器
+                    if(rangeCount==1){
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                        //tablePopMenu->addAction(action_ModifyCellBatch);
+                    }
+                    //多个选择器
+                    else{
+                        //将会弹出复制错误
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                        //tablePopMenu->addAction(action_ModifyCellBatch);
+                    }
+                }
+                //多行多列
+                else{
+                    //单个选择器
+                    if(rangeCount==1){
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                    }
+                    //多个选择器
+                    else{
+                        //将会弹出复制错误
+                        tablePopMenu->addAction(action_ShowCopyColum);
+                    }
+                }
+            }
         }
     }
+    //索引模式也支持复制
     //为打开文件或者打开失败时，有可能表格显示了失败原因，开启复制功能
-    if(currentOpenFileType==-1){
+    if(currentOpenFileType==-1||currentOpenFileType==0){
         tablePopMenu->addAction(action_ShowCopyColum);
     }
+    //显示菜单在鼠标点击的位置
     tablePopMenu->exec(QCursor::pos());
 }
 
@@ -3286,27 +3612,33 @@ void MainWindow::save2Xlsx(QString filename){
     formatTitle.setFontColor(QColor(Qt::black));
     formatTitle.setPatternBackgroundColor(QColor(0,176,80));
     formatTitle.setHorizontalAlignment(QXlsx::Format::AlignHCenter);
+    formatTitle.setBorderStyle(QXlsx::Format::BorderThin);
     //用来记录列最宽的list
-    int colWidthArray[ptr_table->columnCount()];
+    const int columnCount=ptr_table->columnCount();
+    int colWidthArray[columnCount];
     //标题和是否是数值列,数值列需要设置列格式
-    QHash<int,QXlsx::Format> numberFormat;
-    //数据类型插入点
+    QHash<int,QXlsx::Format> numberFormatQhash;
+    //标准文本样式
+    QXlsx::Format formatBody;
+    formatBody.setFont(QFont("SimSun"));
+    formatBody.setNumberFormat("@");
+    //导出OFD文件的内容
     if(currentOpenFileType==1){
-        for(int i=0;i<ofd.getfieldCount();i++){
+        //插入标题和数值列的专用格式
+        for(int i=0;i<columnCount;i++){
+            //插入标题
             xlsx.write(1,i+1,ofd.getfieldList().at(i).getFiledDescribe(),formatTitle);
             //记录每列的宽度
-            colWidthArray[i]=(ofd.getfieldList().at(i).getFiledDescribe().toLocal8Bit().length()+4);
+            colWidthArray[i]=(ofd.getfieldList().at(i).getFiledDescribe().toLocal8Bit().length()+5);
+            //插入列格式
             if(ofd.getfieldList().at(i).getFieldType()=="N"){
                 QXlsx::Format formatNumber;
                 formatNumber.setFont(QFont("SimSun"));
-                formatNumber.setFontBold(false);
-                formatNumber.setFontColor(QColor(Qt::black));
                 //构造数值长度
                 QString zj="#";
                 QString z="0";
                 QString xj="";
                 QString x="";
-
                 int lengthx=ofd.getfieldList().at(i).getDecLength();
                 int ix=0;
                 while(ix<lengthx){
@@ -3320,44 +3652,40 @@ void MainWindow::save2Xlsx(QString filename){
                 else{
                     formatNumber.setNumberFormat(zj+z);
                 }
-                numberFormat.insert(i,formatNumber);
+                numberFormatQhash.insert(i,formatNumber);
             }
         }
-        //文本样式
-        QXlsx::Format formatBody;
-        formatBody.setFont(QFont("SimSun"));
-        formatBody.setFontBold(false);
-        formatBody.setFontColor(QColor(Qt::black));
-        formatBody.setNumberFormat("@");
         //文本内容
         for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
             //数据写入--按行读取
-            for(int col=0;col<ofd.getfieldCount();col++){
+            for(int col=0;col<columnCount;col++){
                 QString value=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col);
                 //空的单元格直接忽略
                 if(value.isEmpty()){
                     continue;
                 }
                 //决定是否更新列宽,如果本列数据比以往的都长那就得更新列宽度
-                int widthNew=value.toLocal8Bit().length()+4;
+                int widthNew=value.toLocal8Bit().length()+5;
                 if(widthNew>colWidthArray[col]){
-                    colWidthArray[col]=widthNew;
-                }
-                //判断数据类型
-                if(ofd.getfieldList().at(col).getFieldType()=="N"){
-                    //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
-                    if(numberFormat.contains(col)){
-                        bool okNb=false;
-                        double number=value.toDouble(&okNb);
-                        if(okNb){
-                            xlsx.write(row+2,col+1,number,numberFormat.value(col));
-                        }
-                        else{
-                            xlsx.write(row+2,col+1,value,numberFormat.value(col));
-                        }
+                    //重新校准数值型数据的宽度，数值型excel显示时会插入千位符，需要提高宽度
+                    if(numberFormatQhash.contains(col)){
+                        int addLen=value.length()/3;
+                        colWidthArray[col]=widthNew+addLen;
                     }
                     else{
-                        xlsx.write(row+2,col+1,value,formatBody);
+                        colWidthArray[col]=widthNew;
+                    }
+                }
+                //判断数据类型
+                if(ofd.getfieldList().at(col).getFieldType()=="N"&&numberFormatQhash.contains(col)){
+                    //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
+                    bool okNb=false;
+                    double number=value.toDouble(&okNb);
+                    if(okNb){
+                        xlsx.write(row+2,col+1,number,numberFormatQhash.value(col));
+                    }
+                    else{
+                        xlsx.write(row+2,col+1,value,numberFormatQhash.value(col));
                     }
                 }else{
                     xlsx.write(row+2,col+1,value,formatBody);
@@ -3375,40 +3703,78 @@ void MainWindow::save2Xlsx(QString filename){
             }
         }
     }
+    //导出CSV文件的内容
     if(currentOpenFileType==2){
-        int colCount=ptr_table->columnCount();
-        for(int i=0;i<colCount;i++){
+        //标题内容
+        for(int i=0;i<columnCount;i++){
             xlsx.write(1,i+1,ptr_table->horizontalHeaderItem(i)->text(),formatTitle);
             //记录每列的宽度
-            colWidthArray[i]=(ptr_table->horizontalHeaderItem(i)->text().toLocal8Bit().length()+4);
+            colWidthArray[i]=(ptr_table->horizontalHeaderItem(i)->text().toLocal8Bit().length()+5);
+            //插入列格式
+            if(fieldIsNumberOrNot.contains(i)&&fieldIsNumberOrNot.value(i).getIsNumber()){
+                QXlsx::Format formatNumber;
+                formatNumber.setFont(QFont("SimSun"));
+                //构造数值长度
+                QString zj="#";
+                QString z="0";
+                QString xj="";
+                QString x="";
+                int lengthx=fieldIsNumberOrNot.value(i).getDecimalLength();
+                int ix=0;
+                while(ix<lengthx){
+                    x.append("0");
+                    xj.append("#");
+                    ix++;
+                }
+                if(x.length()>0){
+                    formatNumber.setNumberFormat(zj+","+xj+z+"."+x);
+                }
+                else{
+                    formatNumber.setNumberFormat(zj+z);
+                }
+                numberFormatQhash.insert(i,formatNumber);
+            }
         }
-        //文本样式
-        QXlsx::Format formatBody;
-        formatBody.setFont(QFont("SimSun"));
-        formatBody.setFontBold(false);
-        formatBody.setFontColor(QColor(Qt::black));
-        formatBody.setNumberFormat("@");
         //文本内容
         for (int row=0;row<csvFileContentQStringList.count();row++){
             //数据写入--按行读取
             //csv文件按行获取数据
             QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQStringList,&csv,row);
             //csv文件的数据可能缺失列，因为读取的时候没有做强制判断，这里判断补充下,如果数据长度不够，补空数据
-            while(rowdata.count()<colCount){
+            while(rowdata.count()<columnCount){
                 rowdata.append("");
             }
-            for(int col=0;col<colCount;col++){
+            for(int col=0;col<columnCount;col++){
                 QString value=rowdata.at(col);
                 //空的单元格直接忽略
                 if(value.isEmpty()){
                     continue;
                 }
                 //决定是否更新列宽,如果本列数据比以往的都长那就得更新列宽度
-                int widthNew=value.toLocal8Bit().length()+4;
+                int widthNew=value.toLocal8Bit().length()+5;
                 if(widthNew>colWidthArray[col]){
-                    colWidthArray[col]=widthNew;
+                    //重新校准数值型数据的宽度，数值型excel显示时会插入千位符，需要提高宽度
+                    if(numberFormatQhash.contains(col)){
+                        int addLen=value.length()/3;
+                        colWidthArray[col]=widthNew+addLen;
+                    }
+                    else{
+                        colWidthArray[col]=widthNew;
+                    }
                 }
-                xlsx.write(row+2,col+1,value,formatBody);
+                //判断数据类型
+                if(fieldIsNumberOrNot.contains(col)&&numberFormatQhash.contains(col)){
+                    bool okNb=false;
+                    double number=value.toDouble(&okNb);
+                    if(okNb){
+                        xlsx.write(row+2,col+1,number,numberFormatQhash.value(col));
+                    }
+                    else{
+                        xlsx.write(row+2,col+1,value,numberFormatQhash.value(col));
+                    }
+                }else{
+                    xlsx.write(row+2,col+1,value,formatBody);
+                }
             }
             //每100行读取下事件循环
             //excel导出较慢
@@ -3423,10 +3789,10 @@ void MainWindow::save2Xlsx(QString filename){
         }
     }
     //根据每列最大的值设置本列的宽度
-    for(int i=0;i<ofd.getfieldCount();i++){
+    for(int i=0;i<columnCount;i++){
         xlsx.setColumnWidth(i+1,i+1,colWidthArray[i]+0.0);
     }
-    //保存文件
+    //保存文件////写入文件耗时操作
     xlsx.saveAs(filename);
     statusBar_disPlayMessage(tr("数据成功导出到%1").arg(filename));
     //恢复鼠标响应
@@ -3678,9 +4044,19 @@ void MainWindow::randomTips(){
     tips.append("按Ctrl+G切换视图模式,可以隐藏或者显示文件头信息...");
     tips.append("尝试使用本工具解析各种固定分隔符文件吧，比excel更好的数据展示方式,且支持导出excel...");
     tips.append("创建一个本软件的桌面图标,直接拖放文件到图标上即可打开文件,只需一步即可直达");
+    tips.append("选择一个区间的数据，右键复制,可以便捷粘贴到excel中");
+    tips.append("对于全是数值的列，选择同一列多行数据时，状态栏会自动对选择的数据进行求和，求平均数");
     srand((unsigned)time(nullptr));
     int index =rand()%tips.count();
-    statusBar_disPlayMessage("温馨提示:"+tips.at(index));
+    QTime current_time =QTime::currentTime();
+    int hour = current_time.hour();
+    //深夜11点后，到凌晨5点前的特殊提醒
+    if(hour>22||hour<5){
+        statusBar_disPlayMessage("温馨提示:深夜了,请注意休息哟!如果你还在坚持排查生产问题,那就祝你好运吧!");
+    }
+    else{
+        statusBar_disPlayMessage("温馨提示:"+tips.at(index));
+    }
 }
 
 void MainWindow::on_pushButtonRowJump2_clicked()
@@ -3788,5 +4164,152 @@ void MainWindow::on_viewMode_triggered()
     else{
         ui->frameInfo->setHidden(false);
         ui->viewMode->setText("精简视图");
+    }
+}
+
+void MainWindow::on_tableWidget_itemSelectionChanged()
+{
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    int rangeCount=itemsRange.count();
+    int selectedRow=0;
+    if(rangeCount>=1){
+        selectedRow=itemsRange.at(0).bottomRow()-itemsRange.at(0).topRow()+1;
+        //第一个选择器选择范围跨列,不进行数据统计//目前跨列进行数据求和的意义不大，咱不能和excel学着
+        if(itemsRange.at(0).leftColumn()!=itemsRange.at(0).rightColumn()){
+            return;
+        }
+        else{
+            //当有多个选择器时进行跨列判断
+            bool flag=false;
+            //循环遍历选择的范围区间，从第二个开始，第一个已统计
+            for(int i=1;i<rangeCount;i++){
+                selectedRow+=(itemsRange.at(i).bottomRow()-itemsRange.at(i).topRow()+1);
+                //选择范围跨列,与上一个范围区间列不等这两种情况,不进行数据统计
+                if((itemsRange.at(i).leftColumn()!=itemsRange.at(i).rightColumn())||(itemsRange.at(i).leftColumn()!=itemsRange.at(i-1).leftColumn())){
+                    flag=true;
+                    break;
+                }
+            }
+            //如果多个选择器也没跨列，则允许进行统计
+            if(!flag){
+                //如果只选择了一个单元格,不进行数据统计
+                if(selectedRow<2){
+                    return;
+                }
+                //选择的是同一列数据，则进行统计
+                else
+                {
+                    //判断当前打开的文件类型
+                    if(currentOpenFileType==1){
+                        if(ofd.getfieldList().at(itemsRange.at(0).leftColumn()).getFieldType()=="N"){
+                            int editCol=itemsRange.at(0).leftColumn();
+                            int selectCount=0;
+                            double selectSum=0;
+                            bool sucessFlag=true;
+                            QString faultMessage;
+                            for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
+                                for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
+                                    //开始取值
+                                    QString vvv=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol);
+                                    if(vvv==nullptr){
+                                        sucessFlag=false;
+                                        faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
+                                        break;
+                                    }
+                                    else{
+                                        bool covertOk=false;
+                                        double valueitem=vvv.toDouble(&covertOk);
+                                        if(covertOk){
+                                            selectCount+=1;
+                                            selectSum+=valueitem;
+                                        }
+                                        else{
+                                            sucessFlag=false;
+                                            faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
+                                            break;
+                                        }
+                                    }
+                                }
+                                //内层循环判断数值失败，则立即终止不再统计
+                                if(!sucessFlag){
+                                    break;
+                                }
+                            }
+                            //展示统计数据
+                            if(sucessFlag){
+                                statusBar_disPlayMessage("计数:"+QString::number(selectCount)+"  平均值:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum/selectCount,'f',ofd.getfieldList().at(editCol).getDecLength()))+"  求和:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum,'f',ofd.getfieldList().at(editCol).getDecLength())));
+                            }
+                            else{
+                                statusBar_disPlayMessage(faultMessage);
+                            }
+                        }
+                        //非数值型字段，仅仅统计计数
+                        else{
+                            int selectCount=0;
+                            for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
+                                selectCount+=(itemsRange.at(rangeIndex).bottomRow()-itemsRange.at(rangeIndex).topRow()+1);
+                            }
+                            statusBar_disPlayMessage("计数:"+QString::number(selectCount));
+                        }
+                    }
+                    else  if(currentOpenFileType==2){
+                        if(fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber()){
+                            int editCol=itemsRange.at(0).leftColumn();
+                            int selectCount=0;
+                            double selectSum=0;
+                            bool sucessFlag=true;
+                            QString faultMessage;
+                            for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
+                                for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
+                                    //开始取值
+                                    QStringList rowList=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQStringList,&csv,editRow);
+                                    QString vvv="";
+                                    if(rowList.count()>editCol){
+                                        vvv=rowList.at(editCol);
+                                    }
+                                    if(vvv==nullptr){
+                                        sucessFlag=false;
+                                        faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
+                                        break;
+                                    }
+                                    else{
+                                        bool covertOk=false;
+                                        double valueitem=vvv.toDouble(&covertOk);
+                                        if(covertOk){
+                                            selectCount+=1;
+                                            selectSum+=valueitem;
+                                        }
+                                        else{
+                                            sucessFlag=false;
+                                            faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
+                                            break;
+                                        }
+                                    }
+                                }
+                                //内层循环判断数值失败，则立即终止不再统计
+                                if(!sucessFlag){
+                                    break;
+                                }
+                            }
+                            //展示统计数据
+                            if(sucessFlag){
+                                statusBar_disPlayMessage("计数:"+QString::number(selectCount)+"  平均值:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum/selectCount,'f',fieldIsNumberOrNot.value(editCol).getDecimalLength()))+"  求和:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum,'f',fieldIsNumberOrNot.value(editCol).getDecimalLength())));
+                            }
+                            else{
+                                statusBar_disPlayMessage(faultMessage);
+                            }
+                        }
+                        //非数值型字段，仅仅统计计数
+                        else{
+                            int selectCount=0;
+                            for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
+                                selectCount+=(itemsRange.at(rangeIndex).bottomRow()-itemsRange.at(rangeIndex).topRow()+1);
+                            }
+                            statusBar_disPlayMessage("计数:"+QString::number(selectCount));
+                        }
+                    }
+                }
+            }
+        }
     }
 }

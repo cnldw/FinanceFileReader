@@ -37,7 +37,7 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
 
     //表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
-    action_ShowCopyColum = new QAction(tr("复制光标所在单元格"),this);
+    action_ShowCopyColum = new QAction(tr("复制"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
     //设置表格列标题
     QStringList title;
@@ -88,10 +88,46 @@ void DialogShowTableRow::on_tableWidget_customContextMenuRequested(const QPoint 
 }
 
 void DialogShowTableRow::copyToClipboard(){
-    if(ptr_table->itemAt(posCurrentMenu)!=nullptr){
-        QString text= ptr_table->itemAt(posCurrentMenu)->text();
-        QClipboard *board = QApplication::clipboard();
-        board->setText(text);
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    int rangeCount=itemsRange.count();
+    if(rangeCount==1){
+        int topRow=itemsRange.at(0).topRow();
+        int bottomRow=itemsRange.at(0).bottomRow();
+        int leftColumn=itemsRange.at(0).leftColumn();
+        int rigthColumn=itemsRange.at(0).rightColumn();
+        //单个单元格复制
+        if(topRow==bottomRow&&leftColumn==rigthColumn){
+            QString text="";
+            QClipboard *board = QApplication::clipboard();
+            if(ptr_table->item(topRow,leftColumn)!=nullptr){
+                text= ptr_table->item(topRow,leftColumn)->text();
+            }
+            board->setText(text);
+        }
+        //多个单元格复制
+        else{
+            QString value="";
+            for(int row=topRow;row<=bottomRow;row++){
+                for(int col=leftColumn;col<=rigthColumn;col++){
+                    if(ptr_table->item(row,col)==nullptr){
+                        value.append("");
+                    }
+                    else{
+                        value.append(ptr_table->item(row,col)->text());
+                    }
+                    if(col<rigthColumn){
+                        value.append("\t");
+                    }else if(row<bottomRow){
+                        value.append("\r\n");
+                    }
+                }
+            }
+            QClipboard *board = QApplication::clipboard();
+            board->setText(value);
+        }
+    }
+    else if(rangeCount>1){
+        QMessageBox::warning(this,tr("警告"),"无法对多重选择区域执行复制!",QMessageBox::Ok,QMessageBox::Ok);
     }
 }
 

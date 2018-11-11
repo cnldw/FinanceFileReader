@@ -55,6 +55,12 @@ public:
       */
      static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QString> * csvFileContentQStringList,CsvFileDefinition * csv,int row);
      static QString CovertInt2ExcelCol(int number);
+     /**
+      * @brief CovertDoubleQStringWithThousandSplit
+      * @param doubleString
+      * @return
+      */
+     static QString CovertDoubleQStringWithThousandSplit(QString doubleString);
 };
 
 #endif // UTILS_H

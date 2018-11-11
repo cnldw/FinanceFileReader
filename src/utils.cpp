@@ -39,11 +39,11 @@ bool Utils::isFileExist(QString fullFileName)
 
 QString Utils::getVersion()
 {
-    return "V1.6.0";
+    return "V1.6.2";
 }
 
 QString Utils::getCompileDate(){
-    return "2018-10-27";
+    return "2018-11-09";
 }
 
 QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
@@ -114,7 +114,13 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
             //获取小数
             QString right=filed.right(filedDeclength);
             //拼接整数部分和小数部分
-            filed=left.append(".").append(right);
+            //如果整数和小数部分都是空，则返回空，不再返回一个点
+            if(left.trimmed().isEmpty()&&right.trimmed().isEmpty()){
+                filed="";
+            }
+            else{
+                filed=left.append(".").append(right);
+            }
         }
     }
     else if(fileType=="TEXT"){
@@ -187,4 +193,18 @@ QString Utils::CovertInt2ExcelCol(int col){
     return tmp;
 }
 
-
+QString Utils::CovertDoubleQStringWithThousandSplit(QString doubleString){
+    int strLength=doubleString.length();
+    int BeginIndex=strLength-1;
+    if(doubleString.contains(".")){
+        BeginIndex=doubleString.indexOf(".")-1;
+    }
+    int z=1;
+    for(int index=BeginIndex;index>0;index--){
+        if(z%3==0){
+            doubleString.insert(index,QChar(','));
+        }
+        z++;
+    }
+    return doubleString;
+}

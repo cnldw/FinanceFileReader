@@ -190,3 +190,13 @@ void DialogModifyCell::on_pushButton_clicked()
         }
     }
 }
+
+void DialogModifyCell::on_lineEdit_4_textChanged(const QString &arg1)
+{
+    if(filedType=="N"&&arg1.isEmpty()){
+        ui->textEdit->setText("数值型内容不建议填充空哟，确认需要填充空请继续保存，如果要使用全0填充，则填写一个0即可！");
+    }
+    else{
+        ui->textEdit->setText(nullptr);
+    }
+}

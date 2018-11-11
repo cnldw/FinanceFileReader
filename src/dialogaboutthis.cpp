@@ -24,7 +24,7 @@ DialogAboutThis::DialogAboutThis(QWidget *parent) :
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
     setWindowTitle("关于本程序");
     ui->label->setWordWrap(true);
-    ui->label->setText(tr("本程序是一个可以解析格式化显示《开放式基金数据交换协议》、《中国结算开放式基金系统管理人数据接口规范》、等协议文件的工具\r\n可以用于解析如上所述协议所交换的各种文件\r\n\r\n作      者:793554262@qq.com(刘德位)\r\n友情赞助:15238872101(支付宝)\r\n本程序为本人业余开发,如果这个程序对你带来了方便,你可进行小额赞助,本程序将持续更新改进,带来更好的使用体验...\r\n\r\n版      本:")+Utils::getVersion()+"\r\n编译日期:"+Utils::getCompileDate());
+    ui->label->setText(tr("本程序是一个可以解析格式化显示《开放式基金数据交换协议》、《中国结算开放式基金系统管理人数据接口规范》、等OFD文件协议、各类固定分隔符CSV文件的工具\r\n可以用于解析如上所述协议/接口规范所交换的各种文件\r\n\r\n作      者:793554262@qq.com(刘德位)\r\n友情赞助:15238872101(支付宝)\r\n本程序为本人业余开发,如果这个程序对你带来了方便,你可进行小额赞助,本程序将持续更新改进,带来更好的使用体验...\r\n\r\n版      本:")+Utils::getVersion()+"\r\n编译日期:"+Utils::getCompileDate());
 }
 
 DialogAboutThis::~DialogAboutThis()

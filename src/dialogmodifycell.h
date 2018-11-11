@@ -38,6 +38,8 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_lineEdit_4_textChanged(const QString &arg1);
+
 private:
     Ui::DialogModifyCell *ui;
     bool modify=false;
