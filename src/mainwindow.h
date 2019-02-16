@@ -182,7 +182,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     //应用程序名字
-    QString appName=tr("金融文件阅读器-").append(VERSION_V);
+    QString appName=tr("基金文件阅读器(开源版)-").append(VERSION_V);
     //状态栏指针变量
     QLabel *statusLabel_ptr_showCount;
     QLabel *statusLabel_ptr_showRowAndCol;
