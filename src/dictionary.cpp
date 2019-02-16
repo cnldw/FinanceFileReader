@@ -34,6 +34,15 @@ void Dictionary::addDictionary(QString line)
         QString name=line.left(index);
         if(line.length()>index){
             QString dic=line.mid(index+1);
+            //处理引号
+            //引号开始的去掉引号
+            if(dic.startsWith("\"")){
+                dic=dic.replace(0,1,"");
+            }
+            //引号结束的去掉引号
+            if(dic.endsWith("\"")){
+                dic=dic.replace(dic.length()-1,1,"");
+            }
             if(dic.contains(":")){
                 QHash<QString,QString>dictionaryItem;
                 QList <QString>list=dic.split("|");

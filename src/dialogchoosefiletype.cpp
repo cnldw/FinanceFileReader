@@ -13,23 +13,40 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef CSVFIELDDEFINITION_H
-#define CSVFIELDDEFINITION_H
-#include <QString>
+#include "dialogchoosefiletype.h"
+#include "ui_dialogchoosefiletype.h"
 
-/**
- * @brief The CsvFieldDefinition class CSV文件的字段定义
- */
-class CsvFieldDefinition
+DialogChooseFileType::DialogChooseFileType(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::DialogChooseFileType)
 {
-public:
-    CsvFieldDefinition();
+    ui->setupUi(this);
+    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+}
 
-    QString getFieldName() const;
-    void setFieldName(const QString &value);
+DialogChooseFileType::~DialogChooseFileType()
+{
+    delete ui;
+}
 
-private:
-    QString fieldName;
-};
+void DialogChooseFileType::on_pushButtonCsv_clicked()
+{
+    this->setFileType(2);
+    this->close();
+}
 
-#endif // CSVFIELDDEFINITION_H
+void DialogChooseFileType::on_pushButtonFixed_clicked()
+{
+    this->setFileType(3);
+    this->close();
+}
+
+int DialogChooseFileType::getFileType() const
+{
+    return fileType;
+}
+
+void DialogChooseFileType::setFileType(int value)
+{
+    fileType = value;
+}

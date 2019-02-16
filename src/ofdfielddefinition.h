@@ -13,41 +13,41 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef DIALOGSHOWTABLEFILEDCHECK_H
-#define DIALOGSHOWTABLEFILEDCHECK_H
+#ifndef OFDFIELDDEFINITION_H
+#define OFDFIELDDEFINITION_H
 
-#include <QDialog>
-#include <QTableWidget>
 #include <QString>
-#include <QClipboard>
-#include <QPoint>
-#include <QMenu>
 
-namespace Ui {
-class DialogShowTableFiledCheck;
-}
-
-class DialogShowTableFiledCheck : public QDialog
+class OFDFieldDefinition
 {
-    Q_OBJECT
-
 public:
-    explicit DialogShowTableFiledCheck(QList<QStringList> * data,QWidget *parent = nullptr);
-    ~DialogShowTableFiledCheck();
+    OFDFieldDefinition();
 
-private slots:
-    void on_tableWidget_customContextMenuRequested(const QPoint &pos);
+    QString getFieldType() const;
+    void setFieldType( QString value);
 
-    void copyToClipboard();
+    int getRowBeginIndex() const;
+    void setRowBeginIndex(int value);
+
+    int getLength() const;
+    void setLength(int value);
+
+    int getDecLength() const;
+    void setDecLength(int value);
+
+    QString getFieldName() const;
+    void setFieldName( QString value);
+
+    QString getFieldDescribe() const;
+    void setFieldDescribe( QString value);
 
 private:
-    Ui::DialogShowTableFiledCheck *ui;
-    QTableWidget * ptr_table;
-    //表格菜单
-    QMenu *tablePopMenu;
-    QAction *action_ShowCopyColum;
-    //
-    QPoint posCurrentMenu;
+    QString fieldType;
+    int rowBeginIndex;
+    int length;
+    int decLength;
+    QString fieldName;
+    QString fieldDescribe;
 };
 
-#endif // DIALOGSHOWTABLEFILEDCHECK_H
+#endif // OFDFIELDDEFINITION_H

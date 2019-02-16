@@ -13,31 +13,44 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef DIALOGABOUTTHIS_H
-#define DIALOGABOUTTHIS_H
+#ifndef DIALOGSHOWTABLEFIELDCHECK_H
+#define DIALOGSHOWTABLEFIELDCHECK_H
 
 #include <QDialog>
-#include "src/utils.h"
-#include <QByteArray>
-#include "src/publicdefine.h"
+#include <QTableWidget>
+#include <QString>
+#include <QClipboard>
+#include <QPoint>
+#include <QMenu>
 
 namespace Ui {
-class DialogAboutThis;
+class DialogShowTableFieldCheck;
 }
 
 /**
- * @brief The DialogAboutThis class 关于本软件
+ * @brief The DialogShowTableFieldCheck class 字段检查工具
  */
-class DialogAboutThis : public QDialog
+class DialogShowTableFieldCheck : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit DialogAboutThis(QWidget *parent = nullptr);
-    ~DialogAboutThis();
+    explicit DialogShowTableFieldCheck(QList<QStringList> * data,QWidget *parent = nullptr);
+    ~DialogShowTableFieldCheck();
+
+private slots:
+    void on_tableWidget_customContextMenuRequested(const QPoint &pos);
+
+    void copyToClipboard();
 
 private:
-    Ui::DialogAboutThis *ui;
+    Ui::DialogShowTableFieldCheck *ui;
+    QTableWidget * ptr_table;
+    //表格菜单
+    QMenu *tablePopMenu;
+    QAction *action_ShowCopyColum;
+    //
+    QPoint posCurrentMenu;
 };
 
-#endif // DIALOGABOUTTHIS_H
+#endif // DIALOGSHOWTABLEFIELDCHECK_H

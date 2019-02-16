@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DialogShowTableFiledCheck</class>
- <widget class="QDialog" name="DialogShowTableFiledCheck">
+ <class>DialogShowTableFieldCheck</class>
+ <widget class="QDialog" name="DialogShowTableFieldCheck">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>

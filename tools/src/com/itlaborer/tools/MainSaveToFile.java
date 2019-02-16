@@ -207,8 +207,8 @@ public class MainSaveToFile {
 			}
 		}
 		// 结束保存到文件
-		FileUtils.saveToFile(new File("./CodeInfo.csv"), sbCsv.toString());
-		FileUtils.saveToFile(new File("./CodeInfo.ini"), sbAgency.toString());
+		FileUtils.saveToFile(new File("./OFD_CodeInfo.csv"), sbCsv.toString());
+		FileUtils.saveToFile(new File("./OFD_CodeInfo.ini"), sbAgency.toString());
 		System.out.println("*抓取结束文件已保存");
 	}
 }

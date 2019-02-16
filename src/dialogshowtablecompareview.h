@@ -26,11 +26,15 @@
 #include <QColor>
 #include <QList>
 #include <QDebug>
+#include <QMessageBox>
 
 namespace Ui {
 class DialogShowTableCompareView;
 }
 
+/**
+ * @brief The DialogShowTableCompareView class 比对器
+ */
 class DialogShowTableCompareView : public QDialog
 {
     Q_OBJECT

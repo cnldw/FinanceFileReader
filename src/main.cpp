@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 {
     //启用高分辨率支持
     //仅使用QT5.6.0以及以上版本支持
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5,6,0))
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
     QApplication app(argc, argv);

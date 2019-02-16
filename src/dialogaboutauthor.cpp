@@ -24,6 +24,7 @@ DialogAboutAuthor::DialogAboutAuthor(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    ui->textEdit->setText(QByteArray::fromBase64(AUTHOR_INFO));
 }
 
 DialogAboutAuthor::~DialogAboutAuthor()

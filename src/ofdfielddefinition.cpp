@@ -13,69 +13,69 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#include "src/fielddefinition.h"
+#include "src/ofdfielddefinition.h"
 
-FieldDefinition::FieldDefinition()
+OFDFieldDefinition::OFDFieldDefinition()
 {
 
 }
 
-QString FieldDefinition::getFieldType() const
+QString OFDFieldDefinition::getFieldType() const
 {
     return fieldType;
 }
 
-void FieldDefinition::setFieldType( QString value)
+void OFDFieldDefinition::setFieldType( QString value)
 {
     fieldType = value;
 }
 
-int FieldDefinition::getLength() const
+int OFDFieldDefinition::getLength() const
 {
     return length;
 }
 
-void FieldDefinition::setLength(int value)
+void OFDFieldDefinition::setLength(int value)
 {
     length = value;
 }
 
-int FieldDefinition::getDecLength() const
+int OFDFieldDefinition::getDecLength() const
 {
     return decLength;
 }
 
-void FieldDefinition::setDecLength(int value)
+void OFDFieldDefinition::setDecLength(int value)
 {
     decLength = value;
 }
 
-QString FieldDefinition::getFiledName() const
+QString OFDFieldDefinition::getFieldName() const
 {
-    return filedName;
+    return fieldName;
 }
 
-void FieldDefinition::setFiledName( QString value)
+void OFDFieldDefinition::setFieldName( QString value)
 {
-    filedName = value;
+    fieldName = value;
 }
 
-QString FieldDefinition::getFiledDescribe() const
+QString OFDFieldDefinition::getFieldDescribe() const
 {
-    return filedDescribe;
+    return fieldDescribe;
 }
 
-void FieldDefinition::setFiledDescribe( QString value)
+void OFDFieldDefinition::setFieldDescribe( QString value)
 {
-    filedDescribe = value;
+    fieldDescribe = value;
 }
 
-int FieldDefinition::getRowBeginIndex() const
+int OFDFieldDefinition::getRowBeginIndex() const
 {
     return rowBeginIndex;
 }
 
-void FieldDefinition::setRowBeginIndex(int value)
+void OFDFieldDefinition::setRowBeginIndex(int value)
 {
     rowBeginIndex = value;
 }

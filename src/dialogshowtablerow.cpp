@@ -58,8 +58,8 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
         }
         ptr_table->resizeColumnsToContents();
         //表格初始化完毕后，搜索默认以00开始
-        currentColumn=0;
-        currentRow=0;
+        searchColumn=0;
+        searchRow=0;
     }
 }
 
@@ -137,43 +137,67 @@ void DialogShowTableRow::on_pushButton_clicked()
     if(!text.isEmpty()){
         int rowcount=ptr_table->rowCount();
         int colcount=ptr_table->columnCount();
-        if(endFlag){
-            currentRow=0;
-            currentColumn=0;
-        }
-        for(int i=currentRow;i<rowcount;i++){
-            //如果搜到了最后一列，跳到下一行
-            if(currentColumn>colcount-1){
-                currentColumn=0;
-                continue;
-            }
-            for(int j=currentColumn;j<colcount;j++){
-                if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
-                    ptr_table->setCurrentCell(i,j);
-                    ptr_table->setFocus();
-                    endFlag=false;
-                    if(j==colcount-1){
-                        currentColumn+=1;
+        //开始搜索
+        //行
+        for(int i=searchRow;i<rowcount;i++){
+            //搜索开始行时，列从searchCol开始
+            if(i==searchRow){
+                for(int j=searchColumn;j<colcount;j++){
+                    //搜索到了
+                    if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(i,j);
+                        ptr_table->setFocus();
+                        return;
                     }
-                    return;
+                    //如果搜索到了最后一行最后一列都没搜到则将搜索起始点转移到第一行第一列
+                    if(i==(rowcount-1)&&j==(colcount-1)){
+                        this->searchRow=0;
+                        this->searchColumn=0;
+                    }
                 }
-                //判断是否是最后一列最后一行
-                if(i==rowcount-1&&j==colcount-1){
-                    endFlag=true;
-                    break;
-                }
-                else if(j==colcount-1){
-                    currentColumn+=1;
+            }
+            //非搜索起始行，则从第0列搜索
+            else{
+                for(int j=0;j<colcount;j++){
+                    //搜索到了
+                    if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(i,j);
+                        ptr_table->setFocus();
+                        return;
+                    }
+                    //如果搜索到了最后一行最后一列都没搜到则将搜索起始点转移到第一行第一列
+                    if(i==(rowcount-1)&&j==(colcount-1)){
+                        this->searchRow=0;
+                        this->searchColumn=0;
+                    }
                 }
             }
         }
     }
 }
 
-void DialogShowTableRow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
+void DialogShowTableRow::on_tableWidget_itemSelectionChanged()
 {
-    UNUSED(previousRow);
-    UNUSED(previousColumn);
-    this->currentRow=currentRow;
-    this->currentColumn=currentColumn+1;
+    //选择的范围
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    //范围和
+    int rangeCount=itemsRange.count();
+    //如果仅仅选择了一个单元格，先更新当前选择的单元格
+    ///////////////////////////////////////////////////
+    if(rangeCount==1&&itemsRange.at(0).leftColumn()==itemsRange.at(0).rightColumn()&&itemsRange.at(0).topRow()==itemsRange.at(0).bottomRow()){
+        int rowcount=ptr_table->rowCount();
+        int colcount=ptr_table->columnCount();
+        //记录当前所在行
+        this->searchRow=itemsRange.at(itemsRange.count()-1).bottomRow();
+        //当前所在列
+        this->searchColumn=itemsRange.at(itemsRange.count()-1).rightColumn();
+        //焦点在最后一个单元格时，转移到第一行第一列，其余情况起始列+1
+        if(searchRow==(rowcount-1)&&searchColumn==(colcount-1)){
+            this->searchRow=0;
+            this->searchColumn=0;
+        }
+        else{
+            this->searchColumn+=1;
+        }
+    }
 }

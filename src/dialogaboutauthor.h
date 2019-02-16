@@ -17,17 +17,22 @@
 #define DIALOGABOUTAUTHOR_H
 
 #include <QDialog>
+#include <QByteArray>
+#include "src/publicdefine.h"
 
 namespace Ui {
 class DialogAboutAuthor;
 }
 
+/**
+ * @brief The DialogAboutAuthor class 关于作者
+ */
 class DialogAboutAuthor : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit DialogAboutAuthor(QWidget *parent = 0);
+    explicit DialogAboutAuthor(QWidget *parent = nullptr);
     ~DialogAboutAuthor();
 
 private slots:

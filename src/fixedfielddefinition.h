@@ -13,23 +13,41 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef CSVFIELDDEFINITION_H
-#define CSVFIELDDEFINITION_H
+#ifndef FIXEDFIELDDEFINITION_H
+#define FIXEDFIELDDEFINITION_H
+
 #include <QString>
 
-/**
- * @brief The CsvFieldDefinition class CSV文件的字段定义
- */
-class CsvFieldDefinition
+class FixedFieldDefinition
 {
 public:
-    CsvFieldDefinition();
+    FixedFieldDefinition();
+
+    QString getFieldType() const;
+    void setFieldType(const QString &value);
+
+    int getRowBeginIndex() const;
+    void setRowBeginIndex(int value);
+
+    int getLength() const;
+    void setLength(int value);
+
+    int getDecLength() const;
+    void setDecLength(int value);
 
     QString getFieldName() const;
     void setFieldName(const QString &value);
 
+    QString getFieldDescribe() const;
+    void setFieldDescribe(const QString &value);
+
 private:
+    QString fieldType;
+    int rowBeginIndex;
+    int length;
+    int decLength;
     QString fieldName;
+    QString fieldDescribe;
 };
 
-#endif // CSVFIELDDEFINITION_H
+#endif // FIXEDFIELDDEFINITION_H

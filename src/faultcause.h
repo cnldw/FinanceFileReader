@@ -13,23 +13,24 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef CSVFIELDDEFINITION_H
-#define CSVFIELDDEFINITION_H
+#ifndef CSVFAULTCAUSE_H
+#define CSVFAULTCAUSE_H
 #include <QString>
 
-/**
- * @brief The CsvFieldDefinition class CSV文件的字段定义
- */
-class CsvFieldDefinition
+class FaultCause
 {
 public:
-    CsvFieldDefinition();
+    FaultCause();
 
-    QString getFieldName() const;
-    void setFieldName(const QString &value);
+    int getConfigIndex() const;
+    void setConfigIndex(int value);
+
+    QString getCause() const;
+    void setCause(const QString &value);
 
 private:
-    QString fieldName;
+    int configIndex;
+    QString cause;
 };
 
-#endif // CSVFIELDDEFINITION_H
+#endif // CSVFAULTCAUSE_H

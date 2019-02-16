@@ -44,14 +44,23 @@
 #include <QClipboard>
 #include <QColor>
 #include <QDateTime>
+#include <QFutureWatcher>
+#include <QtConcurrent>
+#include <QFuture>
+#include <QProcess>
+#include <QCloseEvent>
 #include "src/utils.h"
 #include "src/ofdfiledefinition.h"
-#include "src/fielddefinition.h"
+#include "src/ofdfielddefinition.h"
+#include "src/fixedfiledefinition.h"
+#include "src/fixedfielddefinition.h"
 #include "src/dialogshowtablerow.h"
-#include "src/dialogshowtablefiledcheck.h"
+#include "src/dialogchoosefiletype.h"
+#include "src/dialogshowtablefieldcheck.h"
 #include "src/dialogshowtablecompareview.h"
+#include "src/dialogmytip.h"
 #include "src/dictionary.h"
-#include "src/codeinfo.h"
+#include "src/ofdcodeinfo.h"
 #include "src/xlsx/xlsxdocument.h"
 #include "src/xlsx/xlsxcellrange.h"
 #include "src/dialogmodifycell.h"
@@ -59,8 +68,12 @@
 #include "src/dialogaboutthis.h"
 #include "src/dialogmergetip.h"
 #include "src/csvfiledefinition.h"
-#include "src/csvfaultcause.h"
+#include "src/faultcause.h"
+#include "src/dialogopenfileadv.h"
 #include "fieldisnumber.h"
+#include "src/dialogpreference.h"
+#include "src/dialogmodifyrow.h"
+#include "src/publicdefine.h"
 
 namespace Ui {
 class MainWindow;
@@ -96,8 +109,6 @@ private slots:
     //接受滚动条事件
     void acceptVScrollValueChanged(int value);
 
-    void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
-
     void on_pushButtonPreSearch_clicked();
 
     void on_pushButtonNextSearch_clicked();
@@ -106,15 +117,31 @@ private slots:
 
     void editCompareData();
 
+    void deleteRowDataFromFileAndTable();
+
+    void copyOFDRowData();
+
+    void addOFDRowDataPreviousRow();
+
+    void addOFDRowDataNextRow();
+
+    void addOFDRowDataEndRow();
+
+    void addNewLineOFDRowDataEndRow();
+
+    void moaifyOFDRow();
+
     void copyToClipboard();
 
     void showRowDetails();
 
-    void showFiledAnalysis();
+    void showOFDFiledAnalysis();
 
     void showModifyCell();
 
-    void loadFileOnWindowisOpen();
+    void save2XlsxFinished();
+
+    void loadFileOnWindowisOpenOrDragEnter();
 
     void showModifyCellBatch();
 
@@ -144,43 +171,60 @@ private slots:
 
     void on_tableWidget_itemSelectionChanged();
 
+    void on_actionfileOpenAdv_triggered();
+
+    void on_actionpreference_triggered();
+
+    void on_actionnewWindow_triggered();
+
+    void on_pushButtonColumnJump_2_clicked();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
-    QString appName=tr("基金文件阅读器-")+Utils::getVersion();
+    QString appName=tr("金融文件阅读器-").append(VERSION_V);
     //状态栏指针变量
     QLabel *statusLabel_ptr_showCount;
     QLabel *statusLabel_ptr_showRowAndCol;
     QLabel *statusLabel_ptr_showMessage;
+    //表格指针
     QTableWidget *ptr_table;
-    QString currentOpenFilePath;
-    QString getConfigPath();
-    QString startUpfile="";
+    //当前打开的文件的路径
+    QString currentOpenFilePath="";
+    //当前打开的文件名字
+    QString currentFileName="";
+    //程序启动时或者拖拽进来需要加载的文件,当次变量不为空时，timer定时任务会扫描到文件后加载
+    QString startUpOrDragfile="";
+    //程序启动时读取是否需要加载文件的定时器，以及定时扫描是否拖拽了文件进来
     QTimer *loadFiletimer;
-    //已经加载的code信息,记录销售商和TA的代码信息
-    QHash<QString, CodeInfo> loadedCodeInfo;
-    //已经加载的索引文件信息,记录各种索引文件的文件名开头三个字符
-    QHash<QString, QString> loadedIndexFileInfo;
+    //已经加载的OFDcode信息,记录销售商和TA的代码信息
+    QHash<QString, OFDCodeInfo> loadedOfdCodeInfo;
+    //已经加载的OFD索引文件信息,记录各种索引文件的文件名开头三个字符
+    QHash<QString, QString> loadedOfdIndexFileInfo;
     //已经加载的OFD文件的文件名结尾两个字符和文件名的对应关系,比如04,交易类确认
     QHash<QString, QString> loadedOfdFileInfo;
-    //csv
+    //已经加载的CSV类的文件名的正则匹配器--CSV文件判断类别，使用简单的正则匹配方法
     QHash<QString, QString> loadedCsvFileInfo;
-    //已经加载的定长文件类别信息
+    //已经加载的定长文件文件名的正则匹配器--FIXED文件判断类别，使用简单的正则匹配方法
     QHash<QString, QString> loadedFixedFileInfo;
-    //已经加载的各种OFD文件的定义,比如400_21_01,代表V400,第21版本的01文件的定义
-    QHash<QString,OFDFileDefinition>loadedOfdDefinitionMap;
+    //已经加载的各种OFD文件的定义,比如400_21_01,代表V400,第21版本的01文件的定义，使用Hash记录<400_21_01,400接口21版本下的01文件的定义>
+    QHash<QString,OFDFileDefinition>loadedOfdDefinitionHash;
     //已经加载的CSV文件类别信息,csv文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
     QList<CsvFileDefinition> loadedCsvDefinitionList;
+    //已经加载的FIXED文件类别信息,定长文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
+    QList<FIXEDFileDefinition> loadedFixedDefinitionList;
     //用来记录文件头部内容的map,此信息用于文件检查
-    QHash<QString,QString> indexFileHeaderMap;
+    QHash<QString,QString> ofdIndexFileHeaderMap;
     //用来记录文件标题和内容的list,解析索引类文件时使用
     QList<QStringList> indexFileDataList;
     //当前正在使用的ofd定义,打开哪个文件,就切换到改文件的ofd定义
     OFDFileDefinition ofd;
     //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到改文件的csv定义
     CsvFileDefinition csv;
-    //用于记录csv等类别文件哪些列是数值的变量，注意，这个是否是数值是猜出来的
+    //用于记录csv等类别文件哪些列是数值的变量，注意，这个是否是数值是猜出来的，根据前几行的数据，进猜取小数，不猜整数
     QHash<int,FieldIsNumber> fieldIsNumberOrNot;
+    //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
+    FIXEDFileDefinition fixed;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
@@ -188,24 +232,46 @@ private:
     //打开的CSV文件的文件头
     QList<QString> csvFileHeaderQStringList;
     //打开的CSV文件的数据体
-    QList<QString> csvFileContentQStringList;
-    //当前打开的文件类别,目前已支持的文件类型0索引,1 OFD数据,2CSV文件,-1未打开文件
+    QList<QByteArray> csvFileContentQByteArrayList;
+    //打开的Fixed文件的文件头
+    QList<QString> fixedFileHeaderQStringList;
+    //打开的Fixed文件的数据体
+    QList<QByteArray> fixedContenQByteArrayList;
+    //打开的Fixed文件的文件尾
+    QList<QString> fixedFooterQStringList;
+    //当前打开的文件类别,目前已支持的文件类型0索引,1:OFD数据,2:CSV文件,3:FIXED定长文件，-1未打开文件或者显示了错误信息
     int currentOpenFileType=-1;
 
-    //字典参数
-    Dictionary dictionary;
+    //OFD字典参数，专用于OFD文件，打开文件类别为1时使用
+    Dictionary ofdDictionary;
+
+    //通用字典配置-用于csv和定长文件
+    QHash<QString,Dictionary> commonDictionary;
+    //监控xlsx文件导出是否完成
+    QFutureWatcher<int>* watcherXlsxSaveStatus_;
+    //创建成员xlsx变量//xlsx文件数据存放到堆内存,注意使用完毕释放
+    QXlsx::Document *xlsx=new QXlsx::Document();
+    //xlsx文件保存文件名
+    QString xlsxSaveName;
+    //全局blocked消息,当主动block时,填充此消息,用于告知其他场景程序正在做什么
+    QString dataBlockedMessage;
 
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
     QAction *action_ShowCopyColum;
-    QAction *action_ShowAnalysis;
+    QAction *action_ShowOFDAnalysis;
     QAction *action_EditCompareData;
-    QAction *action_ModifyCell;
-    QAction *action_ModifyCellBatch;
-
-    //鼠标指针位置,当鼠标点击单元格时,记录鼠标所点位置
-    QPoint posCurrentMenu;
+    QAction *action_EditCompareDataBatch;
+    QAction *action_ModifyOFDCell;
+    QAction *action_ModifyOFDCellBatch;
+    QAction *action_DeleteOFDRowData;
+    QAction *action_CopyOFDRowData;
+    QAction *action_addCopyedOFDData2PreviousRow;
+    QAction *action_addCopyedOFDData2NextRow;
+    QAction *action_addCopyedOFDData2End;
+    QAction *action_addNewLineOFDData2End;
+    QAction *action_ModifyOFDRow;
 
     /*
       极其重要的表格相关参数
@@ -220,16 +286,17 @@ private:
     int colcurrent=0;
     //表格当前高度
     int tableHeight;
-    //表格行高度,常量-用于数据展示
+    //表格行高度,常量-用于数据展示-如果你觉得现在的表格比较拥挤，可以增加每行高度
     const int rowHight=22;
-    //配置文件加载的状态
+    //配置文件加载的状态，在启动时使用
     bool configLoadCompleted=false;
     //数据更新状态,比如当前正在加载文件，正在重新刷新文件
     bool isUpdateData=false;
 
     //阻断的操作，比如当前正在导出文件，正在搜索，和isUpdatedata类似
     bool dataBlocked=false;
-
+    //是否是在导出文件
+    bool isExportFile=false;
     //已经加载的行,用于懒加载是判断哪些行已经加载,避免重复加载
     //优化，使用QHash提高大文件下多行数据加载后的查找效率
     QHash <int,bool> rowHasloaded;
@@ -237,178 +304,67 @@ private:
     //优化器，记录每列表格最宽记录，当异步下次加载数据时，根据是否发生了变化来决定是否需要更新列宽度
     QHash <int,int> columnWidth;
 
-    //加入到比对器的数据
+    //加入到比对器的数据 <行号,数据>
     QMap<int,QStringList> compareData;
 
     //文件变化标志，如果打开了一个文件并且编辑修改了，则此标志为真
     bool fileChanged=false;
 
-    /**
-     * @brief statusBar_clear_statusBar
-     * 状态栏信息清除方法
-     */
+    //数据内存压缩等级--默认禁用
+    int dataCompressLevel=0;
+
+    //默认视图模式-0当拖进来文件时在当前窗口打开，1不同的文件在新窗口打开，2所有拖到窗口的文件在新窗口打开
+    QString defaultViewMode="0";
+    //新文件打开方式
+    QString defaultNewFileMode="0";
+
+    //程序所有的tips，用于程序启动后随机显示一条提示
+    QList<QString> tips;
+
+    QString getConfigPath();
+    void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
     void statusBar_clear_statusBar();
-
-    /**
-     * @brief statusBar_display_rowsCount
-     * @param rowsCount
-     * 状态栏显示目前打开的文件总记录数的方法
-     */
     void statusBar_display_rowsCount(int rowsCount);
-
-    /**
-     * @brief statusBar_display_rowsAndCol
-     * @param row
-     * @param col
-     * @param length
-     * 状态栏显示目前打开的文件鼠标所在的行和列的方法
-     */
     void statusBar_display_rowsAndCol(int row,int col,int length);
-
-    /**
-     * @brief statusBar_disPlayMessage
-     * @param text
-     * 状态栏显示消息的方法
-     */
     void statusBar_disPlayMessage(QString text);
-
-    /**
-     * @brief clear_Table_Info
-     * 清理表格的方法如果你要新打开一个文件/一个新的类型的文件，请先调用此方法清理上次打开的文件的数据
-     */
     void clear_Table_Info();
-
-    /**
-     * @brief clear_Display_Info
-     * 清理文件标示栏目的方法，诸如文件的发送方接收方的信息等，如果你要打开一个新的文件，先调用此方法
-     */
     void clear_Display_Info();
-
-    /**
-     * @brief clear_oldData
-     * 刷新文件时调用，清理上次的数据
-     */
     void clear_oldData();
-
-    /**
-     * @brief initFile
-     * 文件初始化方法
-     */
-    void initFile();
-
-    /**
-     * @brief initStatusBar
-     * 无需关注的一个方法，用于程序启动时初始化状态栏
-     */
+    void initFile(QString filePath);
     void initStatusBar();
-
-    /**
-     * @brief open_file_Dialog
-     * 弹出选择文件的选择框
-     */
     void open_file_Dialog();
-
-    /**
-     * @brief load_CodeInfo
-     *针对OFD文件，用于加载文件发送方和接受方的代码和名称信息，读取OFD_CodeInfo.ini
-     */
-    void load_CodeInfo();
-
-    /**
-     * @brief load_FileType
-     * 加载文件类别标示
-     */
-    void load_FileType();
-
-    /**
-     * @brief load_Dictionary
-     * 加载OFD文件的字典信息
-     */
-    void load_Dictionary();
-
-    /**
-     * @brief load_OFDDefinition
-     * 加载所有的OFD文件的配置，各个版本的各个文件
-     */
+    void load_OFDCodeInfo();
+    void load_Setting();
+    void load_OFDFileType();
+    void load_OFDDictionary();
     void load_OFDDefinition();
-
-    /**
-     * @brief load_CSVDefinition
-     * 加载所有csv类文件的定义
-     */
     void load_CSVDefinition();
-
-    /**
-     * @brief load_indexFile
-     * 索引文件的加载
-     */
+    void load_FIXEDDefinition();
     void load_indexFile();
-
-    /**
-     * @brief load_ofdFile
-     * @param sendCode
-     * @param fileType
-     * OFD文件的加载
-     */
     void load_ofdFile(QString sendCode,QString fileType);
-
-    /**
-     * @brief load_csvFile
-     * @param fileType
-     * CSV文件的加载
-     */
     void load_csvFile(QStringList fileType);
-
+    void load_fixedFile(QStringList fileType);
+    void load_fixedFileData();
     void load_csvFileData(QStringList title);
-    /**
-     * @brief save2Csv
-     * @param filename
-     * 保存文件到csv
-     */
     void save2Csv(QString filename);
-
-    /**
-     * @brief save2Html
-     * @param filename
-     * 保存文件到html
-     */
     void save2Html(QString filename);
-
-    /**
-     * @brief save2Xlsx
-     * @param filename
-     * 保存文件到csv
-     */
     void save2Xlsx(QString filename);
-
-    //初始化且显示索引文件数据
-    //索引文件数据较小,不再启用懒加载
+    int save2XlxsFile();
     void init_display_IndexTable();
-
-    //初始化OFD用的表格
     void init_OFDTable();
     void init_CSVTable(QStringList title);
-    //仅仅渲染显示当前指定区域
-    //算法原理,当table试图发生滚动或者table控件大小发生变化时
-    //探视当前屏幕显示的区间范围,从QTableWidgetItem池中获取已经不再显示的item复用，大大降低内存开销
+    void init_FIXEDTable();
     void display_OFDTable();
-
     void display_CSVTable();
-
-    void display_CSVFaultCause(QList<CsvFaultCause> faultList);
-    /**
-     * @brief saveOFDFile
-     * @param filepath
-     * OFD文件的保存方法
-     */
+    void display_FIXEDTable();
+    void display_CSVFaultCause(QList<FaultCause> faultList);
+    void display_FIXEDFaultCause(QList<FaultCause> faultList);
     void saveOFDFile(QString filepath);
-
-    /**
-     * @brief randomTips
-     * 启动程序时候的随机提醒信息
-     */
     void randomTips();
-
+    void addOFDRowData(int location);
+    bool ignoreFileChangeAndOpenNewFile();
+    void closeEvent(QCloseEvent *event);
+    void columnJump(int type);
 };
 
 #endif // MAINWINDOW_H

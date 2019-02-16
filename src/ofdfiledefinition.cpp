@@ -21,38 +21,38 @@ OFDFileDefinition::OFDFileDefinition()
 
 }
 
-int OFDFileDefinition::getfieldCount()const
+int OFDFileDefinition::getFieldCount()const
 {
     return this->fieldCount;
 }
-int OFDFileDefinition::getrowLength()const
+int OFDFileDefinition::getRowLength()const
 {
     return this->rowLength;
 }
-bool OFDFileDefinition::getuseAble()const{
+bool OFDFileDefinition::getUseAble()const{
     return this->useAble;
 }
 QString OFDFileDefinition::getMessage()const{
     return this->message;
 }
-QList <FieldDefinition>  OFDFileDefinition::getfieldList()const
+QList <OFDFieldDefinition>  OFDFileDefinition::getFieldList()const
 {
     return this->fieldList;
 }
-void OFDFileDefinition::setfieldCount(int count)
+void OFDFileDefinition::setFieldCount(int count)
 {
     this->fieldCount=count;
 }
-void OFDFileDefinition::setrowLength(int length)
+void OFDFileDefinition::setRowLength(int length)
 {
     this->rowLength=length;
 }
-void  OFDFileDefinition::setfieldList(QList <FieldDefinition> list)
+void  OFDFileDefinition::setFieldList(QList <OFDFieldDefinition> list)
 {
     this->fieldList=list;
 }
 
-void OFDFileDefinition::setuseAble(bool useAble){
+void OFDFileDefinition::setUseAble(bool useAble){
     this->useAble=useAble;
 }
 void OFDFileDefinition::setMessage(QString message){

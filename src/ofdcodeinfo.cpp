@@ -13,26 +13,28 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef CODEINFO_H
-#define CODEINFO_H
+#include "src/ofdcodeinfo.h"
 
-#include <QString>
-
-class CodeInfo
+OFDCodeInfo::OFDCodeInfo()
 {
-public:
-    CodeInfo();
-    QString getCode()const;
-    QString getVersion()const;
-    QString getName()const;
-    void setCode(QString name);
-    void setVersion(QString version);
-    void setName(QString name);
 
-private:
-    QString code;
-    QString version;
-    QString name;
-};
+}
 
-#endif // CODEINFO_H
+QString OFDCodeInfo::getCode()const{
+    return this->code;
+}
+QString OFDCodeInfo::getVersion()const{
+    return this->version;
+}
+QString OFDCodeInfo::getName()const{
+    return this->name;
+}
+void OFDCodeInfo::setCode(QString code){
+    this->code=code;
+}
+void OFDCodeInfo::setVersion(QString version){
+    this->version=version;
+}
+void OFDCodeInfo::setName(QString name){
+    this->name=name;
+}

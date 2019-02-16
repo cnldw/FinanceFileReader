@@ -24,6 +24,10 @@ class Dictionary
 public:
     Dictionary();
     QString getDictionary(QString name,QString key) const;
+    /**
+     * @brief addDictionary 增加字典项的方法，一般直接增加一行数据，形如dict=key:value|key:value
+     * @param line
+     */
     void addDictionary(QString line);
 
 private:

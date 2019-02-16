@@ -16,38 +16,38 @@
 #include "src/dialogmodifycell.h"
 #include "ui_dialogmodifycell.h"
 
-DialogModifyCell::DialogModifyCell(QString filedType,int filedLength,int filedDecLength,QString value,QWidget *parent) :
+DialogModifyCell::DialogModifyCell(QString fieldType,int fieldLength,int fieldDecLength,QString value,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogModifyCell)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint);
     ui->textEdit->setTextColor(QColor("#FF0000"));
-    this->filedType=filedType;
-    this->filedLength=filedLength;
-    this->filedDecLength=filedDecLength;
+    this->fieldType=fieldType;
+    this->fieldLength=fieldLength;
+    this->fieldDecLength=fieldDecLength;
     ui->lineEdit_4->setFocus();
     //初始化界面元素
     //字段类型
-    if(filedType=="C"){
+    if(fieldType=="C"){
         ui->lineEdit->setText("C(字符型)");
     }
-    else if(filedType=="A"){
+    else if(fieldType=="A"){
         ui->lineEdit->setText("A(数字字符型)");
     }
-    else if(filedType=="N"){
+    else if(fieldType=="N"){
         ui->lineEdit->setText("N(数值型)");
     }
-    else if(filedType=="TEXT"){
+    else if(fieldType=="TEXT"){
         ui->lineEdit->setText("TEXT(文本型)");
     }
     else{
-        ui->lineEdit->setText(filedType);
+        ui->lineEdit->setText(fieldType);
     }
     //字段长度
-    ui->lineEdit_2->setText(QString::number(filedLength));
+    ui->lineEdit_2->setText(QString::number(fieldLength));
     //小数长度
-    ui->lineEdit_3->setText(QString::number(filedDecLength));
+    ui->lineEdit_3->setText(QString::number(fieldDecLength));
     //原始内容
     ui->lineEdit_4->setText(value);
 }
@@ -82,10 +82,10 @@ void DialogModifyCell::on_pushButton_clicked()
     //长度
     int textLength=text.toLocal8Bit().length();
     //字符类和文本类的只需要判断长度
-    if(filedType=="C"||filedType=="TEXT"){
+    if(fieldType=="C"||fieldType=="TEXT"){
         //长度校验
-        if(textLength>filedLength){
-            ui->textEdit->setText(tr("长度不能超过%1,请检查").arg(filedLength));
+        if(textLength>fieldLength){
+            ui->textEdit->setText(tr("长度不能超过%1,请检查").arg(fieldLength));
         }
         else{
             modify=true;
@@ -93,10 +93,10 @@ void DialogModifyCell::on_pushButton_clicked()
         }
     }
     //数字字符型
-    else if(filedType=="A"){
+    else if(fieldType=="A"){
         //长度校验
-        if(textLength>filedLength){
-            ui->textEdit->setText(tr("长度不能超过%1,请检查").arg(filedLength));
+        if(textLength>fieldLength){
+            ui->textEdit->setText(tr("长度不能超过%1,请检查").arg(fieldLength));
         }
         else{
             //内容校验-空
@@ -132,15 +132,15 @@ void DialogModifyCell::on_pushButton_clicked()
         }
     }
     //数字型
-    else if(filedType=="N"){
+    else if(fieldType=="N"){
         //空数据,空数据由主窗口设置为全0
         if(text.isEmpty()){
             modify=true;
             this->close();
         }
         bool ok=false;
-        text.toFloat(&ok);
-        //如果无法转化为float直接认为不合规
+        text.toDouble(&ok);
+        //如果无法转化为Double直接认为不合规//兼容负数
         if(!ok){
             ui->textEdit->setText(tr("输入的内容不是一个有效的数值"));
         }
@@ -148,8 +148,8 @@ void DialogModifyCell::on_pushButton_clicked()
             //无小数部分
             if(!text.contains("."))
             {
-                if(textLength>(filedLength-filedDecLength)){
-                    ui->textEdit->setText(tr("数值的整数部分长度不能超过%1").arg(filedLength-filedDecLength));
+                if(textLength>(fieldLength-fieldDecLength)){
+                    ui->textEdit->setText(tr("数值的整数部分长度不能超过%1").arg(fieldLength-fieldDecLength));
                 }
                 else{
                     modify=true;
@@ -162,14 +162,14 @@ void DialogModifyCell::on_pushButton_clicked()
                 int index=text.indexOf(".");
                 //整数部分
                 QString intS=text.mid(0,index);
-                if(intS.length()>(filedLength-filedDecLength)){
-                    ui->textEdit->setText(tr("数值的整数部分长度不能超过%1").arg(QString::number(filedLength-filedDecLength)));
+                if(intS.length()>(fieldLength-fieldDecLength)){
+                    ui->textEdit->setText(tr("数值的整数部分长度不能超过%1").arg(QString::number(fieldLength-fieldDecLength)));
                     return;
                 }
                 //小数部分
                 QString intD=text.mid(index+1,-1);
-                if(intD.length()>filedDecLength){
-                    ui->textEdit->setText(tr("数值的小数部分长度不能超过%1").arg(QString::number(filedDecLength)));
+                if(intD.length()>fieldDecLength){
+                    ui->textEdit->setText(tr("数值的小数部分长度不能超过%1").arg(QString::number(fieldDecLength)));
                     return;
                 }
                 //如果没问题就好说
@@ -180,8 +180,8 @@ void DialogModifyCell::on_pushButton_clicked()
     }
     //其他未知类型,仅校验长度
     else{
-        if(textLength>filedLength){
-            ui->textEdit->setText(tr("长度不能超过%1,请检查").arg(filedLength));
+        if(textLength>fieldLength){
+            ui->textEdit->setText(tr("长度不能超过%1,请检查").arg(fieldLength));
             return;
         }
         else{
@@ -193,7 +193,7 @@ void DialogModifyCell::on_pushButton_clicked()
 
 void DialogModifyCell::on_lineEdit_4_textChanged(const QString &arg1)
 {
-    if(filedType=="N"&&arg1.isEmpty()){
+    if(fieldType=="N"&&arg1.isEmpty()){
         ui->textEdit->setText("数值型内容不建议填充空哟，确认需要填充空请继续保存，如果要使用全0填充，则填写一个0即可！");
     }
     else{

@@ -13,23 +13,28 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef CSVFIELDDEFINITION_H
-#define CSVFIELDDEFINITION_H
-#include <QString>
+#ifndef DIALOGOPENFILEADV_H
+#define DIALOGOPENFILEADV_H
+
+#include <QDialog>
+
+namespace Ui {
+class DialogOpenFileAdv;
+}
 
 /**
- * @brief The CsvFieldDefinition class CSV文件的字段定义
+ * @brief The DialogOpenFileAdv class 高级版的打开文件选择框
  */
-class CsvFieldDefinition
+class DialogOpenFileAdv : public QDialog
 {
-public:
-    CsvFieldDefinition();
+    Q_OBJECT
 
-    QString getFieldName() const;
-    void setFieldName(const QString &value);
+public:
+    explicit DialogOpenFileAdv(QWidget *parent = nullptr);
+    ~DialogOpenFileAdv();
 
 private:
-    QString fieldName;
+    Ui::DialogOpenFileAdv *ui;
 };
 
-#endif // CSVFIELDDEFINITION_H
+#endif // DIALOGOPENFILEADV_H

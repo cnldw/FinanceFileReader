@@ -10,6 +10,18 @@
     <height>300</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>500</width>
+    <height>300</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>500</width>
+    <height>300</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
@@ -17,9 +29,9 @@
    <property name="geometry">
     <rect>
      <x>310</x>
-     <y>260</y>
+     <y>264</y>
      <width>101</width>
-     <height>31</height>
+     <height>25</height>
     </rect>
    </property>
    <property name="focusPolicy">
@@ -33,9 +45,9 @@
    <property name="geometry">
     <rect>
      <x>413</x>
-     <y>260</y>
+     <y>264</y>
      <width>75</width>
-     <height>31</height>
+     <height>25</height>
     </rect>
    </property>
    <property name="focusPolicy">
@@ -62,6 +74,9 @@
    <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
    <property name="html">
     <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
@@ -72,6 +87,9 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'SimSun'; font-size:9pt;&quot;&gt;注意1:如果说数据异常换行了,通过本修复功能修复后请审核文件的正确性,建议从原始数据库中,将字段中异常存在的多余换行符(可能是\r,也可能是\n也可能是\r\n)删除,避免后续再次导出这种错误的数据...&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'SimSun'; font-size:9pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'SimSun'; font-size:9pt;&quot;&gt;注意2:将原始OFD数据文件使用文本编辑器打开并显示换行符,可以快速定位哪里发生了异常换行截断...&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="acceptRichText">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

@@ -23,12 +23,15 @@ namespace Ui {
 class DialogModifyCell;
 }
 
+/**
+ * @brief The DialogModifyCell class 修改
+ */
 class DialogModifyCell : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit DialogModifyCell(QString filedType,int filedLength,int filedDecLength,QString value,QWidget *parent);
+    explicit DialogModifyCell(QString fieldType,int fieldLength,int fieldDecLength,QString value,QWidget *parent);
     ~DialogModifyCell();
     bool getModifyFlag();
     QString getValueNew();
@@ -43,9 +46,9 @@ private slots:
 private:
     Ui::DialogModifyCell *ui;
     bool modify=false;
-    QString filedType="";
-    int filedLength=0;
-    int filedDecLength=0;
+    QString fieldType="";
+    int fieldLength=0;
+    int fieldDecLength=0;
 };
 
 #endif // DIALOGMODIFYCELL_H

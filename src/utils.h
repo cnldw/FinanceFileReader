@@ -20,8 +20,11 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QList>
+#include <QLocale>
+#include <QDateTime>
 #include "src/ofdfiledefinition.h"
 #include "src/csvfiledefinition.h"
+#include "src/fixedfiledefinition.h"
 
 namespace Ui {
 class Utils;
@@ -33,33 +36,14 @@ public:
     Utils();
      static bool isDirExist(QString fullPath);
      static bool isFileExist(QString fullFileName);
-     static QString getVersion();
      static QString getCompileDate();
-     /**
-      * 获取指定行列的解析后的数据
-      * 由于ofd文件原始记录可能非常大,需要使用指针
-     */
      static QString getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
-     /**
-      * 获取指定行列的原始数据
-      * 由于ofd文件原始记录可能非常大,需要使用指针
-      */
+     static QStringList getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row);
      static QString getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
-     /**
-      * @brief getRowCsvValuesFromcsvFileContentQStringList
-      * @param csvFileContentQStringList
-      * @param csv
-      * @param row
-      * @return
-      * csv文件的数据行分隔方法
-      */
-     static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QString> * csvFileContentQStringList,CsvFileDefinition * csv,int row);
+     static QString getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col);
+     static QStringList getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row);
+     static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row);
      static QString CovertInt2ExcelCol(int number);
-     /**
-      * @brief CovertDoubleQStringWithThousandSplit
-      * @param doubleString
-      * @return
-      */
      static QString CovertDoubleQStringWithThousandSplit(QString doubleString);
 };
 

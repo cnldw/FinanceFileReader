@@ -28,6 +28,9 @@ namespace Ui {
 class DialogShowTableRow;
 }
 
+/**
+ * @brief The DialogShowTableRow class 展示数据行
+ */
 class DialogShowTableRow : public QDialog
 {
     Q_OBJECT
@@ -44,7 +47,7 @@ private slots:
 
     void on_pushButton_clicked();
 
-    void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
+    void on_tableWidget_itemSelectionChanged();
 
 private:
     Ui::DialogShowTableRow *ui;
@@ -54,10 +57,8 @@ private:
     QAction *action_ShowCopyColum;
     QPoint posCurrentMenu;
     //
-    int currentRow =0;
-    int currentColumn=0;
-
-    bool endFlag=false;
+    int searchRow =0;
+    int searchColumn=0;
 };
 
 #endif // DIALOGSHOWTABLEROW_H

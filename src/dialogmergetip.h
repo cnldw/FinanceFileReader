@@ -22,6 +22,9 @@ namespace Ui {
 class DialogMergeTip;
 }
 
+/**
+ * @brief The DialogMergeTip class 合并提示
+ */
 class DialogMergeTip : public QDialog
 {
     Q_OBJECT

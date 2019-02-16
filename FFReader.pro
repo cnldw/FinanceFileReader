@@ -3,7 +3,7 @@
 # Project created by QtCreator 2018-03-24T10:23:52
 #
 #-------------------------------------------------
-QT       += core gui
+QT       += core gui concurrent
 #要求使用的最低c++版本
 CONFIG += c++11
 #静态编译声明-windows,unix like
@@ -43,11 +43,8 @@ SOURCES += \
         src/mainwindow.cpp \
     src/utils.cpp \
     src/ofdfiledefinition.cpp \
-    src/fielddefinition.cpp \
-    src/codeinfo.cpp \
     src/dictionary.cpp \
     src/dialogshowtablerow.cpp \
-    src/dialogshowtablefiledcheck.cpp \
     src/dialogshowtablecompareview.cpp \
     src/dialogmodifycell.cpp \
     src/dialogaboutauthor.cpp \
@@ -55,17 +52,25 @@ SOURCES += \
     src/dialogaboutthis.cpp \
     src/csvfielddefinition.cpp \
     src/csvfiledefinition.cpp \
-    src/csvfaultcause.cpp
+    src/fieldisnumber.cpp \
+    src/dialogopenfileadv.cpp \
+    src/fixedfielddefinition.cpp \
+    src/ofdfielddefinition.cpp \
+    src/ofdcodeinfo.cpp \
+    src/fixedfiledefinition.cpp \
+    src/faultcause.cpp \
+    src/dialogchoosefiletype.cpp \
+    src/dialogpreference.cpp \
+    src/dialogmytip.cpp \
+    src/dialogmodifyrow.cpp \
+    src/dialogshowtablefieldcheck.cpp
 
 HEADERS += \
         src/mainwindow.h \
     src/utils.h \
     src/ofdfiledefinition.h \
-    src/fielddefinition.h \
-    src/codeinfo.h \
     src/dictionary.h \
     src/dialogshowtablerow.h \
-    src/dialogshowtablefiledcheck.h \
     src/dialogshowtablecompareview.h \
     src/dialogmodifycell.h \
     src/dialogaboutauthor.h \
@@ -73,17 +78,34 @@ HEADERS += \
     src/dialogaboutthis.h \
     src/csvfielddefinition.h \
     src/csvfiledefinition.h \
-    src/csvfaultcause.h
+    src/fieldisnumber.h \
+    src/dialogopenfileadv.h \
+    src/fixedfielddefinition.h \
+    src/ofdcodeinfo.h \
+    src/ofdfielddefinition.h \
+    src/fixedfiledefinition.h \
+    src/faultcause.h \
+    src/dialogchoosefiletype.h \
+    src/dialogpreference.h \
+    src/dialogmytip.h \
+    src/dialogmodifyrow.h \
+    src/publicdefine.h \
+    src/dialogshowtablefieldcheck.h
 
 FORMS += \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
-    src/dialogshowtablefiledcheck.ui \
     src/dialogshowtablecompareview.ui \
     src/dialogmodifycell.ui \
     src/dialogaboutauthor.ui \
     src/dialogmergetip.ui \
-    src/dialogaboutthis.ui
+    src/dialogaboutthis.ui \
+    src/dialogopenfileadv.ui \
+    src/dialogchoosefiletype.ui \
+    src/dialogpreference.ui \
+    src/dialogmytip.ui \
+    src/dialogmodifyrow.ui \
+    src/dialogshowtablefieldcheck.ui
 
 RESOURCES += \
     res.qrc \
@@ -93,16 +115,18 @@ DISTFILES +=
 win32{
 #windows下应用图标
 RC_ICONS =res/icon.ico
+############以下注意按版本修改###############
+#版本号-给windows生成到程序包使用
+VERSION = 1.7.3
+############以下注意按版本修改###############
 
-#版本号
-VERSION = 1.6.0
 # 语言
 # 0x0004 表示 简体中文
 RC_LANG = 0x0004
 # 产品名称
 QMAKE_TARGET_PRODUCT = FFReader
 # 详细描述
-QMAKE_TARGET_DESCRIPTION = Fund File Reader
+QMAKE_TARGET_DESCRIPTION = Finance File Reader
 # 版权
 QMAKE_TARGET_COPYRIGHT = Copyright(C) 2018 Liudewei
 }

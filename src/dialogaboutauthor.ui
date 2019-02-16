@@ -25,7 +25,7 @@
   <property name="windowTitle">
    <string>关于作者</string>
   </property>
-  <widget class="QPlainTextEdit" name="plainTextEdit">
+  <widget class="QTextEdit" name="textEdit">
    <property name="geometry">
     <rect>
      <x>210</x>
@@ -44,12 +44,6 @@
    </property>
    <property name="readOnly">
     <bool>true</bool>
-   </property>
-   <property name="plainText">
-    <string>作者:刘德位(幻舞奇影)
-
-2015年毕业于郑州大学
-</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton">

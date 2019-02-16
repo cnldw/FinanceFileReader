@@ -37,7 +37,7 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
 
     //表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
-    action_ShowCopyColum = new QAction(tr("复制光标所在单元格"),this);
+    action_ShowCopyColum = new QAction(tr("复制"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
 
     //设置表格标题
@@ -47,38 +47,41 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
     //排序
     std::sort(keys.begin(), keys.end());
     //数据显示
-    if(compareData->count()>0){
-        for(int i=0;i<compareData->count();i++){
+    if(keys.count()>0){
+        for(int row=0;row<keys.count();row++){
             //第一列显示数据的原始行号
-            QTableWidgetItem *item= new QTableWidgetItem(QString::number(keys.at(i)));
-            ptr_table->setItem(i, 0, item);
+            QTableWidgetItem *item= new QTableWidgetItem(QString::number(keys.at(row)));
+            ptr_table->setItem(row, 0, item);
             //从第二列开始为数据内容
-            for(int index=0;index<(compareData->value(keys.at(i)).count())&&index<ptr_table->columnCount()-1;index++){
-                //每行的第一列为该行数据在原始记录中的行号,亲,请注意
-                QTableWidgetItem *item2= new QTableWidgetItem(compareData->value(keys.at(i)).at(index));
-                ptr_table->setItem(i, index+1, item2);
+            for(int col=1;col<ptr_table->columnCount();col++){
+                QString value="";
+                if(col<compareData->value(keys.at(row)).count()){
+                    value=compareData->value(keys.at(row)).at(col);
+                }
+                QTableWidgetItem *item2= new QTableWidgetItem(value);
+                ptr_table->setItem(row, col, item2);
                 //从第二行开始，开始判断是否不一样，一旦有不一样的直接就标记此列有不一样的
-                if(i==1){
-                    //如果第一行等于第二行
-                    if((compareData->value(keys.at(i)).at(index))!=(compareData->value(keys.at(i-1)).at(index))){
+                if(row==1){
+                    //如果第一行不等于第二行
+                    if(ptr_table->item(row,col)->text()!=ptr_table->item(row-1,col)->text()){
                         //插入不等标记
-                        colNoEqual.append(index);
-                        for(int i2=0;i2<=i;i2++){
-                            ptr_table->item(i2,index+1)->setBackgroundColor(backcolor);
+                        colNoEqual.append(col);
+                        for(int i2=0;i2<=row;i2++){
+                            ptr_table->item(i2,col)->setBackgroundColor(backcolor);
                         }
                     }
-                }else if(i>1){
+                }else if(row>1){
                     //先判断前几行是否不相等,如果不相等直接更新本行颜色即可
-                    if(colNoEqual.contains(index)){
-                        ptr_table->item(i,index+1)->setBackgroundColor(backcolor);
+                    if(colNoEqual.contains(col)){
+                        ptr_table->item(row,col)->setBackgroundColor(backcolor);
                     }
                     else{
                         //前N行相等,则拿本行和上一行对比,并且如果检测到不一致,需从第一行开始更新背景色
-                        if((compareData->value(keys.at(i)).at(index))!=(compareData->value(keys.at(i-1)).at(index))){
+                        if(ptr_table->item(row,col)->text()!=ptr_table->item(row-1,col)->text()){
                             //插入不等标记
-                            colNoEqual.append(index);
-                            for(int i2=0;i2<=i;i2++){
-                                ptr_table->item(i2,index+1)->setBackgroundColor(backcolor);
+                            colNoEqual.append(col);
+                            for(int i2=0;i2<=row;i2++){
+                                ptr_table->item(i2,col)->setBackgroundColor(backcolor);
                             }
                         }
                     }
@@ -114,10 +117,46 @@ void DialogShowTableCompareView::on_tableWidget_customContextMenuRequested(const
 }
 
 void DialogShowTableCompareView::copyToClipboard(){
-    if(ptr_table->itemAt(posCurrentMenu)!=nullptr){
-        QString text= ptr_table->itemAt(posCurrentMenu)->text();
-        QClipboard *board = QApplication::clipboard();
-        board->setText(text);
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    int rangeCount=itemsRange.count();
+    if(rangeCount==1){
+        int topRow=itemsRange.at(0).topRow();
+        int bottomRow=itemsRange.at(0).bottomRow();
+        int leftColumn=itemsRange.at(0).leftColumn();
+        int rigthColumn=itemsRange.at(0).rightColumn();
+        //单个单元格复制
+        if(topRow==bottomRow&&leftColumn==rigthColumn){
+            QString text="";
+            QClipboard *board = QApplication::clipboard();
+            if(ptr_table->item(topRow,leftColumn)!=nullptr){
+                text= ptr_table->item(topRow,leftColumn)->text();
+            }
+            board->setText(text);
+        }
+        //多个单元格复制
+        else{
+            QString value="";
+            for(int row=topRow;row<=bottomRow;row++){
+                for(int col=leftColumn;col<=rigthColumn;col++){
+                    if(ptr_table->item(row,col)==nullptr){
+                        value.append("");
+                    }
+                    else{
+                        value.append(ptr_table->item(row,col)->text());
+                    }
+                    if(col<rigthColumn){
+                        value.append("\t");
+                    }else if(row<bottomRow){
+                        value.append("\r\n");
+                    }
+                }
+            }
+            QClipboard *board = QApplication::clipboard();
+            board->setText(value);
+        }
+    }
+    else if(rangeCount>1){
+        QMessageBox::warning(this,tr("警告"),"无法对多重选择区域执行复制!",QMessageBox::Ok,QMessageBox::Ok);
     }
 }
 
@@ -171,17 +210,12 @@ void DialogShowTableCompareView::on_pushButton_2_clicked()
     if(colNoEqual.isEmpty()){
         return;
     }else{
-        if(colcurrent!=0){
+        if(colcurrent>0){
             for(int col=colcurrent-1;col>=0;col--){
-                if(colNoEqual.contains(col-1)){
+                if(colNoEqual.contains(col)){
                     ptr_table->setCurrentCell(rowcurrent,col);
                     ptr_table->setFocus();
                     break;
-                }
-                //如果找到第一个结束，将光标强制显示到第一个一样的
-                if(col==0){
-                    ptr_table->setCurrentCell(rowcurrent,colNoEqual.first()+1);
-                    ptr_table->setFocus();
                 }
             }
         }
@@ -194,16 +228,12 @@ void DialogShowTableCompareView::on_pushButton_3_clicked()
     if(colNoEqual.isEmpty()){
         return;
     }else{
-        if(colcurrent<ptr_table->columnCount()-1){
+        if(colcurrent<ptr_table->columnCount()){
             for(int col=colcurrent+1;col<ptr_table->columnCount();col++){
-                if(colNoEqual.contains(col-1)){
+                if(colNoEqual.contains(col)){
                     ptr_table->setCurrentCell(rowcurrent,col);
                     ptr_table->setFocus();
                     break;
-                }
-                if(col==ptr_table->columnCount()-1){
-                    ptr_table->setCurrentCell(rowcurrent,colNoEqual.last()+1);
-                    ptr_table->setFocus();
                 }
             }
         }

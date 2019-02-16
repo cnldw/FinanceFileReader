@@ -13,12 +13,12 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#include "src/dialogshowtablefiledcheck.h"
-#include "ui_dialogshowtablefiledcheck.h"
+#include "src/dialogshowtablefieldcheck.h"
+#include "ui_dialogshowtablefieldcheck.h"
 
-DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,QWidget *parent) :
+DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::DialogShowTableFiledCheck)
+    ui(new Ui::DialogShowTableFieldCheck)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
@@ -69,7 +69,7 @@ DialogShowTableFiledCheck::DialogShowTableFiledCheck(QList<QStringList> * data,Q
     }
 }
 
-void DialogShowTableFiledCheck::on_tableWidget_customContextMenuRequested(const QPoint &pos)
+void DialogShowTableFieldCheck::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
     posCurrentMenu=pos;
     //判断当前鼠标位置是不是在表格单元格位置内
@@ -86,7 +86,7 @@ void DialogShowTableFiledCheck::on_tableWidget_customContextMenuRequested(const 
     tablePopMenu->exec(QCursor::pos());
 }
 
-void DialogShowTableFiledCheck::copyToClipboard(){
+void DialogShowTableFieldCheck::copyToClipboard(){
     if(ptr_table->itemAt(posCurrentMenu)!=nullptr){
         QString text= ptr_table->itemAt(posCurrentMenu)->text();
         QClipboard *board = QApplication::clipboard();
@@ -94,7 +94,7 @@ void DialogShowTableFiledCheck::copyToClipboard(){
     }
 }
 
-DialogShowTableFiledCheck::~DialogShowTableFiledCheck()
+DialogShowTableFieldCheck::~DialogShowTableFieldCheck()
 {
     delete action_ShowCopyColum;
     delete tablePopMenu;

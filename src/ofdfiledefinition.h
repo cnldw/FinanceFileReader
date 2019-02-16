@@ -18,7 +18,7 @@
 
 #include <QList>
 #include <QString>
-#include "src/fielddefinition.h"
+#include "src/ofdfielddefinition.h"
 
 class OFDFileDefinition
 {
@@ -34,21 +34,21 @@ private:
     //每行长度
     int rowLength;
     //字段信息
-    QList <FieldDefinition> fieldList;
+    QList <OFDFieldDefinition> fieldList;
 
 public:
     OFDFileDefinition();
     ~OFDFileDefinition();
-    bool getuseAble()const;
+    bool getUseAble()const;
     QString getMessage()const;
-    int getfieldCount()const;
-    int getrowLength()const;
-    QList <FieldDefinition>  getfieldList()const;
-    void setfieldCount(int count);
-    void setrowLength(int length);
-    void setuseAble(bool useAble);
+    int getFieldCount()const;
+    int getRowLength()const;
+    QList <OFDFieldDefinition>  getFieldList()const;
+    void setFieldCount(int count);
+    void setRowLength(int length);
+    void setUseAble(bool useAble);
     void setMessage(QString message);
-    void setfieldList(QList <FieldDefinition> list);
+    void setFieldList(QList <OFDFieldDefinition> list);
 
 };
 

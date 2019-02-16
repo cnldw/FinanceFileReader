@@ -13,23 +13,20 @@
 *See the License for the specific language governing permissions and
 *limitations under the License.
 ************************************************************************/
-#ifndef CSVFIELDDEFINITION_H
-#define CSVFIELDDEFINITION_H
-#include <QString>
+#include "dialogopenfileadv.h"
+#include "ui_dialogopenfileadv.h"
 
-/**
- * @brief The CsvFieldDefinition class CSV文件的字段定义
- */
-class CsvFieldDefinition
+DialogOpenFileAdv::DialogOpenFileAdv(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::DialogOpenFileAdv)
 {
-public:
-    CsvFieldDefinition();
+    ui->setupUi(this);
+    this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint);
+    ui->comboBoxFileType->addItem("OFD文件");
 
-    QString getFieldName() const;
-    void setFieldName(const QString &value);
+}
 
-private:
-    QString fieldName;
-};
-
-#endif // CSVFIELDDEFINITION_H
+DialogOpenFileAdv::~DialogOpenFileAdv()
+{
+    delete ui;
+}
