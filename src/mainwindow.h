@@ -49,6 +49,7 @@
 #include <QFuture>
 #include <QProcess>
 #include <QCloseEvent>
+#include <QDesktopServices>
 #include "src/utils.h"
 #include "src/ofdfiledefinition.h"
 #include "src/ofdfielddefinition.h"
@@ -127,9 +128,9 @@ private slots:
 
     void addOFDRowDataEndRow();
 
-    void addNewLineOFDRowDataEndRow();
+    void addOFDNewLineRowDataEndRow();
 
-    void moaifyOFDRow();
+    void showMoaifyOFDRow();
 
     void copyToClipboard();
 
@@ -137,13 +138,13 @@ private slots:
 
     void showOFDFiledAnalysis();
 
-    void showModifyCell();
+    void showModifyOFDCell();
 
     void save2XlsxFinished();
 
     void loadFileOnWindowisOpenOrDragEnter();
 
-    void showModifyCellBatch();
+    void showModifyOFDCellBatch();
 
     void on_actionsOpenCompare_triggered();
 
@@ -179,10 +180,26 @@ private slots:
 
     void on_pushButtonColumnJump_2_clicked();
 
+    void on_actionwebsite_triggered();
+
+    void on_actionmanual_triggered();
+
+    void on_currentOpenFilePathLineText_returnPressed();
+
+    void on_pushButtonPageFirst_clicked();
+
+    void on_pushButtonPagePrevious_clicked();
+
+    void on_pushButtonPageNext_clicked();
+
+    void on_pushButtonPageLast_clicked();
+
+    void on_pushButtonGo_clicked();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
-    QString appName=tr("基金文件阅读器(开源版)-").append(VERSION_V);
+    QString appName=tr("金融文件阅读器-").append(VERSION_V);
     //状态栏指针变量
     QLabel *statusLabel_ptr_showCount;
     QLabel *statusLabel_ptr_showRowAndCol;
@@ -277,13 +294,13 @@ private:
       极其重要的表格相关参数
     */
     //记录table在当前界面显示的行范围,用于判断需要刷新显示到界面的元素
-    int hValueBegin = 0;
-    int hValueEnd = 0;
+    int tableRowBegin = 0;
+    int tableRowEnd = 0;
     //列跳转模式当前搜索进度
-    int colSearch=0;
+    int tableColSearch=0;
     //记录当前选中的行和列
-    int rowcurrent=0;
-    int colcurrent=0;
+    int tableRowCurrent=0;
+    int tableColCurrent=0;
     //表格当前高度
     int tableHeight;
     //表格行高度,常量-用于数据展示-如果你觉得现在的表格比较拥挤，可以增加每行高度
@@ -310,16 +327,28 @@ private:
     //文件变化标志，如果打开了一个文件并且编辑修改了，则此标志为真
     bool fileChanged=false;
 
+    //设置选项
     //数据内存压缩等级--默认禁用
     int dataCompressLevel=0;
-
+    //设置选项
     //默认视图模式-0当拖进来文件时在当前窗口打开，1不同的文件在新窗口打开，2所有拖到窗口的文件在新窗口打开
     QString defaultViewMode="0";
+    //设置选项
     //新文件打开方式
     QString defaultNewFileMode="0";
+    //设置选项
+    //每页行数类型 0-10万行,1-20万行,2-50万行,3-100万行
+    QString defaultPageSizeType="0";
 
     //程序所有的tips，用于程序启动后随机显示一条提示
     QList<QString> tips;
+
+    //每页行数-默认10万
+    int pageRowSize=100000;
+    //总页数
+    int pageCount=1;
+    //目前在第几页
+    int currentPage=1;
 
     QString getConfigPath();
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
@@ -328,6 +357,7 @@ private:
     void statusBar_display_rowsAndCol(int row,int col,int length);
     void statusBar_disPlayMessage(QString text);
     void clear_Table_Info();
+    void clear_Table_Contents();
     void clear_Display_Info();
     void clear_oldData();
     void initFile(QString filePath);
@@ -365,6 +395,7 @@ private:
     bool ignoreFileChangeAndOpenNewFile();
     void closeEvent(QCloseEvent *event);
     void columnJump(int type);
+    void pageJump(int page,int scrollIndex=0);
 };
 
 #endif // MAINWINDOW_H

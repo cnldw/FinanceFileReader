@@ -55,6 +55,24 @@ DialogPreference::DialogPreference(QMap <QString,QString> par,QWidget *parent) :
             ui->comboBox_3->setCurrentIndex(2);
         }
     }
+    if(keys.contains("defaultpagesizetype")){
+        if(par.value("defaultpagesizetype")=="0"){
+            this->defaultPageSizeType="0";
+            ui->comboBox_4->setCurrentIndex(0);
+        }
+        else if(par.value("defaultpagesizetype")=="1"){
+            this->defaultPageSizeType="1";
+            ui->comboBox_4->setCurrentIndex(1);
+        }
+        else if(par.value("defaultpagesizetype")=="2"){
+            this->defaultPageSizeType="2";
+            ui->comboBox_4->setCurrentIndex(2);
+        }
+        else if(par.value("defaultpagesizetype")=="3"){
+            this->defaultPageSizeType="3";
+            ui->comboBox_4->setCurrentIndex(3);
+        }
+    }
 }
 
 DialogPreference::~DialogPreference()
@@ -134,4 +152,25 @@ void DialogPreference::on_comboBox_3_currentIndexChanged(int index)
     else if(index==2){
         defaultNewFileMode="2";
     }
+}
+
+void DialogPreference::on_comboBox_4_currentIndexChanged(int index)
+{
+    if(index==0){
+        defaultPageSizeType="0";
+    }
+    else if(index==1){
+        defaultPageSizeType="1";
+    }
+    else if(index==2){
+        defaultPageSizeType="2";
+    }
+    else if(index==3){
+        defaultPageSizeType="3";
+    }
+}
+
+QString DialogPreference::getDefaultPageSizeType() const
+{
+    return defaultPageSizeType;
 }

@@ -32,7 +32,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <property name="spacing">
-     <number>4</number>
+     <number>3</number>
     </property>
     <property name="leftMargin">
      <number>3</number>
@@ -44,7 +44,7 @@
      <number>3</number>
     </property>
     <property name="bottomMargin">
-     <number>0</number>
+     <number>3</number>
     </property>
     <item>
      <widget class="QFrame" name="frameInfo">
@@ -484,7 +484,7 @@ border-radius:3px;
         </rect>
        </property>
        <property name="toolTip">
-        <string>可以将数据导出到excel文件进行分析...</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;可以将数据导出到excel文件进行排序、筛选、统计分析...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>数据导出</string>
@@ -510,6 +510,9 @@ border-radius:3px;
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayout">
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
       <item row="0" column="0">
        <widget class="QTableWidget" name="tableWidget">
         <property name="frameShape">
@@ -518,6 +521,176 @@ border-radius:3px;
         <property name="frameShadow">
          <enum>QFrame::Sunken</enum>
         </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QFrame" name="framePage">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="layoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>557</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="pushButtonPageFirst">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>首页</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonPagePrevious">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>上一页</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="pageText">
+            <property name="minimumSize">
+             <size>
+              <width>65</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>65</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>当前所在页,可以输入页码后点击“跳转”按钮前往输入的页</string>
+            </property>
+            <property name="readOnly">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonPageNext">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>下一页</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonPageLast">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>末页</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonGo">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>跳转到输入的页</string>
+            </property>
+            <property name="text">
+             <string>跳转</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelPageSize">
+            <property name="text">
+             <string>（X万行/页）</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
@@ -549,6 +722,8 @@ border-radius:3px;
     </property>
     <addaction name="aboutOpen"/>
     <addaction name="actionaboutAuthor"/>
+    <addaction name="actionwebsite"/>
+    <addaction name="actionmanual"/>
     <addaction name="actionAboutQt"/>
    </widget>
    <widget class="QMenu" name="menu">
@@ -606,9 +781,6 @@ border-radius:3px;
    </property>
    <property name="statusTip">
     <string/>
-   </property>
-   <property name="shortcut">
-    <string>F3</string>
    </property>
   </action>
   <action name="actionsOpenCompare">
@@ -691,6 +863,16 @@ border-radius:3px;
   <action name="actionerrorFind">
    <property name="text">
     <string>数据错误评估</string>
+   </property>
+  </action>
+  <action name="actionwebsite">
+   <property name="text">
+    <string>官方网站</string>
+   </property>
+  </action>
+  <action name="actionmanual">
+   <property name="text">
+    <string>使用手册</string>
    </property>
   </action>
  </widget>

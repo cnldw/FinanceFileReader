@@ -209,6 +209,55 @@
      </property>
     </item>
    </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>30</y>
+      <width>131</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>超大文件分页每页行数</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_4">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>60</y>
+      <width>121</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;针对大文件的分页每页行数,选择10万行每页,则记录数低于10万时不分页&lt;/p&gt;&lt;p&gt;每页能承载的最大行数和你的电脑内存有关,内存较低时建议配置10万行每页&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <item>
+     <property name="text">
+      <string>10万行</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>20万行</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>50万行</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>100万行</string>
+     </property>
+    </item>
+   </widget>
   </widget>
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">

@@ -56,7 +56,7 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
             for(int col=1;col<ptr_table->columnCount();col++){
                 QString value="";
                 if(col<compareData->value(keys.at(row)).count()){
-                    value=compareData->value(keys.at(row)).at(col);
+                    value=compareData->value(keys.at(row)).at(col-1);
                 }
                 QTableWidgetItem *item2= new QTableWidgetItem(value);
                 ptr_table->setItem(row, col, item2);

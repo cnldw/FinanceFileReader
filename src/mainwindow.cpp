@@ -40,6 +40,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
 #endif
     //临时隐藏未开发完毕的功能--高级文件打开
     ui->actionfileOpenAdv->setVisible(false);
+    //隐藏分页组件--只有当页数大于1的时候才显示
+    ui->framePage->setVisible(false);
     //指向表格控件的指针
     ptr_table=ui->tableWidget;
     ptr_table->setAlternatingRowColors(true);
@@ -60,9 +62,9 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     action_EditCompareDataBatch= new QAction(tr("将选择的行批量加入比对器"),this);
     connect(action_EditCompareDataBatch, SIGNAL(triggered()), this, SLOT(editCompareData()));
     action_ModifyOFDCell= new QAction(tr("编辑光标所在单元格"),this);
-    connect(action_ModifyOFDCell, SIGNAL(triggered()), this, SLOT(showModifyCell()));
+    connect(action_ModifyOFDCell, SIGNAL(triggered()), this, SLOT(showModifyOFDCell()));
     action_ModifyOFDCellBatch= new QAction(tr("批量编辑选中单元格"),this);
-    connect(action_ModifyOFDCellBatch, SIGNAL(triggered()), this, SLOT(showModifyCellBatch()));
+    connect(action_ModifyOFDCellBatch, SIGNAL(triggered()), this, SLOT(showModifyOFDCellBatch()));
     action_DeleteOFDRowData= new QAction(tr("从文件中删除光标所在行的整行记录"),this);
     connect(action_DeleteOFDRowData, SIGNAL(triggered()), this, SLOT(deleteRowDataFromFileAndTable()));
     action_CopyOFDRowData= new QAction(tr("复制光标所在整行原始数据(专用于合并OFD数据)"),this);
@@ -74,9 +76,9 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     action_addCopyedOFDData2End= new QAction(tr("将剪切板上的数据插入到文件尾"),this);
     connect(action_addCopyedOFDData2End, SIGNAL(triggered()), this, SLOT(addOFDRowDataEndRow()));
     action_addNewLineOFDData2End= new QAction(tr("新增一行数据记录到文件尾"),this);
-    connect(action_addNewLineOFDData2End, SIGNAL(triggered()), this, SLOT(addNewLineOFDRowDataEndRow()));
+    connect(action_addNewLineOFDData2End, SIGNAL(triggered()), this, SLOT(addOFDNewLineRowDataEndRow()));
     action_ModifyOFDRow= new QAction(tr("编辑光标所在的整行数据"),this);
-    connect(action_ModifyOFDRow, SIGNAL(triggered()), this, SLOT(moaifyOFDRow()));
+    connect(action_ModifyOFDRow, SIGNAL(triggered()), this, SLOT(showMoaifyOFDRow()));
 
     tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
     tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
@@ -113,9 +115,31 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     //加载程序设置
     load_Setting();
     /*加载完设置后进行设置应用*/
+    //默认页面视图模式
     if(this->defaultViewMode=="1"){
         ui->frameInfo->setHidden(true);
         ui->viewMode->setText("标准视图");
+    }
+    //每页行数
+    if(this->defaultPageSizeType=="0"){
+        ui->labelPageSize->setText("(10万行/页)");
+        this->pageRowSize=100000;
+    }
+    else if(this->defaultPageSizeType=="1"){
+        ui->labelPageSize->setText("(20万行/页)");
+        this->pageRowSize=200000;
+    }
+    else if(this->defaultPageSizeType=="2"){
+        ui->labelPageSize->setText("(50万行/页)");
+        this->pageRowSize=500000;
+    }
+    else if(this->defaultPageSizeType=="3"){
+        ui->labelPageSize->setText("(100万行/页)");
+        this->pageRowSize=1000000;
+    }
+    else{
+        ui->labelPageSize->setText("(10万行/页)");
+        this->pageRowSize=100000;
     }
     //加载基金销售商和TA代码信息
     load_OFDCodeInfo();
@@ -189,9 +213,9 @@ void MainWindow::initStatusBar(){
     ui->statusBar->setStyleSheet("font-family:Microsoft YaHei,Sans-serif;");
     //显示总记录数的标签
     statusLabel_ptr_showCount = new QLabel;
-    statusLabel_ptr_showCount->setMinimumSize(140, 20); // 设置标签最小大小
+    statusLabel_ptr_showCount->setMinimumSize(210, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showCount);
-    statusLabel_ptr_showCount->setText(tr("记录数:N/A"));
+    statusLabel_ptr_showCount->setText(tr("记录数:0,共计0页"));
     //显示行列的标签
     statusLabel_ptr_showRowAndCol = new QLabel;
     statusLabel_ptr_showRowAndCol->setMinimumSize(200, 20); // 设置标签最小大小
@@ -332,8 +356,8 @@ void MainWindow:: resizeEvent (QResizeEvent * event ){
     if(tableHeight!=ptr_table->height()&&!isUpdateData){
         //获取当前table的高度
         int higth=ptr_table->size().height();
-        hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
-        hValueEnd=hValueBegin+(higth/rowHight);
+        tableRowBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
+        tableRowEnd=tableRowBegin+(higth/rowHight);
         //不同数据类型插入点
         if(currentOpenFileType==1){
             display_OFDTable();
@@ -357,11 +381,11 @@ void MainWindow::acceptVScrollValueChanged(int value)
     //正在更新表/数据源时不开启自动加载
     if(!isUpdateData){
         //新的起始位置
-        hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
+        tableRowBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
         //获取当前table的高度
         int higth=ptr_table->size().height();
         //计算要结束的行
-        hValueEnd=hValueBegin+(higth/rowHight);
+        tableRowEnd=tableRowBegin+(higth/rowHight);
         //不同数据类型插入点
         if(currentOpenFileType==1){
             display_OFDTable();
@@ -379,7 +403,7 @@ void MainWindow::acceptVScrollValueChanged(int value)
  * @brief MainWindow::statusBar_clear_statusBar状态栏信息清理还原
  */
 void MainWindow::statusBar_clear_statusBar(){
-    statusLabel_ptr_showCount->setText(tr("记录数:N/A"));
+    statusLabel_ptr_showCount->setText(tr("记录数:0,共计0页"));
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
     statusLabel_ptr_showMessage->setText(nullptr);
 }
@@ -424,8 +448,8 @@ void MainWindow::open_file_Dialog(){
  * @param rowsCount
  */
 void MainWindow::statusBar_display_rowsCount(int rowsCount){
-
-    statusLabel_ptr_showCount->setText(tr("记录数:%1行").arg(QString::number(rowsCount, 10)));
+    int count=(rowsCount + pageRowSize - 1) / pageRowSize;
+    statusLabel_ptr_showCount->setText(tr("记录数:%1行,共计%2页").arg(QString::number(rowsCount, 10)).arg(count));
 }
 
 /**
@@ -467,7 +491,7 @@ QString MainWindow::getConfigPath(){
 }
 
 /**
- * @brief MainWindow::clear_oldData重新加载数据时，清除旧数据将会加载到内存的数据全部清除
+ * @brief MainWindow::clear_oldData重新加载数据时，清除旧数据将会加载到内存的数据全部清除-重新加载文件前请务必调用此方法
  */
 void MainWindow::clear_oldData(){
     //不同数据类型插入点
@@ -485,39 +509,27 @@ void MainWindow::clear_oldData(){
     columnWidth.clear();
     fieldIsNumberOrNot.clear();
     //记录当前所在行
-    rowcurrent=0;
+    tableRowCurrent=0;
     //当前所在列
-    colcurrent=0;
+    tableColCurrent=0;
     //更新列跳转搜索开始列
-    colSearch=0;
+    tableColSearch=0;
+    ///////////////分页组件重置/////////////////////
+    //当前页号和总页数
+    currentPage=1;
+    pageCount=1;
+    //隐藏分页组件
+    ui->framePage->setVisible(false);
+    //恢复按钮可点击性
+    ui->pushButtonPageFirst->setEnabled(true);
+    ui->pushButtonPagePrevious->setEnabled(true);
+    ui->pushButtonPageNext->setEnabled(true);
+    ui->pushButtonPageLast->setEnabled(true);
+    /////////////////////////////////////////////
 }
 
 /**
- * @brief MainWindow::load_OFDCodeInfo加载ofd的代码配置信息,包含销售商，TA信息
- */
-void MainWindow::load_OFDCodeInfo(){
-    QString codeInipath=getConfigPath()+"OFD_CodeInfo.ini";
-    if(Utils::isFileExist(codeInipath)){
-        //加载ini文件
-        QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,nullptr);
-        //目前仅接收UTF-8编码的配置文件
-        loadedCodeInfoIni.setIniCodec("UTF-8");
-        QStringList agencyInfo=loadedCodeInfoIni.childGroups();
-        //获取所有代码和代码对应的机构名称
-        for(int i=0;i<agencyInfo.count();i++){
-            OFDCodeInfo infoItem;
-            infoItem.setCode(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString());
-            infoItem.setVersion(loadedCodeInfoIni.value(agencyInfo.at(i)+"/IVERSION").toString());
-            infoItem.setName(loadedCodeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
-            loadedOfdCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),infoItem);
-        }
-    }else{
-        statusBar_disPlayMessage(getConfigPath()+tr("OFD_CodeInfo.ini配置丢失"));
-    }
-}
-
-/**
- * @brief MainWindow::load_Setting 程序设置加载函数
+ * @brief MainWindow::load_Setting 程序设置加载方法-读取程序配置文件，如果失败则创建一个默认的配置文件
  */
 void MainWindow::load_Setting(){
     QString Settingini=getConfigPath()+"Setting.ini";
@@ -569,6 +581,14 @@ void MainWindow::load_Setting(){
                         this->defaultNewFileMode=value;
                     }
                 }
+                //默认每页行数类别
+                if(key=="defaultpagesizetype"){
+                    if(value!="0"&&value!="1"&&value!="2"&&value!="3"){
+                        this->defaultPageSizeType="0";
+                    }else{
+                        this->defaultPageSizeType=value;
+                    }
+                }
             }
         }
     }else{
@@ -587,8 +607,33 @@ void MainWindow::load_Setting(){
         loadedSettingInfoIni.setValue("compresslevel",dataCompressLevel);
         loadedSettingInfoIni.setValue("defaultviewmode",defaultViewMode);
         loadedSettingInfoIni.setValue("defaultnewfilemode",defaultNewFileMode);
+        loadedSettingInfoIni.setValue("defaultpagesizetype",defaultPageSizeType);
         loadedSettingInfoIni.endGroup();
         loadedSettingInfoIni.sync();
+    }
+}
+
+/**
+ * @brief MainWindow::load_OFDCodeInfo加载ofd的代码配置信息,包含销售商，TA信息-这个数据取自tools目录下的爬虫工具-数据来源为证券市场标准网
+ */
+void MainWindow::load_OFDCodeInfo(){
+    QString codeInipath=getConfigPath()+"OFD_CodeInfo.ini";
+    if(Utils::isFileExist(codeInipath)){
+        //加载ini文件
+        QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        loadedCodeInfoIni.setIniCodec("UTF-8");
+        QStringList agencyInfo=loadedCodeInfoIni.childGroups();
+        //获取所有代码和代码对应的机构名称
+        for(int i=0;i<agencyInfo.count();i++){
+            OFDCodeInfo infoItem;
+            infoItem.setCode(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString());
+            infoItem.setVersion(loadedCodeInfoIni.value(agencyInfo.at(i)+"/IVERSION").toString());
+            infoItem.setName(loadedCodeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
+            loadedOfdCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),infoItem);
+        }
+    }else{
+        statusBar_disPlayMessage(getConfigPath()+tr("OFD_CodeInfo.ini配置丢失"));
     }
 }
 
@@ -2649,14 +2694,33 @@ void MainWindow::init_display_IndexTable(){
 }
 
 /**
- * @brief MainWindow::init_OFDTable加载OFD数据完毕后，初始化OFD文件所需要的表格的函数
+ * @brief MainWindow::init_OFDTable加载OFD数据完毕后，初始化OFD文件所需要的表格的函数，目前在分页支持下，默认只初始化第一页数据
  */
 void MainWindow::init_OFDTable(){
     if(ofd.getUseAble()){
         int colCount=ofd.getFieldCount();
         int rowCount=ofdFileContentQByteArrayList.count();
+        //设置表格列数
         ptr_table->setColumnCount(colCount);
-        ptr_table->setRowCount(rowCount);
+        //////////////分页逻辑//////////////////////
+        //根据分页情况来决定是否显示分页按钮和设置表格行数
+        //不分页
+        if(rowCount<=pageRowSize){
+            ui->framePage->setVisible(false);
+            ptr_table->setRowCount(rowCount);
+        }
+        //分页-加载第一页
+        else{
+            ui->framePage->setVisible(true);
+            ui->pageText->setText("1");
+            //表格行数为第一页的行数
+            ptr_table->setRowCount(pageRowSize);
+            pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+            //显示到第一页的时候,禁用首页和上一页按钮
+            ui->pushButtonPageFirst->setEnabled(false);
+            ui->pushButtonPagePrevious->setEnabled(false);
+        }
+        //////////////分页逻辑//////////////////////
         //设置表格列标题
         QStringList title;
         for(int i=0;i<colCount;i++){
@@ -2678,8 +2742,8 @@ void MainWindow::init_OFDTable(){
         if(rowCount>0){
             //获取当前table的高度
             int higth=ptr_table->size().height();
-            hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
-            hValueEnd=hValueBegin+(higth/rowHight);
+            tableRowBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
+            tableRowEnd=tableRowBegin+(higth/rowHight);
             display_OFDTable();
             ptr_table->resizeColumnsToContents();
         }
@@ -2697,13 +2761,31 @@ void MainWindow::init_OFDTable(){
 }
 
 /**
- * @brief MainWindow::init_FIXEDTable初始化定长文件函数
+ * @brief MainWindow::init_FIXEDTable初始化定长文件函数，目前在分页支持下，默认只初始化第一页数据
  */
 void MainWindow::init_FIXEDTable(){
     int colCount=fixed.getFieldCountMax();
     int rowCount=fixedContenQByteArrayList.count();
+    //////////////分页逻辑//////////////////////
+    //根据分页情况来决定是否显示分页按钮和设置表格行数
+    //不分页
+    if(rowCount<=pageRowSize){
+        ui->framePage->setVisible(false);
+        ptr_table->setRowCount(rowCount);
+    }
+    //分页-加载第一页
+    else{
+        ui->framePage->setVisible(true);
+        ui->pageText->setText("1");
+        //表格行数为第一页的行数
+        ptr_table->setRowCount(pageRowSize);
+        pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+        //显示到第一页的时候,禁用首页和上一页按钮
+        ui->pushButtonPageFirst->setEnabled(false);
+        ui->pushButtonPagePrevious->setEnabled(false);
+    }
+    //////////////分页逻辑//////////////////////
     ptr_table->setColumnCount(colCount);
-    ptr_table->setRowCount(rowCount);
     //设置表格列标题
     QStringList title;
     for(int i=0;i<colCount;i++){
@@ -2724,8 +2806,8 @@ void MainWindow::init_FIXEDTable(){
     if(rowCount>0){
         //获取当前table的高度
         int higth=ptr_table->size().height();
-        hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
-        hValueEnd=hValueBegin+(higth/rowHight);
+        tableRowBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
+        tableRowEnd=tableRowBegin+(higth/rowHight);
         display_FIXEDTable();
         ptr_table->resizeColumnsToContents();
     }
@@ -2738,7 +2820,7 @@ void MainWindow::init_FIXEDTable(){
 }
 
 /**
- * @brief MainWindow::init_CSVTable初始化csv文件函数
+ * @brief MainWindow::init_CSVTable初始化csv文件函数，目前在分页支持下，默认只初始化第一页数据
  * @param title
  */
 void MainWindow::init_CSVTable(QStringList title){
@@ -2811,7 +2893,25 @@ void MainWindow::init_CSVTable(QStringList title){
         int colCount=title.count();
         int rowCount=csvFileContentQByteArrayList.count();
         ptr_table->setColumnCount(colCount);
-        ptr_table->setRowCount(rowCount);
+        //////////////分页逻辑//////////////////////
+        //根据分页情况来决定是否显示分页按钮和设置表格行数
+        //不分页
+        if(rowCount<=pageRowSize){
+            ui->framePage->setVisible(false);
+            ptr_table->setRowCount(rowCount);
+        }
+        //分页-加载第一页
+        else{
+            ui->framePage->setVisible(true);
+            ui->pageText->setText("1");
+            //表格行数为第一页的行数
+            ptr_table->setRowCount(pageRowSize);
+            pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+            //显示到第一页的时候,禁用首页和上一页按钮
+            ui->pushButtonPageFirst->setEnabled(false);
+            ui->pushButtonPagePrevious->setEnabled(false);
+        }
+        //////////////分页逻辑//////////////////////
         //设置标题
         ptr_table->setHorizontalHeaderLabels(title);
         for(int i=0;i<title.count();i++){
@@ -2827,8 +2927,8 @@ void MainWindow::init_CSVTable(QStringList title){
         if(rowCount>0){
             //获取当前table的高度
             int higth=ptr_table->size().height();
-            hValueBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
-            hValueEnd=hValueBegin+(higth/rowHight);
+            tableRowBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
+            tableRowEnd=tableRowBegin+(higth/rowHight);
             ptr_table->resizeColumnsToContents();
             display_CSVTable();
         }
@@ -2857,20 +2957,28 @@ void MainWindow::display_OFDTable(){
     int rowCount=ptr_table->rowCount();
     int colCount=ptr_table->columnCount();
     //防止渲染边界超过表总行数
-    if(hValueBegin<0){
-        hValueBegin=0;
+    if(tableRowBegin<0){
+        tableRowBegin=0;
     }
-    if(hValueEnd>=rowCount){
-        hValueEnd=rowCount-1;
+    if(tableRowEnd>=rowCount){
+        tableRowEnd=rowCount-1;
     }
-    for (int row = hValueBegin; row <= hValueEnd; ++row)
+    for (int rowInTable = tableRowBegin; rowInTable <= tableRowEnd; ++rowInTable)
     {
         //如果此行已经加载过了,则不再加载
-        if(rowHasloaded.contains(row)){
+        if(rowHasloaded.contains(rowInTable)){
             continue;
         }else{
-            rowHasloaded.insert(row,true);
-            QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row);
+            rowHasloaded.insert(rowInTable,true);
+            //进行关系转换,计算本行在文件记录List中的行数
+            int rowInFileContent=(currentPage-1)*pageRowSize+rowInTable;
+            //在分页模式下重设表头行号，以免非第一页的表头仍然从1开始计算行号
+            QTableWidgetItem *itemVerticalHeaderItem= new QTableWidgetItem();
+            ptr_table->setVerticalHeaderItem(rowInTable,itemVerticalHeaderItem);
+            //行号取文件记录行号
+            itemVerticalHeaderItem->setText(QString::number(rowInFileContent+1));
+            //获取本行数据
+            QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowInFileContent);
             for(int col=0;col<colCount;col++){
                 QString values=rowdata.at(col);
                 //仅对数据非空单元格赋值
@@ -2885,7 +2993,7 @@ void MainWindow::display_OFDTable(){
                             columnWidth.insert(col,colLength);
                         }
                     QTableWidgetItem *item= new QTableWidgetItem();
-                    ptr_table->setItem(row, col, item);
+                    ptr_table->setItem(rowInTable, col, item);
                     item->setText(values);
                 }
             }
@@ -2905,21 +3013,28 @@ void MainWindow::display_FIXEDTable(){
     int rowCount=ptr_table->rowCount();
     int colCount=ptr_table->columnCount();
     //防止渲染边界超过表总行数
-    if(hValueBegin<0){
-        hValueBegin=0;
+    if(tableRowBegin<0){
+        tableRowBegin=0;
     }
-    if(hValueEnd>=rowCount){
-        hValueEnd=rowCount-1;
+    if(tableRowEnd>=rowCount){
+        tableRowEnd=rowCount-1;
     }
-    for (int row = hValueBegin; row <= hValueEnd; ++row)
+    for (int rowInTable = tableRowBegin; rowInTable <= tableRowEnd; ++rowInTable)
     {
         //如果此行已经加载过了,则不再加载
-        if(rowHasloaded.contains(row)){
+        if(rowHasloaded.contains(rowInTable)){
             continue;
         }else{
-            rowHasloaded.insert(row,true);
+            rowHasloaded.insert(rowInTable,true);
+            //进行关系转换,计算本行在文件记录List中的行数
+            int rowInFileContent=(currentPage-1)*pageRowSize+rowInTable;
+            //在分页模式下重设表头行号，以免非第一页的表头仍然从1开始计算行号
+            QTableWidgetItem *itemVerticalHeaderItem= new QTableWidgetItem();
+            ptr_table->setVerticalHeaderItem(rowInTable,itemVerticalHeaderItem);
+            //行号取文件记录行号
+            itemVerticalHeaderItem->setText(QString::number(rowInFileContent+1));
             //获取本行数据
-            QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row);
+            QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowInFileContent);
             for(int col=0;col<colCount&&col<rowdata.count();col++){
                 QString values=rowdata.at(col);
                 //仅对数据非空单元格赋值
@@ -2934,7 +3049,7 @@ void MainWindow::display_FIXEDTable(){
                             columnWidth.insert(col,colLength);
                         }
                     QTableWidgetItem *item= new QTableWidgetItem();
-                    ptr_table->setItem(row, col, item);
+                    ptr_table->setItem(rowInTable, col, item);
                     item->setText(values);
                 }
             }
@@ -2955,20 +3070,28 @@ void MainWindow::display_CSVTable(){
     int rowCount=ptr_table->rowCount();
     int colCount=ptr_table->columnCount();
     //防止渲染边界超过表总行数
-    if(hValueBegin<0){
-        hValueBegin=0;
+    if(tableRowBegin<0){
+        tableRowBegin=0;
     }
-    if(hValueEnd>=rowCount){
-        hValueEnd=rowCount-1;
+    if(tableRowEnd>=rowCount){
+        tableRowEnd=rowCount-1;
     }
-    for (int row = hValueBegin; row <= hValueEnd; ++row)
+    for (int rowInTable = tableRowBegin; rowInTable <= tableRowEnd; ++rowInTable)
     {
         //如果此行已经加载过了,则不再加载
-        if(rowHasloaded.contains(row)){
+        if(rowHasloaded.contains(rowInTable)){
             continue;
         }else{
-            rowHasloaded.insert(row,true);
-            QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,row);
+            rowHasloaded.insert(rowInTable,true);
+            //进行关系转换,计算本行在文件记录List中的行数
+            int rowInFileContent=(currentPage-1)*pageRowSize+rowInTable;
+            //在分页模式下重设表头行号，以免非第一页的表头仍然从1开始计算行号
+            QTableWidgetItem *itemVerticalHeaderItem= new QTableWidgetItem();
+            ptr_table->setVerticalHeaderItem(rowInTable,itemVerticalHeaderItem);
+            //行号取文件记录行号
+            itemVerticalHeaderItem->setText(QString::number(rowInFileContent+1));
+            //获取本行数据
+            QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowInFileContent);
             //csv文件数据的某一行可能是不完整的，做忽略容忍！，允许正常解析
             //后续将不满足的数据记录在案
             for(int col=0;col<colCount&&col<rowdata.count();col++){
@@ -2985,7 +3108,7 @@ void MainWindow::display_CSVTable(){
                             columnWidth.insert(col,colLength);
                         }
                     QTableWidgetItem *item= new QTableWidgetItem();
-                    ptr_table->setItem(row, col, item);
+                    ptr_table->setItem(rowInTable, col, item);
                     item->setText(values);
                 }
             }
@@ -3000,12 +3123,19 @@ void MainWindow::display_CSVTable(){
 
 
 /**
- * @brief MainWindow::clear_Table_Info 清空表格内容
+ * @brief MainWindow::clear_Table_Info 清空表格内容--包含行列信息
  */
 void MainWindow::clear_Table_Info(){
     ptr_table->clearContents();
     ptr_table->setRowCount(0);
     ptr_table->setColumnCount(0);
+}
+
+/**
+ * @brief MainWindow::clear_Table_Contents清空表格信息-仅内容
+ */
+void MainWindow::clear_Table_Contents(){
+    ptr_table->clearContents();
 }
 
 /**
@@ -3187,6 +3317,7 @@ void MainWindow::copyToClipboard(){
             }
             else{
                 QString value="";
+                int rowRealInContent=0;
                 //在错误展示和OFD索引文件模式下复制取表格数据
                 if(currentOpenFileType==-1||currentOpenFileType==0){
                     for(int row=topRow;row<=bottomRow;row++){
@@ -3208,9 +3339,10 @@ void MainWindow::copyToClipboard(){
                 //OFD模式下的复制
                 else if(currentOpenFileType==1){
                     for(int row=topRow;row<=bottomRow;row++){
+                        rowRealInContent=(currentPage-1)*pageRowSize+row;
                         for(int col=leftColumn;col<=rigthColumn;col++){
                             //数据不能取自表格，表格数据基于懒加载机制的情况下数据会不全
-                            value.append(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col));
+                            value.append(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,col));
                             if(col<rigthColumn){
                                 value.append("\t");
                             }else if(row<bottomRow){
@@ -3222,7 +3354,8 @@ void MainWindow::copyToClipboard(){
                 //CSV文件下的复制
                 else if(currentOpenFileType==2){
                     for(int row=topRow;row<=bottomRow;row++){
-                        QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,row);
+                        rowRealInContent=(currentPage-1)*pageRowSize+row;
+                        QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent);
                         for(int col=leftColumn;col<=rigthColumn;col++){
                             //数据不能取自表格，表格数据基于懒加载机制的情况下数据会不全
                             //预防csv行不足的情况
@@ -3242,9 +3375,10 @@ void MainWindow::copyToClipboard(){
                 //FIXED模式下的复制
                 else if(currentOpenFileType==3){
                     for(int row=topRow;row<=bottomRow;row++){
+                        rowRealInContent=(currentPage-1)*pageRowSize+row;
                         for(int col=leftColumn;col<=rigthColumn;col++){
                             //数据不能取自表格，表格数据基于懒加载机制的情况下数据会不全
-                            value.append(Utils::getFormatValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row,col));
+                            value.append(Utils::getFormatValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent,col));
                             if(col<rigthColumn){
                                 value.append("\t");
                             }else if(row<bottomRow){
@@ -3269,13 +3403,15 @@ void MainWindow::copyToClipboard(){
  */
 void MainWindow::editCompareData(){
     const int MaxCompareRow=200;
+    int rowRealInContent=0;
     QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
     int rangeCount=itemsRange.count();
     int topRow=itemsRange.at(0).topRow();
     int bottomRow=itemsRange.at(0).bottomRow();
     //单行加入比对器--单行并且单个选择器
     if(topRow==bottomRow&&itemsRange.count()==1){
-        if(!compareData.contains(topRow+1)){
+        rowRealInContent=(currentPage-1)*pageRowSize+topRow;
+        if(!compareData.contains(rowRealInContent+1)){
             if(compareData.count()>=MaxCompareRow){
                 statusBar_disPlayMessage(QString("比对器内已有"+QString::number(MaxCompareRow)+"行数据，每次比对最多"+QString::number(MaxCompareRow)+"行！"));
             }
@@ -3289,13 +3425,13 @@ void MainWindow::editCompareData(){
                     }
                     rowdata.append(col);
                 }
-                compareData.insert(topRow+1,rowdata);
+                compareData.insert(rowRealInContent+1,rowdata);
                 statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(compareData.count()));
             }
         }
         else{
             //移除数据行
-            compareData.remove(topRow+1);
+            compareData.remove(rowRealInContent+1);
             if(compareData.count()>0){
                 statusBar_disPlayMessage(QString("比对器内还有%1行数据").arg(compareData.count()));
             }
@@ -3325,11 +3461,12 @@ void MainWindow::editCompareData(){
             if(currentOpenFileType==1){
                 for(int l1=0;l1<rangeCount;l1++){
                     for(int l2=itemsRange.at(l1).topRow();l2<=itemsRange.at(l1).bottomRow();l2++){
-                        if(compareData.contains(l2+1)){
+                        rowRealInContent=(currentPage-1)*pageRowSize+l2;
+                        if(compareData.contains(rowRealInContent+1)){
                             continue;
                         }
                         else{
-                            compareData.insert(l2+1,Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,l2));
+                            compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent));
                         }
                     }
                 }
@@ -3338,11 +3475,12 @@ void MainWindow::editCompareData(){
             else if(currentOpenFileType==2){
                 for(int l1=0;l1<rangeCount;l1++){
                     for(int l2=itemsRange.at(l1).topRow();l2<=itemsRange.at(l1).bottomRow();l2++){
-                        if(compareData.contains(l2+1)){
+                        rowRealInContent=(currentPage-1)*pageRowSize+l2;
+                        if(compareData.contains(rowRealInContent+1)){
                             continue;
                         }
                         else{
-                            compareData.insert(l2+1,Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,l2));
+                            compareData.insert(rowRealInContent+1,Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent));
                         }
                     }
                 }
@@ -3351,11 +3489,12 @@ void MainWindow::editCompareData(){
             else if(currentOpenFileType==3){
                 for(int l1=0;l1<rangeCount;l1++){
                     for(int l2=itemsRange.at(l1).topRow();l2<=itemsRange.at(l1).bottomRow();l2++){
-                        if(compareData.contains(l2+1)){
+                        rowRealInContent=(currentPage-1)*pageRowSize+l2;
+                        if(compareData.contains(rowRealInContent+1)){
                             continue;
                         }
                         else{
-                            compareData.insert(l2+1,Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,l2));
+                            compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent));
                         }
                     }
                 }
@@ -3369,6 +3508,7 @@ void MainWindow::editCompareData(){
  * @brief MainWindow::deleteRowDataFromFileAndTable 删除选择的行，目前针对OFD文件支持
  *
  */
+//待修改
 void MainWindow::deleteRowDataFromFileAndTable(){
     //正在进行的阻断操作时，禁止删除数据
     if(dataBlocked){
@@ -3414,6 +3554,7 @@ void MainWindow::deleteRowDataFromFileAndTable(){
         std::sort(deleteRowList.begin(), deleteRowList.end());
         int count=deleteRowList.count();
         //判断是不是要删除所有行--删除所有行要使用单独的方法
+        //如果删除所有行-既全选能删除所有行，表明目前的文件未分页
         if(count==ofdFileContentQByteArrayList.count()){
             //清除所有内容
             ptr_table->clearContents();
@@ -3432,33 +3573,76 @@ void MainWindow::deleteRowDataFromFileAndTable(){
             this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
             //更新文件修改标记
             fileChanged=true;
-            //大功告成
+            //大功告成-处理下分页的问题
+            currentPage=1;
+            pageCount=1;
+            ui->framePage->setVisible(false);
         }
         //非全部删除的情况下，逐行删除，注意需倒序删除，至于原因，请思考
+        //需要考虑分页了的可能性
         else{
             if(count>0){
                 //阻断标记，避免删除大量数据时误操作
                 dataBlocked=true;
                 dataBlockedMessage="正在删除数据中,请稍候...";
+                int row=0;
+                int rowRealInContent=0;
                 for(int w=count-1;w>=0;w--){
                     //需要被删除的行
-                    int row=deleteRowList.at(w);
+                    row=deleteRowList.at(w);
                     //从表格移除该行
                     ptr_table->removeRow(row);
                     //从原始记录移除该行
-                    ofdFileContentQByteArrayList.removeAt(row);
+                    //做行号转换
+                    rowRealInContent=(currentPage-1)*pageRowSize+row;
+                    ofdFileContentQByteArrayList.removeAt(rowRealInContent);
                 }
                 //删除所有行加载记录，因为删除某行后所有比删除的行大的行的加载记录都错位了,还是老实再加载一下吧，当然也可以重新校准哪些行已经加载了，但是会很麻烦
                 rowHasloaded.clear();
                 //更新OFD记录数标记--在文件头的最后一行，设置为8为前补充0的记录数总和
                 ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), 8, 10, QLatin1Char('0')));
+                //重新统计目前文件行数
+                int rowCount=ofdFileContentQByteArrayList.count();
+                //重新统计页数
+                int tmpPageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+                //根据是否页数变化了来进行分开处理
+                if(tmpPageCount==pageCount){
+                    //总页数没变，则代表只是删除了本页部分，且删除后最后一页的数据量还存在部分条目，本页还在，直接重新加载显示下即可
+                    //更新表格视图
+                    display_OFDTable();
+                }
+                //总页数发生了变化，删除了某一页整页数据，或者删除了某页部分数据后最后一页不在了，需要处理跳页问题
+                else{
+                    //判断是否剩余页数大于1
+                    if(tmpPageCount<2){
+                        //重设页数
+                        pageCount=1;
+                        currentPage=1;
+                        ui->framePage->setVisible(false);
+                        pageJump(1,0);
+                    }
+                    //页数大于1并且删除了某一整页，再判断是不是当前在最后一页且删除的最后一页
+                    else{
+                        //最后一页被删除，则跳到新的最后页的尾部
+                        if(currentPage==pageCount){
+                            pageCount=tmpPageCount;
+                            currentPage=pageCount;
+                            ui->framePage->setVisible(true);
+                            pageJump(pageCount,-1);
+                        }
+                        //删除了数据后页数发生了变化，但当前不是最后一页，则下一页数据会重新显示到本页，跳到页首
+                        else{
+                            pageCount=tmpPageCount;
+                            ui->framePage->setVisible(true);
+                            pageJump(currentPage,0);
+                        }
+                    }
+                }
                 //更新提示
                 statusBar_disPlayMessage(QString("选择的%1行数据已删除,请记得保存文件哟...").arg(count));
                 this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
                 //更新文件修改标记//////////////////////////////////////////////////////////
                 fileChanged=true;
-                //更新表格视图
-                display_OFDTable();
             }
         }
         dataBlocked=false;
@@ -3512,9 +3696,12 @@ void MainWindow::copyOFDRowData(){
         //对需要复制的行排序--当数据量比较大时将会比较耗时
         std::sort(copyRowList.begin(), copyRowList.end());
         statusBar_disPlayMessage(dataBlockedMessage);
+        int rowRealInContent=0;
         for(int j=0;j<count;j++){
             //将本行数据加入待复制列表
-            needCopyData.append(QString::fromLocal8Bit(qUncompress(ofdFileContentQByteArrayList.at(copyRowList.at(j)))));
+            //做行号转换
+            rowRealInContent=(currentPage-1)*pageRowSize+copyRowList.at(j);
+            needCopyData.append(QString::fromLocal8Bit(qUncompress(ofdFileContentQByteArrayList.at(rowRealInContent))));
             if(j<count-1){
                 needCopyData.append("\r\n");
             }
@@ -3549,193 +3736,10 @@ void MainWindow::addOFDRowDataEndRow(){
 }
 
 /**
- * @brief MainWindow::addNewLineOFDRowDataEndRow 插入到尾部一个空数据行
+ * @brief MainWindow::addOFDNewLineRowDataEndRow 插入到尾部一个空数据行
  */
-void MainWindow::addNewLineOFDRowDataEndRow(){
+void MainWindow::addOFDNewLineRowDataEndRow(){
     addOFDRowData(2);
-}
-
-
-/**
- * @brief MainWindow::moaifyOFDRow 修改一行ODF文件
- */
-void MainWindow::moaifyOFDRow(){
-    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
-    if(itemsRange.count()>0){
-        //获取行号-指向当前鼠标选择的行
-        int editRow=itemsRange.at(0).topRow();
-        //获取目前行数据
-        QStringList rowDataOld=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow);
-        //创建弹窗，传递ofd定义的指针，行数据
-        DialogModifyRow * dialog = new DialogModifyRow(&ofd,rowDataOld,this);
-        dialog->setWindowTitle(QString("编辑第%1行数据").arg(editRow+1));
-        dialog->setModal(true);
-        dialog->exec();
-        ///////////////////////////////开始进行数据编辑更新//////////////////////////////////
-        //数据发生了改变
-        if(dialog->getChange()&&dialog->getSaveFlag()){
-            QStringList rowDataNew=dialog->getRowDataNew();
-            delete dialog;
-            dialog=nullptr;
-            //开始更新数据，按列更新
-            if(rowDataNew.count()>0){
-                //本行记录原始内容
-                QByteArray valueNewArrayRow=qUncompress(ofdFileContentQByteArrayList.at(editRow));
-                //列循环/////////////////////////
-                //仅更新被修改的列
-                for(int editCol=0;editCol<rowDataNew.count()&&editCol<ptr_table->columnCount();editCol++){
-                    //字段类型
-                    QString fieldType=ofd.getFieldList().at(editCol).getFieldType();
-                    //字段长度
-                    int fieldLength=ofd.getFieldList().at(editCol).getLength();
-                    //字段小数长度
-                    int fieldDecLength=ofd.getFieldList().at(editCol).getDecLength();
-                    //获取字段目前的值
-                    QString fieldValues=rowDataOld.at(editCol);
-                    //修改后的值
-                    QString valueNew=rowDataNew.at(editCol);
-                    if(fieldValues!=valueNew){
-                        //要更新的范围
-                        int updateBegin=ofd.getFieldList().at(editCol).getRowBeginIndex();
-                        int updateEnd=updateBegin+fieldLength;
-                        //新的单元格值的字节数组
-                        QByteArray valueNewArray=valueNew.toLocal8Bit();
-                        //判断数据类型处理
-                        //数值字符型,字符型,长文本型对于长度不够的情况直接补充空格即可
-                        if(fieldType=="C"||fieldType=="TEXT"||fieldType=="A"){
-                            int index=0;
-                            for(int i=updateBegin;i<updateEnd;i++){
-                                if(index<valueNewArray.length()){
-                                    valueNewArrayRow[i]=valueNewArray[index];
-                                    index++;
-                                }
-                                //超过填写的参数的部分使用空格补充
-                                else{
-                                    valueNewArrayRow[i]=' ';
-                                }
-                            }
-                        }
-                        //数值型
-                        else if(fieldType=="N"){
-                            //空数据自动补充为空格，0自动补充为全0，不再强制将空补充为0
-                            if(valueNew.isEmpty()){
-                                for(int i=updateBegin;i<updateEnd;i++){
-                                    valueNewArrayRow[i]=QString(" ").toLocal8Bit().at(0);
-                                }
-                            }
-                            //仅包含整数部分
-                            else if(!valueNew.contains("."))
-                            {
-                                //合成整数和小数部分
-                                int zLength=fieldLength-fieldDecLength;
-                                //整数部分不够前补0,缺少多少补多少
-                                QString intS=valueNew;
-                                if(intS.length()<zLength){
-                                    int zeroAdd=zLength-intS.length();
-                                    for(int zz=0;zz<zeroAdd;zz++){
-                                        intS.insert(0,'0');
-                                    }
-                                }
-                                //小数部分直接全部补0
-                                QString intD="";
-                                if(intD.length()<fieldDecLength){
-                                    int zeroAdd=fieldDecLength-intD.length();
-                                    for(int zz=0;zz<zeroAdd;zz++){
-                                        intD.append('0');
-                                    }
-                                }
-                                //整数和小数补充缺少的0结束后开始填充数据
-                                QString number=intS+intD;
-                                int index=0;
-                                for(int i=updateBegin;i<updateEnd;i++){
-                                    valueNewArrayRow[i]=number.toLocal8Bit().at(index);
-                                    index++;
-                                }
-                            }
-                            //整数部分和小数部分都有值
-                            else{
-                                //分别获取整数和小数
-                                int zLength=fieldLength-fieldDecLength;
-                                QString intS=valueNew.mid(0,valueNew.indexOf("."));
-                                if(intS.length()<zLength){
-                                    int zeroAdd=zLength-intS.length();
-                                    for(int zz=0;zz<zeroAdd;zz++){
-                                        intS.insert(0,'0');
-                                    }
-                                }
-                                //小数部分后补0
-                                QString intD=valueNew.mid(valueNew.indexOf(".")+1,-1);
-                                if(intD.length()<fieldDecLength){
-                                    int zeroAdd=fieldDecLength-intD.length();
-                                    for(int zz=0;zz<zeroAdd;zz++){
-                                        intD.append('0');
-                                    }
-                                }
-                                //整数和小数补充缺少的0结束后开始填充数据
-                                QString number=intS+intD;
-                                int index=0;
-                                for(int i=updateBegin;i<updateEnd;i++){
-                                    valueNewArrayRow[i]=number.toLocal8Bit().at(index);
-                                    index++;
-                                }
-                            }
-                        }
-                        //其他未知类型
-                        else{
-                            int index=0;
-                            for(int i=updateBegin;i<updateEnd;i++){
-                                if(index<valueNewArray.length()){
-                                    valueNewArrayRow[i]=valueNewArray[index];
-                                    index++;
-                                }
-                                //超过填写的参数的部分使用空格补充
-                                else{
-                                    valueNewArrayRow[i]=' ';
-                                }
-                            }
-                        }
-                        //将新的行记录写入原ofdFileContentQByteArrayList/////////////////////////////
-                        ofdFileContentQByteArrayList.replace(editRow,qCompress(valueNewArrayRow,dataCompressLevel));
-                        //更新界面/////////////////////////////////////////////////////////////////
-                        if(ptr_table->item(editRow,editCol)!=nullptr){
-                            ptr_table->item(editRow,editCol)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
-                        }
-                        //如果这个单元格未填充过数据,则QTableWidgetItem不存在
-                        else if(!valueNew.isEmpty()){
-                            QTableWidgetItem *item= new QTableWidgetItem();
-                            ptr_table->setItem(editRow, editCol, item);
-                            item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
-                        }
-                    }
-                }
-                //重新校准列宽
-                ptr_table->resizeColumnsToContents();
-                //如果这行数据在比对器,需要更新////////////////////////////////////////////////
-                if(compareData.contains(editRow+1)){
-                    //移除原数据
-                    compareData.remove(editRow+1);
-                    //数据重新加入
-                    compareData.insert(editRow+1,rowDataNew);
-                }
-                //提示用户保存//////////////////////////////////////////////////////////////
-                statusBar_disPlayMessage("单元格数据修改成功,请记得保存文件哟...");
-                this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
-                //更新文件修改标记//////////////////////////////////////////////////////////
-                fileChanged=true;
-            }
-        }
-        //数据未发生改变
-        else{
-            if(!dialog->getSaveFlag()){
-                statusBar_disPlayMessage("放弃编辑...");
-            }
-            if(dialog->getSaveFlag()&&!dialog->getChange()){
-                statusBar_disPlayMessage("数据未修改,无需更新记录...");
-            }
-            delete dialog;
-            dialog=nullptr;
-        }
-    }
 }
 
 /**
@@ -3743,28 +3747,31 @@ void MainWindow::moaifyOFDRow(){
  * @param location
  */
 void MainWindow::addOFDRowData(int location){
-    int insertIndex=0;
+    int insertIndexInContent=0;
     QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
     //////////////计算文件插入位置/////////////////////////////////
+    //跳转标记插入位置
+    int fIndex=0;
     //当前文件是空文件
     if(itemsRange.count()<1){
-        insertIndex=0;
+        insertIndexInContent=0;
     }
     //当前文件是非空文件
     else{
+        fIndex=itemsRange.at(0).topRow()+((currentPage-1)*pageRowSize);
         //文件非空-插入到上方
         //向上插入不能在多行选择时显示菜单，否则这里的插入位置会存在缺陷
         if(location==-1){
-            insertIndex=itemsRange.at(0).topRow();
+            insertIndexInContent=itemsRange.at(0).topRow()+((currentPage-1)*pageRowSize);
         }
         //文件非空-插入到下方
         //向下插入不能在多行选择时显示菜单，否则这里的插入位置会存在缺陷
         else if(location==1){
-            insertIndex=itemsRange.at(0).topRow()+1;
+            insertIndexInContent=itemsRange.at(0).topRow()+1+((currentPage-1)*pageRowSize);;
         }
         //文件非空-插入到文件尾
         else {
-            insertIndex=ofdFileContentQByteArrayList.count();
+            insertIndexInContent=ofdFileContentQByteArrayList.count();
         }
     }
     //////////////////////////////////////////////////////////
@@ -3791,32 +3798,39 @@ void MainWindow::addOFDRowData(int location){
         for(int charIndex=0;charIndex<Length;charIndex++){
             newLine.append(QChar(' '));
         }
-        ofdFileContentQByteArrayList.insert(insertIndex,qCompress(newLine,dataCompressLevel));
+        ofdFileContentQByteArrayList.insert(insertIndexInContent,qCompress(newLine,dataCompressLevel));
         //更新OFD记录数标记--在文件头的最后一行，设置为8为前补充0的记录数总和
         ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), 8, 10, QLatin1Char('0')));
-        //重新调节表格行数
-        ptr_table->setRowCount(ofdFileContentQByteArrayList.count());
-        //情况加载标记，重新加载数据
-        rowHasloaded.clear();
-        fileChanged=true;
-        //放开block，重新刷新下表格
-        dataBlocked=false;
-        //当原来的数据不足一屏时，添加数据会不显示，重新计算需要显示的范围
-        //判断如果在首页，则重新计算要显示的范围
-        if(hValueBegin==0){
-            int higth=ptr_table->size().height();
-            //计算要结束的行
-            hValueEnd=hValueBegin+(higth/rowHight);
+        //新的总行数
+        int rowCount=ofdFileContentQByteArrayList.count();
+        //添加完数据没有引发分页
+        if(rowCount<=pageRowSize){
+            //跳到第一页重加载
+            pageJump(1);
+            //滚动进度条
+            ptr_table->scrollToBottom();
+            //选中新增的行
+            QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(insertIndexInContent,0,insertIndexInContent,ptr_table->columnCount()-1);
+            ptr_table->clearSelection();
+            ptr_table->setRangeSelected(addRange,true);
         }
-        display_OFDTable();
-        //滚到结尾
-        ptr_table->scrollToBottom();
-        //选中新增的行
-        QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(insertIndex,0,insertIndex,ptr_table->columnCount()-1);
-        ptr_table->clearSelection();
-        ptr_table->setRangeSelected(addRange,true);
+        //添加完数据数据大于1页，或者原本数据就大于1页-则跳到最后一页，并选中最后一行
+        else{
+            ui->framePage->setVisible(true);
+            //表格行数为第一页的行数
+            pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+            //跳转到最后一页的底部
+            pageJump(pageCount,-1);
+            //选中新增的行
+            QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(ptr_table->rowCount()-1,0,ptr_table->rowCount()-1,ptr_table->columnCount()-1);
+            ptr_table->clearSelection();
+            ptr_table->setRangeSelected(addRange,true);
+        }
+        //---
+        fileChanged=true;
+        dataBlocked=false;
         //更新总记录数
-        statusBar_display_rowsCount(ofdFileContentQByteArrayList.count());
+        statusBar_display_rowsCount(rowCount);
         statusBar_disPlayMessage(QString("新增空行完毕,请编辑填充数据..."));
         this->setWindowTitle(appName+"-"+currentFileName+"-新增数据行待编辑保存");
     }
@@ -3842,7 +3856,7 @@ void MainWindow::addOFDRowData(int location){
                 statusBar_disPlayMessage("不同版本的文件,无法将数据插入!");
                 return;
             }
-            //文件版本和文件类型匹配开始准备数据转换
+            //文件版本和文件类型匹配开始准备数据转换---开始准备插入数据
             else{
                 QList<QByteArray> dataQByteArrayList;
                 //提取剪切板数据并校验长度
@@ -3874,39 +3888,77 @@ void MainWindow::addOFDRowData(int location){
                     //注意这里不要调整顺序，此处倒序和从剪切板拉取数据的倒序相结合，倒倒得正
                     int indexAdd=0;
                     for(int j=dataCount-1;j>=0;j--){
-                        ofdFileContentQByteArrayList.insert(insertIndex+indexAdd,dataQByteArrayList.at(j));
+                        ofdFileContentQByteArrayList.insert(insertIndexInContent+indexAdd,dataQByteArrayList.at(j));
                         dataQByteArrayList.removeAt(j);
                         indexAdd++;
                     }
                     //更新OFD记录数标记--在文件头的最后一行，设置为8为前补充0的记录数总和
                     ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), 8, 10, QLatin1Char('0')));
-                    //重新调节表格行数
-                    ptr_table->setRowCount(ofdFileContentQByteArrayList.count());
-                    //情况加载标记，重新加载数据
-                    rowHasloaded.clear();
-                    fileChanged=true;
-                    //放开block，重新刷新下表格
-                    dataBlocked=false;
-                    //当原来的数据不足一屏时，添加数据会不显示，重新计算需要显示的范围
-                    //判断如果在首页，则重新计算要显示的范围
-                    if(hValueBegin==0){
-                        int higth=ptr_table->size().height();
-                        //计算要结束的行
-                        hValueEnd=hValueBegin+(higth/rowHight);
+                    //新的总行数
+                    int rowCount=ofdFileContentQByteArrayList.count();
+                    ///////////////数据插入完毕处理页面跳转显示的问题///////////////////
+                    //添加完数据没有引发分页-原来也就1页
+                    if(rowCount<=pageRowSize){
+                        //借助跳到第一页的方式重加载
+                        pageJump(1);
+                        //滚动进度条
+                        if(location==0){
+                            ptr_table->scrollToBottom();
+                        }
+                        else{
+                            ptr_table->setCurrentCell(insertIndexInContent+dataCount-1,0);
+                        }
+                        //选中新增的行
+                        QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(insertIndexInContent,0,insertIndexInContent+dataCount-1,ptr_table->columnCount()-1);
+                        ptr_table->clearSelection();
+                        ptr_table->setRangeSelected(addRange,true);
+                        fileChanged=true;
+                        dataBlocked=false;
+                        //更新总记录数
+                        statusBar_display_rowsCount(rowCount);
+                        statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(dataCount));
+                        this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
                     }
-                    display_OFDTable();
-                    //将新添加的数据部分选中，做个指示
-                    QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(insertIndex,0,insertIndex+dataCount-1,ptr_table->columnCount()-1);
-                    ptr_table->clearSelection();
-                    ptr_table->setRangeSelected(addRange,true);
-                    //如果是插入到文件尾，做个跳转
-                    if(location!=1&&location!=-1){
-                        ptr_table->scrollToBottom();
+                    //添加完数据数据大于1页，或者原本数据就大于1页-需要判断跳转的位置
+                    else{
+                        //展示分页组件
+                        ui->framePage->setVisible(true);
+                        //更新总行数
+                        statusBar_display_rowsCount(rowCount);
+                        //统计新的页数
+                        pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+                        //更新文件修改标记-释放阻断
+                        fileChanged=true;
+                        dataBlocked=false;
+                        //重要的逻辑---判断需要跳转的位置
+                        //跳到文件末尾
+                        if (location==0){
+                            fIndex=ofdFileContentQByteArrayList.count()-dataCount;
+                        }
+                        //跳转到插入点的下方
+                        else if(location==1){
+                            fIndex+=1;
+                        }
+                        //计算页码和位置
+                        int targetPage=(fIndex/pageRowSize)+1;
+                        int targetTableIndex=(fIndex%pageRowSize);
+                        pageJump(targetPage);
+                        //强制触发下刷新，避免显示数据不完整
+                        acceptVScrollValueChanged(0);
+                        //滚动并选中第一行
+                        ptr_table->setCurrentCell(targetTableIndex,0);
+                        QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(targetTableIndex,0,targetTableIndex,ptr_table->columnCount()-1);
+                        ptr_table->clearSelection();
+                        ptr_table->setRangeSelected(addRange,true);
+                        if(dataCount==1){
+                            statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(dataCount));
+                        }
+                        else{
+                            statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,已选中插入的第一行数据,记得保存文件哟...").arg(dataCount));
+                        }
+                        this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
                     }
-                    //更新总记录数
-                    statusBar_display_rowsCount(ofdFileContentQByteArrayList.count());
-                    statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(dataCount));
-                    this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
+                    //////////////////////////////////////////////////////////
                 }
             }
         }
@@ -3918,9 +3970,9 @@ void MainWindow::addOFDRowData(int location){
  */
 void MainWindow::showRowDetails(){
     //行
-    int row=rowcurrent;
+    int dataRowCurrent=(currentPage-1)*pageRowSize+tableRowCurrent;
     int colCount=ptr_table->columnCount();
-    statusBar_disPlayMessage(QString("查看第%1行数据").arg(row+1));
+    statusBar_disPlayMessage(QString("查看第%1行数据").arg(dataRowCurrent+1));
     //定义一个Qlist存储此行的数据,将表格的列转换为行，共计四列
     //数据内容从表格取，从原始数据取还需要转换
     QList<QStringList> rowdata;
@@ -3928,7 +3980,7 @@ void MainWindow::showRowDetails(){
     if(currentOpenFileType==1){
         for(int i=0;i<colCount;i++){
             QStringList colitem;
-            if(ptr_table->item(row,i)==nullptr){
+            if(ptr_table->item(tableRowCurrent,i)==nullptr){
                 //字段中文名
                 colitem.append(ofd.getFieldList().at(i).getFieldDescribe());
                 //字段英文名
@@ -3939,7 +3991,7 @@ void MainWindow::showRowDetails(){
                 colitem.append(nullptr);
             }
             else{
-                QString colvalue=ptr_table->item(row,i)->text();
+                QString colvalue=ptr_table->item(tableRowCurrent,i)->text();
                 //字段名
                 colitem.append(ofd.getFieldList().at(i).getFieldDescribe());
                 colitem.append(ofd.getFieldList().at(i).getFieldName());
@@ -3954,7 +4006,7 @@ void MainWindow::showRowDetails(){
     if(currentOpenFileType==2){
         for(int i=0;i<colCount;i++){
             QStringList colitem;
-            if(ptr_table->item(row,i)==nullptr){
+            if(ptr_table->item(tableRowCurrent,i)==nullptr){
                 //字段中文名
                 colitem.append(ptr_table->horizontalHeaderItem(i)->text());
                 //字段英文名
@@ -3965,7 +4017,7 @@ void MainWindow::showRowDetails(){
                 colitem.append(nullptr);
             }
             else{
-                QString colvalue=ptr_table->item(row,i)->text();
+                QString colvalue=ptr_table->item(tableRowCurrent,i)->text();
                 //字段名
                 colitem.append(ptr_table->horizontalHeaderItem(i)->text());
                 colitem.append(nullptr);
@@ -3980,7 +4032,7 @@ void MainWindow::showRowDetails(){
     if(currentOpenFileType==3){
         for(int i=0;i<colCount;i++){
             QStringList colitem;
-            if(ptr_table->item(row,i)==nullptr){
+            if(ptr_table->item(tableRowCurrent,i)==nullptr){
                 //字段中文名
                 colitem.append(fixed.getFieldList().at(i).getFieldDescribe());
                 //字段英文名
@@ -3991,7 +4043,7 @@ void MainWindow::showRowDetails(){
                 colitem.append(nullptr);
             }
             else{
-                QString colvalue=ptr_table->item(row,i)->text();
+                QString colvalue=ptr_table->item(tableRowCurrent,i)->text();
                 //字段名
                 colitem.append(fixed.getFieldList().at(i).getFieldDescribe());
                 colitem.append(nullptr);
@@ -4005,7 +4057,7 @@ void MainWindow::showRowDetails(){
     }
     //打开窗口
     DialogShowTableRow * dialog = new DialogShowTableRow(&rowdata,this);
-    dialog->setWindowTitle(QString("查看表格行记录-第%1行").arg(row+1));
+    dialog->setWindowTitle(QString("查看表格行记录-第%1行").arg(dataRowCurrent+1));
     dialog->setModal(false);
     dialog->show();
 }
@@ -4016,21 +4068,22 @@ void MainWindow::showRowDetails(){
 void MainWindow:: showOFDFiledAnalysis(){
     //注意，这个函数不建议复用，如果需要进行别的文件类别合法性分析，建议设置单独的函数
     if(currentOpenFileType==1){
-        statusBar_disPlayMessage(QString("分析第%1行第%2列数据数据").arg(rowcurrent+1).arg(colcurrent+1));
+        int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
+        statusBar_disPlayMessage(QString("分析第%1行第%2列数据数据").arg(rowRealInContent+1).arg(tableColCurrent+1));
         //字段中文名
-        QString fieldDes=ofd.getFieldList().at(colcurrent).getFieldDescribe();
+        QString fieldDes=ofd.getFieldList().at(tableColCurrent).getFieldDescribe();
         //字段英文名
-        QString fieldName=ofd.getFieldList().at(colcurrent).getFieldName();
+        QString fieldName=ofd.getFieldList().at(tableColCurrent).getFieldName();
         //字段类型
-        QString fieldType=ofd.getFieldList().at(colcurrent).getFieldType();
+        QString fieldType=ofd.getFieldList().at(tableColCurrent).getFieldType();
         //字段长度
-        int fieldLength=ofd.getFieldList().at(colcurrent).getLength();
+        int fieldLength=ofd.getFieldList().at(tableColCurrent).getLength();
         //字段小数长度
-        int fieldDecLength=ofd.getFieldList().at(colcurrent).getDecLength();
+        int fieldDecLength=ofd.getFieldList().at(tableColCurrent).getDecLength();
         //字段原始值
-        QString fieldOaiginal=Utils::getOriginalValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowcurrent,colcurrent);
+        QString fieldOaiginal=Utils::getOriginalValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,tableColCurrent);
         //字段翻译值
-        QString fieldValues=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowcurrent,colcurrent);
+        QString fieldValues=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,tableColCurrent);
         QList<QStringList> data;
         //开始存储数据
         /////////////////////////////
@@ -4148,20 +4201,22 @@ void MainWindow:: showOFDFiledAnalysis(){
         data.append(rowfieldCheck);
         //打开窗口
         DialogShowTableFieldCheck * dialog = new DialogShowTableFieldCheck(&data,this);
-        dialog->setWindowTitle(QString("分析第%1行第%2列数据数据").arg(rowcurrent+1).arg(colcurrent+1));
+        dialog->setWindowTitle(QString("分析第%1行第%2列数据数据").arg(rowRealInContent+1).arg(tableColCurrent+1));
         dialog->setModal(false);
         dialog->show();
     }
 }
 
 /**
- * @brief MainWindow::showModifyCell OFD专用修改工具函数
+ * @brief MainWindow::showModifyOFDCell OFD专用修改工具函数
  */
-void MainWindow::showModifyCell(){
+void MainWindow::showModifyOFDCell(){
     if(currentOpenFileType==1){
-        //标记要编辑的位置
-        int editRow=rowcurrent;
-        int editCol=colcurrent;
+        //标记要编辑的位置--注意做行转换
+        int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
+        //表格中的行
+        int editRow=tableRowCurrent;
+        int editCol=tableColCurrent;
         //字段类型
         QString fieldType=ofd.getFieldList().at(editCol).getFieldType();
         //字段长度
@@ -4169,14 +4224,14 @@ void MainWindow::showModifyCell(){
         //字段小数长度
         int fieldDecLength=ofd.getFieldList().at(editCol).getDecLength();
         //获取字段目前的值
-        QString fieldValues=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol);
+        QString fieldValues=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,editCol);
         //字段修改标记
         bool modifyFlag=false;
         //修改后的值
         QString valueNew="";
         //打开窗口
         DialogModifyCell * dialog = new DialogModifyCell(fieldType,fieldLength,fieldDecLength,fieldValues,this);
-        dialog->setWindowTitle(QString("编辑第%1行第%2列-"+ofd.getFieldList().at(colcurrent).getFieldDescribe()).arg(editRow+1).arg(colcurrent+1));
+        dialog->setWindowTitle(QString("编辑第%1行第%2列-"+ofd.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(rowRealInContent+1).arg(tableColCurrent+1));
         dialog->setModal(true);
         dialog->exec();
         //从弹窗中获取结果
@@ -4194,12 +4249,12 @@ void MainWindow::showModifyCell(){
             else{
                 //更新原始记录//////////////////////////////////////////////////////
                 //要更新的范围
-                int updateBegin=ofd.getFieldList().at(colcurrent).getRowBeginIndex();
+                int updateBegin=ofd.getFieldList().at(tableColCurrent).getRowBeginIndex();
                 int updateEnd=updateBegin+fieldLength;
                 //新的单元格值的字节数组
                 QByteArray valueNewArray=valueNew.toLocal8Bit();
                 //本行记录原始内容
-                QByteArray valueNewArrayRow=qUncompress(ofdFileContentQByteArrayList.at(editRow));
+                QByteArray valueNewArrayRow=qUncompress(ofdFileContentQByteArrayList.at(rowRealInContent));
                 //判断数据类型处理
                 //数值字符型,字符型,长文本型对于长度不够的情况直接补充空格即可
                 if(fieldType=="C"||fieldType=="TEXT"||fieldType=="A"){
@@ -4295,23 +4350,23 @@ void MainWindow::showModifyCell(){
                     }
                 }
                 //将新的行记录写入原ofdFileContentQByteArrayList/////////////////////////////
-                ofdFileContentQByteArrayList.replace(editRow,qCompress(valueNewArrayRow,dataCompressLevel));
+                ofdFileContentQByteArrayList.replace(rowRealInContent,qCompress(valueNewArrayRow,dataCompressLevel));
                 //更新界面/////////////////////////////////////////////////////////////////
-                if(ptr_table->item(editRow,colcurrent)!=nullptr){
-                    ptr_table->item(editRow,colcurrent)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
+                if(ptr_table->item(editRow,tableColCurrent)!=nullptr){
+                    ptr_table->item(editRow,tableColCurrent)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,editCol));
                 }
                 //如果这个单元格未填充过数据,则QTableWidgetItem不存在
                 else if(!valueNew.isEmpty()){
                     QTableWidgetItem *item= new QTableWidgetItem();
-                    ptr_table->setItem(editRow, colcurrent, item);
-                    item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
+                    ptr_table->setItem(editRow, tableColCurrent, item);
+                    item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,editCol));
                 }
                 //重新校准列宽
                 ptr_table->resizeColumnsToContents();
                 //如果这行数据在比对器,需要更新////////////////////////////////////////////////
-                if(compareData.contains(editRow+1)){
+                if(compareData.contains(rowRealInContent+1)){
                     //移除原数据
-                    compareData.remove(editRow+1);
+                    compareData.remove(rowRealInContent+1);
                     //数据重新加入
                     QStringList rowdata;
                     for(int i=0;i<(ptr_table->columnCount());i++){
@@ -4321,7 +4376,7 @@ void MainWindow::showModifyCell(){
                         }
                         rowdata.append(col);
                     }
-                    compareData.insert(editRow+1,rowdata);
+                    compareData.insert(rowRealInContent+1,rowdata);
                 }
                 //提示用户保存//////////////////////////////////////////////////////////////
                 statusBar_disPlayMessage("单元格数据修改成功,请记得保存文件哟...");
@@ -4337,12 +4392,13 @@ void MainWindow::showModifyCell(){
 }
 
 /**
- * @brief MainWindow::showModifyCellBatch 批量修改选择的多行同列
+ * @brief MainWindow::showModifyOFDCellBatch 批量修改选择的多行同列
  */
-void MainWindow::showModifyCellBatch(){
+//待修改
+void MainWindow::showModifyOFDCellBatch(){
     if(currentOpenFileType==1){
         //标记要编辑的列
-        int editCol=colcurrent;
+        int editCol=tableColCurrent;
         //字段类型
         QString fieldType=ofd.getFieldList().at(editCol).getFieldType();
         //字段长度
@@ -4354,7 +4410,7 @@ void MainWindow::showModifyCellBatch(){
         //修改后的值
         //打开窗口
         DialogModifyCell * dialog = new DialogModifyCell(fieldType,fieldLength,fieldDecLength,"",this);
-        dialog->setWindowTitle(QString("批量编辑第%1列多个单元格-"+ofd.getFieldList().at(colcurrent).getFieldDescribe()).arg(colcurrent+1));
+        dialog->setWindowTitle(QString("批量编辑第%1列多个单元格-"+ofd.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(tableColCurrent+1));
         dialog->setModal(true);
         dialog->exec();
         //从弹窗中获取结果
@@ -4441,6 +4497,7 @@ void MainWindow::showModifyCellBatch(){
                     }
                 }
             }
+            int rowRealInContent=0;
             //RangeList
             QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
             if(itemsRange.count()>=1){
@@ -4453,8 +4510,9 @@ void MainWindow::showModifyCellBatch(){
                 for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                     //遍历本range的多行,从上往下逐行修改
                     for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
+                        rowRealInContent=(currentPage-1)*pageRowSize+editRow;
                         //本行记录原始内容
-                        QByteArray valueNewArrayRow=qUncompress(ofdFileContentQByteArrayList.at(editRow));
+                        QByteArray valueNewArrayRow=qUncompress(ofdFileContentQByteArrayList.at(rowRealInContent));
                         //更新字段值
                         int index=0;
                         for(int i=updateBegin;i<updateEnd;i++){
@@ -4463,17 +4521,17 @@ void MainWindow::showModifyCellBatch(){
                         }
                         //qDebug()<<valueNewArrayRow;
                         //将新的行记录写入原ofdFileContentQByteArrayList/////////////////////////////
-                        ofdFileContentQByteArrayList.replace(editRow,qCompress(valueNewArrayRow,dataCompressLevel));
+                        ofdFileContentQByteArrayList.replace(rowRealInContent,qCompress(valueNewArrayRow,dataCompressLevel));
                         //更新界面/////////////////////////////////////////////////////////////////
                         //暂不考虑本行是否已加载
                         if(ptr_table->item(editRow,editCol)!=nullptr){
-                            ptr_table->item(editRow,editCol)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
+                            ptr_table->item(editRow,editCol)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,editCol));
                         }
                         //如果这个单元格未填充过数据,则QTableWidgetItem不存在
                         else if(!valueNew.isEmpty()){
                             QTableWidgetItem *item= new QTableWidgetItem();
                             ptr_table->setItem(editRow, editCol, item);
-                            item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol));
+                            item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,editCol));
                         }
                         //如果这行数据在比对器,需要更新////////////////////////////////////////////////
                         if(compareData.contains(editRow+1)){
@@ -4509,6 +4567,190 @@ void MainWindow::showModifyCellBatch(){
         }
         else{
             statusBar_disPlayMessage("取消编辑...");
+        }
+    }
+}
+
+/**
+ * @brief MainWindow::showMoaifyOFDRow 修改一行ODF文件
+ */
+//待修改
+void MainWindow::showMoaifyOFDRow(){
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    if(itemsRange.count()>0){
+        //获取行号-指向当前鼠标选择的行
+        int editRow=itemsRange.at(0).topRow();
+        int rowRealInContent=(currentPage-1)*pageRowSize+editRow;
+        //获取目前行数据
+        QStringList rowDataOld=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent);
+        //创建弹窗，传递ofd定义的指针，行数据
+        DialogModifyRow * dialog = new DialogModifyRow(&ofd,rowDataOld,this);
+        dialog->setWindowTitle(QString("编辑第%1行数据").arg(rowRealInContent+1));
+        dialog->setModal(true);
+        dialog->exec();
+        ///////////////////////////////开始进行数据编辑更新//////////////////////////////////
+        //数据发生了改变
+        if(dialog->getChange()&&dialog->getSaveFlag()){
+            QStringList rowDataNew=dialog->getRowDataNew();
+            delete dialog;
+            dialog=nullptr;
+            //开始更新数据，按列更新
+            if(rowDataNew.count()>0){
+                //本行记录原始内容
+                QByteArray valueNewArrayRow=qUncompress(ofdFileContentQByteArrayList.at(rowRealInContent));
+                //列循环/////////////////////////
+                //仅更新被修改的列
+                for(int editCol=0;editCol<rowDataNew.count()&&editCol<ptr_table->columnCount();editCol++){
+                    //字段类型
+                    QString fieldType=ofd.getFieldList().at(editCol).getFieldType();
+                    //字段长度
+                    int fieldLength=ofd.getFieldList().at(editCol).getLength();
+                    //字段小数长度
+                    int fieldDecLength=ofd.getFieldList().at(editCol).getDecLength();
+                    //获取字段目前的值
+                    QString fieldValues=rowDataOld.at(editCol);
+                    //修改后的值
+                    QString valueNew=rowDataNew.at(editCol);
+                    if(fieldValues!=valueNew){
+                        //要更新的范围
+                        int updateBegin=ofd.getFieldList().at(editCol).getRowBeginIndex();
+                        int updateEnd=updateBegin+fieldLength;
+                        //新的单元格值的字节数组
+                        QByteArray valueNewArray=valueNew.toLocal8Bit();
+                        //判断数据类型处理
+                        //数值字符型,字符型,长文本型对于长度不够的情况直接补充空格即可
+                        if(fieldType=="C"||fieldType=="TEXT"||fieldType=="A"){
+                            int index=0;
+                            for(int i=updateBegin;i<updateEnd;i++){
+                                if(index<valueNewArray.length()){
+                                    valueNewArrayRow[i]=valueNewArray[index];
+                                    index++;
+                                }
+                                //超过填写的参数的部分使用空格补充
+                                else{
+                                    valueNewArrayRow[i]=' ';
+                                }
+                            }
+                        }
+                        //数值型
+                        else if(fieldType=="N"){
+                            //空数据自动补充为空格，0自动补充为全0，不再强制将空补充为0
+                            if(valueNew.isEmpty()){
+                                for(int i=updateBegin;i<updateEnd;i++){
+                                    valueNewArrayRow[i]=QString(" ").toLocal8Bit().at(0);
+                                }
+                            }
+                            //仅包含整数部分
+                            else if(!valueNew.contains("."))
+                            {
+                                //合成整数和小数部分
+                                int zLength=fieldLength-fieldDecLength;
+                                //整数部分不够前补0,缺少多少补多少
+                                QString intS=valueNew;
+                                if(intS.length()<zLength){
+                                    int zeroAdd=zLength-intS.length();
+                                    for(int zz=0;zz<zeroAdd;zz++){
+                                        intS.insert(0,'0');
+                                    }
+                                }
+                                //小数部分直接全部补0
+                                QString intD="";
+                                if(intD.length()<fieldDecLength){
+                                    int zeroAdd=fieldDecLength-intD.length();
+                                    for(int zz=0;zz<zeroAdd;zz++){
+                                        intD.append('0');
+                                    }
+                                }
+                                //整数和小数补充缺少的0结束后开始填充数据
+                                QString number=intS+intD;
+                                int index=0;
+                                for(int i=updateBegin;i<updateEnd;i++){
+                                    valueNewArrayRow[i]=number.toLocal8Bit().at(index);
+                                    index++;
+                                }
+                            }
+                            //整数部分和小数部分都有值
+                            else{
+                                //分别获取整数和小数
+                                int zLength=fieldLength-fieldDecLength;
+                                QString intS=valueNew.mid(0,valueNew.indexOf("."));
+                                if(intS.length()<zLength){
+                                    int zeroAdd=zLength-intS.length();
+                                    for(int zz=0;zz<zeroAdd;zz++){
+                                        intS.insert(0,'0');
+                                    }
+                                }
+                                //小数部分后补0
+                                QString intD=valueNew.mid(valueNew.indexOf(".")+1,-1);
+                                if(intD.length()<fieldDecLength){
+                                    int zeroAdd=fieldDecLength-intD.length();
+                                    for(int zz=0;zz<zeroAdd;zz++){
+                                        intD.append('0');
+                                    }
+                                }
+                                //整数和小数补充缺少的0结束后开始填充数据
+                                QString number=intS+intD;
+                                int index=0;
+                                for(int i=updateBegin;i<updateEnd;i++){
+                                    valueNewArrayRow[i]=number.toLocal8Bit().at(index);
+                                    index++;
+                                }
+                            }
+                        }
+                        //其他未知类型
+                        else{
+                            int index=0;
+                            for(int i=updateBegin;i<updateEnd;i++){
+                                if(index<valueNewArray.length()){
+                                    valueNewArrayRow[i]=valueNewArray[index];
+                                    index++;
+                                }
+                                //超过填写的参数的部分使用空格补充
+                                else{
+                                    valueNewArrayRow[i]=' ';
+                                }
+                            }
+                        }
+                        //将新的行记录写入原ofdFileContentQByteArrayList/////////////////////////////
+                        ofdFileContentQByteArrayList.replace(rowRealInContent,qCompress(valueNewArrayRow,dataCompressLevel));
+                        //更新界面/////////////////////////////////////////////////////////////////
+                        if(ptr_table->item(editRow,editCol)!=nullptr){
+                            ptr_table->item(editRow,editCol)->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,editCol));
+                        }
+                        //如果这个单元格未填充过数据,则QTableWidgetItem不存在
+                        else if(!valueNew.isEmpty()){
+                            QTableWidgetItem *item= new QTableWidgetItem();
+                            ptr_table->setItem(editRow, editCol, item);
+                            item->setText(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,editCol));
+                        }
+                    }
+                }
+                //重新校准列宽
+                ptr_table->resizeColumnsToContents();
+                //如果这行数据在比对器,需要更新////////////////////////////////////////////////
+                if(compareData.contains(rowRealInContent+1)){
+                    //移除原数据
+                    compareData.remove(rowRealInContent+1);
+                    //数据重新加入
+                    compareData.insert(rowRealInContent+1,rowDataNew);
+                }
+                //提示用户保存//////////////////////////////////////////////////////////////
+                statusBar_disPlayMessage("单元格数据修改成功,请记得保存文件哟...");
+                this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
+                //更新文件修改标记//////////////////////////////////////////////////////////
+                fileChanged=true;
+            }
+        }
+        //数据未发生改变
+        else{
+            if(!dialog->getSaveFlag()){
+                statusBar_disPlayMessage("放弃编辑...");
+            }
+            if(dialog->getSaveFlag()&&!dialog->getChange()){
+                statusBar_disPlayMessage("数据未修改,无需更新记录...");
+            }
+            delete dialog;
+            dialog=nullptr;
         }
     }
 }
@@ -4558,7 +4800,7 @@ void MainWindow::on_pushButtonPreSearch_clicked()
         statusBar_disPlayMessage("请填写你要搜索的内容...");
         return;
     }
-    if(rowcurrent==0&&colcurrent==0){
+    if(tableRowCurrent==0&&tableColCurrent==0){
         statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
         return;
     }
@@ -4571,7 +4813,7 @@ void MainWindow::on_pushButtonPreSearch_clicked()
     QString searchText=ui->lineTextText->text();
     //判断是否是当前搜索行,如果是则从焦点单元格前一个单元格搜索,否则从行记录的最后一个单元格搜索
     //搜索当前行时,不能从最后一列开始,要从焦点单元格前一个开始
-    int beginCol=colcurrent-1;
+    int beginCol=tableColCurrent-1;
     //查询总列数
     int colCount=0;
     if(currentOpenFileType==1){
@@ -4583,79 +4825,98 @@ void MainWindow::on_pushButtonPreSearch_clicked()
     if(currentOpenFileType==3){
         colCount=fixed.getFieldCountMax();
     }
-    //数据类型插入点
-    if(currentOpenFileType==1){
-        for(int row=rowcurrent;row>=0;row--){
-            for(int col=beginCol;col>=0;col--){
-                if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col).contains(searchText,Qt::CaseInsensitive)){
-                    ptr_table->setCurrentCell(row,col);
-                    ptr_table->setFocus();
-                    ui->pushButtonPreSearch->setEnabled(true);
-                    QApplication::restoreOverrideCursor();
-                    dataBlocked=false;
-                    return;
+    //分页模式下的跨页搜索
+    int rowRealInContent=0;
+    while(currentPage>0){
+        //数据类型插入点
+        if(currentOpenFileType==1){
+            for(int row=tableRowCurrent;row>=0;row--){
+                for(int col=beginCol;col>=0;col--){
+                    rowRealInContent=(currentPage-1)*pageRowSize+row;
+                    if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,col).contains(searchText,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(row,col);
+                        ptr_table->setFocus();
+                        ui->pushButtonPreSearch->setEnabled(true);
+                        QApplication::restoreOverrideCursor();
+                        dataBlocked=false;
+                        return;
+                    }
+                    else if(row%500==0){
+                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                        qApp->processEvents();
+                    }
                 }
-                else if(row%500==0){
-                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                    qApp->processEvents();
-                }
+                beginCol=colCount-1;
             }
-            beginCol=colCount-1;
+        }
+        if(currentOpenFileType==2){
+            for(int row=tableRowCurrent;row>=0;row--){
+                //csv文件按行获取数据
+                rowRealInContent=(currentPage-1)*pageRowSize+row;
+                QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent);
+                //csv文件的数据可能缺失列，因为读取的时候没有做强制判断，这里判断补充下,如果数据长度不够，补空数据
+                while(rowdata.count()<colCount){
+                    rowdata.append("");
+                }
+                for(int col=beginCol;col>=0;col--){
+                    if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(row,col);
+                        ptr_table->setFocus();
+                        ui->pushButtonPreSearch->setEnabled(true);
+                        QApplication::restoreOverrideCursor();
+                        dataBlocked=false;
+                        return;
+                    }
+                    else if(row%500==0){
+                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                        qApp->processEvents();
+                    }
+                }
+                beginCol=colCount-1;
+            }
+        }
+        if(currentOpenFileType==3){
+            for(int row=tableRowCurrent;row>=0;row--){
+                rowRealInContent=(currentPage-1)*pageRowSize+row;
+                QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent);
+                for(int col=beginCol;col>=0;col--){
+                    //无此列数据的值
+                    if(col>rowdata.count()-1){
+                        continue;
+                    }
+                    if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(row,col);
+                        ptr_table->setFocus();
+                        ui->pushButtonPreSearch->setEnabled(true);
+                        QApplication::restoreOverrideCursor();
+                        dataBlocked=false;
+                        return;
+                    }
+                    else if(row%500==0){
+                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                        qApp->processEvents();
+                    }
+                }
+                beginCol=colCount-1;
+            }
+        }
+        //如果不是第一页
+        //则跳转到上一行继续搜索
+        if(currentPage>1){
+            currentPage--;
+            //跳到上一页面
+            pageJump(currentPage,-1);
+            //重新设置从右下角开始继续搜索
+            beginCol=ptr_table->columnCount()-1;
+            tableRowCurrent=ptr_table->rowCount()-1;
+        }
+        else{
+            statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
+            dataBlocked=false;
+            ui->pushButtonPreSearch->setEnabled(true);
+            QApplication::restoreOverrideCursor();
         }
     }
-    if(currentOpenFileType==2){
-        for(int row=rowcurrent;row>=0;row--){
-            //csv文件按行获取数据
-            QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,row);
-            //csv文件的数据可能缺失列，因为读取的时候没有做强制判断，这里判断补充下,如果数据长度不够，补空数据
-            while(rowdata.count()<colCount){
-                rowdata.append("");
-            }
-            for(int col=beginCol;col>=0;col--){
-                if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
-                    ptr_table->setCurrentCell(row,col);
-                    ptr_table->setFocus();
-                    ui->pushButtonPreSearch->setEnabled(true);
-                    QApplication::restoreOverrideCursor();
-                    dataBlocked=false;
-                    return;
-                }
-                else if(row%500==0){
-                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                    qApp->processEvents();
-                }
-            }
-            beginCol=colCount-1;
-        }
-    }
-    if(currentOpenFileType==3){
-        for(int row=rowcurrent;row>=0;row--){
-            QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row);
-            for(int col=beginCol;col>=0;col--){
-                //无此列数据的值
-                if(col>rowdata.count()-1){
-                    continue;
-                }
-                if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
-                    ptr_table->setCurrentCell(row,col);
-                    ptr_table->setFocus();
-                    ui->pushButtonPreSearch->setEnabled(true);
-                    QApplication::restoreOverrideCursor();
-                    dataBlocked=false;
-                    return;
-                }
-                else if(row%500==0){
-                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                    qApp->processEvents();
-                }
-            }
-            beginCol=colCount-1;
-        }
-    }
-    statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
-    dataBlocked=false;
-    ui->pushButtonPreSearch->setEnabled(true);
-    QApplication::restoreOverrideCursor();
 }
 
 /**
@@ -4715,7 +4976,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
         statusBar_disPlayMessage("请填写你要搜索的内容...");
         return;
     }
-    if(rowcurrent==rowcount-1&&colcurrent==colCount-1){
+    if(tableRowCurrent==rowcount-1&&tableColCurrent==colCount-1){
         statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
         return;
     }
@@ -4726,81 +4987,103 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     QApplication::setOverrideCursor(Qt::WaitCursor);
     qApp->processEvents();
     QString searchText=ui->lineTextText->text();
+    //分页搜索
     //是否是当前搜索行,如果是则从焦点单元格后一个单元格搜索,否则从行记录的第一个单元格搜索
-    int beginCol=colcurrent+1;
-    //数据类型加入点
-    if(currentOpenFileType==1){
-        for(int row=rowcurrent;row<rowcount;row++){
-            for(int col=beginCol;col<colCount;col++){
-                if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row,col).contains(searchText,Qt::CaseInsensitive)){
-                    ptr_table->setCurrentCell(row,col);
-                    ptr_table->setFocus();
-                    ui->pushButtonNextSearch->setEnabled(true);
-                    QApplication::restoreOverrideCursor();
-                    dataBlocked=false;
-                    return;
+    int currentPageRowCount=ptr_table->rowCount();
+    int beginCol=tableColCurrent+1;
+    int rowRealInContent=0;
+    while(currentPage<=pageCount){
+        //数据类型加入点
+        if(currentOpenFileType==1){
+            for(int row=tableRowCurrent;row<currentPageRowCount;row++){
+                rowRealInContent=(currentPage-1)*pageRowSize+row;
+                for(int col=beginCol;col<colCount;col++){
+                    if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,col).contains(searchText,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(row,col);
+                        ptr_table->setFocus();
+                        ui->pushButtonNextSearch->setEnabled(true);
+                        QApplication::restoreOverrideCursor();
+                        dataBlocked=false;
+                        return;
+                    }
+                    else if(row%500==0){
+                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                        qApp->processEvents();
+                    }
                 }
-                else if(row%500==0){
-                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                    qApp->processEvents();
-                }
+                beginCol=0;
             }
+        }
+        if(currentOpenFileType==2){
+            for(int row=tableRowCurrent;row<currentPageRowCount;row++){
+                //csv文件按行获取数据
+                rowRealInContent=(currentPage-1)*pageRowSize+row;
+                QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent);
+                //csv文件的数据可能缺失列，因为读取的时候没有做强制判断，这里判断补充下,如果数据长度不够，补空数据
+                while(rowdata.count()<colCount){
+                    rowdata.append("");
+                }
+                for(int col=beginCol;col<colCount;col++){
+                    if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(row,col);
+                        ptr_table->setFocus();
+                        ui->pushButtonNextSearch->setEnabled(true);
+                        QApplication::restoreOverrideCursor();
+                        dataBlocked=false;
+                        return;
+                    }
+                    else if(row%500==0){
+                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                        qApp->processEvents();
+                    }
+                }
+                beginCol=0;
+            }
+        }
+        if(currentOpenFileType==3){
+            for(int row=tableRowCurrent;row<currentPageRowCount;row++){
+                rowRealInContent=(currentPage-1)*pageRowSize+row;
+                QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent);
+                for(int col=beginCol;col<colCount;col++){
+                    //超过本行最大列，直接break
+                    if(col>=rowdata.count()){
+                        break;
+                    }
+                    if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
+                        ptr_table->setCurrentCell(row,col);
+                        ptr_table->setFocus();
+                        ui->pushButtonNextSearch->setEnabled(true);
+                        QApplication::restoreOverrideCursor();
+                        dataBlocked=false;
+                        return;
+                    }
+                    else if(row%500==0){
+                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                        qApp->processEvents();
+                    }
+                }
+                beginCol=0;
+            }
+        }
+        //不是最后一页
+        //跳转到下一页
+        if(currentPage<pageCount){
+            currentPage++;
+            //跳到上一页面
+            pageJump(currentPage,0);
+            //重新设置从左上角开始继续搜索
             beginCol=0;
+            tableRowCurrent=0;
+            currentPageRowCount=ptr_table->rowCount();
+        }
+        //最后一页
+        else{
+            statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
+            dataBlocked=false;
+            ui->pushButtonNextSearch->setEnabled(true);
+            QApplication::restoreOverrideCursor();
         }
     }
-    if(currentOpenFileType==2){
-        for(int row=rowcurrent;row<rowcount;row++){
-            //csv文件按行获取数据
-            QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,row);
-            //csv文件的数据可能缺失列，因为读取的时候没有做强制判断，这里判断补充下,如果数据长度不够，补空数据
-            while(rowdata.count()<colCount){
-                rowdata.append("");
-            }
-            for(int col=beginCol;col<colCount;col++){
-                if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
-                    ptr_table->setCurrentCell(row,col);
-                    ptr_table->setFocus();
-                    ui->pushButtonNextSearch->setEnabled(true);
-                    QApplication::restoreOverrideCursor();
-                    dataBlocked=false;
-                    return;
-                }
-                else if(row%500==0){
-                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                    qApp->processEvents();
-                }
-            }
-            beginCol=0;
-        }
-    }
-    if(currentOpenFileType==3){
-        for(int row=rowcurrent;row<rowcount;row++){
-            QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row);
-            for(int col=beginCol;col<colCount;col++){
-                //超过本行最大列，直接break
-                if(col>=rowdata.count()){
-                    break;
-                }
-                if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
-                    ptr_table->setCurrentCell(row,col);
-                    ptr_table->setFocus();
-                    ui->pushButtonNextSearch->setEnabled(true);
-                    QApplication::restoreOverrideCursor();
-                    dataBlocked=false;
-                    return;
-                }
-                else if(row%500==0){
-                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                    qApp->processEvents();
-                }
-            }
-            beginCol=0;
-        }
-    }
-    statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
-    dataBlocked=false;
-    ui->pushButtonNextSearch->setEnabled(true);
-    QApplication::restoreOverrideCursor();
 }
 
 /**
@@ -5163,12 +5446,18 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     tablePopMenu->exec(QCursor::pos());
 }
 
+/**
+ * @brief MainWindow::on_pushButtonColumnJump_clicked 列搜索
+ */
 void MainWindow::on_pushButtonColumnJump_clicked()
 {
     //向左搜索
     columnJump(0);
 }
 
+/**
+ * @brief MainWindow::on_actionsOpenCompare_triggered 数据比对器
+ */
 void MainWindow::on_actionsOpenCompare_triggered()
 {
     if(currentOpenFileType==0){
@@ -5202,12 +5491,19 @@ void MainWindow::on_actionsOpenCompare_triggered()
     }
 }
 
+/**
+ * @brief MainWindow::on_actionClearCompare_triggered 清除比对器内容
+ */
 void MainWindow::on_actionClearCompare_triggered()
 {
     compareData.clear();
     statusBar_disPlayMessage("比对器内容清除完毕...");
 }
 
+/**
+ * @brief MainWindow::on_pushButtonExport_clicked 数据导出功能函数
+ */
+//待分页改造,增加分页导出文件的提示-支持一页导出一个文件
 void MainWindow::on_pushButtonExport_clicked()
 {
     if(isUpdateData){
@@ -5327,7 +5623,10 @@ void MainWindow::on_pushButtonExport_clicked()
     }
 }
 
-//保存为csv
+/**
+ * 保存为csv
+ * */
+//待评估分页改造
 void MainWindow::save2Csv(QString filename){
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -5422,7 +5721,12 @@ void MainWindow::save2Csv(QString filename){
     QApplication::restoreOverrideCursor();
 }
 
-//保存为html
+
+/**
+ * 保存为html
+ *
+ * */
+//待评估分页改造
 void MainWindow::save2Html (QString filename){
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -5581,7 +5885,10 @@ void MainWindow::save2Html (QString filename){
     QApplication::restoreOverrideCursor();
 }
 
-//保存为xlsx
+/**
+ * 保存为xlsx
+ * */
+//待分页改造
 void MainWindow::save2Xlsx(QString filename){
     xlsxSaveName=filename;
     //禁止导出过大的excel文件
@@ -5908,25 +6215,6 @@ void MainWindow::on_pushButtonRowJump_clicked()
         statusBar_disPlayMessage("不支持索引文件使用此功能...");
         return;
     }
-    //数据类型加入点
-    if(currentOpenFileType==1){
-        if(ofdFileContentQByteArrayList.count()<1){
-            statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
-            return;
-        }
-    }
-    if(currentOpenFileType==2){
-        if(csvFileContentQByteArrayList.count()<1){
-            statusBar_disPlayMessage("打开的CSV文件没有数据记录...");
-            return;
-        }
-    }
-    if(currentOpenFileType==3){
-        if(fixedContenQByteArrayList.count()<1){
-            statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
-            return;
-        }
-    }
     QString lineStr=ui->lineTextText_2->text();
     if(lineStr.isEmpty()){
         return;
@@ -5940,12 +6228,60 @@ void MainWindow::on_pushButtonRowJump_clicked()
     if(lineNumber<1){
         statusBar_disPlayMessage(tr("行号不能小于1"));
     }
-    else if(lineNumber>ptr_table->rowCount()){
-        statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
-    }
     else{
-        ptr_table->setCurrentCell(lineNumber-1,colcurrent);
-        ptr_table->setFocus();
+        //数据类型加入点
+        int targetIndex=0;
+        if(currentOpenFileType==1){
+            if(ofdFileContentQByteArrayList.count()<1){
+                statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
+                return;
+            }
+            else if(lineNumber>ofdFileContentQByteArrayList.count()){
+                statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+                return;
+            }
+            else{
+                targetIndex=lineNumber-1;
+            }
+        }
+        if(currentOpenFileType==2){
+            if(csvFileContentQByteArrayList.count()<1){
+                statusBar_disPlayMessage("打开的CSV文件没有数据记录...");
+                return;
+            }
+            else if(lineNumber>csvFileContentQByteArrayList.count()){
+                statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+                return;
+            }
+            else{
+                targetIndex=lineNumber-1;
+            }
+        }
+        if(currentOpenFileType==3){
+            if(fixedContenQByteArrayList.count()<1){
+                statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
+                return;
+            }
+            else if(lineNumber>fixedContenQByteArrayList.count()){
+                statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+                return;
+            }
+            else{
+                targetIndex=lineNumber-1;
+            }
+        }
+        //判断是否在当前页，是否需要跳行
+        int targetPage=(targetIndex/pageRowSize)+1;
+        int targetTableIndex=(targetIndex%pageRowSize);
+        if(targetPage==currentPage){
+            ptr_table->setCurrentCell(targetTableIndex,tableColCurrent);
+            ptr_table->setFocus();
+        }
+        else{
+            pageJump(targetPage,1);
+            ptr_table->setCurrentCell(targetTableIndex,tableColCurrent);
+            ptr_table->setFocus();
+        }
     }
 }
 
@@ -6151,8 +6487,8 @@ void MainWindow::on_actionaboutAuthor_triggered()
 void MainWindow::on_tableWidget_cellDoubleClicked(int row, int column)
 {
     //数据类型判断点
-    rowcurrent=row;
-    colcurrent=column;
+    tableRowCurrent=row;
+    tableColCurrent=column;
     if(currentOpenFileType==1||currentOpenFileType==2||currentOpenFileType==3){
         showRowDetails();
     }
@@ -6178,6 +6514,7 @@ void MainWindow::randomTips(){
 /**
  * @brief MainWindow::on_pushButtonRowJump2_clicked 源文件行跳转功能
  */
+//待完善跳页
 void MainWindow::on_pushButtonRowJump2_clicked()
 {
     if(isUpdateData){
@@ -6230,6 +6567,7 @@ void MainWindow::on_pushButtonRowJump2_clicked()
     }
     else {
         //数据类型加入点
+        int targetIndex=0;
         if(currentOpenFileType==1){
             int headerCount=ofdFileHeaderQStringList.count();
             if(lineNumber<=headerCount){
@@ -6238,16 +6576,16 @@ void MainWindow::on_pushButtonRowJump2_clicked()
             }
             //重新计算数据行位置
             lineNumber-=headerCount;
-            if(lineNumber==ptr_table->rowCount()+1){
+            if(lineNumber==ofdFileContentQByteArrayList.count()+1){
                 statusBar_disPlayMessage(tr("你输入的行号所在行应该是OFD文件结束标记[OFDCFEND]"));
                 return;
             }
-            else if(lineNumber>ptr_table->rowCount()+1){
+            else if(lineNumber>ofdFileContentQByteArrayList.count()){
                 statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+                return;
             }
             else{
-                ptr_table->setCurrentCell(lineNumber-1,colcurrent);
-                ptr_table->setFocus();
+                targetIndex=lineNumber-1;
             }
         }
         if(currentOpenFileType==2){
@@ -6258,12 +6596,12 @@ void MainWindow::on_pushButtonRowJump2_clicked()
             }
             //重新计算数据行位置
             lineNumber-=headerCount;
-            if(lineNumber>ptr_table->rowCount()+1){
+            if(lineNumber>csvFileContentQByteArrayList.count()){
                 statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+                return;
             }
             else{
-                ptr_table->setCurrentCell(lineNumber-1,colcurrent);
-                ptr_table->setFocus();
+                targetIndex=lineNumber-1;
             }
         }
         if(currentOpenFileType==3){
@@ -6278,8 +6616,7 @@ void MainWindow::on_pushButtonRowJump2_clicked()
             lineNumber-=headerCount;
             //文件数据
             if(lineNumber>0&&lineNumber<=contentCount){
-                ptr_table->setCurrentCell(lineNumber-1,colcurrent);
-                ptr_table->setFocus();
+                targetIndex=lineNumber-1;
             }
             else if(lineNumber>contentCount&&lineNumber<=(contentCount+footerCount)){
                 statusBar_disPlayMessage(tr("你输入的行号所在行在源文件中记录的是文件尾:[%1]").arg(fixedFooterQStringList.at(lineNumber-contentCount-1)));
@@ -6287,7 +6624,20 @@ void MainWindow::on_pushButtonRowJump2_clicked()
             }
             else if(lineNumber>(contentCount+footerCount)){
                 statusBar_disPlayMessage(tr("无此行,行号超出了数据最大行数值"));
+                return;
             }
+        }
+        //判断是否在当前页，是否需要跳行
+        int targetPage=(targetIndex/pageRowSize)+1;
+        int targetTableIndex=(targetIndex%pageRowSize);
+        if(targetPage==currentPage){
+            ptr_table->setCurrentCell(targetTableIndex,tableColCurrent);
+            ptr_table->setFocus();
+        }
+        else{
+            pageJump(targetPage,1);
+            ptr_table->setCurrentCell(targetTableIndex,tableColCurrent);
+            ptr_table->setFocus();
         }
     }
 }
@@ -6307,7 +6657,7 @@ void MainWindow::on_viewMode_triggered()
             //获取当前table的高度
             int higth=ptr_table->size().height()+addHight;
             //窗口变大不会影响起始行
-            hValueEnd=hValueBegin+(higth/rowHight);
+            tableRowEnd=tableRowBegin+(higth/rowHight);
             //OFD文件
             if(currentOpenFileType==1){
                 display_OFDTable();
@@ -6330,6 +6680,7 @@ void MainWindow::on_viewMode_triggered()
 /**
  * @brief MainWindow::on_tableWidget_itemSelectionChanged 表格选择范围改变触发的事件，当表格选择范围变化时，进行数据统计！！！
  */
+//需要分页改造
 void MainWindow::on_tableWidget_itemSelectionChanged()
 {
     //选择的范围
@@ -6340,11 +6691,11 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     ///////////////////////////////////////////////////
     if(rangeCount==1&&itemsRange.at(0).leftColumn()==itemsRange.at(0).rightColumn()&&itemsRange.at(0).topRow()==itemsRange.at(0).bottomRow()){
         //记录当前所在行
-        rowcurrent=itemsRange.at(itemsRange.count()-1).bottomRow();
+        tableRowCurrent=itemsRange.at(itemsRange.count()-1).bottomRow();
         //当前所在列
-        colcurrent=itemsRange.at(itemsRange.count()-1).rightColumn();
+        tableColCurrent=itemsRange.at(itemsRange.count()-1).rightColumn();
         //更新列跳转搜索开始列
-        colSearch=colcurrent;
+        tableColSearch=tableColCurrent;
     }
     //如果未在更新数据，如果未执行导出等阻断任务
     if(isUpdateData){
@@ -6359,50 +6710,53 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     //判断是否要显示选择的单元格的信息
     //仅选择一个单元格-----仅仅选择了一个单元格，就显示这个单元格的信息
     if(rangeCount==1&&itemsRange.at(0).leftColumn()==itemsRange.at(0).rightColumn()&&itemsRange.at(0).topRow()==itemsRange.at(0).bottomRow()){
+        //将表格中的行号转换成数据List内的行数
+        //分页改造
+        int dataRowCurrent=(currentPage-1)*pageRowSize+tableRowCurrent;
         //OFD索引文件
         if(currentOpenFileType==0){
-            statusBar_display_rowsAndCol(rowcurrent+5,0,-1);
+            statusBar_display_rowsAndCol(dataRowCurrent+5,0,-1);
         }
         //OFD数据文件
         else if(currentOpenFileType==1){
-            int rowInFile=ofdFileHeaderQStringList.count()+rowcurrent+1;
-            int colInFile=ofd.getFieldList().at(colcurrent).getRowBeginIndex()+1;
+            int rowInFile=ofdFileHeaderQStringList.count()+dataRowCurrent+1;
+            int colInFile=ofd.getFieldList().at(tableColCurrent).getRowBeginIndex()+1;
             //显示当前行列
-            statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getFieldList().at(colcurrent).getLength());
-            if(ptr_table->item(rowcurrent,colcurrent)!=nullptr){
-                QString text=ptr_table->item(rowcurrent,colcurrent)->text();
-                QString dic=ofdDictionary.getDictionary(ofd.getFieldList().at(colcurrent).getFieldName(),text);
+            statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getFieldList().at(tableColCurrent).getLength());
+            if(ptr_table->item(tableRowCurrent,tableColCurrent)!=nullptr){
+                QString text=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
+                QString dic=ofdDictionary.getDictionary(ofd.getFieldList().at(tableColCurrent).getFieldName(),text);
                 if(text.isEmpty()){
-                    statusBar_disPlayMessage(ofd.getFieldList().at(colcurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(colcurrent).getFieldName()).append("|").append(ofd.getFieldList().at(colcurrent).getFieldType()));
+                    statusBar_disPlayMessage(ofd.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(ofd.getFieldList().at(tableColCurrent).getFieldType()));
                 }
                 else{
-                    statusBar_disPlayMessage(ofd.getFieldList().at(colcurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(colcurrent).getFieldName()).append("|").append(ofd.getFieldList().at(colcurrent).getFieldType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+                    statusBar_disPlayMessage(ofd.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(ofd.getFieldList().at(tableColCurrent).getFieldType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
                 }
             }
             else{
-                statusBar_disPlayMessage(ofd.getFieldList().at(colcurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(colcurrent).getFieldName()).append("|").append(ofd.getFieldList().at(colcurrent).getFieldType()));
+                statusBar_disPlayMessage(ofd.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(ofd.getFieldList().at(tableColCurrent).getFieldType()));
             }
         }
         //CSV文件
         else if(currentOpenFileType==2){
-            int rowInFile=csvFileHeaderQStringList.count()+rowcurrent+1;
-            int colInFile=colcurrent+1;
+            int rowInFile=csvFileHeaderQStringList.count()+dataRowCurrent+1;
+            int colInFile=tableColCurrent+1;
             statusBar_display_rowsAndCol(rowInFile,colInFile,0);
-            if(ptr_table->item(rowcurrent,colcurrent)!=nullptr){
-                QString text=ptr_table->item(rowcurrent,colcurrent)->text();
-                QString dic=commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(colcurrent).getFieldName(),text);
+            if(ptr_table->item(tableRowCurrent,tableColCurrent)!=nullptr){
+                QString text=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
+                QString dic=commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(tableColCurrent).getFieldName(),text);
                 if(!text.isEmpty()){
                     statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)));
                 }
             }
         }
         else if(currentOpenFileType==3){
-            int rowInFile=fixedFileHeaderQStringList.count()+rowcurrent+1;
-            int colInFile=colcurrent+1;
-            statusBar_display_rowsAndCol(rowInFile,colInFile,fixed.getFieldList().at(colcurrent).getLength());
-            if(ptr_table->item(rowcurrent,colcurrent)!=nullptr){
-                QString text=ptr_table->item(rowcurrent,colcurrent)->text();
-                QString dic=commonDictionary.value("FIXED"+fixed.getFileIni()).getDictionary(fixed.getFieldList().at(colcurrent).getFieldDescribe(),text);
+            int rowInFile=fixedFileHeaderQStringList.count()+dataRowCurrent+1;
+            int colInFile=tableColCurrent+1;
+            statusBar_display_rowsAndCol(rowInFile,colInFile,fixed.getFieldList().at(tableColCurrent).getLength());
+            if(ptr_table->item(tableRowCurrent,tableColCurrent)!=nullptr){
+                QString text=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
+                QString dic=commonDictionary.value("FIXED"+fixed.getFileIni()).getDictionary(fixed.getFieldList().at(tableColCurrent).getFieldDescribe(),text);
                 if(!text.isEmpty()){
                     statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)));
                 }
@@ -6441,16 +6795,18 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
             bool sucessFlag=true;
             //统计失败原因
             QString faultMessage;
+            int editRowinFileContent=0;
             //判断当前打开的文件类型
             if(currentOpenFileType==1){
                 if(ofd.getFieldList().at(itemsRange.at(0).leftColumn()).getFieldType()=="N"){
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
+                            editRowinFileContent=(currentPage-1)*pageRowSize+editRow;
                             //开始取值
-                            QString vvv=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow,editCol);
+                            QString vvv=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRowinFileContent,editCol);
                             if(vvv==nullptr){
                                 sucessFlag=false;
-                                faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
+                                faultMessage="选择的数据中，在表格第:"+QString::number(editRowinFileContent+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
                                 break;
                             }
                             else{
@@ -6461,7 +6817,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                                 }
                                 else{
                                     sucessFlag=false;
-                                    faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
+                                    faultMessage="选择的数据中，在表格第:"+QString::number(editRowinFileContent+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
                                     break;
                                 }
                             }
@@ -6488,15 +6844,16 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 if(fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber()){
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
+                            editRowinFileContent=(currentPage-1)*pageRowSize+editRow;
                             //开始取值
-                            QStringList rowList=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,editRow);
+                            QStringList rowList=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,editRowinFileContent);
                             QString vvv="";
                             if(rowList.count()>editCol){
                                 vvv=rowList.at(editCol);
                             }
                             if(vvv==nullptr){
                                 sucessFlag=false;
-                                faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
+                                faultMessage="选择的数据中，在表格第:"+QString::number(editRowinFileContent+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
                                 break;
                             }
                             else{
@@ -6507,7 +6864,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                                 }
                                 else{
                                     sucessFlag=false;
-                                    faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
+                                    faultMessage="选择的数据中，在表格第:"+QString::number(editRowinFileContent+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
                                     break;
                                 }
                             }
@@ -6534,11 +6891,12 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 if(fixed.getFieldList().at(itemsRange.at(0).leftColumn()).getFieldType()=="N"){
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
+                            editRowinFileContent=(currentPage-1)*pageRowSize+editRow;
                             //开始取值
-                            QString vvv=Utils::getFormatValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,editRow,editCol);
+                            QString vvv=Utils::getFormatValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,editRowinFileContent,editCol);
                             if(vvv==nullptr){
                                 sucessFlag=false;
-                                faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
+                                faultMessage="选择的数据中，在表格第:"+QString::number(editRowinFileContent+1)+"行,第:"+QString::number(editCol+1)+"列为空,无法进行数据统计";
                                 break;
                             }
                             else{
@@ -6549,7 +6907,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                                 }
                                 else{
                                     sucessFlag=false;
-                                    faultMessage="选择的数据中，在表格第:"+QString::number(editRow+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
+                                    faultMessage="选择的数据中，在表格第:"+QString::number(editRowinFileContent+1)+"行,第:"+QString::number(editCol+1)+"列不是一个有效的数值,无法进行数据统计";
                                     break;
                                 }
                             }
@@ -6598,6 +6956,7 @@ void MainWindow::on_actionfileOpenAdv_triggered()
 /**
  * @brief MainWindow::on_actionpreference_triggered 设置
  */
+//需要改造--需要新增设置项每页条目
 void MainWindow::on_actionpreference_triggered()
 {
     //如果新增了配置项-记得修改配置读取--配置修改弹窗发起--弹窗类内修改--配置修改结果回写四处代码
@@ -6606,6 +6965,7 @@ void MainWindow::on_actionpreference_triggered()
     par.insert("compresslevel",QString::number(dataCompressLevel));
     par.insert("defaultviewmode",defaultViewMode);
     par.insert("defaultnewfilemode",defaultNewFileMode);
+    par.insert("defaultpagesizetype",defaultPageSizeType);
     DialogPreference * dialog = new DialogPreference(par,this);
     dialog->setModal(true);
     dialog->exec();
@@ -6637,6 +6997,53 @@ void MainWindow::on_actionpreference_triggered()
             changeFlag=true;
             this->defaultNewFileMode=dialog->getDefaultNewFileMode();
         }
+        //是否修改了分页每页页数
+        if(dialog->getDefaultPageSizeType()!=defaultPageSizeType){
+            changeFlag=true;
+            this->defaultPageSizeType=dialog->getDefaultPageSizeType();
+            //每页行数
+            if(this->defaultPageSizeType=="0"){
+                ui->labelPageSize->setText("(10万行/页)");
+                this->pageRowSize=100000;
+            }
+            else if(this->defaultPageSizeType=="1"){
+                ui->labelPageSize->setText("(20万行/页)");
+                this->pageRowSize=200000;
+            }
+            else if(this->defaultPageSizeType=="2"){
+                ui->labelPageSize->setText("(50万行/页)");
+                this->pageRowSize=500000;
+            }
+            else if(this->defaultPageSizeType=="3"){
+                ui->labelPageSize->setText("(100万行/页)");
+                this->pageRowSize=1000000;
+            }
+            else{
+                ui->labelPageSize->setText("(10万行/页)");
+                this->pageRowSize=100000;
+            }
+            //如果每页条数变化了，并且当前打开了文件，需要跳到第一页-并且判断是否需要打开或者隐藏分页控件
+            int rowCount=0;
+            if(currentOpenFileType==1){
+                rowCount=ofdFileContentQByteArrayList.count();
+            }
+            else if(currentOpenFileType==2){
+                rowCount=csvFileContentQByteArrayList.count();
+            }
+            else if(currentOpenFileType==3){
+                rowCount=fixedContenQByteArrayList.count();
+            }
+            pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+            if(pageCount>1){
+                ui->framePage->setVisible(true);
+            }
+            else{
+                ui->framePage->setVisible(false);
+            }
+            statusBar_display_rowsCount(rowCount);
+            currentPage=1;
+            pageJump(currentPage,0);
+        }
         //如果配置发生了改变,则写入配置
         if(changeFlag){
             QString Settingini=getConfigPath()+"Setting.ini";
@@ -6646,6 +7053,7 @@ void MainWindow::on_actionpreference_triggered()
             loadedSettingInfoIni.setValue("compresslevel",dataCompressLevel);
             loadedSettingInfoIni.setValue("defaultviewmode",defaultViewMode);
             loadedSettingInfoIni.setValue("defaultnewfilemode",defaultNewFileMode);
+            loadedSettingInfoIni.setValue("defaultpagesizetype",defaultPageSizeType);
             loadedSettingInfoIni.endGroup();
             loadedSettingInfoIni.sync();
         }
@@ -6672,6 +7080,7 @@ void MainWindow::on_actionnewWindow_triggered()
  * @brief MainWindow::ignoreFileChangeAndOpenNewFile 决定是否忽略当前修改未保存并打开新的文件，如果允许打开或者文件压根没修改，直接返回true
  * @return
  */
+//无需分页改造
 bool MainWindow:: ignoreFileChangeAndOpenNewFile(){
     //判断文件是否被修改
     if(fileChanged){
@@ -6740,7 +7149,7 @@ void MainWindow::on_pushButtonColumnJump_2_clicked()
  */
 void MainWindow::columnJump(int type){
     QString text=ui->lineTextText_2->text();
-    int col=colSearch;
+    int col=tableColSearch;
     if(isUpdateData){
         statusBar_disPlayMessage("正在加载数据,请稍后再使用搜索功能...");
         return;
@@ -6776,7 +7185,7 @@ void MainWindow::columnJump(int type){
                 col+=1;
                 for(;col<ptr_table->columnCount();col++){
                     if(ofd.getFieldList().at(col).getFieldDescribe().contains(text,Qt::CaseInsensitive)||ofd.getFieldList().at(col).getFieldName().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(rowcurrent,col);
+                        ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
                         return;
@@ -6800,7 +7209,7 @@ void MainWindow::columnJump(int type){
                 col-=1;
                 for(;col>=0;col--){
                     if(ofd.getFieldList().at(col).getFieldDescribe().contains(text,Qt::CaseInsensitive)||ofd.getFieldList().at(col).getFieldName().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(rowcurrent,col);
+                        ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
                         return;
@@ -6834,7 +7243,7 @@ void MainWindow::columnJump(int type){
                 col+=1;
                 for(;col<ptr_table->columnCount();col++){
                     if(ptr_table->horizontalHeaderItem(col)->text().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(rowcurrent,col);
+                        ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
                         return;
@@ -6858,7 +7267,7 @@ void MainWindow::columnJump(int type){
                 col-=1;
                 for(;col>=0;col--){
                     if(ptr_table->horizontalHeaderItem(col)->text().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(rowcurrent,col);
+                        ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
                         return;
@@ -6892,7 +7301,7 @@ void MainWindow::columnJump(int type){
                 col+=1;
                 for(;col<ptr_table->columnCount();col++){
                     if(ptr_table->horizontalHeaderItem(col)->text().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(rowcurrent,col);
+                        ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
                         return;
@@ -6916,7 +7325,7 @@ void MainWindow::columnJump(int type){
                 col-=1;
                 for(;col>=0;col--){
                     if(ptr_table->horizontalHeaderItem(col)->text().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(rowcurrent,col);
+                        ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
                         return;
@@ -6935,3 +7344,218 @@ void MainWindow::columnJump(int type){
     dataBlocked=false;
 }
 
+/**
+ * @brief MainWindow::on_actionwebsite_triggered 打开我的网站
+ */
+void MainWindow::on_actionwebsite_triggered()
+{
+    QDesktopServices::openUrl(QUrl(WEBSITE_INFO));
+}
+
+/**
+ * @brief MainWindow::on_actionmanual_triggered 打开在线手册
+ */
+void MainWindow::on_actionmanual_triggered()
+{
+    QDesktopServices::openUrl(QUrl(MANUAL_INFO));
+}
+
+/**
+  在地址栏输入地址回车后的事件
+*/
+void MainWindow::on_currentOpenFilePathLineText_returnPressed()
+{
+    statusBar_disPlayMessage("");
+    //获取当前文件路径
+    QString  file = ui->currentOpenFilePathLineText->text();
+    if(file.length()==0){
+        statusBar_disPlayMessage("你可以复制文件路径到路径框后回车读取文件...");
+        return;
+    }
+    //判断是否是有效的文件
+    if(!Utils::isFileExist(file)){
+        statusBar_disPlayMessage("["+file+"}不是一个有效的文件路径,你可以复制文件路径到路径框后回车读取文件...");
+        return;
+    }
+    //如果没有忽略，则直接返回
+    if(!ignoreFileChangeAndOpenNewFile()){
+        return;
+    }
+    //是否正在加载数据中
+    if(isUpdateData){
+        statusBar_disPlayMessage("正在加载数据,请稍后再打开新的文件...");
+        return;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
+    //标记阻断的任务和文件加载标志后开始加载文件
+    dataBlocked=true;
+    isUpdateData=true;
+    initFile(file);
+    isUpdateData=false;
+    dataBlocked=false;
+}
+
+/**
+ * @brief MainWindow::on_pushButtonPageFirst_clicked前往首页
+ */
+void MainWindow::on_pushButtonPageFirst_clicked()
+{
+    if(currentPage==1){
+        statusBar_disPlayMessage("当前已在第一页...");
+    }
+    else{
+        currentPage=1;
+        pageJump(currentPage,0);
+    }
+}
+
+/**
+ * @brief MainWindow::on_pushButtonPagePrevious_clicked前往上一页
+ */
+void MainWindow::on_pushButtonPagePrevious_clicked()
+{
+    if(currentPage>1){
+        currentPage--;
+        pageJump(currentPage,0);
+    }
+    else{
+        statusBar_disPlayMessage("当前已在第一页...");
+    }
+}
+
+/**
+ * @brief MainWindow::on_pushButtonPageNext_clicked前往下一页
+ */
+void MainWindow::on_pushButtonPageNext_clicked()
+{
+    statusBar_disPlayMessage("");
+    if(currentPage<pageCount){
+        currentPage++;
+        pageJump(currentPage,0);
+    }
+    else{
+        statusBar_disPlayMessage("当前已在最后一页...");
+    }
+}
+
+/**
+ * @brief MainWindow::on_pushButtonPageLast_clicked前往末页
+ */
+void MainWindow::on_pushButtonPageLast_clicked()
+{
+    if(currentPage==pageCount){
+        statusBar_disPlayMessage("当前已在最后一页...");
+    }
+    else{
+        currentPage=pageCount;
+        pageJump(currentPage,0);
+    }
+}
+
+/**
+ * @brief MainWindow::on_pushButtonGo_clicked前往某一页
+ */
+void MainWindow::on_pushButtonGo_clicked()
+{
+    statusBar_disPlayMessage("");
+    bool ok=false;
+    int pageNum=ui->pageText->text().toInt(&ok,10);
+    if(ok){
+        if(pageNum<1){
+            statusBar_disPlayMessage("页码不能小于0...");
+        }
+        else if(pageNum>pageCount){
+            statusBar_disPlayMessage(QString("当前打开的文件一共有%1页,输入的页码超过了最大值...").arg(pageCount));
+        }
+        else{
+            currentPage=pageNum;
+            pageJump(currentPage,0);
+        }
+    }
+    else{
+        statusBar_disPlayMessage("请在页码输入框输入有效的页码数值后跳转...");
+    }
+}
+
+/**
+ * @brief MainWindow::pageJump 跳页函数
+ * @param page
+ * @param scrollIndex 滚动位置,-1滚动到页尾部,0滚动到页首
+ */
+
+void MainWindow:: pageJump(int page,int scrollIndex){
+    if(page>pageCount){
+        statusBar_disPlayMessage("页面计算错误,请检查");
+        return;
+    }
+    else{
+        currentPage=page;
+    }
+    //按钮禁用逻辑
+    if(page==1){
+        ui->pushButtonPageFirst->setEnabled(false);
+        ui->pushButtonPagePrevious->setEnabled(false);
+        ui->pushButtonPageNext->setEnabled(true);
+        ui->pushButtonPageLast->setEnabled(true);
+    }
+    else if (page==pageCount){
+        ui->pushButtonPageFirst->setEnabled(true);
+        ui->pushButtonPagePrevious->setEnabled(true);
+        ui->pushButtonPageNext->setEnabled(false);
+        ui->pushButtonPageLast->setEnabled(false);
+    }
+    else{
+        ui->pushButtonPageFirst->setEnabled(true);
+        ui->pushButtonPagePrevious->setEnabled(true);
+        ui->pushButtonPageNext->setEnabled(true);
+        ui->pushButtonPageLast->setEnabled(true);
+    }
+    //计算本页行数
+    int currentPageRowSize=0;
+    if(currentPage<pageCount){
+        currentPageRowSize=pageRowSize;
+    }
+    else{
+        //数据类型插入点
+        if(currentOpenFileType==1){
+            currentPageRowSize=ofdFileContentQByteArrayList.count()-(pageRowSize*(pageCount-1));
+        }
+        else if(currentOpenFileType==2){
+            currentPageRowSize=csvFileContentQByteArrayList.count()-(pageRowSize*(pageCount-1));
+        }
+        else if(currentOpenFileType==3){
+            currentPageRowSize=fixedContenQByteArrayList.count()-(pageRowSize*(pageCount-1));
+        }
+    }
+    //清空表格内容和加载记录
+    clear_Table_Contents();
+    rowHasloaded.clear();
+    //重设表格行数
+    ptr_table->setRowCount(currentPageRowSize);
+    //显示行号
+    ui->pageText->setText(QString::number(page));
+    //显示描述
+    statusBar_disPlayMessage(QString("第%1页,本页记录数%2行").arg(page).arg(currentPageRowSize));
+    //加载本页数据
+    //数据类型插入点
+    if(currentOpenFileType==1){
+        display_OFDTable();
+    }
+    else if(currentOpenFileType==2){
+        display_CSVTable();
+    }
+    else if(currentOpenFileType==3){
+        display_FIXEDTable();
+    }
+    //跳转位置
+    if(scrollIndex==-1){
+        ptr_table->scrollToBottom();
+    }
+    else if(scrollIndex==0){
+        ptr_table->scrollToTop();
+    }
+}
