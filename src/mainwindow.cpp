@@ -3839,7 +3839,9 @@ void MainWindow::addOFDRowData(int location){
         //开始获取剪切板内容
         QClipboard *board = QApplication::clipboard();
         //对换行符切割
-        QStringList data=board->text().split("\r\n");
+        //不同操作系统系统复制过来的数据，换行符号不同，我们这里做统一替换
+        //一个坑爹的问题
+        QStringList data=board->text().replace("\r\n","\n").replace("\r","\n").split("\n");
         //开始进行数据比对
         if(data.count()<3||!data.at(0).startsWith("OFD")){
             statusBar_disPlayMessage("剪切板上无有效的OFD专用数据，无法插入!");
@@ -3914,6 +3916,8 @@ void MainWindow::addOFDRowData(int location){
                         ptr_table->setRangeSelected(addRange,true);
                         fileChanged=true;
                         dataBlocked=false;
+                        //强制触发下刷新，避免显示数据不完整
+                        acceptVScrollValueChanged(0);
                         //更新总记录数
                         statusBar_display_rowsCount(rowCount);
                         statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(dataCount));
@@ -3943,8 +3947,6 @@ void MainWindow::addOFDRowData(int location){
                         int targetPage=(fIndex/pageRowSize)+1;
                         int targetTableIndex=(fIndex%pageRowSize);
                         pageJump(targetPage);
-                        //强制触发下刷新，避免显示数据不完整
-                        acceptVScrollValueChanged(0);
                         //滚动并选中第一行
                         ptr_table->setCurrentCell(targetTableIndex,0);
                         QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(targetTableIndex,0,targetTableIndex,ptr_table->columnCount()-1);
@@ -3956,6 +3958,8 @@ void MainWindow::addOFDRowData(int location){
                         else{
                             statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,已选中插入的第一行数据,记得保存文件哟...").arg(dataCount));
                         }
+                        //强制触发下刷新，避免显示数据不完整
+                        acceptVScrollValueChanged(0);
                         this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
                     }
                     //////////////////////////////////////////////////////////
@@ -6787,6 +6791,9 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
         }
         //如果多个选择器也没跨列，则允许进行统计
         if(!crossColumnFlag&&selectedAllItemCount>1){
+            //如果选择了多个单元格但是没有跨列，更新当前列，以免导致右键菜单批量更新某列数据时定位列错误
+            //当前所在列
+            tableColCurrent=itemsRange.at(0).rightColumn();
             //需要统计的列
             int editCol=itemsRange.at(0).leftColumn();
             //总和
@@ -7554,8 +7561,12 @@ void MainWindow:: pageJump(int page,int scrollIndex){
     //跳转位置
     if(scrollIndex==-1){
         ptr_table->scrollToBottom();
+        //强制触发下刷新，避免显示数据不完整
+        acceptVScrollValueChanged(0);
     }
     else if(scrollIndex==0){
         ptr_table->scrollToTop();
+        //强制触发下刷新，避免显示数据不完整
+        acceptVScrollValueChanged(0);
     }
 }
