@@ -33,6 +33,8 @@ private:
     int fieldCount;
     //每行长度
     int rowLength;
+    //记录总行数的记录数的长度
+    int rowCountLength;
     //字段信息
     QList <OFDFieldDefinition> fieldList;
 
@@ -50,6 +52,8 @@ public:
     void setMessage(QString message);
     void setFieldList(QList <OFDFieldDefinition> list);
 
+    int getRowCountLength() const;
+    void setRowCountLength(int value);
 };
 
 #endif // OFDFILEDEFINITION_H

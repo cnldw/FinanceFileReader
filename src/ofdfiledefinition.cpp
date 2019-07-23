@@ -16,9 +16,19 @@
 #include "src/ofdfiledefinition.h"
 
 
+int OFDFileDefinition::getRowCountLength() const
+{
+    return rowCountLength;
+}
+
+void OFDFileDefinition::setRowCountLength(int value)
+{
+    rowCountLength = value;
+}
+
 OFDFileDefinition::OFDFileDefinition()
 {
-
+    
 }
 
 int OFDFileDefinition::getFieldCount()const

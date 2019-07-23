@@ -823,6 +823,23 @@ void MainWindow::load_OFDDefinition(){
                             //写入该文件的配置
                             //如果记录完整没错误则写入
                             if(okFlag){
+                                //记录数的长度/////////20190723///////////
+                                QString rowcountLengthStr=ofdIni.value(interfaceList.at(i)+"/ROWCOUNTLENGTH").toString();
+                                if(rowcountLengthStr.isEmpty()){
+                                    //找不到就默认设置为8
+                                    ofd.setRowCountLength(8);
+                                }else{
+                                    bool ok;
+                                    int rowcountLengthInt=rowcountLengthStr.toInt(&ok,10);
+                                    if(ok&&rowcountLengthInt>0){
+                                        ofd.setRowCountLength(rowcountLengthInt);
+                                    }
+                                    else{
+                                        //读取配置错误也设置为8
+                                        ofd.setRowCountLength(8);
+                                    }
+                                }
+                                ///////////////////////////
                                 ofd.setUseAble(okFlag);
                                 ofd.setMessage(message);
                                 ofd.setFieldCount(fieldCount);
@@ -1645,6 +1662,7 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
         versionName=(info.getVersion().isEmpty()?"400":info.getVersion());
     }
     //读取文件结束位置
+    //第10行文件字段记录数
     int lineEnd=9;
     int countNumberFromFile=0;
     QString versionFromFile="";
@@ -3564,8 +3582,8 @@ void MainWindow::deleteRowDataFromFileAndTable(){
             ofdFileContentQByteArrayList.clear();
             //清空行加载记录
             rowHasloaded.clear();
-            //更新OFD记录数标记--在文件头的最后一行，设置为8为前补充0的记录数总和
-            ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), 8, 10, QLatin1Char('0')));
+            //更新OFD记录数标记--在文件头的最后一行
+            ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), ofd.getRowCountLength(), 10, QLatin1Char('0')));
             //清空比对器内容
             compareData.clear();
             //更新提示-更新主窗口标题
@@ -3599,8 +3617,8 @@ void MainWindow::deleteRowDataFromFileAndTable(){
                 }
                 //删除所有行加载记录，因为删除某行后所有比删除的行大的行的加载记录都错位了,还是老实再加载一下吧，当然也可以重新校准哪些行已经加载了，但是会很麻烦
                 rowHasloaded.clear();
-                //更新OFD记录数标记--在文件头的最后一行，设置为8为前补充0的记录数总和
-                ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), 8, 10, QLatin1Char('0')));
+                //更新OFD记录数标记--在文件头的最后一行
+                ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), ofd.getRowCountLength(), 10, QLatin1Char('0')));
                 //重新统计目前文件行数
                 int rowCount=ofdFileContentQByteArrayList.count();
                 //重新统计页数
@@ -3799,8 +3817,8 @@ void MainWindow::addOFDRowData(int location){
             newLine.append(QChar(' '));
         }
         ofdFileContentQByteArrayList.insert(insertIndexInContent,qCompress(newLine,dataCompressLevel));
-        //更新OFD记录数标记--在文件头的最后一行，设置为8为前补充0的记录数总和
-        ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), 8, 10, QLatin1Char('0')));
+        //更新OFD记录数标记--在文件头的最后一行
+        ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), ofd.getRowCountLength(), 10, QLatin1Char('0')));
         //新的总行数
         int rowCount=ofdFileContentQByteArrayList.count();
         //添加完数据没有引发分页
@@ -3894,8 +3912,8 @@ void MainWindow::addOFDRowData(int location){
                         dataQByteArrayList.removeAt(j);
                         indexAdd++;
                     }
-                    //更新OFD记录数标记--在文件头的最后一行，设置为8为前补充0的记录数总和
-                    ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), 8, 10, QLatin1Char('0')));
+                    //更新OFD记录数标记--在文件头的最后一行
+                    ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), ofd.getRowCountLength(), 10, QLatin1Char('0')));
                     //新的总行数
                     int rowCount=ofdFileContentQByteArrayList.count();
                     ///////////////数据插入完毕处理页面跳转显示的问题///////////////////
