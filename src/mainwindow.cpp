@@ -4863,12 +4863,12 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                         dataBlocked=false;
                         return;
                     }
-                    else if(row%500==0){
-                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                        qApp->processEvents();
-                    }
                 }
                 beginCol=colCount-1;
+                if(row%500==0){
+                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                    qApp->processEvents();
+                }
             }
         }
         if(currentOpenFileType==2){
@@ -4889,12 +4889,12 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                         dataBlocked=false;
                         return;
                     }
-                    else if(row%500==0){
-                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                        qApp->processEvents();
-                    }
                 }
                 beginCol=colCount-1;
+                if(row%500==0){
+                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                    qApp->processEvents();
+                }
             }
         }
         if(currentOpenFileType==3){
@@ -4914,12 +4914,12 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                         dataBlocked=false;
                         return;
                     }
-                    else if(row%500==0){
-                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                        qApp->processEvents();
-                    }
                 }
                 beginCol=colCount-1;
+                if(row%500==0){
+                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                    qApp->processEvents();
+                }
             }
         }
         //如果不是第一页
@@ -4937,6 +4937,8 @@ void MainWindow::on_pushButtonPreSearch_clicked()
             dataBlocked=false;
             ui->pushButtonPreSearch->setEnabled(true);
             QApplication::restoreOverrideCursor();
+            //搜索到第一页最顶部还没搜到内容，break
+            break;
         }
     }
 }
@@ -5028,12 +5030,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                         dataBlocked=false;
                         return;
                     }
-                    else if(row%500==0){
-                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                        qApp->processEvents();
-                    }
                 }
                 beginCol=0;
+                if(row%500==0){
+                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                    qApp->processEvents();
+                }
             }
         }
         if(currentOpenFileType==2){
@@ -5054,12 +5056,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                         dataBlocked=false;
                         return;
                     }
-                    else if(row%500==0){
-                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                        qApp->processEvents();
-                    }
                 }
                 beginCol=0;
+                if(row%500==0){
+                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                    qApp->processEvents();
+                }
             }
         }
         if(currentOpenFileType==3){
@@ -5079,12 +5081,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                         dataBlocked=false;
                         return;
                     }
-                    else if(row%500==0){
-                        statusBar_disPlayMessage("正在搜索,请耐心等待...");
-                        qApp->processEvents();
-                    }
                 }
                 beginCol=0;
+                if(row%500==0){
+                    statusBar_disPlayMessage("正在搜索,请耐心等待...");
+                    qApp->processEvents();
+                }
             }
         }
         //不是最后一页
@@ -5104,6 +5106,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
             dataBlocked=false;
             ui->pushButtonNextSearch->setEnabled(true);
             QApplication::restoreOverrideCursor();
+            break;
         }
     }
 }
