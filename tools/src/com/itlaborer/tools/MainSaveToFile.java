@@ -95,7 +95,7 @@ public class MainSaveToFile {
 								String code = elementCurrentRow.child(5).text();
 								String name = elementCurrentRow.child(4).text();
 								// agency组装
-								String agenvy = "[" + code + "]\r\nAGENCYNO=" + code + "\r\nIVERSION=400\r\nNAME="
+								String agenvy = "[" + code + "]\r\nAGENCYNO=" + code + "\r\nNAME="
 										+ companyName + "-" + code;
 								sbAgency.append(agenvy).append("\r\n");
 								// csv组装
@@ -115,7 +115,7 @@ public class MainSaveToFile {
 							try {
 								// agency组装
 								String agenvy = "[" + elementcode1.child(1).text() + "]\r\nAGENCYNO="
-										+ elementcode1.child(1).text() + "\r\nIVERSION=400\r\nNAME=" + companyName + "-"
+										+ elementcode1.child(1).text() + "\r\nNAME=" + companyName + "-"
 										+ elementcode1.child(0).text();
 								sbAgency.append(agenvy).append("\r\n");
 								// csv组装
@@ -131,7 +131,7 @@ public class MainSaveToFile {
 							try {
 								// agency组装
 								String agenvy = "[" + elementcode2.child(1).text() + "]\r\nAGENCYNO="
-										+ elementcode2.child(1).text() + "\r\nIVERSION=400\r\nNAME=" + companyName + "-"
+										+ elementcode2.child(1).text() + "\r\nNAME=" + companyName + "-"
 										+ elementcode2.child(0).text();
 								sbAgency.append(agenvy).append("\r\n");
 								// csv组装
@@ -147,7 +147,7 @@ public class MainSaveToFile {
 							try {
 								// agency组装
 								String agency = "[" + elementcode3.child(1).text() + "]\r\nAGENCYNO="
-										+ elementcode3.child(1).text() + "\r\nIVERSION=400\r\nNAME=" + companyName + "-"
+										+ elementcode3.child(1).text() + "\r\nNAME=" + companyName + "-"
 										+ elementcode3.child(0).text();
 								sbAgency.append(agency).append("\r\n");
 								// csv组装
@@ -163,7 +163,7 @@ public class MainSaveToFile {
 							try {
 								// agency组装
 								String agency = "[" + elementcode4.child(1).text() + "]\r\nAGENCYNO="
-										+ elementcode4.child(1).text() + "\r\nIVERSION=400\r\nNAME=" + companyName + "-"
+										+ elementcode4.child(1).text() + "\r\nNAME=" + companyName + "-"
 										+ elementcode4.child(0).text();
 								sbAgency.append(agency).append("\r\n");
 								// csv组装
@@ -179,7 +179,7 @@ public class MainSaveToFile {
 							try {
 								// agency组装
 								String agency = "[" + elementcode5.child(1).text() + "]\r\nAGENCYNO="
-										+ elementcode5.child(1).text() + "\r\nIVERSION=400\r\nNAME=" + companyName + "-"
+										+ elementcode5.child(1).text() + "\r\nNAME=" + companyName + "-"
 										+ elementcode5.child(0).text();
 								sbAgency.append(agency).append("\r\n");
 								// csv组装
