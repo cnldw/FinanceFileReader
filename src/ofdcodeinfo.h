@@ -26,12 +26,10 @@ public:
     QString getVersion()const;
     QString getName()const;
     void setCode(QString name);
-    void setVersion(QString version);
     void setName(QString name);
 
 private:
     QString code;
-    QString version;
     QString name;
 };
 

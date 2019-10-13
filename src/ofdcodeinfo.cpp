@@ -23,17 +23,11 @@ OFDCodeInfo::OFDCodeInfo()
 QString OFDCodeInfo::getCode()const{
     return this->code;
 }
-QString OFDCodeInfo::getVersion()const{
-    return this->version;
-}
 QString OFDCodeInfo::getName()const{
     return this->name;
 }
 void OFDCodeInfo::setCode(QString code){
     this->code=code;
-}
-void OFDCodeInfo::setVersion(QString version){
-    this->version=version;
 }
 void OFDCodeInfo::setName(QString name){
     this->name=name;
