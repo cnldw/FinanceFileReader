@@ -31,10 +31,14 @@ private:
     QString message;
     //字段总和
     int fieldCount;
+    //字典类型
+    QString dictionary;
     //每行长度
     int rowLength;
     //记录总行数的记录数的长度
     int rowCountLength;
+    // 文件说明
+    QString describe;
     //字段信息
     QList <OFDFieldDefinition> fieldList;
 
@@ -54,6 +58,10 @@ public:
 
     int getRowCountLength() const;
     void setRowCountLength(int value);
+    QString getDescribe() const;
+    void setDescribe(const QString &value);
+    QString getDictionary() const;
+    void setDictionary(const QString &value);
 };
 
 #endif // OFDFILEDEFINITION_H

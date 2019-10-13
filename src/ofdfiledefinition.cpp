@@ -26,6 +26,26 @@ void OFDFileDefinition::setRowCountLength(int value)
     rowCountLength = value;
 }
 
+QString OFDFileDefinition::getDescribe() const
+{
+    return describe;
+}
+
+void OFDFileDefinition::setDescribe(const QString &value)
+{
+    describe = value;
+}
+
+QString OFDFileDefinition::getDictionary() const
+{
+    return dictionary;
+}
+
+void OFDFileDefinition::setDictionary(const QString &value)
+{
+    dictionary = value;
+}
+
 OFDFileDefinition::OFDFileDefinition()
 {
     
