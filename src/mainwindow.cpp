@@ -106,6 +106,9 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("对于全是数值的列，选择同一列多行数据时，状态栏会自动对选择的数据进行求和，求平均数");
     tips.append("尝试使用本工具解析各种固定字符/字节长度文件吧，高效解析,且支持导出excel...");
     tips.append("尝试进行设置本程序,可以实现默认拖进文件时打开一个新窗口解析,默认使用精简模式打开程序,你的爱好你做主...");
+    tips.append("基金、银行理财领域的OFD文件,本程序都支持解析哟...");
+    tips.append("需要打开超大文件?,建议在设置里设置开启压缩模式和分页支持,支持的文件大小立即提升到GB级别...");
+    tips.append("本程序是业余无偿开发的,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
 
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
@@ -144,7 +147,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     //加载基金销售商和TA代码信息
     load_OFDCodeInfo();
     //加载OFD文件类别信息
-    load_OFDFileType();
+    load_OFDIndexFile();
     //加载各类OFD文件的定义
     load_OFDDefinition();
     //加载OFD字典
@@ -628,7 +631,6 @@ void MainWindow::load_OFDCodeInfo(){
         for(int i=0;i<agencyInfo.count();i++){
             OFDCodeInfo infoItem;
             infoItem.setCode(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString());
-            infoItem.setVersion(loadedCodeInfoIni.value(agencyInfo.at(i)+"/IVERSION").toString());
             infoItem.setName(loadedCodeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
             loadedOfdCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),infoItem);
         }
@@ -638,10 +640,10 @@ void MainWindow::load_OFDCodeInfo(){
 }
 
 /**
- * @brief MainWindow::load_OFDFileType 加载OFD的文件类别信息
+ * @brief MainWindow::load_OFDIndexFile 加载OFD的索引文件类别信息
  */
-void MainWindow::load_OFDFileType(){
-    QString fileTypeInipath=getConfigPath()+"OFD_FileType.ini";
+void MainWindow::load_OFDIndexFile(){
+    QString fileTypeInipath=getConfigPath()+"OFD_IndexFile.ini";
     if(Utils::isFileExist(fileTypeInipath)){
         //加载ini文件
         QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,nullptr);
@@ -658,20 +660,9 @@ void MainWindow::load_OFDFileType(){
             }
         }
         infoList.clear();
-        //读取OFDDATAFILE
-        fileTypeIni.beginGroup("OFDDATAFILE");
-        infoList =fileTypeIni.childKeys();
-        fileTypeIni.endGroup();
-        //遍历组OFDDATAFILE
-        if(infoList.count()>0){
-            for(int i=0;i<infoList.count();i++){
-                loadedOfdFileInfo.insert(infoList.at(i),fileTypeIni.value("OFDDATAFILE/"+infoList.at(i)).toString());
-            }
-        }
-        infoList.clear();
     }
     else{
-        statusBar_disPlayMessage(getConfigPath()+tr("OFD_FileType.ini配置丢失"));
+        statusBar_disPlayMessage(getConfigPath()+tr("OFD_IndexFile.ini配置丢失"));
     }
 }
 
@@ -681,26 +672,29 @@ void MainWindow::load_OFDFileType(){
 void MainWindow::load_OFDDictionary(){
     QString dictionaryInipath=getConfigPath()+"OFD_Dictionary.ini";
     if(Utils::isFileExist(dictionaryInipath)){
-        //读取配置使用UTF-8
-        //OFD字典解析直接按行解析即可,不再使用QSettings
-        QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
-        QFile dataFile(dictionaryInipath);
-        if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
-        {
-            QTextStream data(&dataFile);
-            QString line;
-            while (!data.atEnd())
-            {
-                line = data.readLine();
-                line=line.remove('\r').remove('\n');
-                //;开头的当作注释行
-                if(!line.startsWith(";")){
-                    ofdDictionary.addDictionary(line);
+        //加载ini文件
+        QSettings loadedDictionary(dictionaryInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        loadedDictionary.setIniCodec("UTF-8");
+        //获取所有fixed文件的配置信息，循环存储
+        QStringList dictionaryGroup=loadedDictionary.childGroups();
+        //查不到任何段落
+        if(dictionaryGroup.count()<1){
+            return;
+        }
+        //循环各个字典组
+        for(int i=0;i<dictionaryGroup.count();i++){
+            loadedDictionary.beginGroup(dictionaryGroup.at(i));
+            QStringList allkey=loadedDictionary.allKeys();
+            if(allkey.count()>0){
+                for (int j=0;j<allkey.count();j++){
+                    //循环插入字典
+                    //字典分组_key=a:xxxb:xxx
+                    ofdDictionary.addDictionary(dictionaryGroup.at(i)+"_"+allkey.at(j)+"="+loadedDictionary.value(allkey.at(j)).toString());
                 }
             }
-            dataFile.close();
+            loadedDictionary.endGroup();
         }
-        return;
     }
     else{
         statusBar_disPlayMessage(getConfigPath()+tr("OFD_Dictionary.ini配置丢失"));
@@ -718,21 +712,25 @@ void MainWindow::load_OFDDefinition(){
     QFileInfoList list = dirPath.entryInfoList();
     if(list.length()!=0){
         //循环检索config目录下可用的接口定义配置
-        //OFD开头ini结尾,形式类似于OFD_XXX_XXX.ini
+        //OFD开头ini结尾,形式类似于OFD_XXX.ini
         /*-------------------------------开启第一重循环,遍历config下的OFD配置文件-----------------------------------*/
         for (int f = 0; f < list.size(); f++)
         {
             QString fileName=list.at(f).fileName();
             QString fixName=fileName;
+            //排除几个文件
+            if(fileName=="OFD_CodeInfo.ini"||fileName=="OFD_Dictionary.ini"||fileName=="OFD_IndexFile.ini"){
+                continue;
+            }
             if(fileName.startsWith("OFD",Qt::CaseInsensitive)&&fileName.endsWith("ini",Qt::CaseInsensitive)){
                 //编辑加载文件
                 if(fixName.contains(".",Qt::CaseInsensitive)){
                     fixName=fixName.mid(0,fixName.indexOf("."));
                 }
                 QStringList nameList=fixName.split("_");
-                if(nameList.count()==3){
+                if(nameList.count()==2){
                     //加载ini文件
-                    QString prefixName=nameList.at(1)+"_"+nameList.at(2);
+                    QString prefixName=nameList.at(1);
                     QSettings ofdIni(getConfigPath()+fileName,QSettings::IniFormat,nullptr);
                     //目前仅接收UTF-8编码的配置文件
                     ofdIni.setIniCodec("UTF-8");
@@ -751,6 +749,18 @@ void MainWindow::load_OFDDefinition(){
                             //记录每行的长度，自动总数
                             int rowLength=0;
                             int fieldCount=0;
+                            //文件说明
+                            QString describe=ofdIni.value(interfaceList.at(i)+"/DESCRIBE").toString();
+                            if (!describe.isEmpty()){
+                                ofd.setDescribe(describe);
+                            }
+                            else{
+                                ofd.setDescribe("未配置说明的文件");
+                            }
+                            //字典类型
+                            QString dictionary=ofdIni.value(interfaceList.at(i)+"/DICTIONARY").toString();
+                            //设置解析字典类型
+                            ofd.setDictionary(dictionary.isEmpty()?"":dictionary);
                             //查找COUNT标记
                             QString countStr=ofdIni.value(interfaceList.at(i)+"/COUNT").toString();
                             if(countStr.isEmpty()){
@@ -882,6 +892,9 @@ void MainWindow::load_CSVDefinition(){
                 //目前仅接收UTF-8编码的配置文件
                 loadedCsvInfoIni.setIniCodec("UTF-8");
                 QStringList csvInfo=loadedCsvInfoIni.childGroups();
+                if(csvInfo.count()<1){
+                    continue;
+                }
                 //获取所有csv文件的配置信息，循环存储
                 for(int i=0;i<csvInfo.count();i++){
                     QString csvType=QString(csvInfo.at(i));
@@ -1074,6 +1087,9 @@ void MainWindow::load_FIXEDDefinition(){
                 loadedFixedInfoIni.setIniCodec("UTF-8");
                 //获取所有fixed文件的配置信息，循环存储
                 QStringList fixedInfo=loadedFixedInfoIni.childGroups();
+                if(fixedInfo.count()<1){
+                    continue;
+                }
                 //遍历所有组
                 for(int i=0;i<fixedInfo.count();i++){
                     //配置验证失败标志
@@ -1421,15 +1437,14 @@ void MainWindow::initFile(QString filePath){
             //从配置文件获取名称信息
             QString sendName=(loadedOfdCodeInfo.value(sendCode)).getName();
             QString recName=(loadedOfdCodeInfo.value(recCode)).getName();
-            QString fileTypeName=loadedOfdFileInfo.value(fileTypeCode);
             //刷新UI
             ui->lineEditSendCode->setText(sendCode);
             ui->lineEditRecCode->setText(recCode);
+            ui->labelFileTransferDate->setText("文件传递日期");
             ui->lineEditFileTransferDate->setText(dateInfo);
             ui->lineEditFileType->setText(fileTypeCode);
             ui->lineEditSenfInfo->setText(sendName);
             ui->lineEditRecInfo->setText(recName);
-            ui->lineEditFileDescribe->setText(fileTypeName);
             //判断是否是ok文件
             if(currentOpenFilePath.toUpper().endsWith(".OK")){
                 statusBar_disPlayMessage("这是一个OFD文件的OK文件,请解析原始数据文件...");
@@ -1452,7 +1467,7 @@ void MainWindow::initFile(QString filePath){
             }
             //记录从文件里读取的文件发送信息
             //此处开始加载OFD数据文件
-            load_ofdFile(sendCode,fileTypeCode);
+            load_ofdFile(fileTypeCode);
             return;
         }
     }
@@ -1460,28 +1475,27 @@ void MainWindow::initFile(QString filePath){
     if(fileName.length()>10&&fileName.startsWith("OF",Qt::CaseInsensitive))
     {
         //开始解析非OFD文件
-        QString nameBegin=fileName.left(3);
-        if(!loadedOfdIndexFileInfo.value(nameBegin).isEmpty()){
-            //检索到了文件头标识
-            //开始拆解文件名
-            QString fixName=fileName;
-            if(fixName.contains(".",Qt::CaseInsensitive)){
-                fixName=fixName.mid(0,fixName.indexOf("."));
-            }
-            //索引文件名处理完毕后，开始拆解文件名
-            QStringList nameList=fixName.split("_");
-            //正常的OFD索引文件应该有5段信息组成
-            if(nameList.count()!=4){
-                goto NOT_OF_FILE;
-            }
-            else{
+        //检索到了文件头标识
+        //开始拆解文件名
+        QString fixName=fileName;
+        if(fixName.contains(".",Qt::CaseInsensitive)){
+            fixName=fixName.mid(0,fixName.indexOf("."));
+        }
+        //索引文件名处理完毕后，开始拆解文件名
+        QStringList nameList=fixName.split("_");
+        //正常的OFD索引文件应该有4段信息组成
+        if(nameList.count()!=4){
+            goto NOT_OF_FILE;
+        }
+        if(!loadedOfdIndexFileInfo.value(nameList.at(0)).isEmpty()){
+            {
                 /*开始初步分析文件*/
                 //从文件头获取各种信息
                 //Code
                 QString sendCode=nameList.at(1);
                 QString recCode=nameList.at(2);
                 QString dateInfo=nameList.at(3);
-                QString fileIndexTypeCode=nameBegin;
+                QString fileIndexTypeCode=nameList.at(0);
                 //名称信息
                 QString sendName=loadedOfdCodeInfo.value(sendCode).getName();
                 QString recName=loadedOfdCodeInfo.value(recCode).getName();
@@ -1498,6 +1512,9 @@ void MainWindow::initFile(QString filePath){
                 load_indexFile();
                 return;
             }
+        }
+        else{
+            qDebug()<<"索引识别异常";
         }
     }
     //非OF体系的文件，既不是OFD数据文件，又不是索引文件，则不放弃，检测下是否是csv或者定长文件
@@ -1584,8 +1601,21 @@ void MainWindow::load_indexFile(){
         QString line;
         int lineNumber=0;
         while (!data.atEnd())
-        {   QStringList lineList;
+        {
+            QStringList lineList;
             line = data.readLine();
+            //识别文件换行符~~~~~
+            if(lineNumber==0){
+                if(line.endsWith("\r\n")){
+                    ofdFileNewLine="\\r\\n";
+                }
+                else if(line.endsWith("\r")){
+                    ofdFileNewLine="\\r";
+                }
+                else if(line.endsWith("\n")){
+                    ofdFileNewLine="\\n";
+                }
+            }
             line=line.remove('\r').remove('\n');
             //文件体
             if(lineNumber>5){
@@ -1645,39 +1675,57 @@ void MainWindow::load_indexFile(){
 
 /**
  * @brief MainWindow::load_ofdFile OFD文件的加载方法
- * @param sendCode
  * @param fileType
  */
-void MainWindow::load_ofdFile(QString sendCode,QString fileType){
+void MainWindow::load_ofdFile(QString fileType){
+    qDebug()<<"开始加载的文件类别"<<fileType;
+    //当前打开的文件类别为1，OFD文件
     currentOpenFileType=1;
-    ui->labelFileTransferDate->setText("文件传递日期");
-    QString defineMapName;
-    QString versionName;
-    //获取发送方的默认版本配置
-    OFDCodeInfo info=loadedOfdCodeInfo.value(sendCode);
-    //如果获取不到，就默认使用400接口
-    if(info.getCode().isEmpty()){
-        versionName="400";
-    }else{
-        versionName=(info.getVersion().isEmpty()?"400":info.getVersion());
-    }
     //读取文件结束位置
-    //第10行文件字段记录数
+    //第10行文件字段记录数//先读取到这一行看能否获取到字段记录数
     int lineEnd=9;
+    //从文件中读取到的字段总和--用于稍后比对
     int countNumberFromFile=0;
+    //从文件中读取到的文件版本号--用于稍后比对
     QString versionFromFile="";
+    //从文件中读取到的字段列表-用于稍后比对
     QStringList fieldNameFromFile;
+    //从文件中读取到的第一行数据的长度,如果是空文件就赋值-1
+    int firstLineDateLenght=-1;
+    //开始准备打开文件
     QFile dataFile(currentOpenFilePath);
+    //适用于OFD文件的编码方式
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
     {
         QTextStream data(&dataFile);
         QString line;
         int lineNumber=0;
         while (!data.atEnd())
-        {   QStringList lineList;
+        {
+            //记录文件内容
+            QStringList lineList;
             line = data.readLine();
-            line=line.remove('\r').remove('\n').trimmed();
-            //文件体
+            //识别文件换行符~~~~~
+            if(lineNumber==0){
+                if(line.endsWith("\r\n")){
+                    ofdFileNewLine="\\r\\n";
+                }
+                else if(line.endsWith("\r")){
+                    ofdFileNewLine="\\r";
+                }
+                else if(line.endsWith("\n")){
+                    ofdFileNewLine="\\n";
+                }
+            }
+            //第一行数据不trim
+            if(lineNumber==lineEnd&&lineNumber!=9){
+                //数据行不能trim
+                line=line.remove('\r').remove('\n');
+            }
+            else{
+                line=line.remove('\r').remove('\n').trimmed();
+            }
             lineList.append(line);
             //文件的第二行是文件版本
             if(lineNumber==1){
@@ -1685,11 +1733,13 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                 //获取不到版本号，退出
                 if(versionFromFile.isEmpty()){
                     currentOpenFileType=-1;
+                    dataFile.close();
                     statusBar_disPlayMessage("解析失败,未从文件第2行读取到OFD文件的版本号信息");
                     return;
                 }
             }
             //文件的第10行记录了该文件有多少个字段
+            //如果读取本行成功，则延长读取结束到第一行数据
             if(lineNumber==9){
                 QString count=line;
                 bool flag=false;
@@ -1697,16 +1747,41 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                 if(!flag)
                 {
                     currentOpenFileType=-1;
-                    statusBar_disPlayMessage("解析失败,从文件第10行读取接口字段总数失败,请检查文件");
+                    dataFile.close();
+                    statusBar_disPlayMessage("解析失败,从文件第10行读取该文件接口字段总数失败,请检查文件");
                     return;
                 }else{
-                    //如果读取记录数成功,则延长结束行,读取文件的字段记录
-                    lineEnd+=countNumberFromFile;
+                    //如果读取记录数成功,则延长结束行,读取文件的字段记录,读取到第一个数据行结束
+                    //读取第一个记录行的长度，方便稍后比对文件解析
+                    //字段列表结束下一行是记录数，再下一行是第一行数据
+                    lineEnd=lineEnd+countNumberFromFile+2;
                 }
             }
-            //从第11行开始,为字段名字
-            if(lineNumber>9){
+            //从第11行开始,为字段名字-直至设定的结束行的前两行
+            if(lineNumber>9&&lineNumber<lineEnd-1){
                 fieldNameFromFile.append(line);
+            }
+            //读取到了文件记录数
+            if(lineNumber>9&&lineNumber==lineEnd-1){
+                bool dataCountOk=false;
+                int dataCount=line.toInt(&dataCountOk,10);
+                if(dataCountOk){
+                    //没有数据行，不再循环读取下一行数据行了
+                    if(dataCount<1){
+                        break;
+                    }
+                }
+                else{
+                    currentOpenFileType=-1;
+                    dataFile.close();
+                    statusBar_disPlayMessage("解析失败,文件数据记录数["+line+"]不是有效的数值,请检查文件是否合法");
+                    return;
+                }
+            }
+            //读取到了第一行记录，哈哈哈
+            if(lineNumber>9&&lineNumber==lineEnd){
+                //记录到了文件记录数
+                firstLineDateLenght=line.toLocal8Bit().size();
             }
             lineNumber++;
             //如果到达了终止点就跳出
@@ -1714,231 +1789,258 @@ void MainWindow::load_ofdFile(QString sendCode,QString fileType){
                 break;
             }
         }
+        //提取文件首部的重要信息结束,关闭文件
         dataFile.close();
         //判断是否读取到了一个空的文件
-        if(lineNumber<2){
+        //OFD文件行记录数最小也不可能小于10行
+        if(lineNumber<10){
             currentOpenFileType=-1;
             statusBar_disPlayMessage("无效的文件,请检查文件是否满足OFD文件规范...");
             return;
         }
-        defineMapName=versionName+"_"+versionFromFile+"_"+fileType;
-        QString useini="OFD_"+versionName+"_"+versionFromFile+".ini";
+        QString useini="OFD_"+versionFromFile+".ini";
         ui->lineEditUseIni->setText(useini);
         ui->lineEditUseIni->setToolTip(nullptr);
         //判断对应的配置文件是否存在
+        //从文件头部收取到了足够的信息后，我们要开始尝试用配置解析文件了
+        //根据配置和从文件里采集到的文件字段总数，首行数据的长度综合分析，决定使用哪个配置文件解析文件
         QString path=getConfigPath()+useini;
         if(Utils::isFileExist(path)){
-            ofd=loadedOfdDefinitionHash.value(defineMapName);
-            if(loadedOfdDefinitionHash.contains(defineMapName)) {
-                if(ofd.getUseAble()){
-                    if(fieldNameFromFile.count()!=countNumberFromFile){
-                        currentOpenFileType=-1;
-                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n从解析的文件第10行获取到的文件字段数为["+QString::number( countNumberFromFile)+"],但是读取字段时，却只读取到了["+QString::number(fieldNameFromFile.count())+"]个,请检查文件是否完整",QMessageBox::Ok,QMessageBox::Ok);
-                        return;
+            //失败原因列表
+            QList<OFDFaultCause> faultList;
+            //这里开始根据文件类别筛查基本满足要求的配置
+            //1.8.0改版后，同一个配置文件，比如OFD_22.ini,允许配置多个XX（比如07）文件的定义，所以需要二次确定要使用哪个配置
+            QHash<QString, OFDFileDefinition>::const_iterator i;
+            bool findConfigOk=false;
+            for (i = loadedOfdDefinitionHash.constBegin(); i != loadedOfdDefinitionHash.constEnd(); ++i) {
+                //判断是否以文件类型开头
+                QString ofdHashKey=i.key();
+                OFDFileDefinition ofdFileDefinition=i.value();
+                QString needCom=versionFromFile+"_"+fileType;
+                //标记使用的解析器
+                QString config="["+QString(ofdHashKey).replace(versionFromFile+"_","")+"]";
+                if(ofdHashKey.startsWith(needCom)){
+                    //先判断配置文件是否可用，不可用的配置直接忽略
+                    if(!ofdFileDefinition.getUseAble()){
+                        //首行数据不满足
+                        OFDFaultCause fault;
+                        fault.setConfig(config);
+                        fault.setCause("配置文件错误:"+ofdFileDefinition.getMessage());
+                        faultList.append(fault);
                     }
-                    //判断文件字段数是否和定义的一致
-                    if(ofd.getFieldCount()!=countNumberFromFile){
-                        //中登TA21版本04文件兼容20版本
-                        //特殊逻辑
-                        ///////////////////////////////////////////////////////////////
-                        if(fileType=="04" && versionFromFile=="21"){
-                            int fieldCount21=ofd.getFieldCount();
-                            defineMapName=versionName+"_20_"+fileType;
-                            useini="OFD_"+versionName+"_20.ini(20兼容)";
-                            ofd=loadedOfdDefinitionHash.value(defineMapName);
-                            if(ofd.getUseAble()){
-                                //兼容模式也无法解析
-                                if(fieldNameFromFile.count()!=countNumberFromFile){
-                                    currentOpenFileType=-1;
-                                    QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n无法解析这个04文件,请检查文件是否完整正确",QMessageBox::Ok,QMessageBox::Ok);
-                                    return;
-                                }
-                                else{
-                                    //检查字段总数是否和定义一致
-                                    if(ofd.getFieldCount()!=countNumberFromFile){
-                                        currentOpenFileType=-1;
-                                        QMessageBox::information(this,tr("提示"),QString("重要提示\r\n\r\n无法解析这个04文件,请检查文件是否符合接口定义,此文件目前即不满足20版本的%1个字段的要求,也不满足21版本的%2个字段的要求").arg(ofd.getFieldCount()).arg(fieldCount21),QMessageBox::Ok,QMessageBox::Ok);
-                                        return;
-                                    }
-                                    else{
-                                        //确认使用兼容解析
-                                        ui->lineEditUseIni->setText(useini);
-                                        ui->lineEditUseIni->setToolTip("20兼容表示这个文件里的版本号不是20版本\r\n但是文件内容实际和20版本字段一致");
-                                    }
-                                }
-                            }
-                            else{
-                                currentOpenFileType=-1;
-                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n缺失20版本的04文件配置,无法尝试使用兼容模式解析04,请检查配置",QMessageBox::Ok,QMessageBox::Ok);
-                                return;
+                    //判断字段数
+                    if(ofdFileDefinition.getFieldCount()==countNumberFromFile){
+                        //字段一致，开始循环遍历字段
+                        //遍历比对字段是否一致
+                        bool fieldOk=true;
+                        for(int ff=0;ff<fieldNameFromFile.count();ff++){
+                            if((QString(fieldNameFromFile.at(ff))).toUpper()!=ofdFileDefinition.getFieldList().at(ff).getFieldName().toUpper()){
+                                OFDFaultCause fault;
+                                fault.setConfig(config);
+                                fault.setCause("配置文件"+useini+"中的解析器"+config+"所代表的文件第["+QString::number(ff+1)+"]个字段是["+ofdFileDefinition.getFieldList().at(ff).getFieldName().toUpper()+"],但是从文件第["+QString::number(11+ff)+"]行获取到的字段是["+(QString(fieldNameFromFile.at(ff))).toUpper()+"] 字段名(忽略大小写)不一致,请检查文件是否满足接口标准,或者配置是否有误");
+                                faultList.append(fault);
+                                fieldOk=false;
+                                break;
                             }
                         }
-                        /////////////////////////////////////////////////////////////////
-                        //通用提示
-                        else{
-                            currentOpenFileType=-1;
-                            QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件有["+QString::number(ofd.getFieldCount())+"]个字段，但是从文件第10行获取到的文件字段数为["+QString::number( countNumberFromFile)+"],请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
-                            return;
-                        }
-                    }
-                    //遍历比对字段是否一致
-                    for(int ff=0;ff<fieldNameFromFile.count();ff++){
-                        if((QString(fieldNameFromFile.at(ff))).toUpper()!=ofd.getFieldList().at(ff).getFieldName().toUpper()){
-                            currentOpenFileType=-1;
-                            QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n解析文件失败,配置文件"+useini+"中记录的"+fileType+"文件第["+QString::number(ff)+"]个字段是["+ofd.getFieldList().at(ff).getFieldName().toUpper()+"],但是从文件第["+QString::number(11+ff)+"]行获取到的字段是["+(QString(fieldNameFromFile.at(ff))).toUpper()+"] 字段名(忽略大小写)不一致,请检查文件是否满足接口标准,或者配置是否有误",QMessageBox::Ok,QMessageBox::Ok);
-                            return;
-                        }
-                    }
-                    //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
-                    //如果不加次定义,默认取系统编码，因此在英文系统下读取可能会有问题
-                    QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
-                    QFile dataFile(currentOpenFilePath);
-                    //判断如果文件打开成功,则开始读取
-                    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
-                    {
-                        QTextStream data(&dataFile);
-                        int lineNumber=0;
-                        //数据行开始的位置,10行文件头,1行行记录标识+字段行数
-                        int beginIndex=11+ofd.getFieldCount();
-                        QString line;
-                        bool sucessFlag=true;
-                        bool mergeSucessFlag=false;
-                        bool mergeFlag=false;
-                        QApplication::setOverrideCursor(Qt::WaitCursor);
-                        while (!data.atEnd())
-                        {
-                            //如果此行记录小于数据开始行,则认为是文件头,存入文件头
-                            if(lineNumber<beginIndex){
-                                line = data.readLine();
-                                line=line.remove('\r').remove('\n');
-                                ofdFileHeaderQStringList.append(line);
-                            }
-                            //数据行,进行数据行分析
-                            else{
-                                line = data.readLine();
-                                line=line.remove('\r').remove('\n');
-                                //分析是否读取到了OFDCFEND结束标记,是的话直接跳出循环
-                                if(line.length()==8&&QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
+                        //如果字段也都一致
+                        if(fieldOk){
+                            //字段一致的情况下，判断是不是读取到了文件第一行，如果没有读取到文件第一行就是空文件，直接解析，如果解析到了第一行，再比较下长度，以防万一
+                            //首行长度非-1
+                            if(firstLineDateLenght!=-1)
+                            {
+                                //开始判断首行
+                                if(firstLineDateLenght ==ofdFileDefinition.getRowLength()){
+                                    //找到目标解析配置
+                                    ofd=ofdFileDefinition;
+                                    findConfigOk=true;
                                     break;
                                 }
-                                //获取本行的QByteArray
-                                QByteArray qbyteArrayRow=line.toLocal8Bit();
-                                //本行记录和接口约束的一致,存入
-                                if(qbyteArrayRow.size()==ofd.getRowLength()){
-                                    //数据压缩器
-                                    ofdFileContentQByteArrayList.append(qCompress(qbyteArrayRow,dataCompressLevel));
-                                }
-                                //如果本行数据长度和接口定义不一致,则尝试读取下一行,分析是否进行数据合并
                                 else{
-                                    //读取下一行
-                                    QString nextLine = data.readLine();
-                                    //如果下一行是文件结束标志,则不再进行合并尝试,直接报错
-                                    if(nextLine.length()==8&&QString::compare(nextLine,"OFDCFEND",Qt::CaseInsensitive)==0){
-                                        sucessFlag=false;
-                                        currentOpenFileType=-1;
-                                        statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
-                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
-                                        break;
+                                    //首行数据不满足
+                                    OFDFaultCause fault;
+                                    fault.setConfig(config);
+                                    fault.setCause("配置文件"+useini+"中的解析器"+config+"所代表的文件的文件每行数据长度是["+QString::number(ofdFileDefinition.getRowLength())+"],但是从文件第1行数据记录获取到的数据长度是["+QString::number(firstLineDateLenght)+"],请检查文件是否满足接口标准,或者配置是否有误");
+                                    faultList.append(fault);
+                                }
+                            }
+                            else{
+                                //空数据无法校验首行记录，直接认定
+                                ofd=ofdFileDefinition;
+                                findConfigOk=true;
+                                break;
+                            }
+                        }
+                    }
+                    else{
+                        OFDFaultCause fault;
+                        fault.setConfig(config);
+                        fault.setCause(QString("打开的文件的字段数是[%1]和配置文件中的[%2]不一致,请检查文件是否满足接口标准,或者配置是否有误").arg(QString::number(countNumberFromFile)).arg(QString::number(ofdFileDefinition.getFieldCount())));
+                        faultList.append(fault);
+                    }
+                }
+            }
+            if(findConfigOk){
+                ui->lineEditFileDescribe->setText(ofd.getDescribe());
+                //关键,此句强制将toLocal8Bit()函数转换为GB18030编码的字符数组
+                //如果不加此定义,默认取系统编码，因此在英文系统下读取可能会有问题
+                QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+                QFile dataFile(currentOpenFilePath);
+                //判断如果文件打开成功,则开始读取
+                if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                {
+                    QTextStream data(&dataFile);
+                    int lineNumber=0;
+                    //数据行开始的位置,10行文件头,1行行记录标识+字段行数
+                    int beginIndex=11+ofd.getFieldCount();
+                    QString line;
+                    bool sucessFlag=true;
+                    bool mergeSucessFlag=false;
+                    bool mergeFlag=false;
+                    QApplication::setOverrideCursor(Qt::WaitCursor);
+                    while (!data.atEnd())
+                    {
+                        //如果此行记录小于数据开始行,则认为是文件头,存入文件头
+                        if(lineNumber<beginIndex){
+                            line = data.readLine();
+                            line=line.remove('\r').remove('\n');
+                            ofdFileHeaderQStringList.append(line);
+                        }
+                        //数据行,进行数据行分析
+                        else{
+                            line = data.readLine();
+                            line=line.remove('\r').remove('\n');
+                            //分析是否读取到了OFDCFEND结束标记,是的话直接跳出循环
+                            if(line.length()==8&&QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
+                                break;
+                            }
+                            //获取本行的QByteArray
+                            QByteArray qbyteArrayRow=line.toLocal8Bit();
+                            //本行记录和接口约束的一致,存入
+                            if(qbyteArrayRow.size()==ofd.getRowLength()){
+                                //数据压缩器
+                                ofdFileContentQByteArrayList.append(qCompress(qbyteArrayRow,dataCompressLevel));
+                            }
+                            //如果本行数据长度和接口定义不一致,则尝试读取下一行,分析是否进行数据合并
+                            else{
+                                //读取下一行
+                                QString nextLine = data.readLine();
+                                //如果下一行是文件结束标志,则不再进行合并尝试,直接报错
+                                if(nextLine.length()==8&&QString::compare(nextLine,"OFDCFEND",Qt::CaseInsensitive)==0){
+                                    sucessFlag=false;
+                                    currentOpenFileType=-1;
+                                    statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
+                                    QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                    break;
+                                }
+                                //如果下一行不是结束标志OFDCFEND,则尝试进行数据合并
+                                else{
+                                    //弹窗确认--只弹窗一次
+                                    if(!mergeFlag){
+                                        DialogMergeTip * dialog2 = new DialogMergeTip(this);
+                                        dialog2->setWindowTitle("数据异常换行修复提示");
+                                        dialog2->setModal(true);
+                                        dialog2->exec();
+                                        //从弹窗中获取结果
+                                        mergeFlag=dialog2->getMergeFlag();
+                                        //模态的使用完毕删除
+                                        delete dialog2;
+                                        dialog2=nullptr;
                                     }
-                                    //如果下一行不是结束标志OFDCFEND,则尝试进行数据合并
-                                    else{
-                                        //弹窗确认--只弹窗一次
-                                        if(!mergeFlag){
-                                            DialogMergeTip * dialog2 = new DialogMergeTip(this);
-                                            dialog2->setWindowTitle("数据异常换行修复提示");
-                                            dialog2->setModal(true);
-                                            dialog2->exec();
-                                            //从弹窗中获取结果
-                                            mergeFlag=dialog2->getMergeFlag();
-                                            //模态的使用完毕删除
-                                            delete dialog2;
-                                            dialog2=nullptr;
+                                    //如果确认需要合并
+                                    //需要合并分三种情况上一行的长度+下一行的长度等于定义长度（人为插入的换行）
+                                    //异常加入的换行符计入了长度,可能为/r /n /r/n三种情况，占用长度为1，2
+                                    if (mergeFlag){
+                                        if((line+nextLine).toLocal8Bit().size()==(ofd.getRowLength()-0)){
+                                            ofdFileContentQByteArrayList.append(qCompress((line+nextLine).toLocal8Bit(),dataCompressLevel));
+                                            mergeSucessFlag=true;
+                                            fileChanged=true;
+                                        }else if((line+nextLine).toLocal8Bit().size()==(ofd.getRowLength()-1)){
+                                            ofdFileContentQByteArrayList.append(qCompress((line.append(" ").append(nextLine)).toLocal8Bit(),dataCompressLevel));
+                                            mergeSucessFlag=true;
+                                            fileChanged=true;
                                         }
-                                        //如果确认需要合并
-                                        //需要合并分三种情况上一行的长度+下一行的长度等于定义长度（人为插入的换行）
-                                        //异常加入的换行符计入了长度,可能为/r /n /r/n三种情况，占用长度为1，2
-                                        if (mergeFlag){
-                                            if((line+nextLine).toLocal8Bit().size()==(ofd.getRowLength()-0)){
-                                                ofdFileContentQByteArrayList.append(qCompress((line+nextLine).toLocal8Bit(),dataCompressLevel));
-                                                mergeSucessFlag=true;
-                                                fileChanged=true;
-
-                                            }else if((line+nextLine).toLocal8Bit().size()==(ofd.getRowLength()-1)){
-                                                ofdFileContentQByteArrayList.append(qCompress((line.append(" ").append(nextLine)).toLocal8Bit(),dataCompressLevel));
-                                                mergeSucessFlag=true;
-                                                fileChanged=true;
-                                            }
-                                            else if((line+nextLine).toLocal8Bit().size()==(ofd.getRowLength()-2)){
-                                                ofdFileContentQByteArrayList.append(qCompress((line.append("  ").append(nextLine)).toLocal8Bit(),dataCompressLevel));
-                                                mergeSucessFlag=true;
-                                                fileChanged=true;
-                                            }
-                                            //合并
-                                            else{
-                                                sucessFlag=false;
-                                                mergeSucessFlag=false;
-                                                currentOpenFileType=-1;
-                                                statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
-                                                QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
-                                                break;
-                                            }
+                                        else if((line+nextLine).toLocal8Bit().size()==(ofd.getRowLength()-2)){
+                                            ofdFileContentQByteArrayList.append(qCompress((line.append("  ").append(nextLine)).toLocal8Bit(),dataCompressLevel));
+                                            mergeSucessFlag=true;
+                                            fileChanged=true;
                                         }
-                                        //如果放弃合并,则放弃读取
+                                        //合并
                                         else{
                                             sucessFlag=false;
+                                            mergeSucessFlag=false;
                                             currentOpenFileType=-1;
                                             statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
                                             QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                             break;
                                         }
                                     }
+                                    //如果放弃合并,则放弃读取
+                                    else{
+                                        sucessFlag=false;
+                                        currentOpenFileType=-1;
+                                        statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
+                                        QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(qbyteArrayRow.size())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
+                                        break;
+                                    }
                                 }
                             }
-                            lineNumber++;
-                            //为了防止UI卡死,进行循环读取文件时,考虑支持下窗口事件接收
-                            //每读取1000行更新下窗口事件
-                            if((lineNumber%1000)==0){
-                                statusBar_disPlayMessage(QString("文件读取中,已读取数据记录%1行").arg(QString::number(lineNumber)));
-                                qApp->processEvents();
-                            }
                         }
-                        QApplication::restoreOverrideCursor();
-                        dataFile.close();
-                        //如果读取是成功的则开始解析
-                        if(sucessFlag){
-                            //是否发生了合并
-                            if(mergeSucessFlag){
-                                this->setWindowTitle(appName+"-"+currentFileName+"-文件修复待保存");
-                            }
-                            statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行");
-                            init_OFDTable();
+                        lineNumber++;
+                        //为了防止UI卡死,进行循环读取文件时,考虑支持下窗口事件接收
+                        //每读取1000行更新下窗口事件
+                        if((lineNumber%1000)==0){
+                            statusBar_disPlayMessage(QString("文件读取中,已读取数据记录%1行").arg(QString::number(lineNumber)));
+                            qApp->processEvents();
                         }
-                        //如果失败了,则释放内存
-                        //此处很重要,是否启用文件另存使用了ofdFileHeaderQStringList是否为空的判断
-                        else{
-                            ofdFileHeaderQStringList.clear();
-                            ofdFileContentQByteArrayList.clear();
+                    }
+                    QApplication::restoreOverrideCursor();
+                    dataFile.close();
+                    //如果读取是成功的则开始解析
+                    if(sucessFlag){
+                        //是否发生了合并
+                        if(mergeSucessFlag){
+                            this->setWindowTitle(appName+"-"+currentFileName+"-文件修复待保存");
                         }
-                    }else{
-                        currentOpenFileType=-1;
-                        statusBar_disPlayMessage("解析失败:文件读取失败,请重试...");
-                        return;
+                        statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行");
+                        init_OFDTable();
+                    }
+                    //如果失败了,则释放内存
+                    //此处很重要,是否启用文件另存使用了ofdFileHeaderQStringList是否为空的判断
+                    else{
+                        ofdFileHeaderQStringList.clear();
+                        ofdFileContentQByteArrayList.clear();
                     }
                 }else{
                     currentOpenFileType=-1;
-                    statusBar_disPlayMessage("解析失败:配置文件"+path+"中"+fileType+"文件的定义存在错误"+ofd.getMessage());
+                    statusBar_disPlayMessage("解析失败:文件读取失败,请重试...");
                     return;
                 }
-            }else{
+            }
+            else{
                 currentOpenFileType=-1;
-                statusBar_disPlayMessage("解析失败:未在"+path+"配置中找到"+fileType+"文件的定义,请配置...");
+                //显示失败原因
+                if(faultList.count()>0){
+                    //调用展示OFD加载失败的函数
+                    statusBar_disPlayMessage("配置文件["+useini+"]无法解析该文件,请参阅错误提示检查文件或修正配置...");
+                    display_OFDFaultCause(useini,faultList);
+                }
+                //如果为解析成功，且失败原因为0，则说明配置文件里压根没合适的配置
+                else{
+                    statusBar_disPlayMessage("配置文件["+useini+"]无法解析该文件,请检查文件或在配置文件中新增["+fileType+"]配置段...");
+                }
                 return;
             }
-        }else{
-            currentOpenFileType=-1;
-            statusBar_disPlayMessage("解析失败,配置文件"+path+"不存在...");
+        }
+        else{
+            statusBar_disPlayMessage("配置文件["+useini+"]不存在,无法解析版本号为["+versionFromFile+"]的文件,请新增配置...");
             return;
         }
+    }
+    else{
+        currentOpenFileType=-1;
+        statusBar_disPlayMessage("解析失败,文件打开失败...");
+        return;
     }
 }
 
@@ -2210,7 +2312,7 @@ void MainWindow::load_fixedFile(QStringList fileType){
                         int row=0;
                         //读取到第一行数据为止
                         while (!data.atEnd()&&row<dataBeginRow)
-                        {   QStringList lineList;
+                        {
                             line = data.readLine();
                             line=line.remove('\r').remove('\n');
                             fixedData.append(line);
@@ -2622,6 +2724,47 @@ void MainWindow::display_FIXEDFaultCause(QList<FaultCause> faultList){
                 QTableWidgetItem *item11= new QTableWidgetItem(faultList.at(row).getCause());
                 ptr_table->setItem(row, 9, item11);
             }
+        }
+        ptr_table->resizeColumnsToContents();
+        statusBar_display_rowsCount(rowCount);
+        currentOpenFileType=-1;
+    }
+}
+
+/**
+ * @brief MainWindow::display_OFDFaultCause OFD文件解析失败原因
+ * @param useini
+ * @param faultList
+ */
+void MainWindow::display_OFDFaultCause(QString useini,QList<OFDFaultCause> faultList){
+    if(faultList.count()>0){
+        int colCount=3;
+        int rowCount=faultList.count();
+        ptr_table->setColumnCount(colCount);
+        ptr_table->setRowCount(rowCount);
+        //设置表格列标题
+        QStringList title;
+        title.append("使用的配置文件");
+        title.append("文件匹配解析器");
+        title.append("解析失败原因");
+        ptr_table->setHorizontalHeaderLabels(title);
+        //设置表格的选择方式
+        ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
+        //设置编辑方式
+        ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
+        //设置表格的内容
+        for (int row = 0; row < rowCount; ++row)
+        {
+            //配置文件
+            QTableWidgetItem *item0= new QTableWidgetItem(useini);
+            ptr_table->setItem(row, 0, item0);
+            //解析器
+            QTableWidgetItem *item1= new QTableWidgetItem(faultList.at(row).getConfig());
+            ptr_table->setItem(row, 1, item1);
+            //失败原因
+            QTableWidgetItem *item2= new QTableWidgetItem(faultList.at(row).getCause());
+            ptr_table->setItem(row, 2, item2);
         }
         ptr_table->resizeColumnsToContents();
         statusBar_display_rowsCount(rowCount);
@@ -3232,6 +3375,7 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             info.append("文件接收者代码:").append(ofdIndexFileHeaderMap.value("recivecode")).append("\r\n");
             info.append("文件传递日期:").append(ofdIndexFileHeaderMap.value("filedate")).append("\r\n");
             info.append("文件内标识的总记录数:").append(ofdIndexFileHeaderMap.value("count")).append("成功加载记录数:").append(QString::number(indexFileDataList.count())).append("\r\n");
+            info.append("文件换行符:").append(ofdFileNewLine).append(ofdFileNewLine=="\r\n"?"(建议的换行符)":"不建议的换行符(OFD协议建议使用\\r\\n)").append("\r\n");
             QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
         }else{
             QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
@@ -3245,6 +3389,7 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             info.append("文件发送者代码:").append(ofdFileHeaderQStringList.at(2)).append("\r\n");
             info.append("文件接收者代码:").append(ofdFileHeaderQStringList.at(3)).append("\r\n");
             info.append("文件传递日期:").append(ofdFileHeaderQStringList.at(4)).append("\r\n");
+            info.append("文件换行符:").append(ofdFileNewLine).append(ofdFileNewLine=="\r\n"?"(建议的换行符)":"不建议的换行符(OFD协议建议使用\\r\\n)").append("\r\n");
             bool ok=false;
             int  fieldCount=ofdFileHeaderQStringList.at(9).toInt(&ok);
             if(ok){
@@ -4020,7 +4165,7 @@ void MainWindow::showRowDetails(){
                 //字段值
                 colitem.append(colvalue);
                 //字典翻译
-                colitem.append(ofdDictionary.getDictionary(ofd.getFieldList().at(i).getFieldName(),colvalue));
+                colitem.append(ofdDictionary.getDictionary(ofd.getDictionary()+"_"+ofd.getFieldList().at(i).getFieldName(),colvalue));
             }
             rowdata.append(colitem);
         }
@@ -6750,7 +6895,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
             statusBar_display_rowsAndCol(rowInFile,colInFile,ofd.getFieldList().at(tableColCurrent).getLength());
             if(ptr_table->item(tableRowCurrent,tableColCurrent)!=nullptr){
                 QString text=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
-                QString dic=ofdDictionary.getDictionary(ofd.getFieldList().at(tableColCurrent).getFieldName(),text);
+                QString dic=ofdDictionary.getDictionary(ofd.getDictionary()+"_"+ofd.getFieldList().at(tableColCurrent).getFieldName(),text);
                 if(text.isEmpty()){
                     statusBar_disPlayMessage(ofd.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(ofd.getFieldList().at(tableColCurrent).getFieldType()));
                 }

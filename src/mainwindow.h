@@ -75,6 +75,7 @@
 #include "src/dialogpreference.h"
 #include "src/dialogmodifyrow.h"
 #include "src/publicdefine.h"
+#include "src/ofdfaultcause.h"
 
 namespace Ui {
 class MainWindow;
@@ -218,13 +219,11 @@ private:
     QHash<QString, OFDCodeInfo> loadedOfdCodeInfo;
     //已经加载的OFD索引文件信息,记录各种索引文件的文件名开头三个字符
     QHash<QString, QString> loadedOfdIndexFileInfo;
-    //已经加载的OFD文件的文件名结尾两个字符和文件名的对应关系,比如04,交易类确认
-    QHash<QString, QString> loadedOfdFileInfo;
     //已经加载的CSV类的文件名的正则匹配器--CSV文件判断类别，使用简单的正则匹配方法
     QHash<QString, QString> loadedCsvFileInfo;
     //已经加载的定长文件文件名的正则匹配器--FIXED文件判断类别，使用简单的正则匹配方法
     QHash<QString, QString> loadedFixedFileInfo;
-    //已经加载的各种OFD文件的定义,比如400_21_01,代表V400,第21版本的01文件的定义，使用Hash记录<400_21_01,400接口21版本下的01文件的定义>
+    //已经加载的各种OFD文件的定义,比如21_01,代表第21版本的01文件的定义，使用Hash记录<_21_01,21版本下的01文件的定义>
     QHash<QString,OFDFileDefinition>loadedOfdDefinitionHash;
     //已经加载的CSV文件类别信息,csv文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
     QList<CsvFileDefinition> loadedCsvDefinitionList;
@@ -242,6 +241,8 @@ private:
     QHash<int,FieldIsNumber> fieldIsNumberOrNot;
     //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
     FIXEDFileDefinition fixed;
+    //打开的OFD文件的换行符
+    QString ofdFileNewLine;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
@@ -365,13 +366,13 @@ private:
     void open_file_Dialog();
     void load_OFDCodeInfo();
     void load_Setting();
-    void load_OFDFileType();
+    void load_OFDIndexFile();
     void load_OFDDictionary();
     void load_OFDDefinition();
     void load_CSVDefinition();
     void load_FIXEDDefinition();
     void load_indexFile();
-    void load_ofdFile(QString sendCode,QString fileType);
+    void load_ofdFile(QString fileType);
     void load_csvFile(QStringList fileType);
     void load_fixedFile(QStringList fileType);
     void load_fixedFileData();
@@ -389,6 +390,7 @@ private:
     void display_FIXEDTable();
     void display_CSVFaultCause(QList<FaultCause> faultList);
     void display_FIXEDFaultCause(QList<FaultCause> faultList);
+    void display_OFDFaultCause(QString useini,QList<OFDFaultCause> faultList);
     void saveOFDFile(QString filepath);
     void randomTips();
     void addOFDRowData(int location);
