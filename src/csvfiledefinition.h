@@ -43,6 +43,8 @@ private:
     int titlerowindex;
     //数据起始行
     int databeginrowindex;
+    //文件尾部忽略的行
+    int endIgnoreRow;
     //编码信息
     QString ecoding;
     //字段总和
@@ -80,6 +82,8 @@ public:
     void setFileDescribe(const QString &value);
     QString getFileNameWithCount() const;
     void setFileNameWithCount(const QString &value);
+    int getEndIgnoreRow() const;
+    void setEndIgnoreRow(int value);
 };
 
 #endif // CSVFILEDEFINITION_H

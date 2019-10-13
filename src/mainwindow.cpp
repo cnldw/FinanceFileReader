@@ -961,9 +961,36 @@ void MainWindow::load_CSVDefinition(){
                         else{
                             fileDef.setEcoding(encoding);
                         }
+                        //9数据尾部忽略行
+                        bool flag=false;
+                        QString ignorerow=loadedCsvInfoIni.value(csvType+"/endignorerow").toString();
+                        int endignoreRow;
+                        if(ignorerow.isEmpty()){
+                            //不配置就不忽略任何行
+                            fileDef.setEndIgnoreRow(0);
+                        }
+                        else{
+                            endignoreRow=ignorerow.toInt(&flag);
+                            if(!flag){
+                                fileDef.setUseAble(false);
+                                fileDef.setMessage("文件结尾忽略行数不是一个可用的数值");
+                                loadedCsvDefinitionList.append(fileDef);
+                                continue;
+                            }
+                            else{
+                                if(endignoreRow<0){
+                                    flag=false;
+                                    fileDef.setUseAble(false);
+                                    fileDef.setMessage("文件结尾忽略行数应当是一个大于等于0的整数");
+                                    loadedCsvDefinitionList.append(fileDef);
+                                    continue;
+                                }else {
+                                    fileDef.setEndIgnoreRow(endignoreRow);
+                                }
+                            }
+                        }
                         //////////////////////////////////////
-                        //9字段总数
-                        bool flag;
+                        //10字段总数
                         QString fieldCcountStr=loadedCsvInfoIni.value(csvType+"/fieldcount").toString();
                         int fieldCount=fieldCcountStr.toInt(&flag,10);
                         //字段描述值正确
@@ -996,7 +1023,6 @@ void MainWindow::load_CSVDefinition(){
                             loadedCsvDefinitionList.append(fileDef);
                         }
                         else{
-                            //10,文件配置是否可用
                             fileDef.setUseAble(false);
                             fileDef.setMessage("字段总数描述不是正确可用的数值(字段数需为大于0的整数)或者为AUTO(自动解析列数形式)");
                             loadedCsvDefinitionList.append(fileDef);
@@ -1825,8 +1851,9 @@ void MainWindow::load_ofdFile(QString fileType){
                         //首行数据不满足
                         OFDFaultCause fault;
                         fault.setConfig(config);
-                        fault.setCause("配置文件错误:"+ofdFileDefinition.getMessage());
+                        fault.setCause("配置文件错误无法使用此配置解析任何文件,错误原因:"+ofdFileDefinition.getMessage());
                         faultList.append(fault);
+                        continue;
                     }
                     //判断字段数
                     if(ofdFileDefinition.getFieldCount()==countNumberFromFile){
@@ -2813,6 +2840,13 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
         }
         QApplication::restoreOverrideCursor();
         dataFile.close();
+        //从文件读取到内存后，修正文件内容
+        //文件尾部提取
+        if(csv.getEndIgnoreRow()>0&&csvFileContentQByteArrayList.count()>csv.getEndIgnoreRow()){
+            for(int ic=1;ic<=csv.getEndIgnoreRow();ic++){
+                csvFileContentQByteArrayList.removeLast();
+            }
+        }
     }
     //初始化表格
     init_CSVTable(fieldTitle);

@@ -145,6 +145,16 @@ void CsvFileDefinition::setFileNameWithCount(const QString &value)
     fileNameWithCount = value;
 }
 
+int CsvFileDefinition::getEndIgnoreRow() const
+{
+    return endIgnoreRow;
+}
+
+void CsvFileDefinition::setEndIgnoreRow(int value)
+{
+    endIgnoreRow = value;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     
