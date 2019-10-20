@@ -703,7 +703,7 @@ border-radius:3px;
      <x>0</x>
      <y>0</y>
      <width>960</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -751,10 +751,18 @@ border-radius:3px;
     </property>
     <addaction name="actionnewWindow"/>
    </widget>
+   <widget class="QMenu" name="menu_3">
+    <property name="title">
+     <string>附加工具</string>
+    </property>
+    <addaction name="actiondifftools"/>
+    <addaction name="actionfileedit"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menuwindow"/>
+   <addaction name="menu_3"/>
    <addaction name="menuSetting"/>
    <addaction name="menuAbout"/>
   </widget>
@@ -873,6 +881,19 @@ border-radius:3px;
   <action name="actionmanual">
    <property name="text">
     <string>使用手册</string>
+   </property>
+  </action>
+  <action name="actiondifftools">
+   <property name="text">
+    <string>打开文件对比工具</string>
+   </property>
+  </action>
+  <action name="actionfileedit">
+   <property name="text">
+    <string>在文本编辑器中打开当前文件</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+F</string>
    </property>
   </action>
  </widget>

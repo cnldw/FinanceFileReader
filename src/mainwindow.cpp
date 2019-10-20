@@ -39,6 +39,15 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     ui->statusBar->setStyleSheet("font-size:13px");
 #endif
     //临时隐藏未开发完毕的功能--高级文件打开
+    //////////////////////////////////插件功能/////////////////
+    //仅Windows系统支持附加工具
+#ifdef Q_OS_LINUX
+    ui->menu_3->menuAction()->setVisible(false);
+#endif
+#ifdef Q_OS_MAC
+    ui->menu_3->menuAction()->setVisible(false);
+#endif
+    //////////////////////////////////////////////////////////
     ui->actionfileOpenAdv->setVisible(false);
     //隐藏分页组件--只有当页数大于1的时候才显示
     ui->framePage->setVisible(false);
@@ -109,7 +118,10 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("基金、银行理财领域的OFD文件,本程序都支持解析哟...");
     tips.append("需要打开超大文件?,建议在设置里设置开启压缩模式和分页支持,支持的文件大小立即提升到GB级别...");
     tips.append("本程序是业余无偿开发的,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
-
+    #ifdef Q_OS_WIN32
+    tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
+    tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
+    #endif
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
@@ -279,17 +291,52 @@ void MainWindow::dropEvent(QDropEvent *event)
     //获取拖拽来源的文件信息
     /////////////////////////////////////////////////////////////
     QList<QUrl> urls = event->mimeData()->urls();
+    //判断是否包含文件夹,同时获取下参数串，方便稍后传给对比工具，如有需要
+    QStringList pars;
+    for(int i=0;i<urls.count();i++){
+        pars.append(urls.at(i).toLocalFile());
+        if(QFileInfo(urls.at(i).toLocalFile()).isDir()){
+            statusBar_disPlayMessage(tr("不接受读取文件夹,请不要拖放文件夹进来哟..."));
+            return;
+        }
+    }
+    //判断是否进入文件比对功能-拖进来的文件数大于1
     if(urls.count()>1){
+        //仅仅windows系统支持文件对比
+#ifdef Q_OS_WIN32
+        DialogMyTip * dialog2 = new DialogMyTip("同时拖放了多个文件进来，你需要对比这些文件的差异么？,如果你不想使用对比工具对比文件而是要解析文件，请每次拖放一个文件进来！",this);
+        dialog2->setWindowTitle("警告！");
+        dialog2->setModal(true);
+        dialog2->exec();
+        if(dialog2->getBoolFlag()){
+            //模态的使用完毕删除
+            delete dialog2;
+            dialog2=nullptr;
+            //调用打开Winmerge然后return
+            //拼接调用路径，包含文件路径
+            QString winmergepath=QApplication::applicationDirPath()+"/plugin/WinMerge/WinMergeU.exe";
+            if(Utils::isFileExist(winmergepath)){
+                QProcess process;
+                process.startDetached(winmergepath,pars);
+            }else{
+                statusBar_disPlayMessage("找不到WinMerge插件,请安装到plugin目录下！");
+            }
+            return;
+        }
+        else{
+            //否,提示用户
+            delete dialog2;
+            dialog2=nullptr;
+            statusBar_disPlayMessage("请拖放一个文件进来以解析该文件！");
+            return;
+        }
+#endif
+        //非windows系统，提示不要拖放多个文件
         statusBar_disPlayMessage(tr("拖进来一个文件试试~,文件太多啦"));
         return;
     }
+    //仅有一个参数且是文件
     QString fileNameFromDrag = urls.first().toLocalFile();
-    //判断是否是文件夹
-    QFileInfo fileinfo(fileNameFromDrag);
-    if(fileinfo.isDir()){
-        statusBar_disPlayMessage(tr("拖进来一个文件试试~,不接受读取文件夹"));
-        return;
-    }
     //////////////////////////////////////////////////////////////
     //开始判断如何打开文件
     if(defaultNewFileMode=="1"){
@@ -1406,6 +1453,7 @@ void MainWindow::load_FIXEDDefinition(){
  * @param filePath
  */
 void MainWindow::initFile(QString filePath){
+    currentOpenFileType=-1;
     //设置当前打开的路径////////////////////////////////////////////
     currentOpenFilePath=filePath;
     ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
@@ -7768,5 +7816,35 @@ void MainWindow:: pageJump(int page,int scrollIndex){
         ptr_table->scrollToTop();
         //强制触发下刷新，避免显示数据不完整
         acceptVScrollValueChanged(0);
+    }
+}
+
+/**
+ * @brief MainWindow::on_actiondifftools_triggered打开文件对比工具
+ */
+void MainWindow::on_actiondifftools_triggered()
+{
+    QString winmergepath=QApplication::applicationDirPath()+"/plugin/WinMerge/WinMergeU.exe";
+    QStringList pars;
+    if(Utils::isFileExist(winmergepath)){
+        QProcess process;
+        //Qt 5.6在xp系统下有个bug，调用不传参数的startDetached函数时，有可能无法启动程序,所以我们设定一个空参数调用带参数的函数
+        process.startDetached(winmergepath,pars);
+    }else{
+        statusBar_disPlayMessage("找不到WinMerge插件,请安装到plugin目录下！");
+    }
+}
+
+void MainWindow::on_actionfileedit_triggered()
+{
+    QString notepad2path=QApplication::applicationDirPath()+"/plugin/Notepad2/Notepad2.exe";
+    if(currentOpenFilePath.isEmpty()){
+        return;
+    }
+    if(Utils::isFileExist(notepad2path)){
+        QProcess process;
+        process.startDetached(notepad2path,QStringList(currentOpenFilePath));
+    }else{
+        statusBar_disPlayMessage("找不到Notepad2插件,请安装到plugin目录下！");
     }
 }

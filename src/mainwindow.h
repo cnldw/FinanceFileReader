@@ -197,6 +197,10 @@ private slots:
 
     void on_pushButtonGo_clicked();
 
+    void on_actiondifftools_triggered();
+
+    void on_actionfileedit_triggered();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
