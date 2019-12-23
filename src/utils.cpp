@@ -21,6 +21,27 @@ Utils::Utils()
 }
 
 /**
+ *
+ * @brief MainWindow::getConfigPath 针对不通平台设计获取配置目录的方法,windows和linux返回程序当前目录下的config目录,macOS返回程序包的Resources目录
+ * @return
+ */
+QString Utils::getConfigPath(){
+    //macOS 取程序包.app的Resources目录
+#ifdef Q_OS_MAC
+    return QApplication::applicationDirPath().remove(QApplication::applicationDirPath().lastIndexOf("MacOS"),6) + "Resources/";
+#endif
+    //linux 取程序文件所在目录下的config
+#ifdef Q_OS_LINUX
+    return QApplication::applicationDirPath()+"/config/";
+#endif
+    //windows 取程序文件所在目录下的config
+#ifdef Q_OS_WIN32
+    return QApplication::applicationDirPath()+"/config/";
+#endif
+}
+
+
+/**
  * @brief Utils::isDirExist 判断目录是否存在
  * @param fullPath
  * @return
@@ -614,4 +635,42 @@ QString Utils::CovertDoubleQStringWithThousandSplit(QString doubleString){
         z++;
     }
     return doubleString;
+}
+
+/**
+ * @brief Utils::UpdateFileTime 更新文件修改时间为最新
+ * @param file
+ */
+void Utils::UpdateFileTime(QString file){
+    QDateTime lastModifyTime=QDateTime::currentDateTime();
+    int aYear = lastModifyTime.date().year()-1900;
+    int aMonth = lastModifyTime.date().month()-1;
+    int aDay = lastModifyTime.date().day();
+    int aHour = lastModifyTime.time().hour();
+    int aMinute = lastModifyTime.time().minute();
+    int aSec = lastModifyTime.time().second();
+    struct tm tma = {0};
+    tma.tm_year = aYear;
+    tma.tm_mon = aMonth;
+    tma.tm_mday = aDay;
+    tma.tm_hour = aHour;
+    tma.tm_min = aMinute;
+    tma.tm_sec = aSec;
+    tma.tm_isdst = 0;
+#ifdef Q_OS_WIN32
+    struct _utimbuf ut;
+#else
+    struct utimbuf ut;
+#endif
+    //二者得同时修改，否则修改不成功
+    ut.modtime = mktime(&tma);// 最后修改时间
+    ut.actime=mktime(&tma);//最后访问时间
+    QByteArray ary=file.toLocal8Bit();
+    char *fileName = ary.data();
+#ifdef Q_OS_WIN32
+    _utime(fileName, &ut );
+#else
+    utime(fileName, &ut );
+#endif
+
 }

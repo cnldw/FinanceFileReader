@@ -102,7 +102,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("右键菜单有不少小功能哟...");
     tips.append("数据修改后点击保存,程序会自动创建备份,避免找不回原文件...");
     tips.append("数据修改后点击另存保存,可以覆盖保存或者保存文件到其他位置...");
-    tips.append("你可以在"+getConfigPath()+"目录下进行配置文件修改,可以让工具支持新增的各种OFD文件...");
+    tips.append("你可以在"+Utils::getConfigPath()+"目录下进行配置文件修改,可以让工具支持新增的各种OFD文件...");
     tips.append("拖放文件到程序主窗口,即可打开文件,又快又省心...");
     tips.append("程序里有一个彩蛋哟,快去找一下...");
     tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
@@ -118,6 +118,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("基金、银行理财领域的OFD文件,本程序都支持解析哟...");
     tips.append("需要打开超大文件?,建议在设置里设置开启压缩模式和分页支持,支持的文件大小立即提升到GB级别...");
     tips.append("本程序是业余无偿开发的,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
+    tips.append("可以使用本程序新建OFD文件,以及初始化自己的新建模板...");
     #ifdef Q_OS_WIN32
     tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
     tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
@@ -520,25 +521,6 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
     }
 }
 
-/**
- *
- * @brief MainWindow::getConfigPath 针对不通平台设计获取配置目录的方法,windows和linux返回程序当前目录下的config目录,macOS返回程序包的Resources目录
- * @return
- */
-QString MainWindow::getConfigPath(){
-    //macOS 取程序包.app的Resources目录
-#ifdef Q_OS_MAC
-    return QApplication::applicationDirPath().remove(QApplication::applicationDirPath().lastIndexOf("MacOS"),6) + "Resources/";
-#endif
-    //linux 取程序文件所在目录下的config
-#ifdef Q_OS_LINUX
-    return QApplication::applicationDirPath()+"/config/";
-#endif
-    //windows 取程序文件所在目录下的config
-#ifdef Q_OS_WIN32
-    return QApplication::applicationDirPath()+"/config/";
-#endif
-}
 
 /**
  * @brief MainWindow::clear_oldData重新加载数据时，清除旧数据将会加载到内存的数据全部清除-重新加载文件前请务必调用此方法
@@ -582,7 +564,7 @@ void MainWindow::clear_oldData(){
  * @brief MainWindow::load_Setting 程序设置加载方法-读取程序配置文件，如果失败则创建一个默认的配置文件
  */
 void MainWindow::load_Setting(){
-    QString Settingini=getConfigPath()+"Setting.ini";
+    QString Settingini=Utils::getConfigPath()+"Setting.ini";
     QSettings loadedSettingInfoIni(Settingini,QSettings::IniFormat,nullptr);
     if(Utils::isFileExist(Settingini)){
         //加载ini文件
@@ -667,7 +649,7 @@ void MainWindow::load_Setting(){
  * @brief MainWindow::load_OFDCodeInfo加载ofd的代码配置信息,包含销售商，TA信息-这个数据取自tools目录下的爬虫工具-数据来源为证券市场标准网
  */
 void MainWindow::load_OFDCodeInfo(){
-    QString codeInipath=getConfigPath()+"OFD_CodeInfo.ini";
+    QString codeInipath=Utils::getConfigPath()+"OFD_CodeInfo.ini";
     if(Utils::isFileExist(codeInipath)){
         //加载ini文件
         QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,nullptr);
@@ -682,7 +664,7 @@ void MainWindow::load_OFDCodeInfo(){
             loadedOfdCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),infoItem);
         }
     }else{
-        statusBar_disPlayMessage(getConfigPath()+tr("OFD_CodeInfo.ini配置丢失"));
+        statusBar_disPlayMessage(Utils::getConfigPath()+tr("OFD_CodeInfo.ini配置丢失"));
     }
 }
 
@@ -690,7 +672,7 @@ void MainWindow::load_OFDCodeInfo(){
  * @brief MainWindow::load_OFDIndexFile 加载OFD的索引文件类别信息
  */
 void MainWindow::load_OFDIndexFile(){
-    QString fileTypeInipath=getConfigPath()+"OFD_IndexFile.ini";
+    QString fileTypeInipath=Utils::getConfigPath()+"OFD_IndexFile.ini";
     if(Utils::isFileExist(fileTypeInipath)){
         //加载ini文件
         QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,nullptr);
@@ -709,7 +691,7 @@ void MainWindow::load_OFDIndexFile(){
         infoList.clear();
     }
     else{
-        statusBar_disPlayMessage(getConfigPath()+tr("OFD_IndexFile.ini配置丢失"));
+        statusBar_disPlayMessage(Utils::getConfigPath()+tr("OFD_IndexFile.ini配置丢失"));
     }
 }
 
@@ -717,7 +699,7 @@ void MainWindow::load_OFDIndexFile(){
  * @brief MainWindow::load_Dictionary加载OFD的字典信息
  */
 void MainWindow::load_OFDDictionary(){
-    QString dictionaryInipath=getConfigPath()+"OFD_Dictionary.ini";
+    QString dictionaryInipath=Utils::getConfigPath()+"OFD_Dictionary.ini";
     if(Utils::isFileExist(dictionaryInipath)){
         //加载ini文件
         QSettings loadedDictionary(dictionaryInipath,QSettings::IniFormat,nullptr);
@@ -744,7 +726,7 @@ void MainWindow::load_OFDDictionary(){
         }
     }
     else{
-        statusBar_disPlayMessage(getConfigPath()+tr("OFD_Dictionary.ini配置丢失"));
+        statusBar_disPlayMessage(Utils::getConfigPath()+tr("OFD_Dictionary.ini配置丢失"));
     }
 }
 
@@ -752,7 +734,7 @@ void MainWindow::load_OFDDictionary(){
  * @brief MainWindow::load_OFDDefinition加载OFD文件的定义
  */
 void MainWindow::load_OFDDefinition(){
-    QDir dirPath(getConfigPath());
+    QDir dirPath(Utils::getConfigPath());
     QStringList filters;
     filters << "OFD_*.ini";//设置过滤类型
     dirPath.setNameFilters(filters);//设置文件名的过滤
@@ -778,7 +760,7 @@ void MainWindow::load_OFDDefinition(){
                 if(nameList.count()==2){
                     //加载ini文件
                     QString prefixName=nameList.at(1);
-                    QSettings ofdIni(getConfigPath()+fileName,QSettings::IniFormat,nullptr);
+                    QSettings ofdIni(Utils::getConfigPath()+fileName,QSettings::IniFormat,nullptr);
                     //目前仅接收UTF-8编码的配置文件
                     ofdIni.setIniCodec("UTF-8");
                     QStringList interfaceList=ofdIni.childGroups();
@@ -922,7 +904,7 @@ void MainWindow::load_OFDDefinition(){
  * @brief MainWindow::load_CSVDefinition加载CSV文件的定义
  */
 void MainWindow::load_CSVDefinition(){
-    QDir dirPath(getConfigPath());
+    QDir dirPath(Utils::getConfigPath());
     QStringList filters;
     filters << "CSV_*.ini";//设置过滤类型
     dirPath.setNameFilters(filters);//设置文件名的过滤
@@ -932,7 +914,7 @@ void MainWindow::load_CSVDefinition(){
         for (int f = 0; f < listFile.size(); f++)
         {
             QString fileName=listFile.at(f).fileName();
-            QString codeInipath=getConfigPath()+fileName;
+            QString codeInipath=Utils::getConfigPath()+fileName;
             if(Utils::isFileExist(codeInipath)){
                 //加载ini文件
                 QSettings loadedCsvInfoIni(codeInipath,QSettings::IniFormat,nullptr);
@@ -1140,7 +1122,7 @@ void MainWindow::load_CSVDefinition(){
  * @brief MainWindow::load_FIXEDDefinition加载定长文件的定义
  */
 void MainWindow::load_FIXEDDefinition(){
-    QDir dirPath(getConfigPath());
+    QDir dirPath(Utils::getConfigPath());
     QStringList filters;
     filters << "FIXED_*.ini";//设置过滤类型,以FIXED_开头的配置
     dirPath.setNameFilters(filters);//设置文件名的过滤
@@ -1152,7 +1134,7 @@ void MainWindow::load_FIXEDDefinition(){
             //获取文件名
             QString fileName=listFile.at(f).fileName();
             //获取文件路径
-            QString codeInipath=getConfigPath()+fileName;
+            QString codeInipath=Utils::getConfigPath()+fileName;
             if(Utils::isFileExist(codeInipath)){
                 //加载ini文件
                 QSettings loadedFixedInfoIni(codeInipath,QSettings::IniFormat,nullptr);
@@ -1878,7 +1860,7 @@ void MainWindow::load_ofdFile(QString fileType){
         //判断对应的配置文件是否存在
         //从文件头部收取到了足够的信息后，我们要开始尝试用配置解析文件了
         //根据配置和从文件里采集到的文件字段总数，首行数据的长度综合分析，决定使用哪个配置文件解析文件
-        QString path=getConfigPath()+useini;
+        QString path=Utils::getConfigPath()+useini;
         if(Utils::isFileExist(path)){
             //失败原因列表
             QList<OFDFaultCause> faultList;
@@ -7301,7 +7283,7 @@ void MainWindow::on_actionpreference_triggered()
         }
         //如果配置发生了改变,则写入配置
         if(changeFlag){
-            QString Settingini=getConfigPath()+"Setting.ini";
+            QString Settingini=Utils::getConfigPath()+"Setting.ini";
             QSettings loadedSettingInfoIni(Settingini,QSettings::IniFormat,nullptr);
             loadedSettingInfoIni.setIniCodec("UTF-8");
             loadedSettingInfoIni.beginGroup("setting");
@@ -7847,4 +7829,14 @@ void MainWindow::on_actionfileedit_triggered()
     }else{
         statusBar_disPlayMessage("找不到Notepad2插件,请安装到plugin目录下！");
     }
+}
+
+/**
+ * @brief MainWindow::on_actioncreatenewofdfile_triggered 新建OFD文件
+ */
+void MainWindow::on_actioncreatenewofdfile_triggered()
+{
+    CreateOFDWindow * dialog = new CreateOFDWindow(this);
+    dialog->setModal(false);
+    dialog->show();
 }

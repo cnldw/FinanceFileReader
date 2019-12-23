@@ -22,10 +22,16 @@
 #include <QList>
 #include <QLocale>
 #include <QDateTime>
+#include <QApplication>
 #include "src/ofdfiledefinition.h"
 #include "src/csvfiledefinition.h"
 #include "src/fixedfiledefinition.h"
-
+#include "time.h"
+#ifdef Q_OS_WIN32
+#include "sys/utime.h"
+#else
+#include "utime.h"
+#endif
 namespace Ui {
 class Utils;
 }
@@ -36,6 +42,7 @@ public:
     Utils();
      static bool isDirExist(QString fullPath);
      static bool isFileExist(QString fullFileName);
+     static QString getConfigPath();
      static QString getCompileDate();
      static QString getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
      static QStringList getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row);
@@ -45,6 +52,7 @@ public:
      static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row);
      static QString CovertInt2ExcelCol(int number);
      static QString CovertDoubleQStringWithThousandSplit(QString doubleString);
+     static void UpdateFileTime(QString file);
 };
 
 #endif // UTILS_H

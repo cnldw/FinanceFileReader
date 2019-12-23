@@ -715,6 +715,7 @@ border-radius:3px;
     <addaction name="actionsss"/>
     <addaction name="actionSave"/>
     <addaction name="actionSaveAS"/>
+    <addaction name="actioncreatenewofdfile"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -894,6 +895,14 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+F</string>
+   </property>
+  </action>
+  <action name="actioncreatenewofdfile">
+   <property name="text">
+    <string>新建基金交换协议文件(OFD文件)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
  </widget>

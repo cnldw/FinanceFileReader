@@ -76,6 +76,7 @@
 #include "src/dialogmodifyrow.h"
 #include "src/publicdefine.h"
 #include "src/ofdfaultcause.h"
+#include "src/createofdwindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -200,6 +201,8 @@ private slots:
     void on_actiondifftools_triggered();
 
     void on_actionfileedit_triggered();
+
+    void on_actioncreatenewofdfile_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -355,7 +358,7 @@ private:
     //目前在第几页
     int currentPage=1;
 
-    QString getConfigPath();
+
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
     void statusBar_clear_statusBar();
     void statusBar_display_rowsCount(int rowsCount);
