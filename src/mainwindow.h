@@ -204,6 +204,12 @@ private slots:
 
     void on_actioncreatenewofdfile_triggered();
 
+    void on_actioncopy_triggered();
+
+    void on_actionedit_triggered();
+
+    void on_actionedit2_triggered();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
@@ -239,7 +245,7 @@ private:
     //用来记录文件头部内容的map,此信息用于文件检查
     QHash<QString,QString> ofdIndexFileHeaderMap;
     //用来记录文件标题和内容的list,解析索引类文件时使用
-    QList<QStringList> indexFileDataList;
+    QList<QString> indexFileDataList;
     //当前正在使用的ofd定义,打开哪个文件,就切换到改文件的ofd定义
     OFDFileDefinition ofd;
     //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到改文件的csv定义
@@ -248,8 +254,6 @@ private:
     QHash<int,FieldIsNumber> fieldIsNumberOrNot;
     //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
     FIXEDFileDefinition fixed;
-    //打开的OFD文件的换行符
-    QString ofdFileNewLine;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
@@ -280,7 +284,8 @@ private:
     QString xlsxSaveName;
     //全局blocked消息,当主动block时,填充此消息,用于告知其他场景程序正在做什么
     QString dataBlockedMessage;
-
+    //OFD文件专用编码
+    QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;

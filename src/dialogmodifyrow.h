@@ -88,6 +88,8 @@ private:
     //记录错误行的hash
     QHash<int,QString> errorHash;
 
+    QTextCodec *codec=QTextCodec::codecForName("GB18030");
+
     void checkField(int row,int column,bool updateValue,bool displayErrorMessage);
 };
 

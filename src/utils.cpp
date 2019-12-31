@@ -79,6 +79,7 @@ QString Utils::getCompileDate(){
 
 QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
 {
+    QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
     //判断越界
     if(row>=ofdFileContentQByteArrayList->count()||col>=ofd->getFieldCount()){
         return "";
@@ -94,7 +95,7 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
     //小数长度
     int filedDeclength=ofd->getFieldList().at(col).getDecLength();
     //获取此字段的值
-    filed=QString::fromLocal8Bit(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
+    filed=codecOFD->toUnicode(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
     //数据信息处理
     if(fileType=="C"){
         //C类型从右去除多余空格
@@ -184,6 +185,7 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
 
 QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row){
     QStringList rowList;
+    QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
     //判断越界
     if(row<ofdFileContentQByteArrayList->count()){
         //获取本行数据
@@ -202,7 +204,7 @@ QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByt
             //获取此字段的值
             if(rowdata.count()>=ofd->getFieldList().at(col).getRowBeginIndex()+filedlength){
                 //对字节mid后返回字符串
-                filed=QString::fromLocal8Bit(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
+                filed=codecOFD->toUnicode(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
             }
             //越界表示本行后续不再有内容，终止
             else{
@@ -301,8 +303,22 @@ QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByt
     return rowList;
 }
 
-QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col)
+QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
 {
+    QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
+    //判断越界
+    if(row>=ofdFileContentQByteArrayList->count()||col>=ofd->getFieldCount()){
+        return "";
+    }
+    else{
+        int filedlength=ofd->getFieldList().at(col).getLength();
+        return codecOFD->toUnicode(qUncompress(ofdFileContentQByteArrayList->at(row)).mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
+    }
+}
+
+QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col,QString charset)
+{
+    QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
     //判断越界
     if(row>=fixedContentQByteArrayList->count()||col>=fixed->getFieldCountMax()){
         return "";
@@ -324,7 +340,7 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
         //定长文件兼容多种行长度，判断越界
         if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+filedlength){
             //对字节mid后返回字符串
-            filed=QString::fromLocal8Bit(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
+            filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
         }
         else{
             return "";
@@ -333,9 +349,9 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     //字符截取
     else{
         //判断越界
-        if(QString::fromLocal8Bit(qUncompress(fixedContentQByteArrayList->at(row))).length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+filedlength)){
+        if(rowdata.length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+filedlength)){
             //转成字符串后mid
-            filed=QString::fromLocal8Bit(rowdata).mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength);
+            filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
         }
         else{
             return "";
@@ -431,10 +447,11 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     return filed;
 }
 
-QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row){
+QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row,QString charset){
     QStringList rowList;
     //判断越界
     if(row<fixedContentQByteArrayList->count()){
+        QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
         //获取本行数据
         QByteArray rowdata=qUncompress(fixedContentQByteArrayList->at(row));
         //遍历获取各个字段
@@ -455,7 +472,7 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
                 //定长文件兼容多种行长度，判断越界
                 if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+filedlength){
                     //对字节mid后返回字符串
-                    filed=QString::fromLocal8Bit(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
+                    filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
                 }
                 //越界表示本行后续不再有内容，终止
                 else{
@@ -465,9 +482,9 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
             //字符截取
             else{
                 //判断越界
-                if(QString::fromLocal8Bit(qUncompress(fixedContentQByteArrayList->at(row))).length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+filedlength)){
+                if(rowdata.length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+filedlength)){
                     //转成字符串后mid
-                    filed=QString::fromLocal8Bit(rowdata).mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength);
+                    filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
                 }
                 //越界表示本行后续不再有内容，终止
                 else{
@@ -567,31 +584,15 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
     return rowList;
 }
 
-
-QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
-{
-    //判断越界
-    if(row>=ofdFileContentQByteArrayList->count()||col>=ofd->getFieldCount()){
-        return "";
-    }
-    //本行数据
-    QByteArray rowdata=qUncompress(ofdFileContentQByteArrayList->at(row));
-    //开始获取此字段的值
-    QString filed="";
-    //字段长度
-    int filedlength=ofd->getFieldList().at(col).getLength();
-    //获取此字段的值
-    filed=QString::fromLocal8Bit(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
-    return filed;
-}
-
-QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row){
+QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset){
     //判断越界
     QStringList rowData;
     if(row>=csvFileContentQByteArrayList->count()){
         return rowData;
     }else{
-        return QString::fromLocal8Bit(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+        QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
+        rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+        return rowData;
     }
 }
 
@@ -672,5 +673,4 @@ void Utils::UpdateFileTime(QString file){
 #else
     utime(fileName, &ut );
 #endif
-
 }

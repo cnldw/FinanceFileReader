@@ -23,6 +23,7 @@
 #include <QLocale>
 #include <QDateTime>
 #include <QApplication>
+#include <QTextCodec>
 #include "src/ofdfiledefinition.h"
 #include "src/csvfiledefinition.h"
 #include "src/fixedfiledefinition.h"
@@ -47,9 +48,9 @@ public:
      static QString getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
      static QStringList getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row);
      static QString getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
-     static QString getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col);
-     static QStringList getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row);
-     static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row);
+     static QString getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col,QString charset);
+     static QStringList getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row,QString charset);
+     static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset);
      static QString CovertInt2ExcelCol(int number);
      static QString CovertDoubleQStringWithThousandSplit(QString doubleString);
      static void UpdateFileTime(QString file);

@@ -759,7 +759,16 @@ border-radius:3px;
     <addaction name="actiondifftools"/>
     <addaction name="actionfileedit"/>
    </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>编辑</string>
+    </property>
+    <addaction name="actioncopy"/>
+    <addaction name="actionedit"/>
+    <addaction name="actionedit2"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menuwindow"/>
@@ -903,6 +912,30 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actioncopy">
+   <property name="text">
+    <string>复制选择的单元格</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionedit">
+   <property name="text">
+    <string>编辑选择的单元格(仅支持OFD文件)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionedit2">
+   <property name="text">
+    <string>编辑选择的行(仅支持OFD文件)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+E</string>
    </property>
   </action>
  </widget>

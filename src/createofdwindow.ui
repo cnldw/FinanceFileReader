@@ -66,9 +66,9 @@
    <widget class="QLineEdit" name="lineEditTaCode">
     <property name="geometry">
      <rect>
-      <x>340</x>
+      <x>350</x>
       <y>40</y>
-      <width>121</width>
+      <width>111</width>
       <height>20</height>
      </rect>
     </property>
@@ -79,9 +79,9 @@
    <widget class="QLineEdit" name="lineEditAgentCode">
     <property name="geometry">
      <rect>
-      <x>539</x>
+      <x>549</x>
       <y>40</y>
-      <width>101</width>
+      <width>91</width>
       <height>20</height>
      </rect>
     </property>
@@ -94,7 +94,7 @@
      <rect>
       <x>290</x>
       <y>41</y>
-      <width>41</width>
+      <width>51</width>
       <height>20</height>
      </rect>
     </property>
@@ -107,7 +107,7 @@
      <rect>
       <x>470</x>
       <y>41</y>
-      <width>71</width>
+      <width>81</width>
       <height>16</height>
      </rect>
     </property>

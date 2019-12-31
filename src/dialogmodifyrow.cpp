@@ -205,7 +205,6 @@ void DialogModifyRow::on_pushButton_clicked()
 void DialogModifyRow::checkField(int row,int column,bool updateValue,bool displayErrorMessage){
     if(column==4&&row<(ptr_table->rowCount())){
         //OFD的文件编码
-        QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
         //内容
         QString text=ptr_table->item(row,column)->text();
         //获取字段类别等信息
@@ -213,7 +212,7 @@ void DialogModifyRow::checkField(int row,int column,bool updateValue,bool displa
         QString filedType=this->ofd.getFieldList().at(row).getFieldType();
         int filedLength=this->ofd.getFieldList().at(row).getLength();
         int filedDecLength=this->ofd.getFieldList().at(row).getDecLength();
-        int textLength=text.toLocal8Bit().length();
+        int textLength=codec->fromUnicode(text).length();
         //字符类和文本类的只需要判断长度
         if(filedType=="C"||filedType=="TEXT"){
             //长度校验

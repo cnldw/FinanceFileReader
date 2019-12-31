@@ -76,11 +76,11 @@ void DialogModifyCell::on_pushButton_2_clicked()
 void DialogModifyCell::on_pushButton_clicked()
 {
     //保存时需要校验合法性
-    QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
+    QTextCodec *codec=QTextCodec::codecForName("GB18030");
     //内容
     QString text=ui->lineEdit_4->text();
     //长度
-    int textLength=text.toLocal8Bit().length();
+    int textLength=codec->fromUnicode(text).length();
     //字符类和文本类的只需要判断长度
     if(fieldType=="C"||fieldType=="TEXT"){
         //长度校验
