@@ -11,66 +11,43 @@ CreateOFDWindow::CreateOFDWindow(QWidget *parent) :
     //初始化显示日期
     QDate date=ui->calendarWidget->selectedDate();
     setWindowTitle(windowTitle+"-[文件日期:"+date.toString("yyyy-MM-dd")+"]");
-    //过滤器//过滤不需要的文件
-    excludeFiles.append(".");
-    excludeFiles.append("..");
     //程序启动的时候加载配置
     //检查并创建导出目录
-    QDir config = QDir(configpath);
-    bool exist = config.exists();
     //如果存在配置目录-则遍历配置目录
-    if(exist)
+    if(QDir(configpath).exists())
     {
         //分别加载各类配置
         //交易申请类
         QDir configrequest = QDir(configpath+"request");
-        bool existrequest = configrequest.exists();
-        if(existrequest){
-            QFileInfoList fileInfoList = configrequest.entryInfoList();
+        if(configrequest.exists()){
+            QFileInfoList fileInfoList = configrequest.entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot);
             foreach ( QFileInfo fileInfo, fileInfoList )
             {
-                if ( fileInfo.fileName() == "." || fileInfo.fileName() == ".." )
-                    continue;
-                if ( fileInfo.isDir() )
-                {
-                    //加入配置
-                    requestFileList.append(fileInfo.fileName());
-                    ui->comboBox_2->addItem(fileInfo.fileName());
-                }
+                //加入配置
+                requestFileList.append(fileInfo.fileName());
+                ui->comboBox_2->addItem(fileInfo.fileName());
             }
         }
         //基金行情类
         QDir confignav = QDir(configpath+"fundday");
-        bool existnav = confignav.exists();
         //存在可用的行情配置
-        if(existnav){
-            QFileInfoList fileInfoList = confignav.entryInfoList();
+        if(confignav.exists()){
+            QFileInfoList fileInfoList = confignav.entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot);
             foreach ( QFileInfo fileInfo, fileInfoList )
             {
-                if ( fileInfo.fileName() == "." || fileInfo.fileName() == ".." )
-                    continue;
-                if ( fileInfo.isDir() )
-                {
-                    //加入配置
-                    navFileList.append(fileInfo.fileName());
-                }
+                //加入配置
+                navFileList.append(fileInfo.fileName());
             }
         }
         //基金确认类
         QDir configconfirm = QDir(configpath+"confirm");
-        bool existconfirm = configconfirm.exists();
         //存在可用的行情配置
-        if(existconfirm){
-            QFileInfoList fileInfoList = configconfirm.entryInfoList();
+        if(configconfirm.exists()){
+            QFileInfoList fileInfoList = configconfirm.entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot );
             foreach ( QFileInfo fileInfo, fileInfoList )
             {
-                if ( fileInfo.fileName() == "." || fileInfo.fileName() == ".." )
-                    continue;
-                if ( fileInfo.isDir() )
-                {
-                    //加入配置
-                    confirmFileList.append(fileInfo.fileName());
-                }
+                //加入配置
+                confirmFileList.append(fileInfo.fileName());
             }
         }
     }
@@ -92,13 +69,21 @@ void CreateOFDWindow::on_pushButton_clicked()
     //日期
     QDate date=ui->calendarWidget->selectedDate();
     //组装等待被替换的模板变量
+    //将模板变量打包到QHash里
     QHash<QString,QString> data;
     data.insert("tacode",tacode);
     data.insert("agentcode",agentcode);
     data.insert("transferdate",date.toString("yyyyMMdd"));
+    //正则校验器
+    QString pattern("^[A-Za-z0-9]+$");
+    QRegExp rx(pattern);
     //开始做合法判断
     if(tacode.isEmpty()){
         ui->logOut->setText("TA代码不能为空");
+        return;
+    }
+    if(!rx.exactMatch(tacode)){
+        ui->logOut->setText("TA代码只允许包含数字和字母！,请勿随意输入");
         return;
     }
     if(tacode.length()!=2){
@@ -107,6 +92,10 @@ void CreateOFDWindow::on_pushButton_clicked()
     }
     if(agentcode.isEmpty()){
         ui->logOut->setText("销售商代码不能为空");
+        return;
+    }
+    if(!rx.exactMatch(agentcode)){
+        ui->logOut->setText("销售商代码只允许包含数字和字母！,请勿随意输入");
         return;
     }
     if(agentcode.length()!=3){
@@ -118,10 +107,7 @@ void CreateOFDWindow::on_pushButton_clicked()
     if(!temp.exists())
     {
         bool ok = temp.mkdir(exppath);
-        if( ok ){
-            ui->logOut->setText("创建数据导出目录成功");
-        }
-        else{
+        if( !ok ){
             ui->logOut->setText("创建数据导出目录失败!");
             return;
         }
@@ -137,7 +123,7 @@ void CreateOFDWindow::on_pushButton_clicked()
             return;
         }
         targetPath=exppath+"交易申请/"+agentcode+"/"+date.toString("yyyyMMdd")+"/"+tacode+"/";
-        sourcePath=configpath+"request/"+ui->comboBox_2->currentText();
+        sourcePath=configpath+"request/"+ui->comboBox_2->currentText()+"/";
     }
     //行情类数据
     if(ui->comboBox->currentIndex()==1){
@@ -146,7 +132,7 @@ void CreateOFDWindow::on_pushButton_clicked()
             return;
         }
         targetPath=exppath+"行情和确认/"+agentcode+"/"+date.toString("yyyyMMdd")+"/"+tacode+"/FundDay/";
-        sourcePath=configpath+"fundday/"+ui->comboBox_2->currentText();
+        sourcePath=configpath+"fundday/"+ui->comboBox_2->currentText()+"/";
     }
     //交易确认类数据
     if(ui->comboBox->currentIndex()==2){
@@ -154,19 +140,20 @@ void CreateOFDWindow::on_pushButton_clicked()
             ui->logOut->setText("无可用的基金确认类数据文件模板!\r\n");
             return;
         }
-        sourcePath=configpath+"confirm/"+ui->comboBox_2->currentText();
+        sourcePath=configpath+"confirm/"+ui->comboBox_2->currentText()+"/";
         targetPath=exppath+"行情和确认/"+agentcode+"/"+date.toString("yyyyMMdd")+"/"+tacode+"/Confirm/";
     }
-    bool exist;
+    //目录创建结果
     bool ok=true;
     QDir targetDir = QDir(targetPath);
-    exist = targetDir.exists();
-    if(!exist)
+    if(!targetDir.exists())
     {
         ok=targetDir.mkpath(targetPath);
     }
+    //如果导出路径OK
     if(ok){
-        QStringList  filesOld = targetDir.entryList(QStringList(), QDir::Files|QDir::Readable, QDir::Name);
+        targetDir.refresh();
+        QStringList  filesOld = targetDir.entryList(QStringList(), QDir::Files, QDir::Name);
         if(filesOld.count()>0){
             DialogMyTip * dialog2 = new DialogMyTip("文件生成路径["+targetPath+"]下存在文件,是否清空此目录下的文件生成新的文件？\r\n仅删除文件且不可恢复！",this);
             dialog2->setWindowTitle("请确认！");
@@ -178,153 +165,135 @@ void CreateOFDWindow::on_pushButton_clicked()
             }
             else{
                 //清空目标目录下的文件，不清除目录
-                QDir dir(targetPath);
-                dir.setFilter(QDir::Files);
-                int fileCount = dir.count();
+                targetDir.setFilter(QDir::Files);
+                int fileCount = targetDir.count();
                 for (int i = 0; i < fileCount; i++){
-                    dir.remove(dir[i]);
+                    targetDir.remove(targetDir[i]);
                 }
             }
         }
-        //将模板复制到目标目录
-        copyFolder(sourcePath,targetPath,excludeFiles);
-        //执行遍历更新
-        updateFromtemplete(targetPath,data);
-        QStringList  files = targetDir.entryList(QStringList(), QDir::Files|QDir::Readable, QDir::Name);
-        QStringList  okFiles;
-        if(files.count()>0){
-            QString fileList;
-            for(int ff=0;ff<files.count();ff++){
-                fileList.append(files.at(ff)).append("\r\n");
-                //判断是否是OK文件，OK文件稍后刷新下修改时间,确保要比数据文件的新,数据文件现在刷新
-                if(files.at(ff).endsWith("OK")||files.at(ff).endsWith("ok")){
-                    okFiles.append(files.at(ff));
+        //将模板目录里的文件复制到目标目录
+        QDir sourceDir=QDir(sourcePath);
+        QStringList  sourcefiles = sourceDir.entryList(QDir::Files | QDir::NoDotAndDotDot);
+        //复制到目标目录的所有文件
+        QString  targetdataandokfiles;
+        //源目录的ok模板文件
+        QStringList sourceokfiles;
+        //复制到目标目录的OK文件
+        QStringList  targetokfiles;
+        //循环拷贝文件使用的变量
+        QString sourceFile;
+        QString targetFileName;
+        QString targetFile;
+        //遍历源目录文件--忽略目录
+        if(sourcefiles.count()>0){
+            for(int ff=0;ff<sourcefiles.count();ff++){
+                //源模板文件
+                sourceFile=sourcePath+sourcefiles.at(ff);
+                //拷贝过去的文件名--注意这里基于模板变量替换文件名
+                targetFileName=QString(sourcefiles.at(ff)).replace("agentcode",data.value("agentcode")).replace("tacode",data.value("tacode")).replace("transferdate",data.value("transferdate"));
+                targetFile=targetPath+targetFileName;
+                targetdataandokfiles.append("\r\n").append(targetFileName);
+                //ok文件延后拷贝-确保ok文件在数据文件生成后生成
+                if(targetFile.endsWith("ok")||targetFile.endsWith("OK")){
+                    sourceokfiles.append(sourceFile);
+                    targetokfiles.append(targetFileName);
+                    continue;
                 }
+                //数据文件现在拷贝
                 else{
-                    qDebug()<<targetPath+files.at(ff);
-                    Utils::UpdateFileTime(targetPath+files.at(ff));
+                    //如果拷贝失败则终止
+                    if(!copyFile(sourceFile,targetFile,true,true)){
+                        ui->logOut->setText("写入如下模板文件失败,生成失败!!!:\r\n"+sourceFile);
+                        return;
+                    }
+                    //非OK文件更新文件内容
+                    //模板文件拷贝过去后，读取文件内容基于模板变量替换生成新的文件
+                    else {
+                        QFile currentfile(targetFile);
+                        QStringList lineList;
+                        //获取文件内容
+                        if (currentfile.open(QFile::ReadOnly|QIODevice::Text))
+                        {
+                            QTextStream dataLine(&currentfile);
+                            QString line;
+                            while (!dataLine.atEnd())
+                            {
+                                line = dataLine.readLine().replace("agentcode",data.value("agentcode")).replace("tacode",data.value("tacode")).replace("transferdate",data.value("transferdate"));
+                                lineList.append(line);
+                            }
+                        }
+                        //关闭文件
+                        currentfile.close();
+                        //删除原文件后重建
+                        currentfile.remove();
+                        QFile newFile(targetFile);
+                        if (newFile.open(QFile::WriteOnly | QIODevice::Truncate)) {
+                            //开始准备待写入的数据
+                            QString sb="";
+                            if(lineList.count()>0){
+                                for (int row=0;row<lineList.count();row++){
+                                    //数据写入--按行读取
+                                    sb.append(lineList.at(row)).append("\r\n");
+                                }
+                            }
+                            //按照GB18030还原字节数据写入文件
+                            newFile.write(codecGb18030->fromUnicode(sb));
+                            newFile.flush();
+                            newFile.close();
+                        }
+                    }
                 }
             }
-            //现在开始更新ok文件的修改时间
-            //如果ok文件的更新时间早于数据文件，在某些系统环境下会认为数据没更新，所以OK文件在这里更新时间戳
-            if(okFiles.count()>0){
-                for(int okindex=0;okindex<okFiles.count();okindex++){
-                    qDebug()<<targetPath+okFiles.at(okindex);
-                    Utils::UpdateFileTime(targetPath+okFiles.at(okindex));
+        }
+        //如果ok文件的更新时间早于数据文件，在某些系统环境下会认为数据没更新，所以OK文件在这里拷贝并更新时间戳
+        if(targetokfiles.count()>0){
+            for(int okindex=0;okindex<targetokfiles.count();okindex++){
+                //源模板文件
+                sourceFile=sourceokfiles.at(okindex);
+                //目标写入文件
+                targetFile=targetPath+targetokfiles.at(okindex);
+                //如果拷贝失败则终止
+                if(!copyFile(sourceFile,targetFile,true,true)){
+                    ui->logOut->setText("写入如下模板文件失败,生成失败!!!:\r\n"+sourceFile);
+                    return;
                 }
+                //注意,ok文件我们认为是空文件，不再打开进行文件内的模板变量替换
             }
-            //数据生成完毕,文件时间戳刷新完毕
-            ui->logOut->setText("数据已生成在如下路径:\r\n"+targetPath+"\r\n包含如下文件:\r\n"+fileList);
         }
-        else{
-            ui->logOut->setText("生成数据失败!");
-        }
+        //数据生成完毕
+        ui->logOut->setText("数据已生成在如下路径:\r\n"+targetPath+"\r\n包含如下文件:"+targetdataandokfiles);
     }
     else{
         ui->logOut->setText("创建文件导出目录"+targetPath+"失败,请检查路径权限");
     }
 }
 
-
-/**
- * @brief CreateOFDWindow::copyFolder目录复制
- * @param srcFolder
- * @param dstFolder
- * @param excludeFiles
- */
-void  CreateOFDWindow::copyFolder(const QString &srcFolder,const QString & dstFolder,const QStringList &excludeFiles)
+bool CreateOFDWindow::copyFile(QString srcFile ,QString dstFile, bool coverFileIfExist,bool upDateTime)
 {
-    QDir dir( srcFolder );
-    dir.setFilter(QDir::Files);
-    QFileInfoList list = dir.entryInfoList();
-    int count = list.count();
-    for (int index = 0; index < count; index++)
-    {
-        QFileInfo fileInfo = list.at(index);
-        QString fileName = fileInfo.fileName();
-        if( excludeFiles.indexOf( fileName ) != -1 )
-            continue;
-        if( !dir.exists(dstFolder) )
-            dir.mkpath(dstFolder);
-        QString newSrcFileName = srcFolder + "/" + fileInfo.fileName();
-        QString newDstFileName = dstFolder + "/" + fileInfo.fileName();
-        QFile::copy(newSrcFileName, newDstFileName);
+    dstFile.replace("\\","/");
+    if (srcFile == dstFile){
+        return true;
     }
-
-    dir.setFilter(QDir::Dirs);
-    list = dir.entryInfoList();
-    count = list.count();
-    for (int index = 0; index < count; index++)
-    {
-        QFileInfo fileInfo = list.at(index);
-        QString fileName = fileInfo.fileName();
-        if( fileInfo.isDir() )
-        {
-            if( excludeFiles.indexOf( fileName ) != -1 )
-                continue;
-            QString newSrcFolder = srcFolder + "/" + fileName;
-            QString newDstFolder = dstFolder + "/" + fileName;
-            copyFolder( newSrcFolder , newDstFolder ,excludeFiles);
+    if (!QFile::exists(srcFile)){
+        return false;
+    }
+    QFile *createfile  = new QFile;
+    bool exist = createfile->exists(dstFile);
+    if (exist){
+        if(coverFileIfExist){
+            createfile->remove(dstFile);
         }
     }
-}
-
-/**
- * @brief CreateOFDWindow::updateFromtemplete 基于模板文件加工成目标文件
- * @param path
- * @param data
- */
-void CreateOFDWindow::updateFromtemplete(QString path,QHash<QString,QString> data){
-    QDir dir(path);
-    foreach(QFileInfo mfi ,dir.entryInfoList())
+    if(!QFile::copy(srcFile, dstFile))
     {
-        if(mfi.isFile())
-        {
-            QFile currentfile(mfi.absoluteFilePath());
-            QStringList lineList;
-            //开放式基金交换协议使用GB18030编码
-            QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB18030"));
-            //获取文件内容
-            if (currentfile.open(QFile::ReadOnly|QIODevice::Text))
-            {
-                QTextStream dataLine(&currentfile);
-                QString line;
-                int lineNumber=0;
-                while (!dataLine.atEnd())
-                {
-                    line = dataLine.readLine().replace("agentcode",data.value("agentcode")).replace("tacode",data.value("tacode")).replace("transferdate",data.value("transferdate"));
-                    lineList.append(line);
-                }
-                lineNumber++;
-            }
-            //关闭文件
-            currentfile.close();
-            //删除原文件后重建
-            currentfile.remove();
-            QFile newFile(mfi.absoluteFilePath().replace("agentcode",data.value("agentcode")).replace("tacode",data.value("tacode")).replace("transferdate",data.value("transferdate")));
-            if (newFile.open(QFile::WriteOnly | QIODevice::Truncate)) {
-                QTextStream out(&newFile);
-                //开始准备待写入的数据
-                QString sb;
-                //文本内容
-                sb.clear();
-                if(lineList.count()>0){
-                    for (int row=0;row<lineList.count();row++){
-                        //数据写入--按行读取
-                        sb.append(lineList.at(row)).append("\r\n");
-                    }
-                }
-                out<<sb;
-                sb.clear();
-                newFile.close();
-            }
-        }
-        else
-        {
-            if(mfi.fileName()=="." || mfi.fileName() == "..")continue;
-            updateFromtemplete(mfi.absoluteFilePath(),data);
-        }
+        return false;
     }
+    //更新文件的创建和修改时间，理论上来说我们应当在搬移文件时更新文件的时间戳，避免各种操蛋的问题出现
+    if(upDateTime){
+        Utils::UpdateFileTime(dstFile);
+    }
+    return true;
 }
 
 void CreateOFDWindow::on_comboBox_currentIndexChanged(int index)

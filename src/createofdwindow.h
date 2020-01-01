@@ -25,6 +25,7 @@
 #include <QFileInfoList>
 #include <QDebug>
 #include <QHash>
+#include <QRegExp>
 #include <QTextCodec>
 #include <QTextStream>
 #include <QApplication>
@@ -51,10 +52,8 @@ private slots:
     void on_calendarWidget_selectionChanged();
 
 private:
-    void copyFolder(const QString &srcFolder,const QString & dstFolder,const QStringList &excludeFiles);
-    void updateFromtemplete(QString path,QHash<QString,QString> data);
+    bool copyFile(QString srcFile ,QString dstFile, bool coverFileIfExist,bool upDateTime);
     Ui::CreateOFDWindow *ui;
-    QStringList excludeFiles;
     QString windowTitle="基金数据交换协议文件生成器";
     //默认导出路径
     QString exppath=QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/OFDFile/";
@@ -66,5 +65,7 @@ private:
     QStringList navFileList;
     //交易确认可用配置
     QStringList confirmFileList;
+    //OFD文件体系编码
+    QTextCodec *codecGb18030 = QTextCodec::codecForName("GB18030");
 };
 #endif // CREATEOFDWINDOW_H
