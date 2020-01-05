@@ -3764,6 +3764,8 @@ void MainWindow::deleteRowDataFromFileAndTable(){
                 dataBlockedMessage="正在删除数据中,请稍候...";
                 int row=0;
                 int rowRealInContent=0;
+                //清空比对器内容
+                compareData.clear();
                 for(int w=count-1;w>=0;w--){
                     //需要被删除的行
                     row=deleteRowList.at(w);
