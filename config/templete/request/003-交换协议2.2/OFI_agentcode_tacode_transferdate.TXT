@@ -3,10 +3,8 @@ OFDCFIDX
 agentcode                 
 tacode                  
 transferdate
-00000005
+00000003
 OFD_agentcode_tacode_transferdate_01.TXT
 OFD_agentcode_tacode_transferdate_03.TXT
 OFD_agentcode_tacode_transferdate_R1.TXT
-OFD_agentcode_tacode_transferdate_X1.TXT
-OFD_agentcode_tacode_transferdate_X3.TXT
 OFDCFEND
