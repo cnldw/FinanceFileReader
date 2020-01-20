@@ -57,7 +57,12 @@ bool DialogModifyCell::getModifyFlag(){
 }
 
 QString DialogModifyCell::getValueNew(){
-    return ui->lineEdit_4->text();
+    if(fieldType=="N"){
+        return ui->lineEdit_4->text().replace(",","");
+    }
+    else{
+        return ui->lineEdit_4->text();
+    }
 }
 
 DialogModifyCell::~DialogModifyCell()
@@ -133,6 +138,10 @@ void DialogModifyCell::on_pushButton_clicked()
     }
     //数字型
     else if(fieldType=="N"){
+        //如果是千位分隔符
+        if(text.contains(",")){
+            text=text.replace(",","");
+        }
         //空数据,空数据由主窗口设置为全0
         if(text.isEmpty()){
             modify=true;

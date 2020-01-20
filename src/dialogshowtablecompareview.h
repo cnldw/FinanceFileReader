@@ -27,6 +27,7 @@
 #include <QList>
 #include <QDebug>
 #include <QMessageBox>
+#include "src/utils.h"
 
 namespace Ui {
 class DialogShowTableCompareView;
@@ -40,7 +41,7 @@ class DialogShowTableCompareView : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogShowTableCompareView(QStringList title,QMap<int,QStringList> * compareData,QWidget *parent = nullptr);
+    explicit DialogShowTableCompareView(QStringList title,QStringList fieldType,QMap<int,QStringList> * compareData,QWidget *parent = nullptr);
     ~DialogShowTableCompareView();
 
 private slots:

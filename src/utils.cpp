@@ -631,7 +631,9 @@ QString Utils::CovertDoubleQStringWithThousandSplit(QString doubleString){
     int z=1;
     for(int index=BeginIndex;index>0;index--){
         if(z%3==0){
-            doubleString.insert(index,QChar(','));
+            if(!(index==1&&doubleString.at(0)=='-')){
+                doubleString.insert(index,QChar(','));
+            }
         }
         z++;
     }

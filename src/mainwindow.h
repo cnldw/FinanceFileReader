@@ -118,6 +118,8 @@ private slots:
 
     void on_tableWidget_customContextMenuRequested(const QPoint &pos);
 
+    void showMessage_customContextMenuRequested(const QPoint &pos);
+
     void editCompareData();
 
     void deleteRowDataFromFileAndTable();
@@ -137,6 +139,8 @@ private slots:
     void copyToClipboard();
 
     void showRowDetails();
+
+    void copyMessage();
 
     void showOFDFiledAnalysis();
 
@@ -303,6 +307,9 @@ private:
     QAction *action_addNewLineOFDData2End;
     QAction *action_ModifyOFDRow;
 
+    //详情增加可复制功能
+    QMenu *showMessagePopMenu;
+    QAction *action_ShowCopy;
     /*
       极其重要的表格相关参数
     */

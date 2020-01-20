@@ -17,7 +17,7 @@
 #include "ui_dialogshowtablecompareview.h"
 #define UNUSED(x) (void)x
 
-DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<int,QStringList> * compareData,QWidget *parent) :
+DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QStringList fieldType,QMap<int,QStringList> * compareData,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogShowTableCompareView)
 {
@@ -58,7 +58,15 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QMap<in
                 if(col<compareData->value(keys.at(row)).count()){
                     value=compareData->value(keys.at(row)).at(col-1);
                 }
+                if(fieldType.at(col-1)=="N"){
+                    value=Utils::CovertDoubleQStringWithThousandSplit(value);
+                }
                 QTableWidgetItem *item2= new QTableWidgetItem(value);
+                //判断是否是数字，数字右对齐
+                if(fieldType.at(col-1)=="N"){
+                    value=Utils::CovertDoubleQStringWithThousandSplit(value);
+                    item2->setTextAlignment(Qt::AlignRight);
+                }
                 ptr_table->setItem(row, col, item2);
                 //从第二行开始，开始判断是否不一样，一旦有不一样的直接就标记此列有不一样的
                 if(row==1){

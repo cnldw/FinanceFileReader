@@ -237,6 +237,10 @@ void DialogModifyRow::checkField(int row,int column,bool updateValue,bool displa
         }
         //数字型
         else if(filedType=="N"){
+            //如果是千位分隔符
+            if(text.contains(",")){
+                text=text.replace(",","");
+            }
             if(!text.isEmpty()){
                 bool ok=false;
                 text.toDouble(&ok);
@@ -354,6 +358,20 @@ void DialogModifyRow::on_pushButtonSave_clicked()
     }
     //没错误
     else{
+        //这里做个check，看看是不是真的修改了数据
+        bool existDifferent=false;
+        for(int i=0;i<rowDataOld.count();i++){
+            if(rowDataOld.at(i)!=rowDataNew.at(i)){
+                existDifferent=true;
+                break;
+            }
+        }
+        if(existDifferent){
+            this->change=true;
+        }
+        else{
+            this->change=false;
+        }
         this->saveFlag=true;
         //退出
         this->close();
