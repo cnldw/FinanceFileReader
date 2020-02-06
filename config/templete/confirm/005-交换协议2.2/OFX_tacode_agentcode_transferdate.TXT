@@ -1,0 +1,9 @@
+OFDCFIDX
+22      
+tacode                  
+agentcode                 
+transferdate
+00000002
+OFD_tacode_agentcode_transferdate_X2.TXT
+OFD_tacode_agentcode_transferdate_X4.TXT
+OFDCFEND
