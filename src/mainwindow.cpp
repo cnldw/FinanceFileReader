@@ -41,12 +41,14 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
 #endif
     //临时隐藏未开发完毕的功能--高级文件打开
     //////////////////////////////////插件功能/////////////////
-    //仅Windows系统支持附加工具
+    //仅Windows系统支持文件比对和在文本编辑器中打开
 #ifdef Q_OS_LINUX
-    ui->menu_3->menuAction()->setVisible(false);
+    ui->actiondifftools->setVisible(false);
+    ui->actionfileedit->setVisible(false);
 #endif
 #ifdef Q_OS_MAC
-    ui->menu_3->menuAction()->setVisible(false);
+    ui->actiondifftools->setVisible(false);
+    ui->actionfileedit->setVisible(false);
 #endif
     //////////////////////////////////////////////////////////
     //搜索框提示
@@ -5093,6 +5095,8 @@ void MainWindow::on_pushButtonPreSearch_clicked()
     }
     if(tableRowCurrent==0&&tableColCurrent==0){
         statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
+        ptr_table->setCurrentCell(tableRowCurrent,tableColCurrent);
+        ptr_table->setFocus();
         return;
     }
     dataBlocked=true;
@@ -5205,6 +5209,8 @@ void MainWindow::on_pushButtonPreSearch_clicked()
             statusBar_disPlayMessage("再往上没有你要搜索的内容了...");
             dataBlocked=false;
             ui->pushButtonPreSearch->setEnabled(true);
+            ptr_table->setCurrentCell(tableRowCurrent,tableColCurrent);
+            ptr_table->setFocus();
             QApplication::restoreOverrideCursor();
             //搜索到第一页最顶部还没搜到内容，break
             break;
@@ -5271,6 +5277,8 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     }
     if(tableRowCurrent==rowcount-1&&tableColCurrent==colCount-1){
         statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
+        ptr_table->setCurrentCell(tableRowCurrent,tableColCurrent);
+        ptr_table->setFocus();
         return;
     }
     dataBlocked=true;
@@ -5374,6 +5382,8 @@ void MainWindow::on_pushButtonNextSearch_clicked()
             statusBar_disPlayMessage("再往下没有你要搜索的内容了...");
             dataBlocked=false;
             ui->pushButtonNextSearch->setEnabled(true);
+            ptr_table->setCurrentCell(tableRowCurrent,tableColCurrent);
+            ptr_table->setFocus();
             QApplication::restoreOverrideCursor();
             break;
         }
@@ -5905,6 +5915,8 @@ void MainWindow::on_pushButtonExport_clicked()
             }
             //根据文件类型来判断
             if(fileNameSave.endsWith("xlsx",Qt::CaseSensitive)){
+                //这是单纯的导出excel文件地方，不打开
+                openXlsx=false;
                 save2Xlsx(fileNameSave);
                 //xslx的保存，不在这里取消阻断，交后台存储线程
             }
@@ -6226,13 +6238,21 @@ void MainWindow::save2Xlsx(QString filename){
     xlsxSaveName=filename;
     //禁止导出过大的excel文件
     //数据类型插入点
-    if(currentOpenFileType==1||currentOpenFileType==2||currentOpenFileType==3){
-        if(ofdFileContentQByteArrayList.count()>200000){
-            statusBar_disPlayMessage("记录数大于20万行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
-            dataBlocked=false;
-            isExportFile=false;
-            return;
-        }
+    int row=0;
+    if(currentOpenFileType==1){
+        row=ofdFileContentQByteArrayList.count();
+    }
+    else if(currentOpenFileType==2){
+        row=csvFileContentQByteArrayList.count();
+    }
+    else if(currentOpenFileType==3){
+        row=fixedContenQByteArrayList.count();
+    }
+    if(row>maxExcelRow){
+        statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
+        dataBlocked=false;
+        isExportFile=false;
+        return;
     }
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -6525,7 +6545,18 @@ int MainWindow::save2XlxsFile(){
  */
 void MainWindow::save2XlsxFinished(){
     dataBlocked=false;
-    statusBar_disPlayMessage(tr("数据成功导出到%1").arg(xlsxSaveName));
+    statusBar_disPlayMessage(tr("数据成功导出到:%1").arg(xlsxSaveName));
+    //如果需要打开文件
+    if(openXlsx){
+        statusBar_disPlayMessage(tr("使用系统默认程序打开文件:%1").arg(xlsxSaveName));
+        QString  m_szHelpDoc = QString("file:///") + xlsxSaveName;
+        bool is_open = QDesktopServices::openUrl(QUrl(m_szHelpDoc, QUrl::TolerantMode));
+        if(!is_open)
+        {
+            statusBar_disPlayMessage("文件打开失败,请尝试手工打开~~~");
+            return;
+        }
+    }
 }
 
 /**
@@ -8000,5 +8031,68 @@ void MainWindow::on_actionedit2_triggered()
                 statusBar_disPlayMessage("不能同时编辑多行整行数据!!!");
             }
         }
+    }
+}
+
+void MainWindow::on_actionopeninexcel_triggered()
+{
+    int row=0;
+    if(currentOpenFileType==1){
+        row=ofdFileContentQByteArrayList.count();
+    }
+    else if(currentOpenFileType==2){
+        row=csvFileContentQByteArrayList.count();
+    }
+    else if(currentOpenFileType==3){
+        row=fixedContenQByteArrayList.count();
+    }
+    else if(currentOpenFileType==0){
+        statusBar_disPlayMessage("不支持在excel中打开OFD索引文件...");
+        return;
+    }
+    else{
+        return;
+    }
+    //弹窗提示
+    DialogMyTip * dialog2 = new DialogMyTip("确定导出当前文件为xlsx并在Excel中打开么?\r\n使用此功能将在文件原始目录生成一个同名xlsx文件\r\n在Excel中你可以进行更为细致的数据统计分析",this);
+    dialog2->setWindowTitle("提示！");
+    dialog2->setModal(true);
+    dialog2->exec();
+    if(dialog2->getBoolFlag()){
+        //模态的使用完毕删除
+        delete dialog2;
+        dialog2=nullptr;
+        //限制
+        if(row>maxExcelRow){
+            statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
+            return;
+        }
+        else{
+            //开始准备导出excel文件
+            int first = currentOpenFilePath.lastIndexOf ("/");
+            QString fileDir = currentOpenFilePath.left (first+1);
+            QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
+            QString fileNameNoneType=fileName;
+            if(fileName.contains(".")){
+                fileNameNoneType=fileNameNoneType.left(fileName.lastIndexOf("."));
+            }
+            QString exppath=fileDir+fileNameNoneType+".xlsx";
+            //判断文件是否存在
+            //覆盖导出先删除原来的文件
+            if(Utils::isFileExist(exppath)){
+                QFile file(exppath);
+                bool r=file.remove();
+                if(!r){
+                    statusBar_disPlayMessage("覆盖文件失败,目标文件可能正在被占用...");
+                    return;
+                }
+            }
+            //执行excel导出，并标记导出结束时打开文件
+            openXlsx=true;
+            save2Xlsx(exppath);
+        }
+    }
+    else{
+        statusBar_disPlayMessage("放弃在Excel中打开当前接口文件...");
     }
 }

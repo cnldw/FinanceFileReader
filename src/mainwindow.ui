@@ -758,6 +758,7 @@ border-radius:3px;
     </property>
     <addaction name="actiondifftools"/>
     <addaction name="actionfileedit"/>
+    <addaction name="actionopeninexcel"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -936,6 +937,14 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+E</string>
+   </property>
+  </action>
+  <action name="actionopeninexcel">
+   <property name="text">
+    <string>导出到Excel并打开</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+D</string>
    </property>
   </action>
  </widget>

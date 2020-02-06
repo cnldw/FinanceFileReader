@@ -214,6 +214,8 @@ private slots:
 
     void on_actionedit2_triggered();
 
+    void on_actionopeninexcel_triggered();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
@@ -286,6 +288,8 @@ private:
     QXlsx::Document *xlsx=new QXlsx::Document();
     //xlsx文件保存文件名
     QString xlsxSaveName;
+    //导出excel结束后是否打开excel
+    bool openXlsx=false;
     //全局blocked消息,当主动block时,填充此消息,用于告知其他场景程序正在做什么
     QString dataBlockedMessage;
     //OFD文件专用编码
@@ -369,6 +373,10 @@ private:
     int pageCount=1;
     //目前在第几页
     int currentPage=1;
+
+    //支持导出excel文件的最大行数
+    //导出超大excel将占用很大的内存，这里初步限制60万行，需要再高的需要定制该功能
+    int maxExcelRow=600000;
 
 
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
