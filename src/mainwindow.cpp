@@ -8036,6 +8036,15 @@ void MainWindow::on_actionedit2_triggered()
 
 void MainWindow::on_actionopeninexcel_triggered()
 {
+    if(isUpdateData){
+        statusBar_disPlayMessage("正在加载数据,请稍后再使用数据导出功能...");
+        return;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
     int row=0;
     if(currentOpenFileType==1){
         row=ofdFileContentQByteArrayList.count();
@@ -8089,6 +8098,10 @@ void MainWindow::on_actionopeninexcel_triggered()
             }
             //执行excel导出，并标记导出结束时打开文件
             openXlsx=true;
+            //标记阻断事件---正在导出数据
+            dataBlocked=true;
+            isExportFile=true;
+            dataBlockedMessage="正在进行数据导出,请稍后再操作...";
             save2Xlsx(exppath);
         }
     }
