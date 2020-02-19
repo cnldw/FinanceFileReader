@@ -318,14 +318,11 @@ void MainWindow::dropEvent(QDropEvent *event)
     if(urls.count()>1){
         //仅仅windows系统支持文件对比
 #ifdef Q_OS_WIN32
-        DialogMyTip * dialog2 = new DialogMyTip("同时拖放了多个文件进来，你需要对比这些文件的差异么？,如果你不想使用对比工具对比文件而是要解析文件，请每次拖放一个文件进来！",this);
-        dialog2->setWindowTitle("警告！");
-        dialog2->setModal(true);
-        dialog2->exec();
-        if(dialog2->getBoolFlag()){
-            //模态的使用完毕删除
-            delete dialog2;
-            dialog2=nullptr;
+        DialogMyTip dialog2("同时拖放了多个文件进来，你需要对比这些文件的差异么？,如果你不想使用对比工具对比文件而是要解析文件，请每次拖放一个文件进来！",this);
+        dialog2.setWindowTitle("警告！");
+        dialog2.setModal(true);
+        dialog2.exec();
+        if(dialog2.getBoolFlag()){
             //调用打开Winmerge然后return
             //拼接调用路径，包含文件路径
             QString winmergepath=QApplication::applicationDirPath()+"/plugin/WinMerge/WinMergeU.exe";
@@ -339,8 +336,6 @@ void MainWindow::dropEvent(QDropEvent *event)
         }
         else{
             //否,提示用户
-            delete dialog2;
-            dialog2=nullptr;
             statusBar_disPlayMessage("请拖放一个文件进来以解析该文件！");
             return;
         }
@@ -1627,15 +1622,12 @@ NOT_OF_FILE:
     }
     //同时两种类型的文件名字都匹配到了
     else if(resultCsvType.count()>0&&resultFixedType.count()>0){
-        DialogChooseFileType * dialog2 = new DialogChooseFileType(this);
-        dialog2->setWindowTitle("打开的文件文件名匹配到了两种文件大类型,请确认");
-        dialog2->setModal(true);
-        dialog2->exec();
+        DialogChooseFileType  dialog2(this);
+        dialog2.setWindowTitle("打开的文件文件名匹配到了两种文件大类型,请确认");
+        dialog2.setModal(true);
+        dialog2.exec();
         //从弹窗中获取结果
-        int type=dialog2->getFileType();
-        //模态的使用完毕删除
-        delete dialog2;
-        dialog2=nullptr;
+        int type=dialog2.getFileType();
         if(type==2){
             load_csvFile(resultCsvType);
             return;
@@ -1971,15 +1963,12 @@ void MainWindow::load_ofdFile(QString fileType){
                                 else{
                                     //弹窗确认--只弹窗一次
                                     if(!mergeFlag){
-                                        DialogMergeTip * dialog2 = new DialogMergeTip(this);
-                                        dialog2->setWindowTitle("数据异常换行修复提示");
-                                        dialog2->setModal(true);
-                                        dialog2->exec();
+                                        DialogMergeTip  dialog2(this);
+                                        dialog2.setWindowTitle("数据异常换行修复提示");
+                                        dialog2.setModal(true);
+                                        dialog2.exec();
                                         //从弹窗中获取结果
-                                        mergeFlag=dialog2->getMergeFlag();
-                                        //模态的使用完毕删除
-                                        delete dialog2;
-                                        dialog2=nullptr;
+                                        mergeFlag=dialog2.getMergeFlag();
                                     }
                                     //如果确认需要合并
                                     //需要合并分三种情况上一行的长度+下一行的长度等于定义长度（人为插入的换行）
@@ -3421,7 +3410,10 @@ void MainWindow::on_aboutOpen_triggered()
 {
     DialogAboutThis * dialog = new DialogAboutThis(this);
     dialog->setModal(false);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 /**
@@ -3776,21 +3768,14 @@ void MainWindow::deleteRowDataFromFileAndTable(){
     }
     //此函数目前仅支持OFD数据
     if(currentOpenFileType==1){
-        DialogMyTip * dialog2 = new DialogMyTip("真的要删除选择的数据行吗？",this);
-        dialog2->setWindowTitle("警告！");
-        dialog2->setModal(true);
-        dialog2->exec();
+        DialogMyTip  dialog2("真的要删除选择的数据行吗？",this);
+        dialog2.setWindowTitle("警告！");
+        dialog2.setModal(true);
+        dialog2.exec();
         //从弹窗中获取结果//如果放弃删除数据
-        if(!dialog2->getBoolFlag()){
-            //模态的使用完毕删除
-            delete dialog2;
-            dialog2=nullptr;
+        if(!dialog2.getBoolFlag()){
             statusBar_disPlayMessage("放弃删除...");
             return;
-        }
-        else{
-            delete dialog2;
-            dialog2=nullptr;
         }
         dataBlocked=true;
         dataBlockedMessage="正在删除数据,请稍候...";
@@ -3936,20 +3921,13 @@ void MainWindow::copyOFDRowData(){
         //判断是否数据超过了5万行
         int count=copyRowList.count();
         if(count>50000){
-            DialogMyTip * dialog2 = new DialogMyTip("即将复制大量数据到剪切板,数据有"+QString::number(count)+"行,可能会比较慢或者占用大量剪切板空间，确定继续吗？",this);
-            dialog2->setWindowTitle("警告！");
-            dialog2->setModal(true);
-            dialog2->exec();
-            if(!dialog2->getBoolFlag()){
-                //模态的使用完毕删除
-                delete dialog2;
-                dialog2=nullptr;
+            DialogMyTip dialog2("即将复制大量数据到剪切板,数据有"+QString::number(count)+"行,可能会比较慢或者占用大量剪切板空间，确定继续吗？",this);
+            dialog2.setWindowTitle("警告！");
+            dialog2.setModal(true);
+            dialog2.exec();
+            if(!dialog2.getBoolFlag()){
                 statusBar_disPlayMessage("放弃复制...");
                 return;
-            }
-            else{
-                delete dialog2;
-                dialog2=nullptr;
             }
         }
         dataBlocked=true;
@@ -4038,20 +4016,13 @@ void MainWindow::addOFDRowData(int location){
     //////////////////////////////////////////////////////////
     //插入空数据行
     if(location==2){
-        DialogMyTip * dialog2 = new DialogMyTip("真的要为文件新增一行数据么？如果确定，请新增后编辑数据内容！",this);
-        dialog2->setWindowTitle("警告！");
-        dialog2->setModal(true);
-        dialog2->exec();
-        if(!dialog2->getBoolFlag()){
-            //模态的使用完毕删除
-            delete dialog2;
-            dialog2=nullptr;
+        DialogMyTip dialog2("真的要为文件新增一行数据么？如果确定，请新增后编辑数据内容！",this);
+        dialog2.setWindowTitle("警告！");
+        dialog2.setModal(true);
+        dialog2.exec();
+        if(!dialog2.getBoolFlag()){
             statusBar_disPlayMessage("放弃新增行...");
             return;
-        }
-        else{
-            delete dialog2;
-            dialog2=nullptr;
         }
         QByteArray newLine;
         //使用更为安全的方式新增空记录
@@ -4324,7 +4295,10 @@ void MainWindow::showRowDetails(){
     DialogShowTableRow * dialog = new DialogShowTableRow(&rowdata,this);
     dialog->setWindowTitle(QString("查看表格行记录-第%1行").arg(dataRowCurrent+1));
     dialog->setModal(false);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 /**
@@ -4483,7 +4457,10 @@ void MainWindow:: showOFDFiledAnalysis(){
         DialogShowTableFieldCheck * dialog = new DialogShowTableFieldCheck(&data,this);
         dialog->setWindowTitle(QString("分析第%1行第%2列数据数据").arg(rowRealInContent+1).arg(tableColCurrent+1));
         dialog->setModal(false);
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
         dialog->show();
+        dialog->raise();
+        dialog->activateWindow();
     }
 }
 
@@ -4510,16 +4487,13 @@ void MainWindow::showModifyOFDCell(){
         //修改后的值
         QString valueNew="";
         //打开窗口
-        DialogModifyCell * dialog = new DialogModifyCell(fieldType,fieldLength,fieldDecLength,fieldValues,this);
-        dialog->setWindowTitle(QString("编辑第%1行第%2列-"+ofd.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(rowRealInContent+1).arg(tableColCurrent+1));
-        dialog->setModal(true);
-        dialog->exec();
+        DialogModifyCell  dialog(fieldType,fieldLength,fieldDecLength,fieldValues,this);
+        dialog.setWindowTitle(QString("编辑第%1行第%2列-"+ofd.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(rowRealInContent+1).arg(tableColCurrent+1));
+        dialog.setModal(true);
+        dialog.exec();
         //从弹窗中获取结果
-        modifyFlag=dialog->getModifyFlag();
-        valueNew=dialog->getValueNew();
-        //模态的使用完毕删除
-        delete dialog;
-        dialog=nullptr;
+        modifyFlag=dialog.getModifyFlag();
+        valueNew=dialog.getValueNew();
         //开始处理是否需要更新
         if(modifyFlag){
             //检验新值是否和旧值相等,如果相等认为没有编辑
@@ -4693,16 +4667,13 @@ void MainWindow::showModifyOFDCellBatch(){
         bool modifyFlag=false;
         //修改后的值
         //打开窗口
-        DialogModifyCell * dialog = new DialogModifyCell(fieldType,fieldLength,fieldDecLength,"",this);
-        dialog->setWindowTitle(QString("批量编辑第%1列多个单元格-"+ofd.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(tableColCurrent+1));
-        dialog->setModal(true);
-        dialog->exec();
+        DialogModifyCell dialog(fieldType,fieldLength,fieldDecLength,"",this);
+        dialog.setWindowTitle(QString("批量编辑第%1列多个单元格-"+ofd.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(tableColCurrent+1));
+        dialog.setModal(true);
+        dialog.exec();
         //从弹窗中获取结果
-        modifyFlag=dialog->getModifyFlag();
-        QString valueNew=dialog->getValueNew();
-        //模态的使用完毕删除
-        delete dialog;
-        dialog=nullptr;
+        modifyFlag=dialog.getModifyFlag();
+        QString valueNew=dialog.getValueNew();
         //开始处理是否需要更新
         if(modifyFlag){
             //新的单元格值的字节数组
@@ -5800,7 +5771,10 @@ void MainWindow::on_actionsOpenCompare_triggered()
                 DialogShowTableCompareView * dialog = new DialogShowTableCompareView(title,fieldType,&compareData,this);
                 dialog->setWindowTitle(QString("行比对器视图"));
                 dialog->setModal(false);
+                dialog->setAttribute(Qt::WA_DeleteOnClose);
                 dialog->show();
+                dialog->raise();
+                dialog->activateWindow();
             }
         }
     }
@@ -6839,9 +6813,12 @@ void MainWindow::on_actionSaveAS_triggered()
  */
 void MainWindow::on_actionaboutAuthor_triggered()
 {
-    DialogAboutAuthor * dialog = new DialogAboutAuthor(this);
+    DialogAboutAuthor  *dialog=new DialogAboutAuthor (this);
     dialog->setModal(false);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 /**
@@ -7278,13 +7255,10 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
  */
 void MainWindow::on_actionfileOpenAdv_triggered()
 {
-    DialogOpenFileAdv * dialog = new DialogOpenFileAdv(this);
-    dialog->setWindowTitle(QString("自定义配置打开文件"));
-    dialog->setModal(true);
-    dialog->show();
-    //模态的使用完毕删除
-    delete dialog;
-    dialog=nullptr;
+    DialogOpenFileAdv  dialog(this);
+    dialog.setWindowTitle(QString("自定义配置打开文件"));
+    dialog.setModal(true);
+    dialog.exec();
 }
 
 
@@ -7301,20 +7275,20 @@ void MainWindow::on_actionpreference_triggered()
     par.insert("defaultviewmode",defaultViewMode);
     par.insert("defaultnewfilemode",defaultNewFileMode);
     par.insert("defaultpagesizetype",defaultPageSizeType);
-    DialogPreference * dialog = new DialogPreference(par,this);
-    dialog->setModal(true);
-    dialog->exec();
+    DialogPreference  dialog(par,this);
+    dialog.setModal(true);
+    dialog.exec();
     //获取结果
-    if(dialog->getSaveFlag()){
+    if(dialog.getSaveFlag()){
         bool changeFlag=false;
         //设置项压缩等级
-        if(dialog->getDataCompressLevel()!=dataCompressLevel){
+        if(dialog.getDataCompressLevel()!=dataCompressLevel){
             changeFlag=true;
-            this->dataCompressLevel=dialog->getDataCompressLevel();
+            this->dataCompressLevel=dialog.getDataCompressLevel();
         }
-        if(dialog->getDefaultViewMode()!=defaultViewMode){
+        if(dialog.getDefaultViewMode()!=defaultViewMode){
             changeFlag=true;
-            this->defaultViewMode=dialog->getDefaultViewMode();
+            this->defaultViewMode=dialog.getDefaultViewMode();
             if(defaultViewMode=="0"){
                 if(ui->frameInfo->isHidden()){
                     ui->frameInfo->setHidden(false);
@@ -7328,14 +7302,14 @@ void MainWindow::on_actionpreference_triggered()
                 }
             }
         }
-        if(dialog->getDefaultNewFileMode()!=defaultNewFileMode){
+        if(dialog.getDefaultNewFileMode()!=defaultNewFileMode){
             changeFlag=true;
-            this->defaultNewFileMode=dialog->getDefaultNewFileMode();
+            this->defaultNewFileMode=dialog.getDefaultNewFileMode();
         }
         //是否修改了分页每页页数
-        if(dialog->getDefaultPageSizeType()!=defaultPageSizeType){
+        if(dialog.getDefaultPageSizeType()!=defaultPageSizeType){
             changeFlag=true;
-            this->defaultPageSizeType=dialog->getDefaultPageSizeType();
+            this->defaultPageSizeType=dialog.getDefaultPageSizeType();
             //每页行数
             if(this->defaultPageSizeType=="0"){
                 ui->labelPageSize->setText("(10万行/页)");
@@ -7395,9 +7369,6 @@ void MainWindow::on_actionpreference_triggered()
             loadedSettingInfoIni.sync();
         }
     }
-    //模态弹窗删除
-    delete dialog;
-    dialog=nullptr;
 }
 
 /**
@@ -7421,19 +7392,15 @@ void MainWindow::on_actionnewWindow_triggered()
 bool MainWindow:: ignoreFileChangeAndOpenNewFile(){
     //判断文件是否被修改
     if(fileChanged){
-        DialogMyTip * dialog = new DialogMyTip("当前修改的文件还未保存，要放弃保存并读取新的文件么？",this);
-        dialog->setWindowTitle("警告！");
-        dialog->setModal(true);
-        dialog->exec();
-        if(!dialog->getBoolFlag()){
-            delete dialog;
-            dialog=nullptr;
+        DialogMyTip dialog("当前修改的文件还未保存，要放弃保存并读取新的文件么？",this);
+        dialog.setWindowTitle("警告！");
+        dialog.setModal(true);
+        dialog.exec();
+        if(!dialog.getBoolFlag()){
             statusBar_disPlayMessage("放弃读取新文件,如果需要保存当前文件，可以使用Ctrl+S保存...");
             return false;
         }
         else{
-            delete dialog;
-            dialog=nullptr;
             return true;
         }
     }
@@ -7449,19 +7416,15 @@ bool MainWindow:: ignoreFileChangeAndOpenNewFile(){
  */
 void MainWindow::closeEvent(QCloseEvent *event){
     if(fileChanged){
-        DialogMyTip * dialog = new DialogMyTip("当前修改的文件还未保存,要放弃保存并退出工具么？",this);
-        dialog->setWindowTitle("警告！");
-        dialog->setModal(true);
-        dialog->exec();
-        if(!dialog->getBoolFlag()){
-            delete dialog;
-            dialog=nullptr;
+        DialogMyTip dialog("当前修改的文件还未保存,要放弃保存并退出工具么？",this);
+        dialog.setWindowTitle("警告！");
+        dialog.setModal(true);
+        dialog.exec();
+        if(!dialog.getBoolFlag()){
             statusBar_disPlayMessage("放弃退出工具,如果需要保存当前文件，可以使用Ctrl+S保存...");
             event->ignore();
         }
         else{
-            delete dialog;
-            dialog=nullptr;
             event->accept();
         }
     }
@@ -7938,7 +7901,10 @@ void MainWindow::on_actioncreatenewofdfile_triggered()
 {
     CreateOFDWindow * dialog = new CreateOFDWindow(this);
     dialog->setModal(false);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 void MainWindow::on_actioncopy_triggered()
@@ -8063,14 +8029,11 @@ void MainWindow::on_actionopeninexcel_triggered()
         return;
     }
     //弹窗提示
-    DialogMyTip * dialog2 = new DialogMyTip("确定导出当前文件为xlsx并在Excel中打开么?\r\n使用此功能将在文件原始目录生成一个同名xlsx文件\r\n在Excel中你可以进行更为细致的数据统计分析",this);
-    dialog2->setWindowTitle("提示！");
-    dialog2->setModal(true);
-    dialog2->exec();
-    if(dialog2->getBoolFlag()){
-        //模态的使用完毕删除
-        delete dialog2;
-        dialog2=nullptr;
+    DialogMyTip dialog2("确定导出当前文件为xlsx并在Excel中打开么?\r\n使用此功能将在文件原始目录生成一个同名xlsx文件\r\n在Excel中你可以进行更为细致的数据统计分析",this);
+    dialog2.setWindowTitle("提示！");
+    dialog2.setModal(true);
+    dialog2.exec();
+    if(dialog2.getBoolFlag()){
         //限制
         if(row>maxExcelRow){
             statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");

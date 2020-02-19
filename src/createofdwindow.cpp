@@ -155,11 +155,11 @@ void CreateOFDWindow::on_pushButton_clicked()
         targetDir.refresh();
         QStringList  filesOld = targetDir.entryList(QStringList(), QDir::Files, QDir::Name);
         if(filesOld.count()>0){
-            DialogMyTip * dialog2 = new DialogMyTip("文件生成路径["+targetPath+"]下存在文件,是否清空此目录下的文件生成新的文件？\r\n仅删除文件且不可恢复！",this);
-            dialog2->setWindowTitle("请确认！");
-            dialog2->setModal(true);
-            dialog2->exec();
-            if(!dialog2->getBoolFlag()){
+            DialogMyTip dialog2("文件生成路径["+targetPath+"]下存在文件,是否清空此目录下的文件生成新的文件？\r\n仅删除文件且不可恢复！",this);
+            dialog2.setWindowTitle("请确认！");
+            dialog2.setModal(true);
+            dialog2.exec();
+            if(!dialog2.getBoolFlag()){
                 ui->logOut->setText("放弃覆盖生成!");
                 return;
             }

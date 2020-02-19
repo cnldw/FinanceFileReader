@@ -39,7 +39,10 @@ void DialogAboutAuthor::on_pushButton_clicked()
         if(number>=4){
             QGameBoard *board=new QGameBoard();
             board->setWindowTitle("2048-恭喜你发现了2048彩蛋,来玩一局吧~");
+            board->setAttribute(Qt::WA_DeleteOnClose);
             board->show();
+            board->raise();
+            board->activateWindow();
             this->close();
         }
 }
