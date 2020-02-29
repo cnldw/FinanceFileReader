@@ -23,6 +23,11 @@
 #include <QPoint>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPixmap>
+#include <QDesktopServices>
+#include <QDateTime>
+#include <QFileDialog>
+#include <QShortcut>
 
 namespace Ui {
 class DialogShowTableRow;
@@ -45,6 +50,8 @@ private slots:
 
     void copyToClipboard();
 
+    void saveScreen();
+
     void on_pushButton_clicked();
 
     void on_tableWidget_itemSelectionChanged();
@@ -55,6 +62,7 @@ private:
     //表格菜单
     QMenu *tablePopMenu;
     QAction *action_ShowCopyColum;
+    QAction *action_ShowSaveScreen;
     QPoint posCurrentMenu;
     //
     int searchRow =0;

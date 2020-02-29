@@ -27,6 +27,11 @@
 #include <QList>
 #include <QDebug>
 #include <QMessageBox>
+#include <QPixmap>
+#include <QDesktopServices>
+#include <QDateTime>
+#include <QFileDialog>
+#include <QShortcut>
 #include "src/utils.h"
 
 namespace Ui {
@@ -50,6 +55,8 @@ private slots:
 
     void copyToClipboard();
 
+    void saveScreen();
+
     void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
 
     void on_pushButton_clicked();
@@ -64,6 +71,7 @@ private:
     //表格菜单
     QMenu *tablePopMenu;
     QAction *action_ShowCopyColum;
+    QAction *action_ShowSaveScreen;
     QList<int> colNoEqual;
     QPoint posCurrentMenu;
 

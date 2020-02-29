@@ -50,6 +50,8 @@
 #include <QProcess>
 #include <QCloseEvent>
 #include <QDesktopServices>
+#include <QPixmap>
+#include <QKeySequence>
 #include "src/utils.h"
 #include "src/ofdfiledefinition.h"
 #include "src/ofdfielddefinition.h"
@@ -77,6 +79,7 @@
 #include "src/publicdefine.h"
 #include "src/ofdfaultcause.h"
 #include "src/createofdwindow.h"
+#include "src/dialogchooseexporttype.h"
 
 namespace Ui {
 class MainWindow;
@@ -96,6 +99,9 @@ protected:
     void dropEvent(QDropEvent *event);
     //窗口尺寸变化事件
     void resizeEvent (QResizeEvent * event );
+
+    bool event(QEvent *event);
+
     //槽函数
 private slots:
 
@@ -215,6 +221,10 @@ private slots:
     void on_actionedit2_triggered();
 
     void on_actionopeninexcel_triggered();
+
+    void on_actionscreen_triggered();
+
+    void on_actiontipslist_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -348,6 +358,9 @@ private:
     //加入到比对器的数据 <行号,数据>
     QMap<int,QStringList> compareData;
 
+    //字段Tips
+    QMap<QString,QMap<QString,QString>> fieldTips;
+
     //文件变化标志，如果打开了一个文件并且编辑修改了，则此标志为真
     bool fileChanged=false;
 
@@ -376,8 +389,13 @@ private:
 
     //支持导出excel文件的最大行数
     //导出超大excel将占用很大的内存，这里初步限制60万行，需要再高的需要定制该功能
-    int maxExcelRow=600000;
+    //1.8.6开始支持导出100万行
+    int maxExcelRow=1000000;
 
+    //忽略正在进行的任务强制退出
+    //如果程序正在进行诸如文件读取,文件导出,搜索任务时,程序强制退出时使用,主动告知进行中的任务进行退出函数，方式程序在后台驻留
+    //只允许退出程序时使用此标志,遇到此标志一切进行中的耗时任务都会终止并退出
+    bool abortExit=false;
 
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
     void statusBar_clear_statusBar();
@@ -395,6 +413,7 @@ private:
     void load_Setting();
     void load_OFDIndexFile();
     void load_OFDDictionary();
+    void load_OFDTipDictionary();
     void load_OFDDefinition();
     void load_CSVDefinition();
     void load_FIXEDDefinition();
@@ -404,9 +423,9 @@ private:
     void load_fixedFile(QStringList fileType);
     void load_fixedFileData();
     void load_csvFileData(QStringList title);
-    void save2Csv(QString filename);
-    void save2Html(QString filename);
-    void save2Xlsx(QString filename);
+    void save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8=false);
+    void save2Html(QString filename,int pageNum, bool useUTF8=false);
+    void save2Xlsx(QString filename,int pageNum);
     int save2XlxsFile();
     void init_display_IndexTable();
     void init_OFDTable();

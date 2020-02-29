@@ -725,6 +725,7 @@ border-radius:3px;
     <addaction name="actionaboutAuthor"/>
     <addaction name="actionwebsite"/>
     <addaction name="actionmanual"/>
+    <addaction name="actiontipslist"/>
     <addaction name="actionAboutQt"/>
    </widget>
    <widget class="QMenu" name="menu">
@@ -757,6 +758,7 @@ border-radius:3px;
      <string>附加工具</string>
     </property>
     <addaction name="actiondifftools"/>
+    <addaction name="actionscreen"/>
     <addaction name="actionfileedit"/>
     <addaction name="actionopeninexcel"/>
    </widget>
@@ -901,7 +903,7 @@ border-radius:3px;
   </action>
   <action name="actionfileedit">
    <property name="text">
-    <string>在文本编辑器中打开当前文件</string>
+    <string>文本编辑器中打开当前文件</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+F</string>
@@ -941,10 +943,23 @@ border-radius:3px;
   </action>
   <action name="actionopeninexcel">
    <property name="text">
-    <string>导出到Excel并打开</string>
+    <string>导出到Excel并打开当前文件</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Alt+D</string>
+    <string>Ctrl+Alt+E</string>
+   </property>
+  </action>
+  <action name="actionscreen">
+   <property name="text">
+    <string>对当前窗口进行截图保存</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+R</string>
+   </property>
+  </action>
+  <action name="actiontipslist">
+   <property name="text">
+    <string>查看所有温馨提示</string>
    </property>
   </action>
  </widget>

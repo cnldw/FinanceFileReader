@@ -124,6 +124,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("需要打开超大文件?,建议在设置里设置开启压缩模式和分页支持,支持的文件大小立即提升到GB级别...");
     tips.append("本程序是业余无偿开发的,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
     tips.append("可以使用本程序新建OFD文件,以及初始化自己的新建模板...");
+    tips.append("导出功能可以分页导出或者导出全部数据,自由选择导出范围,是否使用UTF-8编码...");
+    tips.append("在程序主窗口或者查看行详细信息界面,使用Ctrl+Alt+R(command+option+R)可以进行快速截图保存...");
 #ifdef Q_OS_WIN32
     tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
     tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
@@ -170,6 +172,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     load_OFDDefinition();
     //加载OFD字典
     load_OFDDictionary();
+    load_OFDTipDictionary();
     //加载各类CSV文件的定义
     load_CSVDefinition();
     //加载各类定长文件的定义
@@ -485,7 +488,8 @@ void MainWindow::open_file_Dialog(){
         return;
     }
     dataBlocked=true;
-    QString openpath="./";
+    //1.8.6开始,打开文件路径默认为桌面
+    QString openpath=QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     if(!currentOpenFilePath.isEmpty()){
         if(currentOpenFilePath.contains("/",Qt::CaseSensitive)){
             openpath=currentOpenFilePath.left(currentOpenFilePath.lastIndexOf("/")+1);
@@ -738,6 +742,44 @@ void MainWindow::load_OFDDictionary(){
     }
 }
 
+
+void MainWindow::load_OFDTipDictionary(){
+    QString TipDictionaryInipath=Utils::getConfigPath()+"OFD_TipDictionary.ini";
+    if(Utils::isFileExist(TipDictionaryInipath)){
+        //加载ini文件
+        QSettings loadedDictionary(TipDictionaryInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        loadedDictionary.setIniCodec("UTF-8");
+        //获取所有fixed文件的配置信息，循环存储
+        QStringList dictionaryGroup=loadedDictionary.childGroups();
+        //查不到任何段落
+        if(dictionaryGroup.count()<1){
+            return;
+        }
+        //循环各个字典组
+        //tip字典和字段枚举字典一样分组
+        for(int i=0;i<dictionaryGroup.count();i++){
+            loadedDictionary.beginGroup(dictionaryGroup.at(i));
+            QStringList allkey=loadedDictionary.allKeys();
+            QMap<QString,QString> tips;
+            if(allkey.count()>0){
+                for (int j=0;j<allkey.count();j++){
+                    //如果值不空,则认为是一条有效的tips
+                    if(!loadedDictionary.value(allkey.at(j)).toString().isEmpty()){
+                        tips.insert(allkey.at(j),loadedDictionary.value(allkey.at(j)).toString());
+                    }
+                }
+                //OFD的tips存储结构为OFD0001这样的OFD开头的文件类别
+                fieldTips.insert("OFD"+dictionaryGroup.at(i),tips);
+            }
+            loadedDictionary.endGroup();
+        }
+    }
+    else{
+        statusBar_disPlayMessage(Utils::getConfigPath()+tr("OFD_TipDictionary.ini配置丢失"));
+    }
+}
+
 /**
  * @brief MainWindow::load_OFDDefinition加载OFD文件的定义
  */
@@ -756,7 +798,7 @@ void MainWindow::load_OFDDefinition(){
             QString fileName=list.at(f).fileName();
             QString fixName=fileName;
             //排除几个文件
-            if(fileName=="OFD_CodeInfo.ini"||fileName=="OFD_Dictionary.ini"||fileName=="OFD_IndexFile.ini"){
+            if(fileName=="OFD_CodeInfo.ini"||fileName=="OFD_Dictionary.ini"||fileName=="OFD_IndexFile.ini"||fileName=="OFD_TipDictionary.ini"){
                 continue;
             }
             if(fileName.startsWith("OFD",Qt::CaseInsensitive)&&fileName.endsWith("ini",Qt::CaseInsensitive)){
@@ -1094,6 +1136,32 @@ void MainWindow::load_CSVDefinition(){
                             }
                             infoList.clear();
                         }
+                        //字段Tips加载
+                        else if(csvType=="TipDictionary"){
+                            //开始循环读取字典
+                            loadedCsvInfoIni.beginGroup("TipDictionary");
+                            QStringList infoList =loadedCsvInfoIni.childKeys();
+                            loadedCsvInfoIni.endGroup();
+                            if(infoList.count()>0){
+                                QMap<QString,QString> tips;
+                                for(int aaa=0;aaa<infoList.count();aaa++){
+                                    //ini配置中如果key存在中文会出现错误，所以我们使用1=key:value的方式去改造
+                                    QString line=loadedCsvInfoIni.value("TipDictionary/"+infoList.at(aaa)).toString();
+                                    //从第一个：拆分这样做到优雅的tips中可以存在：
+                                    int index=line.indexOf(':');
+                                    if(index>0){
+                                        tips.insert(line.mid(0,index),line.mid(index+1));
+                                    }
+                                    //不包含:的跳过
+                                    else{
+                                        continue;
+                                    }
+                                }
+                                //以文件类别，配置文件名存入
+                                fieldTips.insert("CSV"+fileName,tips);
+                            }
+                            infoList.clear();
+                        }
                         else{
                             //无效配置段落，跳过
                             continue;
@@ -1304,7 +1372,8 @@ void MainWindow::load_FIXEDDefinition(){
                                 FixedFieldDefinition fixedfield;
                                 //获取这个文件定义的第i个字段的信息
                                 QStringList iniStrList=loadedFixedInfoIni.value(fixedType+"/"+(QString::number(r+1,10))).toStringList();
-                                if (iniStrList.isEmpty()||iniStrList.length()!=4){
+                                //至少要四段配置
+                                if (iniStrList.isEmpty()||iniStrList.length()<4){
                                     message="第"+QString::number(r+1,10)+"个字段定义不正确或者缺失";
                                     okFlag=false;
                                     break;
@@ -1345,8 +1414,15 @@ void MainWindow::load_FIXEDDefinition(){
                                 fixedfield.setLength(length);
                                 fixedfield.setDecLength(declength);
                                 fixedfield.setFieldType(fieldType);
-                                fixedfield.setFieldName(QString(iniStrList.at(3)));
                                 fixedfield.setFieldDescribe(QString(iniStrList.at(3)));
+                                //如果存在英文名赋值
+                                if(iniStrList.count()>4){
+                                    fixedfield.setFieldName(QString(iniStrList.at(4)));
+                                }
+                                //否则赋值中文名
+                                else{
+                                    fixedfield.setFieldName(QString(iniStrList.at(3)));
+                                }
                                 fieldList.append(fixedfield);
                                 //如果存在此长度类型，则记录下行总长度,使用Qhash，行长度，字段数
                                 if(fileDef.getFieldCountList().contains(r+1)){
@@ -1376,7 +1452,7 @@ void MainWindow::load_FIXEDDefinition(){
                             loadedFixedDefinitionList.append(fileDef);
                         }
                     }
-                    //判断是否是字典配置，字典配置是csv配置文件里的一段特殊配置，使用Dictionary标注
+                    //判断是否是字典配置，字典配置是fixed配置文件里的一段特殊配置，使用Dictionary标注
                     else
                     {
                         if(fixedType=="Dictionary"){
@@ -1402,6 +1478,31 @@ void MainWindow::load_FIXEDDefinition(){
                                 }
                                 //将字典加入qhash.FIXED文件的字典以FIXED开头
                                 commonDictionary.insert("FIXED"+fileName,dic);
+                            }
+                            infoList.clear();
+                        }
+                        //字段Tips加载
+                        else if(fixedType=="TipDictionary"){
+                            //开始循环读取字典
+                            loadedFixedInfoIni.beginGroup("TipDictionary");
+                            QStringList infoList =loadedFixedInfoIni.childKeys();
+                            loadedFixedInfoIni.endGroup();
+                            if(infoList.count()>0){
+                                QMap<QString,QString> tips;
+                                for(int aaa=0;aaa<infoList.count();aaa++){
+                                    //ini配置中如果key存在中文会出现错误，所以我们使用1=key@value的方式去改造
+                                    QString line=loadedFixedInfoIni.value("TipDictionary/"+infoList.at(aaa)).toString();
+                                    int index=line.indexOf(':');
+                                    if(index>0){
+                                        tips.insert(line.mid(0,index),line.mid(index+1));
+                                    }
+                                    //不包含:的跳过
+                                    else{
+                                        continue;
+                                    }
+                                }
+                                //以文件类别，配置文件名存入
+                                fieldTips.insert("FIXED"+fileName,tips);
                             }
                             infoList.clear();
                         }
@@ -2015,6 +2116,12 @@ void MainWindow::load_ofdFile(QString fileType){
                         if((lineNumber%1000)==0){
                             statusBar_disPlayMessage(QString("文件读取中,已读取数据记录%1行").arg(QString::number(lineNumber)));
                             qApp->processEvents();
+                            //强制终止事件-立即return退出
+                            if(abortExit){
+                                QApplication::restoreOverrideCursor();
+                                qDebug()<<"强制立即终止任务";
+                                return;
+                            }
                         }
                     }
                     QApplication::restoreOverrideCursor();
@@ -2092,6 +2199,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
                     {
                         int dataBeginRow=loadedCsvDefinitionList.at(dd).getDatabeginrowindex();
+                        int endIgnore=loadedCsvDefinitionList.at(dd).getEndIgnoreRow();
                         //查找可用配置结束，开始分析文件到底是哪个版本
                         //最大化获取文件内的样本数据
                         QTextCodec *codec=QTextCodec::codecForName(loadedCsvDefinitionList.at(dd).getEcoding().toLocal8Bit());
@@ -2099,7 +2207,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                         QString line;
                         //当前读取到的行数
                         int row=0;
-                        while (!dataFile.atEnd()&&row<dataBeginRow)
+                        while (!dataFile.atEnd()&&row<(dataBeginRow+endIgnore+1))
                         {
                             line = codec->toUnicode(dataFile.readLine());
                             line=line.remove('\r').remove('\n').trimmed();
@@ -2113,8 +2221,9 @@ void MainWindow::load_csvFile(QStringList fileType){
                             statusBar_disPlayMessage("空的CSV文件,没有任何数据记录可工解析");
                             return;
                         }
+                        //当文件内存在标题行时，允许解析空文件
                         else{
-                            //存在标题行
+                            //存在标题行----需要从文件内提取标题行
                             if(loadedCsvDefinitionList.at(dd).getTitlerowindex()>0){
                                 //存在标题行但是文件内的数据行数低于标题所在行，无内容，无法判断
                                 if(csvData.count()<loadedCsvDefinitionList.at(dd).getTitlerowindex()){
@@ -2127,7 +2236,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                                 //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
                                 else{
                                     QString titleRowString=csvData.at(loadedCsvDefinitionList.at(dd).getTitlerowindex()-1);
-                                    if(titleRowString.length()<0){
+                                    if(titleRowString.isEmpty()){
                                         FaultCause item;
                                         item.setConfigIndex(dd);
                                         item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行找到的标题内容为空，无法提取接口文件列名信息");
@@ -2143,10 +2252,10 @@ void MainWindow::load_csvFile(QStringList fileType){
                                     //如果文件字段数是-1.则代表根据标题或者第一行数据自动分析列数和列标题，以标题行或者第一行数据自己造标题数据为准来更新列数
                                     if(loadedCsvDefinitionList.at(dd).getFieldCount()==-1){
                                         int countFromtitle=fieldTitle.count();
-                                        if(countFromtitle<0){
+                                        if(countFromtitle<2){
                                             FaultCause item;
                                             item.setConfigIndex(dd);
-                                            item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行使用分隔符["+loadedCsvDefinitionList.at(dd).getSplit()+"]找到的标题列数为0，无法解析列数为0的文件");
+                                            item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行使用分隔符["+loadedCsvDefinitionList.at(dd).getSplit()+"]找到的标题列数为小于2，可能不是该类型的文件");
                                             faultList.append(item);
                                             continue;
                                         }
@@ -2191,28 +2300,29 @@ void MainWindow::load_csvFile(QStringList fileType){
                                     }
                                 }
                             }
-                            //如果不存在标题行
+                            //如果不存在标题行---标题定义在配置文件
                             else{
-                                //不存在标题并且文件内的数据行数低于第一行数据，无内容，无法判断
-                                if(csvData.count()<loadedCsvDefinitionList.at(dd).getDatabeginrowindex()){
+                                //如果文件内没标题行,则至少要有一行数据用于判断
+                                //至少存在一行数据的时候我们才开始进行正常的解析行为
+                                //文件内的行数<文件头+文件尾部忽略行【既文件无实质性数据内容】
+                                if (csvData.count()<(dataBeginRow+endIgnore)){
                                     FaultCause item;
                                     item.setConfigIndex(dd);
-                                    item.setCause("配置文件中说文件从第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行就是数据行了，但是打开的文件只有["+QString::number(csvData.count())+"]行哟，无有效数据,无法解析");
+                                    item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件,请确认是否1行数据记录都没有(CSV文件解析对于文件内无标题行的文件,工具需要根据首行数据内容识别文件类别)....");
                                     faultList.append(item);
                                     continue;
                                 }
-                                //如果文件字段数是-1.则代表根据标题或者第一行数据自动分析列数和列标题，以标题行或者第一行数据自己造标题数据为准来更新列数
-                                else if(loadedCsvDefinitionList.at(dd).getFieldCount()==-1){
+                                if(loadedCsvDefinitionList.at(dd).getFieldCount()==-1){
                                     QString firstDataRowString=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1);
                                     //如果需要忽略最后一个多余的分隔符
                                     if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
                                         firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
                                     }
                                     int fieldCountFirstRow=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
-                                    if(fieldCountFirstRow<0){
+                                    if(fieldCountFirstRow<2){
                                         FaultCause item;
                                         item.setConfigIndex(dd);
-                                        item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行使用分隔符["+loadedCsvDefinitionList.at(dd).getSplit()+"]找到的数据列数为0，无法解析列数为0的文件");
+                                        item.setCause("在本配置描述的文件第"+QString::number(loadedCsvDefinitionList.at(dd).getTitlerowindex())+"行使用分隔符["+loadedCsvDefinitionList.at(dd).getSplit()+"]找到的数据列数小于2，无法断定为该类型的文件");
                                         faultList.append(item);
                                         continue;
                                     }
@@ -2239,7 +2349,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                                         return;
                                     }
                                 }
-                                //存在数据,以第一行数据分析
+                                //存在明确的字段数定义在配置文件中时
                                 else{
                                     QString firstDataRowString=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1);
                                     //如果需要忽略最后一个多余的分隔符
@@ -2262,7 +2372,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                                     else{
                                         FaultCause item;
                                         item.setConfigIndex(dd);
-                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行找到的数据有["+QString::number(fieldCount)+"]列数据,和配置文件中定义的列数["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                                        item.setCause("在文件第"+QString::number(loadedCsvDefinitionList.at(dd).getDatabeginrowindex())+"行(基于该配置的第一行有效数据)找到的数据有["+QString::number(fieldCount)+"]列数据,和配置文件中定义的列数["+QString::number(loadedCsvDefinitionList.at(dd).getFieldCount())+"]不一致，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
                                         faultList.append(item);
                                         continue;
                                     }
@@ -2319,6 +2429,7 @@ void MainWindow::load_fixedFile(QStringList fileType){
                     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
                     {
                         int dataBeginRow=loadedFixedDefinitionList.at(dd).getDataRowBeginIndex();
+                        int endIgnore=loadedFixedDefinitionList.at(dd).getEndIgnoreRow();
                         //查找可用配置结束，开始分析文件到底是哪个版本
                         //最大化获取文件内的样本数据
                         QTextCodec *codec=QTextCodec::codecForName(loadedFixedDefinitionList.at(dd).getEcoding().toLocal8Bit());
@@ -2326,8 +2437,8 @@ void MainWindow::load_fixedFile(QStringList fileType){
                         QString line;
                         //当前读取到的行数
                         int row=0;
-                        //读取到第一行数据为止
-                        while (!dataFile.atEnd()&&row<dataBeginRow)
+                        //读取到第一行数据为止(1.8.6开始多读取几行尾部忽略行+1，用于判断是否为空数据文件)
+                        while (!dataFile.atEnd()&&row<(dataBeginRow+endIgnore+1))
                         {
                             line =codec->toUnicode(dataFile.readLine());
                             line=line.remove('\r').remove('\n');
@@ -2338,7 +2449,7 @@ void MainWindow::load_fixedFile(QStringList fileType){
                         //如果一行数据都没读到，则提示是空文件，结束探测--不再做任何解析尝试
                         if(row==0){
                             dataFile.close();
-                            statusBar_disPlayMessage("空的定长文件,没有任何数据记录可工解析!");
+                            statusBar_disPlayMessage("空的定长文件,没有任何数据记录可供解析!");
                             return;
                         }
                         else{
@@ -2346,7 +2457,15 @@ void MainWindow::load_fixedFile(QStringList fileType){
                             if(fixedData.count()<loadedFixedDefinitionList.at(dd).getDataRowBeginIndex()){
                                 FaultCause item;
                                 item.setConfigIndex(dd);
-                                item.setCause("配置文件中说文件从第"+QString::number(loadedFixedDefinitionList.at(dd).getDataRowBeginIndex())+"行就是数据行了，但是打开的文件只有["+QString::number(fixedData.count())+"]行哟，无有效数据,无法解析");
+                                item.setCause("配置文件中标注文件第"+QString::number(loadedFixedDefinitionList.at(dd).getDataRowBeginIndex())+"行开始是数据行了，但是打开的文件只有["+QString::number(fixedData.count())+"]行哟，无有效数据,无法确认该文件符合本解析规则");
+                                faultList.append(item);
+                                continue;
+                            }
+                            //文件内的行数<文件头+文件尾部忽略行【既文件无实质性数据内容】
+                            else if(fixedData.count()<(dataBeginRow+endIgnore)){
+                                FaultCause item;
+                                item.setConfigIndex(dd);
+                                item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件,请确认是否1行数据记录都没有(定长文件解析不支持空文件解析,工具需要根据首行数据内容识别文件类别)....");
                                 faultList.append(item);
                                 continue;
                             }
@@ -2458,6 +2577,12 @@ void MainWindow::load_fixedFileData(){
             if((lineNumber%1000)==0){
                 statusBar_disPlayMessage(QString("文件读取中,已读取数据记录%1行").arg(QString::number(lineNumber)));
                 qApp->processEvents();
+                //强制终止事件-立即return退出
+                if(abortExit){
+                    QApplication::restoreOverrideCursor();
+                    qDebug()<<"强制立即终止任务";
+                    return;
+                }
             }
         }
         QApplication::restoreOverrideCursor();
@@ -2823,6 +2948,12 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
             if((lineNumber%1000)==0){
                 statusBar_disPlayMessage(QString("文件读取中,已读取数据记录%1行").arg(QString::number(lineNumber)));
                 qApp->processEvents();
+                //强制终止事件-立即return退出
+                if(abortExit){
+                    QApplication::restoreOverrideCursor();
+                    qDebug()<<"强制立即终止任务";
+                    return;
+                }
             }
         }
         QApplication::restoreOverrideCursor();
@@ -2912,6 +3043,16 @@ void MainWindow::init_OFDTable(){
         }
         //设置标题
         ptr_table->setHorizontalHeaderLabels(title);
+        //设置Tips
+        if(fieldTips.contains("OFD"+ofd.getDictionary())){
+            //设置tips
+            for(int tipindex=0;tipindex<colCount;tipindex++){
+                QString tips=fieldTips.value("OFD"+ofd.getDictionary()).value(ofd.getFieldList().at(tipindex).getFieldName());
+                if(!tips.isEmpty()){
+                    ptr_table->horizontalHeaderItem(tipindex)->setToolTip(tips);
+                }
+            }
+        }
         //设置表格的选择方式
         ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
         //设置编辑方式
@@ -2977,6 +3118,15 @@ void MainWindow::init_FIXEDTable(){
     }
     //设置标题
     ptr_table->setHorizontalHeaderLabels(title);
+    if(fieldTips.contains("FIXED"+fixed.getFileIni())){
+        //设置tips
+        for(int tipindex=0;tipindex<colCount;tipindex++){
+            QString tips=fieldTips.value("FIXED"+fixed.getFileIni()).value(fixed.getFieldList().at(tipindex).getFieldDescribe());
+            if(!tips.isEmpty()){
+                ptr_table->horizontalHeaderItem(tipindex)->setToolTip(tips);
+            }
+        }
+    }
     //设置表格的选择方式
     ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
     //设置编辑方式
@@ -3121,6 +3271,15 @@ void MainWindow::init_CSVTable(QStringList title){
         //////////////分页逻辑//////////////////////
         //设置标题
         ptr_table->setHorizontalHeaderLabels(title);
+        if(fieldTips.contains("CSV"+csv.getFileIni())){
+            //设置tips
+            for(int tipindex=0;tipindex<colCount;tipindex++){
+                QString tips=fieldTips.value("CSV"+csv.getFileIni()).value(csv.getFieldList().at(tipindex).getFieldName());
+                if(!tips.isEmpty()){
+                    ptr_table->horizontalHeaderItem(tipindex)->setToolTip(tips);
+                }
+            }
+        }
         for(int i=0;i<title.count();i++){
             //初始化列宽度设置为0，保障加载数据时，至少进行一次列宽度重设，解决一些坑坑的问题，请注意不要修改此处代码
             columnWidth.insert(i,0);
@@ -4236,6 +4395,8 @@ void MainWindow::showRowDetails(){
                 //字典翻译
                 colitem.append(ofdDictionary.getDictionary(ofd.getDictionary()+"_"+ofd.getFieldList().at(i).getFieldName(),colvalue));
             }
+            //tips
+            colitem.append(ptr_table->horizontalHeaderItem(i)->toolTip());
             rowdata.append(colitem);
         }
     }
@@ -4244,7 +4405,7 @@ void MainWindow::showRowDetails(){
             QStringList colitem;
             if(ptr_table->item(tableRowCurrent,i)==nullptr){
                 //字段中文名
-                colitem.append(ptr_table->horizontalHeaderItem(i)->text());
+                colitem.append(csv.getFieldList().at(i).getFieldName());
                 //字段英文名
                 colitem.append(nullptr);
                 //字段值
@@ -4255,13 +4416,15 @@ void MainWindow::showRowDetails(){
             else{
                 QString colvalue=ptr_table->item(tableRowCurrent,i)->text();
                 //字段名
-                colitem.append(ptr_table->horizontalHeaderItem(i)->text());
+                colitem.append(csv.getFieldList().at(i).getFieldName());
                 colitem.append(nullptr);
                 //字段值
                 colitem.append(colvalue);
                 //字典翻译
                 colitem.append(commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(i).getFieldName(),colvalue));
             }
+            //tips
+            colitem.append(ptr_table->horizontalHeaderItem(i)->toolTip());
             rowdata.append(colitem);
         }
     }
@@ -4288,6 +4451,8 @@ void MainWindow::showRowDetails(){
                 //字典翻译
                 colitem.append(commonDictionary.value("FIXED"+fixed.getFileIni()).getDictionary(fixed.getFieldList().at(i).getFieldDescribe(),colvalue));
             }
+            //tips
+            colitem.append(ptr_table->horizontalHeaderItem(i)->toolTip());
             rowdata.append(colitem);
         }
     }
@@ -4811,6 +4976,12 @@ void MainWindow::showModifyOFDCellBatch(){
                         if((updatedRow%1000==0)){
                             statusBar_disPlayMessage(QString("批量更新中,请勿进行其他操作,已更新%1行").arg(QString::number(updatedRow)));
                             qApp->processEvents();
+                            //强制终止事件-立即return退出
+                            if(abortExit){
+                                QApplication::restoreOverrideCursor();
+                                qDebug()<<"强制立即终止任务";
+                                return;
+                            }
                         }
                     }
                 }
@@ -5112,6 +5283,12 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 if(row%500==0){
                     statusBar_disPlayMessage("正在搜索,请耐心等待...");
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
@@ -5138,6 +5315,12 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 if(row%500==0){
                     statusBar_disPlayMessage("正在搜索,请耐心等待...");
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
@@ -5163,6 +5346,12 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 if(row%500==0){
                     statusBar_disPlayMessage("正在搜索,请耐心等待...");
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
@@ -5283,6 +5472,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 if(row%500==0){
                     statusBar_disPlayMessage("正在搜索,请耐心等待...");
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
@@ -5309,6 +5504,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 if(row%500==0){
                     statusBar_disPlayMessage("正在搜索,请耐心等待...");
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
@@ -5334,6 +5535,12 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 if(row%500==0){
                     statusBar_disPlayMessage("正在搜索,请耐心等待...");
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
@@ -5792,7 +5999,6 @@ void MainWindow::on_actionClearCompare_triggered()
 /**
  * @brief MainWindow::on_pushButtonExport_clicked 数据导出功能函数
  */
-//待分页改造,增加分页导出文件的提示-支持一页导出一个文件
 void MainWindow::on_pushButtonExport_clicked()
 {
     if(isUpdateData){
@@ -5815,6 +6021,29 @@ void MainWindow::on_pushButtonExport_clicked()
     //预先数据判断
     if(ptr_table->rowCount()<1){
         statusBar_disPlayMessage("没有数据可供导出,目前表格有0行数据");
+        return;
+    }
+    /////////////////导出方案选择///////////////////////////
+    bool moreThan=false;
+    bool useUTF8=false;
+    //超出限制无法导出整个excel
+    if(ofdFileContentQByteArrayList.count()>maxExcelRow||csvFileContentQByteArrayList.count()>maxExcelRow||fixedContenQByteArrayList.count()>maxExcelRow){
+        moreThan=true;
+    }
+    //选择导出模式
+    DialogChooseExportType dialog(currentOpenFileType,pageCount,currentPage,moreThan,this);
+    dialog.setModal(true);
+    dialog.exec();
+    //导出当前页或者导出整个文件
+    int exportType=dialog.getExportType();
+    //强制使用UTF-8导出文件-仅适用于csvc和html
+    if(dialog.getUtf8()==1){
+        useUTF8=true;
+    }
+    //导出的文件类型
+    int exportFileType=dialog.getExportFileType();
+    if(exportType==0){
+        statusBar_disPlayMessage("没有选择有效的导出方案,导出取消...");
         return;
     }
     //数据类型插入点
@@ -5850,31 +6079,55 @@ void MainWindow::on_pushButtonExport_clicked()
                 filename=currentOpenFilePath.left(index);
             }
         }
+        //默认0为导出所有数据
+        int exportPage=0;
+        //如果当前是OFD文件且要导出csv
+        if((exportFileType==12||exportFileType==13||exportFileType==14)&&useUTF8&&currentOpenFileType==1){
+            filename=filename.append("_UTF-8");
+        }
+        //如果是按页导出的
+        if(exportType==2){
+            exportPage=currentPage;
+            filename=filename.append("_Page").append(QString::number(currentPage));
+        }
         //文件过滤器,用于追踪选择的保存文件类别
         QString selectedFilter=Q_NULLPTR;
         //弹出保存框
         //数据类型插入点，csv文件不支持导出csv文件
         QString fileTypeSelect="";
-        if(currentOpenFileType==1){
-            fileTypeSelect=tr("Excel文件(*.xlsx);;Csv文件(*.csv);;Html文件(*.html)");
+        if(exportFileType==10){
+            fileTypeSelect="Excel文件(*.xlsx)";
         }
-        if(currentOpenFileType==2){
-            fileTypeSelect=tr("Excel文件(*.xlsx);;Html文件(*.html)");
+        if(exportFileType==11){
+            fileTypeSelect="Html文件(*.html)";
         }
-        if(currentOpenFileType==3){
-            fileTypeSelect=tr("Excel文件(*.xlsx);;Csv文件(*.csv);;Html文件(*.html)");
+        if(exportFileType==12){
+            fileTypeSelect="Csv文件-竖线分割(*.csv)";
         }
-        QString fileNameSave = QFileDialog::getSaveFileName(this,("文件数据导出"),openpath+filename,fileTypeSelect,&selectedFilter);
+        if(exportFileType==13){
+            fileTypeSelect="Csv文件-制表符分割(*.csv)";
+        }
+        if(exportFileType==14){
+            fileTypeSelect="Csv文件-逗号分割(*.csv)";
+        }
+        //弹窗选择文件保存路径
+        QString fileNameSave = QFileDialog::getSaveFileName(this,("选择数据导出保存路径"),openpath+filename,fileTypeSelect,&selectedFilter);
         if(!fileNameSave.isEmpty()){
             //在某些系统下（linux系统）选择要保存的文件类型时,系统并不会自动补全文件后缀名,需要咱们自己补全文件后缀
             if(selectedFilter=="Excel文件(*.xlsx)"&&(!fileNameSave.endsWith(".xlsx"))){
                 fileNameSave.append(".xlsx");
             }
-            else if(selectedFilter=="Csv文件(*.csv)"&&(!fileNameSave.endsWith(".csv"))){
-                fileNameSave.append(".csv");
-            }
             else if(selectedFilter=="Html文件(*.html)"&&(!fileNameSave.endsWith(".html"))){
                 fileNameSave.append(".html");
+            }
+            else if(selectedFilter=="Csv文件-竖线分割(*.csv)"&&(!fileNameSave.endsWith(".csv"))){
+                fileNameSave.append(".csv");
+            }
+            else if(selectedFilter=="Csv文件-制表符分割(*.csv)"&&(!fileNameSave.endsWith(".csv"))){
+                fileNameSave.append(".csv");
+            }
+            else if(selectedFilter=="Csv文件-逗号分割(*.csv)"&&(!fileNameSave.endsWith(".csv"))){
+                fileNameSave.append(".csv");
             }
             //覆盖导出先删除原来的文件
             if(Utils::isFileExist(fileNameSave)){
@@ -5891,16 +6144,16 @@ void MainWindow::on_pushButtonExport_clicked()
             if(fileNameSave.endsWith("xlsx",Qt::CaseSensitive)){
                 //这是单纯的导出excel文件地方，不打开
                 openXlsx=false;
-                save2Xlsx(fileNameSave);
-                //xslx的保存，不在这里取消阻断，交后台存储线程
+                save2Xlsx(fileNameSave,exportPage);
+                //xlsx的保存，不在这里取消阻断，交后台存储线程
             }
             else if(fileNameSave.endsWith("csv",Qt::CaseSensitive)){
-                save2Csv(fileNameSave);
+                save2Csv(fileNameSave,exportPage,exportFileType,useUTF8);
                 dataBlocked=false;
                 isExportFile=false;
             }
             else if(fileNameSave.endsWith("html",Qt::CaseSensitive)){
-                save2Html(fileNameSave);
+                save2Html(fileNameSave,exportPage,useUTF8);
                 dataBlocked=false;
                 isExportFile=false;
             }else{
@@ -5919,34 +6172,79 @@ void MainWindow::on_pushButtonExport_clicked()
  * 保存为csv
  * */
 //待评估分页改造
-void MainWindow::save2Csv(QString filename){
+void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8){
+    //计算导出范围
+    //默认从0行开始
+    int rowBegin=0;
+    //默认为当前打开的文件的最大行记录
+    int rowEnd=0;
+    switch (currentOpenFileType) {
+    case 1:
+        rowEnd=ofdFileContentQByteArrayList.count();
+        break;
+    case 2:
+        rowEnd=csvFileContentQByteArrayList.count();
+        break;
+    case 3:
+        rowEnd=fixedContenQByteArrayList.count();
+        break;
+    default:
+        break;
+    }
+    //需要按当前页计算
+    if(pageNum>0){
+        rowBegin=(pageNum-1)*pageRowSize;
+        rowEnd=qMin(pageNum*pageRowSize,rowEnd);
+    }
+    //决定分隔符类别
+    QString split="\t";
+    switch (splitBy) {
+    case 12:
+        split="|";
+        break;
+    case 13:
+        split="\t";
+        break;
+    case 14:
+        split=",";
+        break;
+    default:
+        break;
+    }
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
+    QTextCodec *codec=QTextCodec::codecForName("UTF-8");
     QFile data(filename);
     //数据类型插入点
     if(currentOpenFileType==1){
+        if(!useUTF8){
+            codec=codecOFD;
+        }
+        else{
+            codec=QTextCodec::codecForName("UTF-8");
+        }
         if (data.open(QFile::WriteOnly | QIODevice::Truncate)) {
             //开始准备待写入的数据
             QString sb;
             //标题
             for(int i=0;i<ofd.getFieldCount();i++){
                 if(i<ofd.getFieldCount()-1){
-                    sb.append(ofd.getFieldList().at(i).getFieldDescribe()).append("\t");
+                    sb.append(ofd.getFieldList().at(i).getFieldDescribe()).append(split);
                 }
                 else{
                     sb.append(ofd.getFieldList().at(i).getFieldDescribe()).append("\r\n");
                 }
             }
-            data.write(codecOFD->fromUnicode(sb));
+            data.write(codec->fromUnicode(sb));
             data.flush();
             //文本内容
             sb.clear();
-            for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
+            for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row);
                 for(int col=0;col<ofd.getFieldCount();col++){
                     if(col<ofd.getFieldCount()-1){
-                        sb.append(rowdata.at(col)).append("\t");
+                        sb.append(rowdata.at(col)).append(split);
                     }
                     else{
                         sb.append(rowdata.at(col)).append("\r\n");
@@ -5954,12 +6252,18 @@ void MainWindow::save2Csv(QString filename){
                 }
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==ofdFileContentQByteArrayList.count()-1)){
-                    data.write(codecOFD->fromUnicode(sb));
+                if((row%1000==0)||(row==rowEnd-1)){
+                    data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
                     statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
             data.close();
@@ -5969,14 +6273,19 @@ void MainWindow::save2Csv(QString filename){
         }
     }
     if(currentOpenFileType==3){
+        if(useUTF8){
+            codec=QTextCodec::codecForName("UTF-8");
+        }
+        else{
+            codec=QTextCodec::codecForName(fixed.getEcoding().toLocal8Bit());
+        }
         if (data.open(QFile::WriteOnly | QIODevice::Truncate)) {
-            QTextCodec *codec=QTextCodec::codecForName(fixed.getEcoding().toLocal8Bit());
             //开始准备待写入的数据
             QString sb;
             //标题
             for(int i=0;i<fixed.getFieldCountMax();i++){
                 if(i<fixed.getFieldCountMax()-1){
-                    sb.append(fixed.getFieldList().at(i).getFieldDescribe()).append("\t");
+                    sb.append(fixed.getFieldList().at(i).getFieldDescribe()).append(split);
                 }
                 else{
                     sb.append(fixed.getFieldList().at(i).getFieldDescribe()).append("\r\n");
@@ -5986,12 +6295,12 @@ void MainWindow::save2Csv(QString filename){
             data.flush();
             //文本内容
             sb.clear();
-            for (int row=0;row<fixedContenQByteArrayList.count();row++){
+            for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row,fixed.getEcoding());
                 for(int col=0;col<fixed.getFieldCountMax();col++){
                     if(col<fixed.getFieldCountMax()-1){
-                        sb.append(col<rowdata.count()?rowdata.at(col):"").append("\t");
+                        sb.append(col<rowdata.count()?rowdata.at(col):"").append(split);
                     }
                     else{
                         sb.append(col<rowdata.count()?rowdata.at(col):"").append("\r\n");
@@ -5999,12 +6308,18 @@ void MainWindow::save2Csv(QString filename){
                 }
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==fixedContenQByteArrayList.count()-1)){
+                if((row%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
                     statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
             data.close();
@@ -6022,8 +6337,30 @@ void MainWindow::save2Csv(QString filename){
  * 保存为html
  *
  * */
-//待评估分页改造
-void MainWindow::save2Html (QString filename){
+void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
+    //计算导出范围
+    //默认从0行开始
+    int rowBegin=0;
+    //默认为当前打开的文件的最大行记录
+    int rowEnd=0;
+    switch (currentOpenFileType) {
+    case 1:
+        rowEnd=ofdFileContentQByteArrayList.count();
+        break;
+    case 2:
+        rowEnd=csvFileContentQByteArrayList.count();
+        break;
+    case 3:
+        rowEnd=fixedContenQByteArrayList.count();
+        break;
+    default:
+        break;
+    }
+    //需要按当前页计算
+    if(pageNum>0){
+        rowBegin=(pageNum-1)*pageRowSize;
+        rowEnd=qMin(pageNum*pageRowSize,rowEnd);
+    }
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
     QFile data(filename);
@@ -6041,13 +6378,13 @@ void MainWindow::save2Html (QString filename){
         //csv文件按描述的编码配置
         //数据类型插入点
         if(currentOpenFileType==1){
-            sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\"GB18030\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
+            sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+(useUTF8?"UTF-8":"GB18030")+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
         }
         if(currentOpenFileType==2){
-            sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+csv.getEcoding()+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
+            sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+(useUTF8?"UTF-8":csv.getEcoding())+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
         }
         if(currentOpenFileType==3){
-            sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+fixed.getEcoding()+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
+            sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+(useUTF8?"UTF-8":fixed.getEcoding())+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
         }
         //内联的表格样式,内容太多,base64存储
         sb.append(QByteArray::fromBase64("PHN0eWxlIHR5cGU9InRleHQvY3NzIj4KLnRhYmxlCnsKcGFkZGluZzogMDsKbWFyZ2luOiAwOwp9CnRoIHsKZm9udDogYm9sZCAxMnB4ICJUcmVidWNoZXQgTVMiLCBWZXJkYW5hLCBBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmOwpjb2xvcjogIzRmNmI3MjsKYm9yZGVyLXJpZ2h0OiAxcHggc29saWQgI0MxREFENzsKYm9yZGVyLWJvdHRvbTogMXB4IHNvbGlkICNDMURBRDc7CmJvcmRlci10b3A6IDFweCBzb2xpZCAjQzFEQUQ3OwpsZXR0ZXItc3BhY2luZzogMnB4Owp0ZXh0LXRyYW5zZm9ybTogdXBwZXJjYXNlOwp0ZXh0LWFsaWduOiBsZWZ0OwpwYWRkaW5nOiA2cHggNnB4IDZweCAxMnB4OwpiYWNrZ3JvdW5kOiAjQ0FFOEVBIG5vLXJlcGVhdDsKd29yZC1icmVhazoga2VlcC1hbGw7CndoaXRlLXNwYWNlOm5vd3JhcDsKfQp0ciB7CndvcmQtYnJlYWs6IGtlZXAtYWxsOwp3aGl0ZS1zcGFjZTpub3dyYXA7Cn0KdGQgewpib3JkZXItcmlnaHQ6IDFweCBzb2xpZCAjQzFEQUQ3Owpib3JkZXItYm90dG9tOiAxcHggc29saWQgI0MxREFENzsKZm9udC1zaXplOjE0cHg7CnBhZGRpbmc6IDJweCA2cHggMnB4IDZweDsKY29sb3I6ICM0ZjZiNzI7Cn0KLm51bWJlcnsKdGV4dC1hbGlnbjogcmlnaHQ7Cn0KPC9zdHlsZT4K"));
@@ -6060,7 +6397,12 @@ void MainWindow::save2Html (QString filename){
         QTextCodec *codec=QTextCodec::codecForName("UTF-8");
         if(currentOpenFileType==1){
             colCount=ofd.getFieldCount();
-            codec=codecOFD;
+            if(!useUTF8){
+                codec=codecOFD;
+            }
+            else{
+                codec=QTextCodec::codecForName("UTF-8");
+            }
             for(int i=0;i<colCount;i++){
                 if(i<colCount-1){
                     sb.append("<th>").append(ofd.getFieldList().at(i).getFieldDescribe()).append("</th>");
@@ -6072,7 +6414,12 @@ void MainWindow::save2Html (QString filename){
         }
         if(currentOpenFileType==2){
             colCount=csv.getFieldCount();
-            codec=QTextCodec::codecForName(csv.getEcoding().toLocal8Bit());
+            if(useUTF8){
+                codec=QTextCodec::codecForName("UTF-8");
+            }
+            else{
+                codec=QTextCodec::codecForName(csv.getEcoding().toLocal8Bit());
+            }
             for(int i=0;i<ptr_table->columnCount();i++){
                 if(i<colCount-1){
                     sb.append("<th>").append(ptr_table->horizontalHeaderItem(i)->text()).append("</th>");
@@ -6084,7 +6431,12 @@ void MainWindow::save2Html (QString filename){
         }
         if(currentOpenFileType==3){
             colCount=fixed.getFieldCountMax();
-            codec=QTextCodec::codecForName(fixed.getEcoding().toLocal8Bit());
+            if(useUTF8){
+                codec=QTextCodec::codecForName("UTF-8");
+            }
+            else{
+                codec=QTextCodec::codecForName(fixed.getEcoding().toLocal8Bit());
+            }
             for(int i=0;i<colCount;i++){
                 if(i<colCount-1){
                     sb.append("<th>").append(fixed.getFieldList().at(i).getFieldDescribe()).append("</th>");
@@ -6101,7 +6453,7 @@ void MainWindow::save2Html (QString filename){
         sb.clear();
         //数据类型插入点
         if(currentOpenFileType==1){
-            for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
+            for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 sb.append("<tr>");
                 QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row);
@@ -6117,17 +6469,23 @@ void MainWindow::save2Html (QString filename){
                 sb.append("</tr>\r\n");
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==ofdFileContentQByteArrayList.count()-1)){
+                if((row%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
                     statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
         if(currentOpenFileType==2){
-            for (int row=0;row<csvFileContentQByteArrayList.count();row++){
+            for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 //csv文件按行获取数据
                 QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,row,csv.getEcoding());
@@ -6149,18 +6507,23 @@ void MainWindow::save2Html (QString filename){
                 sb.append("</tr>\r\n");
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==csvFileContentQByteArrayList.count()-1)){
+                if((row%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
                     statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
         if(currentOpenFileType==3){
-            int rowNumber=fixedContenQByteArrayList.count();
-            for (int row=0;row<rowNumber;row++){
+            for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 sb.append("<tr>");
                 QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row,fixed.getEcoding());
@@ -6182,12 +6545,18 @@ void MainWindow::save2Html (QString filename){
                 sb.append("</tr>\r\n");
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==rowNumber-1)){
+                if((row%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
                     statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
                     qApp->processEvents();
+                    //强制终止事件-立即return退出
+                    if(abortExit){
+                        QApplication::restoreOverrideCursor();
+                        qDebug()<<"强制立即终止任务";
+                        return;
+                    }
                 }
             }
         }
@@ -6207,27 +6576,38 @@ void MainWindow::save2Html (QString filename){
 /**
  * 保存为xlsx
  * */
-//待分页改造
-void MainWindow::save2Xlsx(QString filename){
-    xlsxSaveName=filename;
+void MainWindow::save2Xlsx(QString filename,int pageNum){
+    //计算导出范围
+    //默认从0行开始
+    int rowBegin=0;
+    //默认为当前打开的文件的最大行记录
+    int rowEnd=0;
+    switch (currentOpenFileType) {
+    case 1:
+        rowEnd=ofdFileContentQByteArrayList.count();
+        break;
+    case 2:
+        rowEnd=csvFileContentQByteArrayList.count();
+        break;
+    case 3:
+        rowEnd=fixedContenQByteArrayList.count();
+        break;
+    default:
+        break;
+    }
     //禁止导出过大的excel文件
-    //数据类型插入点
-    int row=0;
-    if(currentOpenFileType==1){
-        row=ofdFileContentQByteArrayList.count();
-    }
-    else if(currentOpenFileType==2){
-        row=csvFileContentQByteArrayList.count();
-    }
-    else if(currentOpenFileType==3){
-        row=fixedContenQByteArrayList.count();
-    }
-    if(row>maxExcelRow){
+    if(rowEnd>maxExcelRow){
         statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
         dataBlocked=false;
         isExportFile=false;
         return;
     }
+    //分页导出,需要按当前页计算
+    if(pageNum>0){
+        rowBegin=(pageNum-1)*pageRowSize;
+        rowEnd=qMin(pageNum*pageRowSize,rowEnd);
+    }
+    xlsxSaveName=filename;
     //鼠标响应进入等待
     QApplication::setOverrideCursor(Qt::WaitCursor);
     //标题的样式
@@ -6247,6 +6627,7 @@ void MainWindow::save2Xlsx(QString filename){
     QXlsx::Format formatBody;
     formatBody.setFont(QFont("SimSun"));
     formatBody.setNumberFormat("@");
+    int excelRowNumber=2;
     //导出OFD文件的内容
     if(currentOpenFileType==1){
         //插入标题和数值列的专用格式
@@ -6281,7 +6662,7 @@ void MainWindow::save2Xlsx(QString filename){
             }
         }
         //文本内容
-        for (int row=0;row<ofdFileContentQByteArrayList.count();row++){
+        for (int row=rowBegin;row<rowEnd;row++){
             //数据写入--按行读取
             QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row);
             for(int col=0;col<columnCount;col++){
@@ -6308,13 +6689,13 @@ void MainWindow::save2Xlsx(QString filename){
                     bool okNb=false;
                     double number=value.toDouble(&okNb);
                     if(okNb){
-                        xlsx->write(row+2,col+1,number,numberFormatQhash.value(col));
+                        xlsx->write(excelRowNumber,col+1,number,numberFormatQhash.value(col));
                     }
                     else{
-                        xlsx->write(row+2,col+1,value,numberFormatQhash.value(col));
+                        xlsx->write(excelRowNumber,col+1,value,numberFormatQhash.value(col));
                     }
                 }else{
-                    xlsx->write(row+2,col+1,value,formatBody);
+                    xlsx->write(excelRowNumber,col+1,value,formatBody);
                 }
             }
             //每100行读取下事件循环
@@ -6322,7 +6703,14 @@ void MainWindow::save2Xlsx(QString filename){
             if(row%100==0){
                 statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(row)));
                 qApp->processEvents();
+                //强制终止事件-立即return退出
+                if(abortExit){
+                    QApplication::restoreOverrideCursor();
+                    qDebug()<<"强制立即终止任务";
+                    return;
+                }
             }
+            excelRowNumber++;
         }
     }
     //导出CSV文件的内容
@@ -6358,7 +6746,7 @@ void MainWindow::save2Xlsx(QString filename){
             }
         }
         //文本内容
-        for (int row=0;row<csvFileContentQByteArrayList.count();row++){
+        for (int row=rowBegin;row<rowEnd;row++){
             //数据写入--按行读取
             //csv文件按行获取数据
             QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,row,csv.getEcoding().toLocal8Bit());
@@ -6389,13 +6777,13 @@ void MainWindow::save2Xlsx(QString filename){
                     bool okNb=false;
                     double number=value.toDouble(&okNb);
                     if(okNb){
-                        xlsx->write(row+2,col+1,number,numberFormatQhash.value(col));
+                        xlsx->write(excelRowNumber,col+1,number,numberFormatQhash.value(col));
                     }
                     else{
-                        xlsx->write(row+2,col+1,value,numberFormatQhash.value(col));
+                        xlsx->write(excelRowNumber,col+1,value,numberFormatQhash.value(col));
                     }
                 }else{
-                    xlsx->write(row+2,col+1,value,formatBody);
+                    xlsx->write(excelRowNumber,col+1,value,formatBody);
                 }
             }
             //每100行读取下事件循环
@@ -6403,7 +6791,14 @@ void MainWindow::save2Xlsx(QString filename){
             if(row%100==0){
                 statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(row)));
                 qApp->processEvents();
+                //强制终止事件-立即return退出
+                if(abortExit){
+                    QApplication::restoreOverrideCursor();
+                    qDebug()<<"强制立即终止任务";
+                    return;
+                }
             }
+            excelRowNumber++;
         }
     }
     //fixed文件
@@ -6440,8 +6835,7 @@ void MainWindow::save2Xlsx(QString filename){
             }
         }
         //文本内容
-        int rowSum=fixedContenQByteArrayList.count();
-        for (int row=0;row<rowSum;row++){
+        for (int row=rowBegin;row<rowEnd;row++){
             //数据写入--按行读取
             QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row,fixed.getEcoding().toLocal8Bit());
             for(int col=0;col<columnCount;col++){
@@ -6468,13 +6862,13 @@ void MainWindow::save2Xlsx(QString filename){
                     bool okNb=false;
                     double number=value.toDouble(&okNb);
                     if(okNb){
-                        xlsx->write(row+2,col+1,number,numberFormatQhash.value(col));
+                        xlsx->write(excelRowNumber,col+1,number,numberFormatQhash.value(col));
                     }
                     else{
-                        xlsx->write(row+2,col+1,value,numberFormatQhash.value(col));
+                        xlsx->write(excelRowNumber,col+1,value,numberFormatQhash.value(col));
                     }
                 }else{
-                    xlsx->write(row+2,col+1,value,formatBody);
+                    xlsx->write(excelRowNumber,col+1,value,formatBody);
                 }
             }
             //每100行读取下事件循环
@@ -6482,7 +6876,14 @@ void MainWindow::save2Xlsx(QString filename){
             if(row%100==0){
                 statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(row)));
                 qApp->processEvents();
+                //强制终止事件-立即return退出
+                if(abortExit){
+                    QApplication::restoreOverrideCursor();
+                    qDebug()<<"强制立即终止任务";
+                    return;
+                }
             }
+            excelRowNumber++;
         }
     }
     //根据每列最大的值设置本列的宽度
@@ -6743,6 +7144,12 @@ void MainWindow::saveOFDFile(QString filepath)
                 sb.clear();
                 statusBar_disPlayMessage(QString("文件保存中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
                 qApp->processEvents();
+                //强制终止事件-立即return退出
+                if(abortExit){
+                    QApplication::restoreOverrideCursor();
+                    qDebug()<<"强制立即终止任务";
+                    return;
+                }
             }
             row++;
         }
@@ -7268,6 +7675,11 @@ void MainWindow::on_actionfileOpenAdv_triggered()
 //需要改造--需要新增设置项每页条目
 void MainWindow::on_actionpreference_triggered()
 {
+    //正在进行的阻断操作时，禁止修改设置
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
     //如果新增了配置项-记得修改配置读取--配置修改弹窗发起--弹窗类内修改--配置修改结果回写四处代码
     //获取当前的配置值，用于传递给设置界面
     QMap <QString,QString>par;
@@ -7415,6 +7827,21 @@ bool MainWindow:: ignoreFileChangeAndOpenNewFile(){
  * @param event
  */
 void MainWindow::closeEvent(QCloseEvent *event){
+    if(isUpdateData||dataBlocked){
+        DialogMyTip dialog("当前存在正在进行中的任务,确认要继续退出程序么？",this);
+        dialog.setWindowTitle("警告！");
+        dialog.setModal(true);
+        dialog.exec();
+        if(!dialog.getBoolFlag()){
+            event->ignore();
+            return;
+        }
+        else{
+            //传递终止标志
+            this->abortExit=true;
+            event->accept();
+        }
+    }
     if(fileChanged){
         DialogMyTip dialog("当前修改的文件还未保存,要放弃保存并退出工具么？",this);
         dialog.setWindowTitle("警告！");
@@ -7423,6 +7850,7 @@ void MainWindow::closeEvent(QCloseEvent *event){
         if(!dialog.getBoolFlag()){
             statusBar_disPlayMessage("放弃退出工具,如果需要保存当前文件，可以使用Ctrl+S保存...");
             event->ignore();
+            return;
         }
         else{
             event->accept();
@@ -7704,6 +8132,10 @@ void MainWindow::on_currentOpenFilePathLineText_returnPressed()
  */
 void MainWindow::on_pushButtonPageFirst_clicked()
 {
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
     if(currentPage==1){
         statusBar_disPlayMessage("当前已在第一页...");
     }
@@ -7718,6 +8150,10 @@ void MainWindow::on_pushButtonPageFirst_clicked()
  */
 void MainWindow::on_pushButtonPagePrevious_clicked()
 {
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
     if(currentPage>1){
         currentPage--;
         pageJump(currentPage,0);
@@ -7732,6 +8168,10 @@ void MainWindow::on_pushButtonPagePrevious_clicked()
  */
 void MainWindow::on_pushButtonPageNext_clicked()
 {
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
     statusBar_disPlayMessage("");
     if(currentPage<pageCount){
         currentPage++;
@@ -7747,6 +8187,10 @@ void MainWindow::on_pushButtonPageNext_clicked()
  */
 void MainWindow::on_pushButtonPageLast_clicked()
 {
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
     if(currentPage==pageCount){
         statusBar_disPlayMessage("当前已在最后一页...");
     }
@@ -7761,6 +8205,10 @@ void MainWindow::on_pushButtonPageLast_clicked()
  */
 void MainWindow::on_pushButtonGo_clicked()
 {
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
     statusBar_disPlayMessage("");
     bool ok=false;
     int pageNum=ui->pageText->text().toInt(&ok,10);
@@ -8036,7 +8484,7 @@ void MainWindow::on_actionopeninexcel_triggered()
     if(dialog2.getBoolFlag()){
         //限制
         if(row>maxExcelRow){
-            statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
+            statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法直接使用导出到excel并打开功能,请使用数据导出功能导出当前页后再查看...");
             return;
         }
         else{
@@ -8065,10 +8513,109 @@ void MainWindow::on_actionopeninexcel_triggered()
             dataBlocked=true;
             isExportFile=true;
             dataBlockedMessage="正在进行数据导出,请稍后再操作...";
-            save2Xlsx(exppath);
+            save2Xlsx(exppath,0);
         }
     }
     else{
         statusBar_disPlayMessage("放弃在Excel中打开当前接口文件...");
     }
+}
+
+/**
+ * @brief MainWindow::on_actionscreen_triggered 对整个窗口截图
+ */
+void MainWindow::on_actionscreen_triggered()
+{
+    //获取截图
+    QPixmap p = this->grab();
+    //获取桌面路径拼接文件路径
+    QString filePathName=QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)+"/FFReader截图";
+    filePathName += QDateTime::currentDateTime().toString("yyyyMMddhhmmss");
+    filePathName += ".png";
+    //弹出保存框
+    QString selectedFilter=Q_NULLPTR;
+    filePathName = QFileDialog::getSaveFileName(this,("截图另存为"),filePathName,tr("PNG(*.png)"),&selectedFilter);
+    if(!filePathName.isEmpty()){
+        if(selectedFilter=="PNG(*.png)"&&(!filePathName.endsWith(".png"))){
+            filePathName.append(".png");
+        }
+        //开始进行截图
+        if(p.save(filePathName,"png"))
+        {
+            statusBar_disPlayMessage("截图保存在:"+filePathName);
+        }
+        else{
+            statusBar_disPlayMessage("截图失败...");
+        }
+    }
+    else{
+        statusBar_disPlayMessage("放弃保存截图...");
+    }
+}
+
+/**
+ * @brief MainWindow::on_actiontipslist_triggered 查看温馨提示
+ */
+void MainWindow::on_actiontipslist_triggered()
+{
+    if(isUpdateData){
+        statusBar_disPlayMessage("正在加载数据,请稍后再查看所有温馨提示...");
+        return;
+    }
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
+    setWindowTitle(appName);
+    currentOpenFileType=-1;
+    currentOpenFilePath="";
+    ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
+    fileChanged=false;
+    clear_oldData();
+    clear_Display_Info();
+    clear_Table_Info();
+    int colCount=1;
+    int rowCount=tips.count();
+    ptr_table->setColumnCount(colCount);
+    ptr_table->setRowCount(rowCount);
+    //设置表格列标题
+    QStringList title;
+    title.append("提示内容");
+    ptr_table->setHorizontalHeaderLabels(title);
+    //设置表格的选择方式
+    ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
+    //设置编辑方式
+    ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ptr_table->verticalHeader()->setDefaultSectionSize(rowHight);
+    //设置表格的内容
+    for (int row = 0; row < tips.count(); ++row)
+    {
+        QTableWidgetItem *item= new QTableWidgetItem(tips.at(row));
+        ptr_table->setItem(row, 0, item);
+    }
+    ptr_table->resizeColumnsToContents();
+}
+
+/**
+ * @brief MainWindow::event 窗口事件处理
+ * @param event
+ * @return
+ */
+bool MainWindow::event(QEvent *event)
+{
+#ifdef Q_OS_MAC
+    if(QEvent::WindowActivate == event->type()){
+        qDebug()<<"获取焦点";
+        ui->actionscreen->setEnabled(true);
+        ui->actioncopy->setEnabled(true);
+    }
+    if(QEvent::WindowDeactivate == event->type()) {
+        qDebug()<<"失去焦点";
+        //在macOS下，弹出Dialog时快捷键还是作用在主窗口，所以这里设置主窗口失去焦点时，回收一些和弹窗冲突的快捷键
+        //窗口回到焦点状态时,再启用这些快捷键
+        ui->actionscreen->setEnabled(false);
+        ui->actioncopy->setEnabled(false);
+    }
+#endif
+    return QWidget::event(event);
 }

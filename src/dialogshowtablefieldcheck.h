@@ -22,6 +22,11 @@
 #include <QClipboard>
 #include <QPoint>
 #include <QMenu>
+#include <QPixmap>
+#include <QDesktopServices>
+#include <QDateTime>
+#include <QFileDialog>
+#include <QShortcut>
 
 namespace Ui {
 class DialogShowTableFieldCheck;
@@ -43,12 +48,15 @@ private slots:
 
     void copyToClipboard();
 
+    void saveScreen();
+
 private:
     Ui::DialogShowTableFieldCheck *ui;
     QTableWidget * ptr_table;
     //表格菜单
     QMenu *tablePopMenu;
     QAction *action_ShowCopyColum;
+    QAction *action_ShowSaveScreen;
     //
     QPoint posCurrentMenu;
 };

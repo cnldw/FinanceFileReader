@@ -38,7 +38,23 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
     //表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
     action_ShowCopyColum = new QAction(tr("复制"),this);
+    QString text="对当前窗口进行截图保存(Ctrl+Alt+R)";
+#ifdef Q_OS_MAC
+    text="对当前窗口进行截图保存(command+Option+R)";
+#endif
+    action_ShowSaveScreen= new QAction(text,this);
+    tablePopMenu->addAction(action_ShowCopyColum);
+    tablePopMenu->addAction(action_ShowSaveScreen);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
+    connect(action_ShowSaveScreen, SIGNAL(triggered()), this, SLOT(saveScreen()));
+    //截图快捷键
+    QShortcut *_shortcut;
+    _shortcut = new QShortcut(QKeySequence("Ctrl+Alt+R"), this);
+    connect(_shortcut, SIGNAL(activated()),this,SLOT(saveScreen()));
+    //复制快捷键-拦截系统的复制函数，使用我们写的
+    QShortcut *_shortcut2;
+    _shortcut2 = new QShortcut(QKeySequence("Ctrl+C"), this);
+    connect(_shortcut2, SIGNAL(activated()),this,SLOT(copyToClipboard()));
     //设置表格列标题
     QStringList title;
     title.append("字段中文名");
@@ -52,8 +68,19 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
         for (int row = 0; row < rowdata->count(); ++row)
         {
             for(int col=0;col<4;col++){
-                QTableWidgetItem *item= new QTableWidgetItem(rowdata->at(row).at(col));
-                ptr_table->setItem(row, col, item);
+                if(col==0){
+                    //第5个字段是tips
+                    QString tip=((QString)rowdata->at(row).at(4));
+                    QTableWidgetItem *item= new QTableWidgetItem(rowdata->at(row).at(col));
+                    if(!tip.isEmpty()){
+                        item->setToolTip(tip);
+                    }
+                    ptr_table->setItem(row, col, item);
+                }
+                else{
+                    QTableWidgetItem *item= new QTableWidgetItem(rowdata->at(row).at(col));
+                    ptr_table->setItem(row, col, item);
+                }
             }
         }
         ptr_table->resizeColumnsToContents();
@@ -66,6 +93,7 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
 DialogShowTableRow::~DialogShowTableRow()
 {
     delete action_ShowCopyColum;
+    delete action_ShowSaveScreen;
     delete tablePopMenu;
     delete ui;
 }
@@ -82,8 +110,6 @@ void DialogShowTableRow::on_tableWidget_customContextMenuRequested(const QPoint 
     if( ptr_table->rowAt(pos.y()) <0){
         return;
     }
-    tablePopMenu->clear();
-    tablePopMenu->addAction(action_ShowCopyColum);
     tablePopMenu->exec(QCursor::pos());
 }
 
@@ -199,5 +225,25 @@ void DialogShowTableRow::on_tableWidget_itemSelectionChanged()
         else{
             this->searchColumn+=1;
         }
+    }
+}
+
+void DialogShowTableRow::saveScreen(){
+    QGuiApplication::primaryScreen();
+    //获取截图
+    QPixmap p = this->grab();
+    //获取桌面路径拼接文件路径
+    QString filePathName=QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)+"/FFReader截图";
+    filePathName += QDateTime::currentDateTime().toString("yyyyMMddhhmmss");
+    filePathName += ".png";
+    //弹出保存框
+    QString selectedFilter=Q_NULLPTR;
+    filePathName = QFileDialog::getSaveFileName(this,("截图另存为"),filePathName,tr("PNG(*.png)"),&selectedFilter);
+    if(!filePathName.isEmpty()){
+        if(selectedFilter=="PNG(*.png)"&&(!filePathName.endsWith(".png"))){
+            filePathName.append(".png");
+        }
+        //开始进行截图
+        p.save(filePathName,"png");
     }
 }

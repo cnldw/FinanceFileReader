@@ -65,7 +65,8 @@ SOURCES += \
     src/dialogmodifyrow.cpp \
     src/dialogshowtablefieldcheck.cpp \
     src/ofdfaultcause.cpp \
-    src/createofdwindow.cpp
+    src/createofdwindow.cpp \
+    src/dialogchooseexporttype.cpp
 
 HEADERS += \
         src/mainwindow.h \
@@ -94,7 +95,8 @@ HEADERS += \
     src/publicdefine.h \
     src/dialogshowtablefieldcheck.h \
     src/ofdfaultcause.h \
-    src/createofdwindow.h
+    src/createofdwindow.h \
+    src/dialogchooseexporttype.h
 
 FORMS += \
         src/mainwindow.ui \
@@ -110,7 +112,8 @@ FORMS += \
     src/dialogmytip.ui \
     src/dialogmodifyrow.ui \
     src/dialogshowtablefieldcheck.ui \
-    src/createofdwindow.ui
+    src/createofdwindow.ui \
+    src/dialogchooseexporttype.ui
 
 RESOURCES += \
     res.qrc \
@@ -122,7 +125,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.8.5
+VERSION = 1.8.6
 ############以下注意按版本修改###############
 
 # 语言

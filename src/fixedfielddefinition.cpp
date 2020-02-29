@@ -79,3 +79,4 @@ void FixedFieldDefinition::setFieldDescribe(const QString &value)
 {
     fieldDescribe = value;
 }
+

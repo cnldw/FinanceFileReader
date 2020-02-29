@@ -46,8 +46,11 @@ private:
     int rowBeginIndex;
     int length;
     int decLength;
+    //这个字段应该填充英文字段名，当前没使用
     QString fieldName;
+    //字段中文名
     QString fieldDescribe;
+
 };
 
 #endif // FIXEDFIELDDEFINITION_H
