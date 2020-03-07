@@ -30,15 +30,15 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     ui->setupUi(this);
     setAcceptDrops(true);
     setWindowTitle(appName);
-    //调教字体大小差异,在mac/linux系统上字体默认显示很大，强制缩放下
+    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
 #ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:12px");
-    ui->statusBar->setStyleSheet("font-size:12px");
+    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
+    ui->tableWidget->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
 #endif
 #ifdef Q_OS_LINUX
     this->setStyleSheet("font-size:13px");
-    ui->statusBar->setStyleSheet("font-size:13px");
 #endif
+    /**************************************************************/
     //临时隐藏未开发完毕的功能--高级文件打开
     //////////////////////////////////插件功能/////////////////
     //仅Windows系统支持文件比对和在文本编辑器中打开
@@ -232,7 +232,6 @@ void MainWindow::loadFileOnWindowisOpenOrDragEnter(){
  * @brief MainWindow::initStatusBar 状态栏初始化，我们将状态栏切分为几块，分别用于显示文件记录数，文件行列等信息，实际往状态栏写数据显示不使用本方法
  */
 void MainWindow::initStatusBar(){
-    ui->statusBar->setStyleSheet("font-family:Microsoft YaHei,Sans-serif;");
     //显示总记录数的标签
     statusLabel_ptr_showCount = new QLabel;
     statusLabel_ptr_showCount->setMinimumSize(210, 20); // 设置标签最小大小
