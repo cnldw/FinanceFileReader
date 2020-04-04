@@ -80,6 +80,8 @@
 #include "src/ofdfaultcause.h"
 #include "src/createofdwindow.h"
 #include "src/dialogchooseexporttype.h"
+#include "src/dialogshowcharset.h"
+#include "src/dialogmodifymtime.h"
 
 namespace Ui {
 class MainWindow;
@@ -226,6 +228,10 @@ private slots:
 
     void on_actiontipslist_triggered();
 
+    void showCharacter();
+
+    void on_actionmtime_triggered();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
@@ -307,6 +313,7 @@ private:
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
+    QAction *action_ShowCharacter;
     QAction *action_ShowCopyColum;
     QAction *action_ShowOFDAnalysis;
     QAction *action_EditCompareData;
@@ -351,7 +358,8 @@ private:
     //已经加载的行,用于懒加载是判断哪些行已经加载,避免重复加载
     //优化，使用QHash提高大文件下多行数据加载后的查找效率
     QHash <int,bool> rowHasloaded;
-
+    //
+    QHash <QString,QString> specialCharacter;
     //优化器，记录每列表格最宽记录，当异步下次加载数据时，根据是否发生了变化来决定是否需要更新列宽度
     QHash <int,int> columnWidth;
 
@@ -444,6 +452,8 @@ private:
     void closeEvent(QCloseEvent *event);
     void columnJump(int type);
     void pageJump(int page,int scrollIndex=0);
+    QString StringToHexStringWithEnCode(QString data,QTextCodec *codec,bool withSouceChar=true);
+    QString HexStringToBinaryString(QString HexString);
 };
 
 #endif // MAINWINDOW_H

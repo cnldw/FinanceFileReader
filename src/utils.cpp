@@ -644,8 +644,7 @@ QString Utils::CovertDoubleQStringWithThousandSplit(QString doubleString){
  * @brief Utils::UpdateFileTime 更新文件修改时间为最新
  * @param file
  */
-void Utils::UpdateFileTime(QString file){
-    QDateTime lastModifyTime=QDateTime::currentDateTime();
+void Utils::UpdateFileTime(QString file,QDateTime lastModifyTime){
     int aYear = lastModifyTime.date().year()-1900;
     int aMonth = lastModifyTime.date().month()-1;
     int aDay = lastModifyTime.date().day();
@@ -675,4 +674,36 @@ void Utils::UpdateFileTime(QString file){
 #else
     utime(fileName, &ut );
 #endif
+}
+
+/**
+ * @brief Utils::getFileListFromDir 遍历文件夹获得文件列表
+ * @param dirpath
+ * @param filelist
+ */
+void Utils::getFileListFromDir(QString dirpath,QStringList *filelist){
+    QDir dir(dirpath);
+    if (!dir.exists()) {
+        return;
+    }
+    dir.setFilter(QDir::Dirs|QDir::Files|QDir::NoDotAndDotDot);
+    dir.setSorting(QDir::DirsFirst);
+    QFileInfoList list = dir.entryInfoList();
+    if(list.size()< 1 ) {
+        return;
+    }
+    int i=0;
+    do{
+        QFileInfo fileInfo = list.at(i);
+        bool bisDir = fileInfo.isDir();
+        if(bisDir) {
+            QString path=fileInfo.filePath();
+            Utils::getFileListFromDir(path,filelist);
+        }
+        else{
+            filelist->append(fileInfo.filePath());
+        }
+        i++;
+    } while(i < list.size());
+    return;
 }

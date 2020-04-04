@@ -761,6 +761,7 @@ border-radius:3px;
     <addaction name="actionscreen"/>
     <addaction name="actionfileedit"/>
     <addaction name="actionopeninexcel"/>
+    <addaction name="actionmtime"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -960,6 +961,11 @@ border-radius:3px;
   <action name="actiontipslist">
    <property name="text">
     <string>查看所有温馨提示</string>
+   </property>
+  </action>
+  <action name="actionmtime">
+   <property name="text">
+    <string>文件时间戳【修改时间】修改工具</string>
    </property>
   </action>
  </widget>

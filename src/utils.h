@@ -53,7 +53,8 @@ public:
      static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset);
      static QString CovertInt2ExcelCol(int number);
      static QString CovertDoubleQStringWithThousandSplit(QString doubleString);
-     static void UpdateFileTime(QString file);
+     static void UpdateFileTime(QString file,QDateTime lastModifyTime=QDateTime::currentDateTime());
+     static void getFileListFromDir(QString dirpath,QStringList *filelist);
 };
 
 #endif // UTILS_H

@@ -93,6 +93,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_addNewLineOFDData2End, SIGNAL(triggered()), this, SLOT(addOFDNewLineRowDataEndRow()));
     action_ModifyOFDRow= new QAction(tr("编辑光标所在的整行数据"),this);
     connect(action_ModifyOFDRow, SIGNAL(triggered()), this, SLOT(showMoaifyOFDRow()));
+    action_ShowCharacter = new QAction(tr("十六进制和二进制编码透视(乱码分析)"),this);
+    connect(action_ShowCharacter, SIGNAL(triggered()), this, SLOT(showCharacter()));
 
     tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
     tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
@@ -130,6 +132,40 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
     tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
 #endif
+    specialCharacter.insert("00","NUL (null):空字符");
+    specialCharacter.insert("01","SOH (start of headling):标题开始");
+    specialCharacter.insert("02","STX (start of text):正文开始");
+    specialCharacter.insert("03","ETX (end of text):正文结束");
+    specialCharacter.insert("04","EOT (end of transmission):传输结束");
+    specialCharacter.insert("05","ENQ (enquiry):请求");
+    specialCharacter.insert("06","ACK (acknowledge):收到通知");
+    specialCharacter.insert("07","BEL (bell):响铃");
+    specialCharacter.insert("08","BS (backspace):退格");
+    specialCharacter.insert("09","HT (horizontal tab):水平制表符");
+    specialCharacter.insert("0A","LF (NL line feed new line):换行键");
+    specialCharacter.insert("0B","VT (vertical tab):垂直制表符");
+    specialCharacter.insert("0C","FF (NP form feed new page):换页键");
+    specialCharacter.insert("0D","CR (carriage return):回车键");
+    specialCharacter.insert("0E","SO (shift out):不用切换");
+    specialCharacter.insert("0F","SI (shift in):启用切换");
+    specialCharacter.insert("10","DLE (data link escape):数据链路转义");
+    specialCharacter.insert("11","DC1 (device control 1):设备控制1");
+    specialCharacter.insert("12","DC2 (device control 2):设备控制2");
+    specialCharacter.insert("13","DC3 (device control 3):设备控制3");
+    specialCharacter.insert("14","DC4 (device control 4):设备控制4");
+    specialCharacter.insert("15","NAK (negative acknowledge):拒绝接收");
+    specialCharacter.insert("16","SYN (synchronous idle):同步空闲");
+    specialCharacter.insert("17","ETB (end of trans block):传输块结束");
+    specialCharacter.insert("18","CAN (cancel):取消");
+    specialCharacter.insert("19","EM (end of medium):介质中断");
+    specialCharacter.insert("1A","SUB (substitute):替补");
+    specialCharacter.insert("1B","ESC (escape):溢出");
+    specialCharacter.insert("1C","FS (file separator):文件分割符");
+    specialCharacter.insert("1D","GS (group separator):分组符");
+    specialCharacter.insert("1E","RS (record separator):记录分离符");
+    specialCharacter.insert("1F","US (unit separator):单元分隔符");
+    specialCharacter.insert("20","SP (space):空格");
+    specialCharacter.insert("7F","DEL (delete):删除");
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
@@ -4466,6 +4502,64 @@ void MainWindow::showRowDetails(){
 }
 
 /**
+ * @brief MainWindow::showCharacter
+ */
+void MainWindow::showCharacter(){
+    //定义一个Qlist存储此行的数据,将表格的列转换为行，共计四列
+    QList<QStringList> rowdata;
+    QString charset="UTF-8";
+    if(ptr_table->item(tableRowCurrent,tableColCurrent)==nullptr||ptr_table->item(tableRowCurrent,tableColCurrent)->text().isEmpty()){
+        statusBar_disPlayMessage("该单元格无数据...");
+    }
+    else{
+        QString data=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
+        //获取编码方案
+        QTextCodec *codec=QTextCodec::codecForName("UTF-8");
+        //获得当前打开的文件的编码方案
+        if(currentOpenFileType==1){
+            charset="GB18030";
+            codec=codecOFD;
+        }
+        else if (currentOpenFileType==2){
+            charset=csv.getEcoding();
+            codec=QTextCodec::codecForName(charset.toLocal8Bit());
+        }
+        else if (currentOpenFileType==3){
+            charset=fixed.getEcoding();
+            codec=QTextCodec::codecForName(charset.toLocal8Bit());
+        }
+        //拆字符循环处理
+        for(int i=0;i<data.count();i++){
+            QStringList colitem;
+            QString hex=codec->fromUnicode(data.at(i)).toHex().toUpper();
+            //字符
+            colitem.append(data.at(i));
+            //字节数
+            colitem.append(QString::number(hex.length()/2));
+            //16进制
+            colitem.append(hex);
+            //2进制
+            colitem.append(HexStringToBinaryString(hex));
+            //特殊字符说明
+            if(specialCharacter.contains(hex)){
+                colitem.append(specialCharacter.value(hex));
+            }
+            else{
+                colitem.append(nullptr);
+            }
+            rowdata.append(colitem);
+        }
+    }
+    //打开窗口
+    DialogShowCharset * dialog = new DialogShowCharset(&rowdata,this);
+    dialog->setWindowTitle(QString("查看十六进制和二进制编码(%1)").arg(charset));
+    dialog->setModal(false);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+}
+/**
 * @brief MainWindow::copyMessage 复制状态栏信息
 */
 void MainWindow:: copyMessage(){
@@ -4552,6 +4646,11 @@ void MainWindow:: showOFDFiledAnalysis(){
         rowfieldValues.append("字段解析值");
         rowfieldValues.append(fieldValues);
         data.append(rowfieldValues);
+        /////////////////////////////
+        QStringList rowfieldHexValues;
+        rowfieldHexValues.append("逐字符16进制(GB18030编码)");
+        rowfieldHexValues.append(StringToHexStringWithEnCode(fieldValues,codecOFD,true));
+        data.append(rowfieldHexValues);
         /////////////合法校验/////////
         QStringList rowfieldCheck;
         rowfieldCheck.append("字段值合法性");
@@ -5632,6 +5731,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 if(allSelectIsOneColumn){
                     tablePopMenu->addAction(action_ShowCopyColum);
                     tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_ShowCharacter);
                     tablePopMenu->addAction(action_ShowOFDAnalysis);
                     tablePopMenu->addSeparator();
                     tablePopMenu->addAction(action_ModifyOFDCell);
@@ -5766,8 +5866,9 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 //只选择一行的情况下分为选择了多列和一列
                 //单行单列
                 if(allSelectIsOneColumn){
-                    tablePopMenu->addAction(action_ShowDetails);
                     tablePopMenu->addAction(action_ShowCopyColum);
+                    tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_ShowCharacter);
                     //csv文件暂不支持编辑
                     //tablePopMenu->addAction(action_ModifyCell);
                     //比对器
@@ -5863,8 +5964,9 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 //只选择一行的情况下分为选择了多列和一列
                 //单行单列
                 if(allSelectIsOneColumn){
-                    tablePopMenu->addAction(action_ShowDetails);
                     tablePopMenu->addAction(action_ShowCopyColum);
+                    tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_ShowCharacter);
                     //csv文件暂不支持编辑
                     //tablePopMenu->addAction(action_ModifyCell);
                     //比对器
@@ -8617,4 +8719,98 @@ bool MainWindow::event(QEvent *event)
     }
 #endif
     return QWidget::event(event);
+}
+
+QString MainWindow::StringToHexStringWithEnCode(QString data,QTextCodec *codec,bool withSouceChar){
+    QString sb;
+    if(withSouceChar){
+
+        for(int i=0;i<data.length();i++){
+            sb.append("[").append(data.at(i)).append(":").append(codec->fromUnicode(data.at(i)).toHex().toUpper()).append("]");
+            if(i<data.length()-1){
+                sb.append("-");
+            }
+        }
+    }
+    else{
+        sb=codec->fromUnicode(data).toHex().toUpper();
+        int len = sb.length()/2;
+        for(int i=1;i<len;i++)
+        {
+            sb.insert(2*i+i-1," ");
+        }
+    }
+    return sb;
+}
+
+QString MainWindow::HexStringToBinaryString(QString HexString){
+    QString string="";
+    if(HexString.length()>0){
+        for(int i=0;i<HexString.length();i++){
+            QChar ch=HexString.at(i);
+            if(ch=='0'){
+                string.append("0000");
+            }
+            else if(ch=='1'){
+                string.append("0001");
+            }
+            else if(ch=='2'){
+                string.append("0010");
+            }
+            else if(ch=='3'){
+                string.append("0011");
+            }
+            else if(ch=='4'){
+                string.append("0100");
+            }
+            else if(ch=='5'){
+                string.append("0101");
+            }
+            else if(ch=='6'){
+                string.append("0110");
+            }
+            else if(ch=='7'){
+                string.append("0111");
+            }
+            else if(ch=='8'){
+                string.append("1000");
+            }
+            else if(ch=='9'){
+                string.append("1001");
+            }
+            else if(ch=='A'){
+                string.append("1010");
+            }
+            else if(ch=='B'){
+                string.append("1011");
+            }
+            else if(ch=='C'){
+                string.append("1100");
+            }
+            else if(ch=='D'){
+                string.append("1101");
+            }
+            else if(ch=='E'){
+                string.append("1110");
+            }
+            else if(ch=='F'){
+                string.append("1111");
+            }
+            else{
+                return "ERROR";
+            }
+        }
+    }
+    return string;
+}
+
+void MainWindow::on_actionmtime_triggered()
+{
+    //打开窗口
+    DialogModifyMtime * dialog = new DialogModifyMtime(this);
+    dialog->setModal(false);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
