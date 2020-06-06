@@ -17,7 +17,7 @@ CreateOFDWindow::CreateOFDWindow(QWidget *parent) :
     if(QDir(configpath).exists())
     {
         //分别加载各类配置
-        //交易申请类
+        //申请类
         QDir configrequest = QDir(configpath+"request");
         if(configrequest.exists()){
             QFileInfoList fileInfoList = configrequest.entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot);
@@ -28,18 +28,18 @@ CreateOFDWindow::CreateOFDWindow(QWidget *parent) :
                 ui->comboBox_2->addItem(fileInfo.fileName());
             }
         }
-        //基金行情类
-        QDir confignav = QDir(configpath+"fundday");
+        //信息类文件
+        QDir configinfo = QDir(configpath+"info");
         //存在可用的行情配置
-        if(confignav.exists()){
-            QFileInfoList fileInfoList = confignav.entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot);
+        if(configinfo.exists()){
+            QFileInfoList fileInfoList = configinfo.entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot);
             foreach ( QFileInfo fileInfo, fileInfoList )
             {
                 //加入配置
-                navFileList.append(fileInfo.fileName());
+                infoFileList.append(fileInfo.fileName());
             }
         }
-        //基金确认类
+        //确认类
         QDir configconfirm = QDir(configpath+"confirm");
         //存在可用的行情配置
         if(configconfirm.exists()){
@@ -62,44 +62,44 @@ CreateOFDWindow::~CreateOFDWindow()
 
 void CreateOFDWindow::on_pushButton_clicked()
 {
-    //TA代码
-    QString tacode=ui->lineEditTaCode->text();
-    //销售商代码
-    QString agentcode=ui->lineEditAgentCode->text();
+    //发送方代码
+    QString send=ui->lineEditSendCode->text();
+    //接收方代码
+    QString recv=ui->lineEditRecvCode->text();
     //日期
     QDate date=ui->calendarWidget->selectedDate();
     //组装等待被替换的模板变量
     //将模板变量打包到QHash里
     QHash<QString,QString> data;
-    data.insert("tacode",tacode);
-    data.insert("agentcode",agentcode);
+    data.insert("sendcode",send);
+    data.insert("recvcode",recv);
     data.insert("transferdate",date.toString("yyyyMMdd"));
     //正则校验器
     QString pattern("^[A-Za-z0-9]+$");
     QRegExp rx(pattern);
     //开始做合法判断
-    if(tacode.isEmpty()){
-        ui->logOut->setText("TA代码不能为空");
+    if(send.isEmpty()){
+        ui->logOut->setText("发送方代码不能为空");
         return;
     }
-    if(!rx.exactMatch(tacode)){
-        ui->logOut->setText("TA代码只允许包含数字和字母！,请勿随意输入");
+    if(!rx.exactMatch(send)){
+        ui->logOut->setText("发送方代码只允许包含数字和字母！,请勿随意输入");
         return;
     }
-    if(tacode.length()!=2){
-        ui->logOut->setText("TA代码目前应该是两位,请填写两位TA代码");
+    if(send.length()<2||send.length()>20){
+        ui->logOut->setText("发送方代码长度只允许2-20");
         return;
     }
-    if(agentcode.isEmpty()){
-        ui->logOut->setText("销售商代码不能为空");
+    if(recv.isEmpty()){
+        ui->logOut->setText("接收方代码不能为空");
         return;
     }
-    if(!rx.exactMatch(agentcode)){
-        ui->logOut->setText("销售商代码只允许包含数字和字母！,请勿随意输入");
+    if(!rx.exactMatch(recv)){
+        ui->logOut->setText("接收方代码只允许包含数字和字母！,请勿随意输入");
         return;
     }
-    if(agentcode.length()!=3){
-        ui->logOut->setText("销售商代码目前应该是三位,请填写三位销售商代码");
+    if(recv.length()<2||recv.length()>20){
+        ui->logOut->setText("接收方代码长度只允许2-20");
         return;
     }
     //检查并创建导出目录
@@ -119,29 +119,29 @@ void CreateOFDWindow::on_pushButton_clicked()
     //申请类数据
     if(ui->comboBox->currentIndex()==0){
         if(ui->comboBox_2->count()<1){
-            ui->logOut->setText("无可用的基金申请类数据文件模板!");
+            ui->logOut->setText("无可用的申请类数据文件模板!");
             return;
         }
-        targetPath=exppath+"交易申请/"+agentcode+"/"+date.toString("yyyyMMdd")+"/"+tacode+"/";
+        targetPath=exppath+"申请类文件/"+send+"/"+recv+"/"+date.toString("yyyyMMdd")+"/";
         sourcePath=configpath+"request/"+ui->comboBox_2->currentText()+"/";
     }
     //行情类数据
     if(ui->comboBox->currentIndex()==1){
         if(ui->comboBox_2->count()<1){
-            ui->logOut->setText("无可用的基金行情类数据文件模板!\r\n");
+            ui->logOut->setText("无可用的信息类数据文件模板!\r\n");
             return;
         }
-        targetPath=exppath+"行情和确认/"+agentcode+"/"+date.toString("yyyyMMdd")+"/"+tacode+"/FundDay/";
-        sourcePath=configpath+"fundday/"+ui->comboBox_2->currentText()+"/";
+        targetPath=exppath+"信息类文件/"+send+"/"+recv+"/"+date.toString("yyyyMMdd")+"/";
+        sourcePath=configpath+"info/"+ui->comboBox_2->currentText()+"/";
     }
     //交易确认类数据
     if(ui->comboBox->currentIndex()==2){
         if(ui->comboBox_2->count()<1){
-            ui->logOut->setText("无可用的基金确认类数据文件模板!\r\n");
+            ui->logOut->setText("无可用的确认类数据文件模板!\r\n");
             return;
         }
         sourcePath=configpath+"confirm/"+ui->comboBox_2->currentText()+"/";
-        targetPath=exppath+"行情和确认/"+agentcode+"/"+date.toString("yyyyMMdd")+"/"+tacode+"/Confirm/";
+        targetPath=exppath+"确认类文件/"+send+"/"+recv+"/"+date.toString("yyyyMMdd")+"/";
     }
     //目录创建结果
     bool ok=true;
@@ -191,7 +191,7 @@ void CreateOFDWindow::on_pushButton_clicked()
                 //源模板文件
                 sourceFile=sourcePath+sourcefiles.at(ff);
                 //拷贝过去的文件名--注意这里基于模板变量替换文件名
-                targetFileName=QString(sourcefiles.at(ff)).replace("agentcode",data.value("agentcode")).replace("tacode",data.value("tacode")).replace("transferdate",data.value("transferdate"));
+                targetFileName=QString(sourcefiles.at(ff)).replace("sendcode",data.value("sendcode")).replace("recvcode",data.value("recvcode")).replace("transferdate",data.value("transferdate"));
                 targetFile=targetPath+targetFileName;
                 targetdataandokfiles.append("\r\n").append(targetFileName);
                 //ok文件延后拷贝-确保ok文件在数据文件生成后生成
@@ -219,7 +219,7 @@ void CreateOFDWindow::on_pushButton_clicked()
                             QString line;
                             while (!dataLine.atEnd())
                             {
-                                line = dataLine.readLine().replace("agentcode",data.value("agentcode")).replace("tacode",data.value("tacode")).replace("transferdate",data.value("transferdate"));
+                                line = dataLine.readLine().replace("sendcode",data.value("sendcode")).replace("recvcode",data.value("recvcode")).replace("transferdate",data.value("transferdate"));
                                 lineList.append(line);
                             }
                         }
@@ -299,17 +299,17 @@ bool CreateOFDWindow::copyFile(QString srcFile ,QString dstFile, bool coverFileI
 void CreateOFDWindow::on_comboBox_currentIndexChanged(int index)
 {
     switch (index) {
-    //基金交易申请
+    //申请类文件
     case 0:
         ui->comboBox_2->clear();
         ui->comboBox_2->addItems(requestFileList);
         break;
-        //基金行情
+        //信息类文件
     case 1:
         ui->comboBox_2->clear();
-        ui->comboBox_2->addItems(navFileList);
+        ui->comboBox_2->addItems(infoFileList);
         break;
-        //交易确认
+        //确认类文件
     case 2:
         ui->comboBox_2->clear();
         ui->comboBox_2->addItems(confirmFileList);

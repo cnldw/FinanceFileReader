@@ -912,7 +912,7 @@ border-radius:3px;
   </action>
   <action name="actioncreatenewofdfile">
    <property name="text">
-    <string>新建基金交换协议文件(OFD文件)</string>
+    <string>新建OFD文件</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>

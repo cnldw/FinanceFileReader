@@ -49,26 +49,26 @@
     </property>
     <item>
      <property name="text">
-      <string>基金申请数据</string>
+      <string>申请类文件</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>基金行情数据</string>
+      <string>信息类文件</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>基金确认数据</string>
+      <string>确认类文件</string>
      </property>
     </item>
    </widget>
-   <widget class="QLineEdit" name="lineEditTaCode">
+   <widget class="QLineEdit" name="lineEditSendCode">
     <property name="geometry">
      <rect>
-      <x>350</x>
+      <x>373</x>
       <y>40</y>
-      <width>111</width>
+      <width>91</width>
       <height>20</height>
      </rect>
     </property>
@@ -76,7 +76,7 @@
      <string>填写文件交互的TA代码</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEditAgentCode">
+   <widget class="QLineEdit" name="lineEditRecvCode">
     <property name="geometry">
      <rect>
       <x>549</x>
@@ -94,12 +94,12 @@
      <rect>
       <x>290</x>
       <y>41</y>
-      <width>51</width>
+      <width>80</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>TA代码：</string>
+     <string>发送方代码：</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_2">
@@ -112,7 +112,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>销售商代码：</string>
+     <string>接收方代码：</string>
     </property>
    </widget>
    <widget class="QCalendarWidget" name="calendarWidget">

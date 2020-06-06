@@ -54,7 +54,7 @@ private slots:
 private:
     bool copyFile(QString srcFile ,QString dstFile, bool coverFileIfExist,bool upDateTime);
     Ui::CreateOFDWindow *ui;
-    QString windowTitle="基金数据交换协议文件生成器";
+    QString windowTitle="OFD类文件生成器";
     //默认导出路径
     QString exppath=QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/OFDFile/";
     //配置文件路径
@@ -62,7 +62,7 @@ private:
     //交易申请可用配置
     QStringList requestFileList;
     //行情可用配置
-    QStringList navFileList;
+    QStringList infoFileList;
     //交易确认可用配置
     QStringList confirmFileList;
     //OFD文件体系编码
