@@ -1,0 +1,17 @@
+OFDCFDAT
+22      
+sendcode                  
+recvcode                 
+transferdate
+00000999
+21      
+sendcode      
+recvcode     
+00000005
+SeatCode
+DistributorCode
+DistributorName
+TransferPermitFlag
+DownLoadDate
+0000000000000000
+OFDCFEND

@@ -1,0 +1,26 @@
+                            Qfile requestRnoFile(getConfigPath()+"requestno.txt");
+                            if(requestRnoFile.exists()){
+                                requestRnoFile.remove();
+                            }
+                            if (requestRnoFile.open(QFile::WriteOnly | QIODevice::Truncate)) {
+                                QTextStream out(&requestRnoFile);
+                                QString sb;
+                                int row=0;
+                                for (i = requestRnoFile.constBegin();i!=requestRnoFile.constEnd();++i) {
+                                    sb.append(i.key()).append("=").append(i.value());
+                                    if((row%500)==0){
+                                        out<<sb;
+                                        sb.clear();
+                                        qApp->processEvents();
+                                    }
+                                    row++;
+                                }
+                                out<<sb;
+                                sb.clear();
+                                qApp->processEvents();
+                                requestRnoFile.close();
+                                QApplication::restoreOverrideCursor();
+                            }else{
+                                logOutPut(QString("配置文件requestno.txt生成失败！！！,请检查磁盘权限！"));
+                                return;
+                            }

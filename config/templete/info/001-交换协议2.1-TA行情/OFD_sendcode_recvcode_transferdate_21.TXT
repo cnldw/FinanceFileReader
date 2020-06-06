@@ -1,0 +1,17 @@
+OFDCFDAT
+21  
+sendcode       
+recvcode      
+transferdate
+999
+21
+sendcode      
+recvcode     
+005
+SEATCODE
+DISTRIBUTORCODE
+DISTRIBUTORNAME
+TRANSFERPERMITFLAG
+DOWNLOADDATE
+00000000
+OFDCFEND

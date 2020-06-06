@@ -1,0 +1,17 @@
+OFDCFDAT
+21  
+sendcode       
+recvcode      
+transferdate
+999
+C6
+sendcode      
+recvcode     
+005
+FUNDCODE
+SHARECLASS
+SHAREREGISTERDATE
+ALLOWREDEMPTDATE
+ADDFLAG
+00000000
+OFDCFEND

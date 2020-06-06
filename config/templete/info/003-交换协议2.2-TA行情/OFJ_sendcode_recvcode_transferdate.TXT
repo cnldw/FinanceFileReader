@@ -1,0 +1,10 @@
+OFDCFIDX
+22      
+sendcode                  
+recvcode                 
+transferdate
+00000003
+OFD_sendcode_recvcode_transferdate_07.TXT
+OFD_sendcode_recvcode_transferdate_08.TXT
+OFD_sendcode_recvcode_transferdate_21.TXT
+OFDCFEND
