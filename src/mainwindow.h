@@ -459,6 +459,8 @@ private:
     void pageJump(int page,int scrollIndex=0);
     QString StringToHexStringWithEnCode(QString data,QTextCodec *codec,bool withSouceChar=true);
     QString HexStringToBinaryString(QString HexString);
+    static bool compareOFDData(const OFDFileDefinition &ofd1, const OFDFileDefinition &ofd2);
+
 };
 
 #endif // MAINWINDOW_H

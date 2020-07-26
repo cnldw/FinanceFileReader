@@ -23,21 +23,10 @@ DialogMagnify::DialogMagnify(QString text,QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
-#ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
-    ui->tableWidget->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet("font-size:13px");
-#endif
-    /**************************************************************/
+    QFont font = QFont("SimSun,Microsoft YaHei,PingFangSC-Regular,sans-serif",36,2);
+    font.setStyleName("Bold");
+    ui->textEdit->setFont(font);
     ui->textEdit->setText(text);
-    ui->textEdit->setToolTip("按住Ctrl滚动鼠标继续放大缩小");
-#ifdef Q_OS_MAC
-    ui->textEdit->setToolTip("按住Command滚动鼠标继续放大缩小");
-#endif
-
 }
 
 DialogMagnify::~DialogMagnify()

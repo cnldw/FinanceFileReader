@@ -2054,6 +2054,8 @@ void MainWindow::load_ofdFile(QString fileType){
                 }
                 else{
                     qDebug()<<"多个配置满足解析";
+                    //排序
+                    std::sort(matchOFD.begin(), matchOFD.end(),compareOFDData);
                     DialogChooseOFDConfig  dialog2(useini,&matchOFD,this);
                     dialog2.setWindowTitle("打开的文件匹配到了多个解析配置,请选择使用哪一个配置解析文件");
                     dialog2.setModal(true);
@@ -5774,7 +5776,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 //只选择一行的情况下分为选择了多列和一列
                 //单行单列
                 if(allSelectIsOneColumn){
-                    tablePopMenu->addAction(action_ShowCopyColum);         
+                    tablePopMenu->addAction(action_ShowCopyColum);
                     tablePopMenu->addAction(action_ShowDetails);
                     tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
@@ -8861,4 +8863,14 @@ void MainWindow::on_actionmtime_triggered()
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
+}
+
+bool MainWindow::compareOFDData(const OFDFileDefinition &ofd1, const OFDFileDefinition &ofd2){
+    if (ofd1.getConfigSegment() < ofd2.getConfigSegment())
+    {
+        return true;
+    }
+    else{
+        return false;
+    }
 }
