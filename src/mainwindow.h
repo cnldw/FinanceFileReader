@@ -82,6 +82,8 @@
 #include "src/dialogchooseexporttype.h"
 #include "src/dialogshowcharset.h"
 #include "src/dialogmodifymtime.h"
+#include "src/dialogmagnify.h"
+#include "src/dialogchooseofdconfig.h"
 
 namespace Ui {
 class MainWindow;
@@ -147,6 +149,8 @@ private slots:
     void copyToClipboard();
 
     void showRowDetails();
+
+    void showMagnify();
 
     void copyMessage();
 
@@ -315,6 +319,7 @@ private:
     QAction *action_ShowDetails;
     QAction *action_ShowCharacter;
     QAction *action_ShowCopyColum;
+    QAction *action_Magnify;
     QAction *action_ShowOFDAnalysis;
     QAction *action_EditCompareData;
     QAction *action_EditCompareDataBatch;

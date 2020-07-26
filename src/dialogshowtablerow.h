@@ -29,6 +29,8 @@
 #include <QFileDialog>
 #include <QShortcut>
 
+#include "src/dialogmagnify.h"
+
 namespace Ui {
 class DialogShowTableRow;
 }
@@ -52,6 +54,8 @@ private slots:
 
     void saveScreen();
 
+    void showMagnify();
+
     void on_pushButton_clicked();
 
     void on_tableWidget_itemSelectionChanged();
@@ -63,6 +67,7 @@ private:
     QMenu *tablePopMenu;
     QAction *action_ShowCopyColum;
     QAction *action_ShowSaveScreen;
+    QAction *action_Magnify;
     QPoint posCurrentMenu;
     //
     int searchRow =0;

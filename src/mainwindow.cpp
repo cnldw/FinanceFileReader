@@ -69,6 +69,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_ShowDetails, SIGNAL(triggered()), this, SLOT(showRowDetails()));
     action_ShowCopyColum = new QAction(tr("复制"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
+    action_Magnify = new QAction(tr("放大镜"),this);
+    connect(action_Magnify, SIGNAL(triggered()), this, SLOT(showMagnify()));
     action_ShowOFDAnalysis = new QAction(tr("OFD字段合法分析"),this);
     connect(action_ShowOFDAnalysis, SIGNAL(triggered()), this, SLOT(showOFDFiledAnalysis()));
     action_EditCompareData= new QAction(tr("将此行数据加入比对器"),this);
@@ -857,6 +859,7 @@ void MainWindow::load_OFDDefinition(){
                             //存入QHash使用的key
                             QString name=prefixName+"_"+interfaceList.at(i);
                             OFDFileDefinition ofd;
+                            ofd.setConfigSegment("["+interfaceList.at(i)+"]");
                             QList<OFDFieldDefinition> fieldList;
                             QString message;
                             bool okFlag=false;
@@ -1974,7 +1977,9 @@ void MainWindow::load_ofdFile(QString fileType){
             //这里开始根据文件类别筛查基本满足要求的配置
             //1.8.0改版后，同一个配置文件，比如OFD_22.ini,允许配置多个XX（比如07）文件的定义，所以需要二次确定要使用哪个配置
             QHash<QString, OFDFileDefinition>::const_iterator i;
-            bool findConfigOk=false;
+            //1.8.9版本开始，新增多配置匹配手工选择解析类别
+            //比如一个文件既满足开放式基金配置，又满足银行理财子配置，则弹窗让你选择使用哪一个
+            QList<OFDFileDefinition> matchOFD;
             for (i = loadedOfdDefinitionHash.constBegin(); i != loadedOfdDefinitionHash.constEnd(); ++i) {
                 //判断是否以文件类型开头
                 QString ofdHashKey=i.key();
@@ -2013,38 +2018,56 @@ void MainWindow::load_ofdFile(QString fileType){
                             //首行长度非-1
                             if(firstLineDateLenght!=-1)
                             {
-                                //开始判断首行
+                                //开始判断首行---满足
                                 if(firstLineDateLenght ==ofdFileDefinition.getRowLength()){
-                                    //找到目标解析配置
-                                    ofd=ofdFileDefinition;
-                                    findConfigOk=true;
-                                    break;
+                                    matchOFD.append(ofdFileDefinition);
+                                    continue;
                                 }
                                 else{
                                     //首行数据不满足
                                     OFDFaultCause fault;
                                     fault.setConfig(config);
-                                    fault.setCause("配置文件"+useini+"中的解析器"+config+"所代表的文件的文件每行数据长度是["+QString::number(ofdFileDefinition.getRowLength())+"],但是从文件第1行数据记录获取到的数据长度是["+QString::number(firstLineDateLenght)+"],请检查文件是否满足接口标准,或者配置是否有误");
+                                    fault.setCause("配置文件"+useini+"中的解析器"+config+"所代表的文件的文件每行数据长度是["+QString::number(ofdFileDefinition.getRowLength())+"],但是从文件第1行数据记录获取到的数据长度是["+QString::number(firstLineDateLenght)+"],请检查文件是否满足该配置对应的接口标准,或者配置是否有误");
                                     faultList.append(fault);
                                 }
                             }
+                            //空数据无法校验首行记录，直接认定满足
                             else{
-                                //空数据无法校验首行记录，直接认定
-                                ofd=ofdFileDefinition;
-                                findConfigOk=true;
-                                break;
+                                matchOFD.append(ofdFileDefinition);
+                                continue;
                             }
                         }
                     }
                     else{
                         OFDFaultCause fault;
                         fault.setConfig(config);
-                        fault.setCause(QString("打开的文件的字段数是[%1]和配置文件中的[%2]不一致,请检查文件是否满足接口标准,或者配置是否有误").arg(QString::number(countNumberFromFile)).arg(QString::number(ofdFileDefinition.getFieldCount())));
+                        fault.setCause(QString("打开的文件的字段数是[%1]和配置文件中的[%2]不一致,请检查文件是否满足该配置对应的接口标准,或者配置是否有误").arg(QString::number(countNumberFromFile)).arg(QString::number(ofdFileDefinition.getFieldCount())));
                         faultList.append(fault);
                     }
                 }
             }
-            if(findConfigOk){
+            //如果至少一条满足，则准备进入解析步骤
+            if(matchOFD.count()>0){
+                //只有一条满足的，直接干
+                if(matchOFD.count()<2){
+                    ofd=matchOFD.at(0);
+                }
+                else{
+                    qDebug()<<"多个配置满足解析";
+                    DialogChooseOFDConfig  dialog2(useini,&matchOFD,this);
+                    dialog2.setWindowTitle("打开的文件匹配到了多个解析配置,请选择使用哪一个配置解析文件");
+                    dialog2.setModal(true);
+                    dialog2.exec();
+                    //从弹窗中获取结果
+                    int index=dialog2.getChooeseIndex();
+                    if(!dialog2.getConfirm()){
+                        statusBar_disPlayMessage("没有选择解析方案,放弃解析...");
+                        return;
+                    }
+                    else{
+                        ofd=matchOFD.at(index);
+                    }
+                }
                 ui->lineEditFileDescribe->setText(ofd.getDescribe());
                 QFile dataFile(currentOpenFilePath);
                 //判断如果文件打开成功,则开始读取
@@ -2182,6 +2205,7 @@ void MainWindow::load_ofdFile(QString fileType){
                     return;
                 }
             }
+            //如果没找到满足的解析配置
             else{
                 currentOpenFileType=-1;
                 //显示失败原因
@@ -4502,6 +4526,27 @@ void MainWindow::showRowDetails(){
 }
 
 /**
+ * @brief MainWindow::showMagnify 打开放大镜
+ */
+void MainWindow::showMagnify(){
+    if(ptr_table->item(tableRowCurrent,tableColCurrent)==nullptr||ptr_table->item(tableRowCurrent,tableColCurrent)->text().isEmpty()){
+        statusBar_disPlayMessage("该单元格无数据...");
+    }
+    else{
+        QString data=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
+        //打开窗口
+        int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
+        DialogMagnify * dialog = new DialogMagnify(data,this);
+        dialog->setWindowTitle(QString("数据放大镜-第%1行第%2列").arg(rowRealInContent+1).arg(tableColCurrent+1));
+        dialog->setModal(false);
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+        dialog->show();
+        dialog->raise();
+        dialog->activateWindow();
+    }
+}
+
+/**
  * @brief MainWindow::showCharacter
  */
 void MainWindow::showCharacter(){
@@ -5729,8 +5774,9 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 //只选择一行的情况下分为选择了多列和一列
                 //单行单列
                 if(allSelectIsOneColumn){
-                    tablePopMenu->addAction(action_ShowCopyColum);
+                    tablePopMenu->addAction(action_ShowCopyColum);         
                     tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
                     tablePopMenu->addAction(action_ShowOFDAnalysis);
                     tablePopMenu->addSeparator();
@@ -5868,6 +5914,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 if(allSelectIsOneColumn){
                     tablePopMenu->addAction(action_ShowCopyColum);
                     tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
                     //csv文件暂不支持编辑
                     //tablePopMenu->addAction(action_ModifyCell);
@@ -5966,6 +6013,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 if(allSelectIsOneColumn){
                     tablePopMenu->addAction(action_ShowCopyColum);
                     tablePopMenu->addAction(action_ShowDetails);
+                    tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
                     //csv文件暂不支持编辑
                     //tablePopMenu->addAction(action_ModifyCell);

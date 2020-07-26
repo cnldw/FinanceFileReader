@@ -39,6 +39,8 @@ include(src/xlsx/qtxlsx.pri)
 include(src/2048/2048.pri)
 
 SOURCES += \
+    src/dialogchooseofdconfig.cpp \
+    src/dialogmagnify.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/utils.cpp \
@@ -71,6 +73,8 @@ SOURCES += \
     src/dialogmodifymtime.cpp
 
 HEADERS += \
+    src/dialogchooseofdconfig.h \
+    src/dialogmagnify.h \
         src/mainwindow.h \
     src/utils.h \
     src/ofdfiledefinition.h \
@@ -103,6 +107,8 @@ HEADERS += \
     src/dialogmodifymtime.h
 
 FORMS += \
+    src/dialogchooseofdconfig.ui \
+    src/dialogmagnify.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
     src/dialogshowtablecompareview.ui \
@@ -131,7 +137,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.8.8
+VERSION = 1.8.9
 ############以下注意按版本修改###############
 
 # 语言

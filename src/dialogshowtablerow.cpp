@@ -51,10 +51,10 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
     text="对当前窗口进行截图保存(command+Option+R)";
 #endif
     action_ShowSaveScreen= new QAction(text,this);
-    tablePopMenu->addAction(action_ShowCopyColum);
-    tablePopMenu->addAction(action_ShowSaveScreen);
+    action_Magnify = new QAction(tr("放大镜"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
     connect(action_ShowSaveScreen, SIGNAL(triggered()), this, SLOT(saveScreen()));
+    connect(action_Magnify, SIGNAL(triggered()), this, SLOT(showMagnify()));
     //截图快捷键
     QShortcut *_shortcut;
     _shortcut = new QShortcut(QKeySequence("Ctrl+Alt+R"), this);
@@ -102,6 +102,7 @@ DialogShowTableRow::~DialogShowTableRow()
 {
     delete action_ShowCopyColum;
     delete action_ShowSaveScreen;
+    delete action_Magnify;
     delete tablePopMenu;
     delete ui;
 }
@@ -118,6 +119,22 @@ void DialogShowTableRow::on_tableWidget_customContextMenuRequested(const QPoint 
     if( ptr_table->rowAt(pos.y()) <0){
         return;
     }
+    //复制
+    tablePopMenu->addAction(action_ShowCopyColum);
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    int rangeCount=itemsRange.count();
+    if(rangeCount==1){
+        int topRow=itemsRange.at(0).topRow();
+        int bottomRow=itemsRange.at(0).bottomRow();
+        int leftColumn=itemsRange.at(0).leftColumn();
+        int rigthColumn=itemsRange.at(0).rightColumn();
+        //单个单元格--允许使用放大镜
+        if(topRow==bottomRow&&leftColumn==rigthColumn){
+            tablePopMenu->addAction(action_Magnify);
+        }
+    }
+    //截屏
+    tablePopMenu->addAction(action_ShowSaveScreen);
     tablePopMenu->exec(QCursor::pos());
 }
 
@@ -255,3 +272,32 @@ void DialogShowTableRow::saveScreen(){
         p.save(filePathName,"png");
     }
 }
+
+/**
+ * @brief DialogShowTableRow::showMagnify 打开放大镜
+ */
+void DialogShowTableRow::showMagnify(){
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    int rangeCount=itemsRange.count();
+    if(rangeCount==1){
+        int topRow=itemsRange.at(0).topRow();
+        int bottomRow=itemsRange.at(0).bottomRow();
+        int leftColumn=itemsRange.at(0).leftColumn();
+        int rigthColumn=itemsRange.at(0).rightColumn();
+        //单个单元格复制
+        if(topRow==bottomRow&&leftColumn==rigthColumn){
+            QString text="";
+            if(ptr_table->item(topRow,leftColumn)!=nullptr){
+                text= ptr_table->item(topRow,leftColumn)->text();
+                DialogMagnify * dialog = new DialogMagnify(text,this);
+                dialog->setWindowTitle(QString("数据放大镜"));
+                dialog->setModal(false);
+                dialog->setAttribute(Qt::WA_DeleteOnClose);
+                dialog->show();
+                dialog->raise();
+                dialog->activateWindow();
+            }
+        }
+    }
+}
+

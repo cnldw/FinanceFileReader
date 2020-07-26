@@ -46,6 +46,16 @@ void OFDFileDefinition::setDictionary(const QString &value)
     dictionary = value;
 }
 
+QString OFDFileDefinition::getConfigSegment() const
+{
+    return configSegment;
+}
+
+void OFDFileDefinition::setConfigSegment(const QString &value)
+{
+    configSegment = value;
+}
+
 OFDFileDefinition::OFDFileDefinition()
 {
     

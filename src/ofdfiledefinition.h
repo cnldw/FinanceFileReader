@@ -27,6 +27,7 @@ private:
 
     //配置是否可用
     bool useAble;
+    QString  configSegment;
     //配置不可用原因
     QString message;
     //字段总和
@@ -62,6 +63,8 @@ public:
     void setDescribe(const QString &value);
     QString getDictionary() const;
     void setDictionary(const QString &value);
+    QString getConfigSegment() const;
+    void setConfigSegment(const QString &value);
 };
 
 #endif // OFDFILEDEFINITION_H
