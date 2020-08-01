@@ -23,10 +23,7 @@ DialogMagnify::DialogMagnify(QString text,QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
-    QFont font = QFont("SimSun,Microsoft YaHei,PingFangSC-Regular,sans-serif",36,2);
-    font.setStyleName("Bold");
-    ui->textEdit->setFont(font);
-    ui->textEdit->setText(text);
+    ui->textEdit->setHtml("<div style=\"font-size:42px\">"+text+"</div>");
 }
 
 DialogMagnify::~DialogMagnify()

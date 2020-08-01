@@ -84,6 +84,7 @@
 #include "src/dialogmodifymtime.h"
 #include "src/dialogmagnify.h"
 #include "src/dialogchooseofdconfig.h"
+#include "src/dialogeditheaderfooter.h"
 
 namespace Ui {
 class MainWindow;
@@ -235,6 +236,8 @@ private slots:
     void showCharacter();
 
     void on_actionmtime_triggered();
+
+    void on_actioneditheaderfooter_triggered();
 
 private:
     Ui::MainWindow *ui;

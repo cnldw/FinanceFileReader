@@ -40,6 +40,7 @@ include(src/2048/2048.pri)
 
 SOURCES += \
     src/dialogchooseofdconfig.cpp \
+    src/dialogeditheaderfooter.cpp \
     src/dialogmagnify.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
@@ -74,6 +75,7 @@ SOURCES += \
 
 HEADERS += \
     src/dialogchooseofdconfig.h \
+    src/dialogeditheaderfooter.h \
     src/dialogmagnify.h \
         src/mainwindow.h \
     src/utils.h \
@@ -108,6 +110,7 @@ HEADERS += \
 
 FORMS += \
     src/dialogchooseofdconfig.ui \
+    src/dialogeditheaderfooter.ui \
     src/dialogmagnify.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
@@ -137,7 +140,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.8.9
+VERSION = 1.9.0
 ############以下注意按版本修改###############
 
 # 语言

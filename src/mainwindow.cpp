@@ -39,7 +39,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     this->setStyleSheet("font-size:13px");
 #endif
     /**************************************************************/
-    //临时隐藏未开发完毕的功能--高级文件打开
+    //临时隐藏未开发完毕的功能
+    ui->actioneditheaderfooter->setVisible(false);
     //////////////////////////////////插件功能/////////////////
     //仅Windows系统支持文件比对和在文本编辑器中打开
 #ifdef Q_OS_LINUX
@@ -1711,6 +1712,7 @@ void MainWindow::initFile(QString filePath){
                 ui->lineEditSenfInfo->setText(sendName);
                 ui->lineEditRecInfo->setText(recName);
                 ui->lineEditFileDescribe->setText(fileIndexTypeName);
+                ui->lineEditFileDescribe->setToolTip(fileIndexTypeName);
                 //此处开始加载索引文件
                 load_indexFile();
                 return;
@@ -2071,6 +2073,7 @@ void MainWindow::load_ofdFile(QString fileType){
                     }
                 }
                 ui->lineEditFileDescribe->setText(ofd.getDescribe());
+                ui->lineEditFileDescribe->setToolTip(ofd.getDescribe());
                 QFile dataFile(currentOpenFilePath);
                 //判断如果文件打开成功,则开始读取
                 if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
@@ -2602,6 +2605,7 @@ void MainWindow::load_fixedFileData(){
     ui->lineEditUseIni->setText(fixed.getFileIni());
     //文件类型描述
     ui->lineEditFileDescribe->setText(fixed.getFileDescribe());
+    ui->lineEditFileDescribe->setToolTip(fixed.getFileDescribe());
     //文件类型描述
     ui->lineEditFileType->setText("字段定长");
     //当加载的文件类别是fixed时，传递日期栏目改为文件正则匹配到的配置;
@@ -2982,6 +2986,7 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
     ui->lineEditUseIni->setText(csv.getFileIni());
     //文件类型描述
     ui->lineEditFileDescribe->setText(csv.getFileDescribe());
+    ui->lineEditFileDescribe->setToolTip(csv.getFileDescribe());
     //文件类型描述
     ui->lineEditFileType->setText("CSV文件");
     //当加载的文件类别是csv时，传递日期栏目改为文件正则匹配到的配置;
@@ -3610,6 +3615,7 @@ void MainWindow::clear_Display_Info(){
     ui->lineEditSenfInfo->setText(nullptr);
     ui->lineEditRecInfo->setText(nullptr);
     ui->lineEditFileDescribe->setText(nullptr);
+    ui->lineEditFileDescribe->setToolTip(nullptr);
     ui->lineEditUseIni->setText(nullptr);
     ui->lineEditUseIni->setToolTip(nullptr);
     statusBar_clear_statusBar();
@@ -8873,4 +8879,15 @@ bool MainWindow::compareOFDData(const OFDFileDefinition &ofd1, const OFDFileDefi
     else{
         return false;
     }
+}
+
+void MainWindow::on_actioneditheaderfooter_triggered()
+{
+    //打开窗口
+    DialogEditHeaderFooter * dialog = new DialogEditHeaderFooter(this);
+    dialog->setModal(false);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }

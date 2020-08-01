@@ -770,6 +770,7 @@ border-radius:3px;
     <addaction name="actioncopy"/>
     <addaction name="actionedit"/>
     <addaction name="actionedit2"/>
+    <addaction name="actioneditheaderfooter"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -966,6 +967,11 @@ border-radius:3px;
   <action name="actionmtime">
    <property name="text">
     <string>文件时间戳【修改时间】修改工具</string>
+   </property>
+  </action>
+  <action name="actioneditheaderfooter">
+   <property name="text">
+    <string>编辑文件头文件尾</string>
    </property>
   </action>
  </widget>
