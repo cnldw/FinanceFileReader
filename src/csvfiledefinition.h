@@ -43,7 +43,7 @@ private:
     int titlerowindex;
     //数据起始行
     int databeginrowindex;
-    //文件尾部忽略的行
+    //文件尾部忽略的行--1自动
     int endIgnoreRow;
     //编码信息
     QString ecoding;
@@ -51,8 +51,12 @@ private:
     int fieldCount;
     //所属配置文件
     QString fileIni;
+    //是否清除双引号边界符
+    bool clearQuotes;
     //字段信息
     QList <CsvFieldDefinition> fieldList;
+
+    bool ffAuto=false;
 
 public:
     CsvFileDefinition();
@@ -84,6 +88,10 @@ public:
     void setFileNameWithCount(const QString &value);
     int getEndIgnoreRow() const;
     void setEndIgnoreRow(int value);
+    bool getClearQuotes() const;
+    void setClearQuotes(bool value);
+    bool getFfAuto() const;
+    void setFfAuto(bool value);
 };
 
 #endif // CSVFILEDEFINITION_H

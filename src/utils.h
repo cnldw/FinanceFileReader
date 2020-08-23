@@ -17,6 +17,7 @@
 #define UTILS_H
 
 #include <QString>
+#include <QDebug>
 #include <QDir>
 #include <QFileInfo>
 #include <QList>
@@ -51,8 +52,10 @@ public:
      static QString getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col,QString charset);
      static QStringList getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row,QString charset);
      static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset);
+     static QStringList getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset);
      static QString CovertInt2ExcelCol(int number);
      static QString CovertDoubleQStringWithThousandSplit(QString doubleString);
+     static QString clearQuotes(QString stringS);
      static void UpdateFileTime(QString file,QDateTime lastModifyTime=QDateTime::currentDateTime());
      static void getFileListFromDir(QString dirpath,QStringList *filelist);
 };

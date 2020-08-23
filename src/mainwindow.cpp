@@ -553,6 +553,12 @@ void MainWindow::statusBar_display_rowsCount(int rowsCount){
     statusLabel_ptr_showCount->setText(tr("记录数:%1行,共计%2页").arg(QString::number(rowsCount, 10)).arg(count));
 }
 
+
+void MainWindow::statusBar_display_rowsCount(int rowsCount, QString charset){
+    int count=(rowsCount + pageRowSize - 1) / pageRowSize;
+    statusLabel_ptr_showCount->setText(tr("记录数:%1行,共计%2页-%3").arg(QString::number(rowsCount, 10)).arg(count).arg(charset));
+}
+
 /**
  * @brief MainWindow::statusBar_display_rowsAndCol 状态栏显示行列，当length为-1时只显示行，当length为0时只显示行列
  * @param row
@@ -1107,8 +1113,16 @@ void MainWindow::load_CSVDefinition(){
                                 }
                             }
                         }
+                        //10是否清除双引号
+                        QString clearQuotesStr=loadedCsvInfoIni.value(csvType+"/clearquotes").toString();
+                        if(clearQuotesStr=="1") {
+                            fileDef.setClearQuotes(true);
+                        }
+                        else{
+                            fileDef.setClearQuotes(false);
+                        }
                         //////////////////////////////////////
-                        //10字段总数
+                        //最后字段总数和字段内容
                         QString fieldCcountStr=loadedCsvInfoIni.value(csvType+"/fieldcount").toString();
                         int fieldCount=fieldCcountStr.toInt(&flag,10);
                         //字段描述值正确
@@ -1782,6 +1796,293 @@ NOT_OF_FILE:
             return;
         }
     }
+    //自动化csv文件分析
+    //此部分构造一个自动化识别csv文件的方案，尝试免配置自动解析csv文件，支持带标题行和不带标题行的竖线分割，tab分割，逗号分割三种方式
+    //支持自动识别的文件编码方式
+    //屏蔽如下文件格式不解析
+    if(!(currentOpenFilePath.endsWith(".exe",Qt::CaseInsensitive)||currentOpenFilePath.endsWith(".xls",Qt::CaseInsensitive)||currentOpenFilePath.endsWith(".xlsx",Qt::CaseInsensitive)
+         ||currentOpenFilePath.endsWith(".doc",Qt::CaseInsensitive)||currentOpenFilePath.endsWith(".docx",Qt::CaseInsensitive)
+         ||currentOpenFilePath.endsWith(".ppt",Qt::CaseInsensitive)||currentOpenFilePath.endsWith(".pptx",Qt::CaseInsensitive)
+         ||currentOpenFilePath.endsWith(".html",Qt::CaseInsensitive)||currentOpenFilePath.endsWith(".zip",Qt::CaseInsensitive)
+         ||currentOpenFilePath.endsWith(".rar",Qt::CaseInsensitive)||currentOpenFilePath.endsWith(".7zip",Qt::CaseInsensitive)
+         ||currentOpenFilePath.endsWith(".sql",Qt::CaseInsensitive)||currentOpenFilePath.endsWith(".pdf",Qt::CaseInsensitive))){
+        QString filecharset="UTF-8";
+        QFile dataFile(currentOpenFilePath);
+        //判断如果文件打开成功,则开始读取
+        if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+        {
+            int lineNumber=0;
+            //存放前50行
+            QList<QByteArray> line50Qlist;
+            //存放识别编码的文本样本
+            QByteArray line50ByteArray;
+            while (!dataFile.atEnd()&&lineNumber<50)
+            {
+                QByteArray line=dataFile.readLine();
+                line50Qlist.append(line);
+                line50ByteArray.append(line);
+                lineNumber++;
+            }
+            dataFile.close();
+            //读取前50行结束后开始自动识别编码-感谢libucd项目，感谢mozilla
+            if(line50ByteArray.count()>0&&line50Qlist.count()>0){
+                filecharset=m_libucd.CharsetDetect(line50ByteArray);
+                qDebug()<<"自动识别出来的原始编码格式"<<filecharset;
+                //不在编码白名单的编码方式暂不支持，统一使用UTF-8解析
+                if(!allowCharsetList.contains(filecharset.toUpper())){
+                    if(filecharset.toUpper()=="WINDOWS-1252"||filecharset.toUpper()=="WINDOWS-1251"||filecharset.toUpper()=="KOI8-R"){
+                        filecharset="GBK";
+                    }
+                    else{
+                        filecharset="UTF-8";
+                    }
+                }
+                QTextCodec *codec=QTextCodec::codecForName(filecharset.toLocal8Bit());
+                if(autoFlagList.count()>0){
+                    QString useflag="";
+                    int lastCount=1;
+                    int titleRow=0;
+                    int dataBeginRow=1;
+                    QString fileini="自动解析引擎";
+                    QString fileName="";
+                    QString fileDescribe="";
+                    QString endwithflag="0";
+                    //-1自动识别
+                    int ignorerow=-1;
+                    bool clearQuotesStr=true;
+                    int fieldCount=-1;
+                    QList <CsvFieldDefinition> fieldTitleList;
+                    QStringList fieldTitleStrList;
+                    for(int in=0;in<autoFlagList.count();in++){
+                        QString thisflag=autoFlagList.at(in);
+                        QRegExp rx("\\"+thisflag+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                        //只有一行数据
+                        //如果文件只有一行数据，则对该行数据进行使用不同的分隔符拆分，拆分出来的字段数最多的则获得解析权，拆分出来的列不得低于2
+                        //如果该行数据高ascii位占比超过设定值，则认为该行是仅有的一行标题行
+                        if(line50Qlist.count()==1){
+                            QString line = codec->toUnicode(line50Qlist.at(0)).replace("\r","").replace("\n","");
+                            QStringList fieldList=line.split(rx);
+                            if(fieldList.count()>lastCount){
+                                lastCount=fieldList.count();
+                                useflag=thisflag;
+                                fileName="基于"+thisflag+"分割列的文件";
+                                //统计中英文占比--笼统的算法-直接统计高ansii占比
+                                float ct=0;
+                                float all=0;
+                                for(int xx=0;xx<fieldList.count();xx++){
+                                    int fiedleLength=fieldList.at(xx).length();
+                                    int in=0;
+                                    while (in<fiedleLength) {
+                                        if(fieldList.at(xx).at(in)>=QChar('A')){
+                                            ct++;
+                                        }
+                                        all++;
+                                        in++;
+                                    }
+                                }
+                                //满足标题要求
+                                if((ct/all)>titlecheck){
+                                    titleRow=1;
+                                    dataBeginRow=2;
+                                    fieldCount=-1;
+                                    fieldTitleList.clear();
+                                    for(int xx=0;xx<fieldList.count();xx++){
+                                        CsvFieldDefinition fieldItem;
+                                        QString name=fieldList.at(xx);
+                                        if(name.isEmpty()){
+                                            name="未定义的字段名";
+                                        }
+                                        fieldItem.setFieldName(name);
+                                        fieldTitleStrList.append(name);
+                                        fieldTitleList.append(fieldItem);
+                                    }
+                                }
+                                //不满足，则认定该行数据为仅有的一行数据
+                                else{
+                                    titleRow=0;
+                                    dataBeginRow=1;
+                                    fieldCount=fieldList.count();
+                                    fieldTitleList.clear();
+                                    for(int xx=0;xx<fieldList.count();xx++){
+                                        CsvFieldDefinition fieldItem;
+                                        QString name="第"+QString::number(xx+1)+"列";
+                                        fieldItem.setFieldName(name);
+                                        //添加此字段信息到文件定义
+                                        fieldTitleList.append(fieldItem);
+                                        fieldTitleStrList.append(name);
+                                        fieldTitleList.append(fieldItem);
+                                    }
+                                }
+                            }
+                        }
+                        //文件内容行数大于1，开始分析多行数据
+                        else{
+                            QList<QStringList > lineQListQStringList;
+                            /////////////////step1////////////////////////////////////////
+                            //对前50行数据进行分隔符拆分
+                            for(int lineN=0;lineN<line50Qlist.count();lineN++){
+                                QStringList line=codec->toUnicode(line50Qlist.at(lineN)).replace("\r","").replace("\n","").split(rx);
+                                lineQListQStringList.append(line);
+                            }
+                            /////////////////step2////////////////////////////////////////
+                            //开始循环分析列数
+                            int previousRowFieldCount=1;
+                            //疑似数据起始行（含标题）--从这一行开始往后最大的列
+                            int contextBgein=-1;
+                            for(int lineN=0;lineN<lineQListQStringList.count();lineN++){
+                                //首次遇到大于1列的-认为该行数据就是起始行
+                                if(previousRowFieldCount==1&&lineQListQStringList.at(lineN).count()>1&&lineN>contextBgein){
+                                    previousRowFieldCount=lineQListQStringList.at(lineN).count();
+                                    //如果这个分割符分出来的比上一个分隔符的多，则更新
+                                    if(previousRowFieldCount>lastCount){
+                                        useflag=thisflag;
+                                        lastCount=previousRowFieldCount;
+                                        fileName="基于"+thisflag+"分割列的文件";
+                                    }
+                                    contextBgein=lineN;
+                                }
+                                //非首次遇到-并且解析到了更多的列-则更新起始行
+                                else if(lineQListQStringList.at(lineN).count()>previousRowFieldCount&&lineN>contextBgein){
+                                    previousRowFieldCount=lineQListQStringList.at(lineN).count();
+                                    if(previousRowFieldCount>lastCount){
+                                        lastCount=previousRowFieldCount;
+                                    }
+                                    contextBgein=lineN;
+                                }
+                                else{
+
+                                }
+                            }
+                            /////////////////step3////////////////////////////////////////
+                            //进阶分析标题和其他情况
+                            qDebug()<<thisflag;
+                            qDebug()<<previousRowFieldCount;
+                            qDebug()<<contextBgein+1;
+                            if(previousRowFieldCount>1){
+                                bool firstRowIsTitle=false;
+                                //从疑似第一行开始，做进阶分析
+                                //先判断该行数据是否是标题行------取第一行
+                                float firstCheck=1;
+                                float ct=0;
+                                float all=0;
+                                QStringList firstRowfieldList=lineQListQStringList.at(contextBgein);
+                                for(int xx=0;xx<firstRowfieldList.count();xx++){
+                                    int fiedleLength=firstRowfieldList.at(xx).length();
+                                    int in=0;
+                                    while (in<fiedleLength) {
+                                        if(firstRowfieldList.at(xx).at(in)>=QChar('A')){
+                                            ct++;
+                                        }
+                                        all++;
+                                        in++;
+                                    }
+                                }
+                                //直接满足标题要求
+                                firstCheck=ct/all;
+                                if((firstCheck)>titlecheck){
+                                    firstRowIsTitle=true;
+                                }
+                                //不满足标题行
+                                else {
+                                    if(contextBgein+1<lineQListQStringList.count()){
+                                        if(lineQListQStringList.at(contextBgein+1).count()==firstRowfieldList.count()){
+                                            float secondCheck=1;
+                                            float c2t=0;
+                                            float all2=0;
+                                            QStringList secondRowfieldList=lineQListQStringList.at(contextBgein+1);
+                                            for(int xx=0;xx<secondRowfieldList.count();xx++){
+                                                int fiedleLength=secondRowfieldList.at(xx).length();
+                                                int in=0;
+                                                while (in<fiedleLength) {
+                                                    if(secondRowfieldList.at(xx).at(in)>=QChar('A')){
+                                                        c2t++;
+                                                    }
+                                                    all2++;
+                                                    in++;
+                                                }
+                                            }
+                                            secondCheck=c2t/all2;
+                                            //第一行不过标题临界值，但是第一和第二行差异过大，我们依然认为第一行就是标题
+                                            if(abs(secondCheck-firstCheck)>titleandcontextcheck){
+                                                firstRowIsTitle=true;
+                                            }
+                                            else{
+                                                firstRowIsTitle=false;
+                                            }
+                                        }
+                                        else{
+                                            firstRowIsTitle=false;
+                                        }
+                                    }
+                                    else{
+                                        firstRowIsTitle=false;
+                                    }
+                                }
+                                if(firstRowIsTitle){
+                                    titleRow=contextBgein+1;
+                                    dataBeginRow=contextBgein+2;
+                                    fieldCount=firstRowfieldList.count();
+                                    fieldTitleList.clear();
+                                    for(int xx=0;xx<firstRowfieldList.count();xx++){
+                                        CsvFieldDefinition fieldItem;
+                                        QString name=firstRowfieldList.at(xx);
+                                        if(name.isEmpty()){
+                                            name="未定义的字段名";
+                                        }
+                                        fieldItem.setFieldName(name);
+                                        fieldTitleStrList.append(name);
+                                        fieldTitleList.append(fieldItem);
+                                    }
+                                }
+                                else{
+                                    titleRow=0;
+                                    dataBeginRow=contextBgein+1;
+                                    fieldCount=firstRowfieldList.count();
+                                    fieldTitleList.clear();
+                                    for(int xx=0;xx<firstRowfieldList.count();xx++){
+                                        CsvFieldDefinition fieldItem;
+                                        QString name="第"+QString::number(xx+1)+"列";
+                                        fieldItem.setFieldName(name);
+                                        //添加此字段信息到文件定义
+                                        fieldTitleList.append(fieldItem);
+                                        fieldTitleStrList.append(name);
+                                        fieldTitleList.append(fieldItem);
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                    //////////////检查识别结果开始解析/////////////////////////
+                    //检查识别结果
+                    if(lastCount>1){
+                        //构建一个可用的解析配置
+                        CsvFileDefinition fileDef;
+                        fileDef.setFfAuto(true);
+                        fileDef.setSplit(useflag);
+                        fileDef.setEcoding(filecharset);
+                        fileDef.setFileIni(fileini);
+                        fileDef.setUseAble(true);
+                        fileDef.setFieldCount(fieldCount);
+                        fileDef.setClearQuotes(clearQuotesStr);
+                        fileDef.setEndwithflag(endwithflag);
+                        fileDef.setEndIgnoreRow(ignorerow);
+                        fileDef.setFileDescribe(fileDescribe);
+                        fileDef.setTitlerowindex(titleRow);
+                        fileDef.setDatabeginrowindex(dataBeginRow);
+                        fileDef.setFileNameWithCount(fileName);
+                        fileDef.setFieldList(fieldTitleList);
+                        //当前打开的文件类型为2
+                        currentOpenFileType=2;
+                        //开始加载数据
+                        csv=fileDef;
+                        load_csvFileData(fieldTitleStrList);
+                        return;
+                    }
+                }
+            }
+        }
+    }
     //完全无法识别的文件
     /////////////////////////////////////////
     statusBar_disPlayMessage("文件无法识别,请尝试配置解析规则,目前工具支持各类OFD文件,CSV文件,以及其他定长字段文件");
@@ -2312,7 +2613,15 @@ void MainWindow::load_csvFile(QStringList fileType){
                                     if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
                                         titleRowString= titleRowString.left(titleRowString.length()-loadedCsvDefinitionList.at(dd).getSplit().length());
                                     }
-                                    QStringList fieldTitle=titleRowString.split(loadedCsvDefinitionList.at(dd).getSplit());
+                                    QStringList fieldTitle;
+                                    //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+                                    if(loadedCsvDefinitionList.at(dd).getClearQuotes()&&loadedCsvDefinitionList.at(dd).getSplit().length()==1){
+                                        QRegExp rx("\\"+loadedCsvDefinitionList.at(dd).getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                                        fieldTitle=titleRowString.split(rx);
+                                    }
+                                    else{
+                                        fieldTitle=titleRowString.split(loadedCsvDefinitionList.at(dd).getSplit());
+                                    }
                                     //如果文件字段数是-1.则代表根据标题或者第一行数据自动分析列数和列标题，以标题行或者第一行数据自己造标题数据为准来更新列数
                                     if(loadedCsvDefinitionList.at(dd).getFieldCount()==-1){
                                         int countFromtitle=fieldTitle.count();
@@ -2376,13 +2685,22 @@ void MainWindow::load_csvFile(QStringList fileType){
                                     faultList.append(item);
                                     continue;
                                 }
+                                //配置不带标题行，但是字段数又是auto的场景
                                 if(loadedCsvDefinitionList.at(dd).getFieldCount()==-1){
                                     QString firstDataRowString=csvData.at(loadedCsvDefinitionList.at(dd).getDatabeginrowindex()-1);
                                     //如果需要忽略最后一个多余的分隔符
                                     if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
                                         firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
                                     }
-                                    int fieldCountFirstRow=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
+                                    int fieldCountFirstRow=0;
+                                    //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+                                    if(loadedCsvDefinitionList.at(dd).getClearQuotes()&&loadedCsvDefinitionList.at(dd).getSplit().length()==1){
+                                        QRegExp rx("\\"+loadedCsvDefinitionList.at(dd).getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                                        fieldCountFirstRow=firstDataRowString.split(rx).count();
+                                    }
+                                    else{
+                                        fieldCountFirstRow=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
+                                    }
                                     if(fieldCountFirstRow<2){
                                         FaultCause item;
                                         item.setConfigIndex(dd);
@@ -2420,7 +2738,15 @@ void MainWindow::load_csvFile(QStringList fileType){
                                     if(loadedCsvDefinitionList.at(dd).getEndwithflag()=="1"){
                                         firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
                                     }
-                                    int fieldCount=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
+                                    int fieldCount=0;
+                                    //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+                                    if(loadedCsvDefinitionList.at(dd).getClearQuotes()&&loadedCsvDefinitionList.at(dd).getSplit().length()==1){
+                                        QRegExp rx("\\"+loadedCsvDefinitionList.at(dd).getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                                        fieldCount=firstDataRowString.split(rx).count();
+                                    }
+                                    else{
+                                        fieldCount=firstDataRowString.split(loadedCsvDefinitionList.at(dd).getSplit()).count();
+                                    }
                                     //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
                                     if(fieldCount==loadedCsvDefinitionList.at(dd).getFieldCount()){
                                         //开始加载数据
@@ -3031,6 +3357,25 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
                 csvFileContentQByteArrayList.removeLast();
             }
         }
+        //自动分析csv时，配置文件结尾忽略为-1，自动检查
+        else if(csv.getEndIgnoreRow()==-1){
+            for(int i=csvFileContentQByteArrayList.count()-1;i>=0;i--){
+                QString lastline=codec->fromUnicode(qUncompress(csvFileContentQByteArrayList.last()));
+                //字段拆分
+                QRegExp rx("\\"+csv.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                QStringList fieldList=lastline.split(rx);
+                qDebug()<<fieldList;
+                qDebug()<<csv.getFieldCount();
+                //列数小于自动识别出来的列
+                if(fieldList.count()<csv.getFieldCount()){
+                    csvFileContentQByteArrayList.removeLast();
+                }
+                //列数等于配置，终止
+                else{
+                    break;
+                }
+            }
+        }
     }
     //初始化表格
     init_CSVTable(fieldTitle);
@@ -3239,7 +3584,7 @@ void MainWindow::init_CSVTable(QStringList title){
                         vav=rowdata.at(colIndex);
                     }
                     vav.toDouble(&convertOk);
-                    if(convertOk){
+                    if(convertOk&&!vav.contains(" ")){
                         //识别识别带小数点的小数
                         if(vav.contains(".",Qt::CaseSensitive)){
                             isnumber.setIsNumber(true);
@@ -3273,7 +3618,7 @@ void MainWindow::init_CSVTable(QStringList title){
                             vav=rowdata.at(colIndex);
                         }
                         vav.toDouble(&convertOk);
-                        if(convertOk){
+                        if(convertOk&&!vav.contains(" ")){
                             //识别小数长度
                             int len=0;
                             //不考虑整数
@@ -3368,8 +3713,13 @@ void MainWindow::init_CSVTable(QStringList title){
             //如果没有数据,也执行下自动设置列宽,增加空数据的显示美感
             ptr_table->resizeColumnsToContents();
         }
-        statusBar_display_rowsCount(rowCount);
-        statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
+        statusBar_display_rowsCount(rowCount,csv.getEcoding());
+        if(csv.getFfAuto()){
+            statusBar_disPlayMessage("成功读取记录"+QString::number(rowCount)+"行-[当前使用自动解析引擎解析,建议配置解析规则获得更好解析体验]");
+        }
+        else{
+            statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
+        }
     }
     else{
         statusBar_disPlayMessage(csv.getMessage());
@@ -7652,7 +8002,19 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 QString text=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
                 QString dic=commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(tableColCurrent).getFieldName(),text);
                 if(!text.isEmpty()){
-                    statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)));
+                    //如果文件执行过双引号边界符处理，则附带显示原始数据，方便用户阅览原始值
+                    if(csv.getClearQuotes()){
+                        QStringList rowdata=Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,dataRowCurrent,csv.getEcoding());
+                        statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)).append("|原始值:").append(rowdata.at(tableColCurrent)));
+                    }
+                    //如果探测到本列是数值,也附带显示原始值
+                    else if(fieldIsNumberOrNot.value(tableColCurrent).getIsNumber()){
+                        QStringList rowdata=Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,dataRowCurrent,csv.getEcoding());
+                        statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)).append("|原始值:").append(rowdata.at(tableColCurrent)));
+                    }
+                    else{
+                        statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)));
+                    }
                 }
             }
         }

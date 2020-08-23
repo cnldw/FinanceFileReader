@@ -155,6 +155,26 @@ void CsvFileDefinition::setEndIgnoreRow(int value)
     endIgnoreRow = value;
 }
 
+bool CsvFileDefinition::getClearQuotes() const
+{
+    return clearQuotes;
+}
+
+void CsvFileDefinition::setClearQuotes(bool value)
+{
+    clearQuotes = value;
+}
+
+bool CsvFileDefinition::getFfAuto() const
+{
+    return ffAuto;
+}
+
+void CsvFileDefinition::setFfAuto(bool value)
+{
+    ffAuto = value;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     

@@ -85,6 +85,7 @@
 #include "src/dialogmagnify.h"
 #include "src/dialogchooseofdconfig.h"
 #include "src/dialogeditheaderfooter.h"
+#include "src/ucdutils.h"
 
 namespace Ui {
 class MainWindow;
@@ -317,6 +318,17 @@ private:
     QString dataBlockedMessage;
     //OFD文件专用编码
     QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
+    //编码识别
+    LibUcd         m_libucd;
+    //允许解析的编码白名单
+    QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
+    //编码识别尝试识别的分隔符
+    QList<QString> autoFlagList={"|",",","\t",";","#",""};
+    //尝试自动检测标题时，中英文字符占比（我们姑且认为如果第一行数据中英文占比大于此值，识别第一行数据行为标题）
+    float titlecheck=0.7;
+    //当第一行中英文占比低于上述设定值时，通过校验第一行和第2到11行数据中英文占比平均值的差值，如果差异大于下属设定值，则依然识别第一行数据行为标题
+    float titleandcontextcheck=0.2;
+
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
@@ -416,6 +428,7 @@ private:
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
     void statusBar_clear_statusBar();
     void statusBar_display_rowsCount(int rowsCount);
+    void statusBar_display_rowsCount(int rowsCount,QString charset);
     void statusBar_display_rowsAndCol(int row,int col,int length);
     void statusBar_disPlayMessage(QString text);
     void clear_Table_Info();

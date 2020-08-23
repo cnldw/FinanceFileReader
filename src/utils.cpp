@@ -591,7 +591,42 @@ QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray
         return rowData;
     }else{
         QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
-        rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+        //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+        if(csv->getClearQuotes()&&csv->getSplit().length()==1){
+            QRegExp rx("\\"+csv->getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(rx);
+        }
+        else{
+            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+        }
+        //需要处理分隔符
+        if(csv->getClearQuotes()&&rowData.count()>0){
+            QStringList rowData2;
+            for(int i=0;i<rowData.count();i++){
+                rowData2.append(clearQuotes(rowData.at(i)));
+            }
+            return rowData2;
+        }
+        else{
+            return rowData;
+        }
+    }
+}
+
+QStringList Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset){
+    //判断越界
+    QStringList rowData;
+    if(row>=csvFileContentQByteArrayList->count()){
+        return rowData;
+    }else{
+        QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
+        if(csv->getClearQuotes()&&csv->getSplit().length()==1){
+            QRegExp rx("\\"+csv->getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(rx);
+        }
+        else{
+            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+        }
         return rowData;
     }
 }
@@ -706,4 +741,23 @@ void Utils::getFileListFromDir(QString dirpath,QStringList *filelist){
         i++;
     } while(i < list.size());
     return;
+}
+
+/**
+ * @brief Utils::clearQuotes 清除csv字段的双引号
+ * @param stringS
+ * @return
+ */
+QString Utils::clearQuotes(QString stringS){
+
+    if(!stringS.isEmpty() && stringS.length()>=2) {
+        if(stringS.indexOf("\"")==0) {
+            stringS = stringS.mid(1,-1);
+        }
+        if(stringS.lastIndexOf("\"")==(stringS.length()-1)) {
+            stringS = stringS.mid(0,stringS.length()-1);
+        }
+        stringS = stringS.replace("\"\"","\"");
+    }
+    return stringS;
 }

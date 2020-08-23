@@ -37,6 +37,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 include(src/xlsx/qtxlsx.pri)
 #引入2048小游戏
 include(src/2048/2048.pri)
+#引入编码检测库
+include(src/libucd/libucd.pri)
 
 SOURCES += \
     src/dialogchooseofdconfig.cpp \
@@ -78,6 +80,7 @@ HEADERS += \
     src/dialogeditheaderfooter.h \
     src/dialogmagnify.h \
         src/mainwindow.h \
+    src/ucdutils.h \
     src/utils.h \
     src/ofdfiledefinition.h \
     src/dictionary.h \
@@ -140,7 +143,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.0
+VERSION = 1.9.1
 ############以下注意按版本修改###############
 
 # 语言
