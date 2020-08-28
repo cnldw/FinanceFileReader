@@ -58,7 +58,7 @@ private:
     //默认导出路径
     QString exppath=QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/OFDFile/";
     //配置文件路径
-    QString configpath=Utils::getConfigPath()+"templete/";
+    QString configpath=Utils::getConfigPath()+"template/";
     //交易申请可用配置
     QStringList requestFileList;
     //行情可用配置
