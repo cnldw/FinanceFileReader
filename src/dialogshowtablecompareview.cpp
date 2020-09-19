@@ -79,16 +79,17 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QString
             //从第二列开始为数据内容
             for(int col=1;col<ptr_table->columnCount();col++){
                 QString value="";
-                if(col<compareData->value(keys.at(row)).count()){
+                //col是从1开始
+                if(col<=compareData->value(keys.at(row)).count()){
                     value=compareData->value(keys.at(row)).at(col-1);
                 }
+                //比对器这里自己进行小数千位分隔符处理
                 if(fieldType.at(col-1)=="N"){
                     value=Utils::CovertDoubleQStringWithThousandSplit(value);
                 }
                 QTableWidgetItem *item2= new QTableWidgetItem(value);
                 //判断是否是数字，数字右对齐
                 if(fieldType.at(col-1)=="N"){
-                    value=Utils::CovertDoubleQStringWithThousandSplit(value);
                     item2->setTextAlignment(Qt::AlignRight);
                 }
                 ptr_table->setItem(row, col, item2);
@@ -249,7 +250,6 @@ void DialogShowTableCompareView::on_pushButton_2_clicked()
                 }
             }
         }
-
     }
 }
 

@@ -236,6 +236,8 @@ private slots:
 
     void showCharacter();
 
+    void forceNumber();
+
     void on_actionmtime_triggered();
 
     void on_actioneditheaderfooter_triggered();
@@ -282,6 +284,7 @@ private:
     CsvFileDefinition csv;
     //用于记录csv等类别文件哪些列是数值的变量，注意，这个是否是数值是猜出来的，根据前几行的数据，进猜取小数，不猜整数
     QHash<int,FieldIsNumber> fieldIsNumberOrNot;
+    QList<int> forceNumberList;
     //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
     FIXEDFileDefinition fixed;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
@@ -322,7 +325,7 @@ private:
     LibUcd         m_libucd;
     //允许解析的编码白名单
     QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
-    //编码识别尝试识别的分隔符
+    //编码识别尝试识别的分隔符-如考虑新增分隔符则写到这里
     QList<QString> autoFlagList={"|",",","\t",";","#",""};
     //尝试自动检测标题时，中英文字符占比（我们姑且认为如果第一行数据中英文占比大于此值，识别第一行数据行为标题）
     float titlecheck=0.7;
@@ -347,6 +350,8 @@ private:
     QAction *action_addCopyedOFDData2End;
     QAction *action_addNewLineOFDData2End;
     QAction *action_ModifyOFDRow;
+    QAction *action_CsvForceNumber;
+
 
     //详情增加可复制功能
     QMenu *showMessagePopMenu;

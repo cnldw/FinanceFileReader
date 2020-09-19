@@ -32,6 +32,7 @@
 #include <QDateTime>
 #include <QFileDialog>
 #include <QShortcut>
+#include <QDebug>
 #include "src/utils.h"
 
 namespace Ui {

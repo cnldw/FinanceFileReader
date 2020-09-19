@@ -658,6 +658,7 @@ QString Utils::CovertInt2ExcelCol(int col){
 }
 
 QString Utils::CovertDoubleQStringWithThousandSplit(QString doubleString){
+    doubleString=doubleString.trimmed();
     int strLength=doubleString.length();
     int BeginIndex=strLength-1;
     if(doubleString.contains(".")){

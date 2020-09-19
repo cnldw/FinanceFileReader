@@ -98,6 +98,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_ModifyOFDRow, SIGNAL(triggered()), this, SLOT(showMoaifyOFDRow()));
     action_ShowCharacter = new QAction(tr("十六进制和二进制编码透视(乱码分析)"),this);
     connect(action_ShowCharacter, SIGNAL(triggered()), this, SLOT(showCharacter()));
+    action_CsvForceNumber= new QAction(tr("对此列强制进行数学统计"),this);
+    connect(action_CsvForceNumber, SIGNAL(triggered()), this, SLOT(forceNumber()));
 
     tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
     tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
@@ -596,6 +598,7 @@ void MainWindow::clear_oldData(){
     compareData.clear();
     columnWidth.clear();
     fieldIsNumberOrNot.clear();
+    forceNumberList.clear();
     //记录当前所在行
     tableRowCurrent=0;
     //当前所在列
@@ -1865,7 +1868,15 @@ NOT_OF_FILE:
                             if(fieldList.count()>lastCount){
                                 lastCount=fieldList.count();
                                 useflag=thisflag;
-                                fileName="基于"+thisflag+"分割列的文件";
+                                //优化描述展示,毕竟直接展示制表符不是很优雅
+                                QString flagd="";
+                                if(thisflag=="\t"){
+                                    flagd="制表符";
+                                }
+                                else {
+                                    flagd=thisflag;
+                                }
+                                fileName="基于 "+flagd+" 分割列的文件";
                                 //统计中英文占比--笼统的算法-直接统计高ansii占比
                                 float ct=0;
                                 float all=0;
@@ -1937,8 +1948,14 @@ NOT_OF_FILE:
                                     if(previousRowFieldCount>lastCount){
                                         useflag=thisflag;
                                         lastCount=previousRowFieldCount;
-                                        fileName="基于"+thisflag+"分割列的文件";
-                                    }
+                                        QString flagd="";
+                                        if(thisflag=="\t"){
+                                            flagd="制表符";
+                                        }
+                                        else {
+                                            flagd=thisflag;
+                                        }
+                                        fileName="基于 "+flagd+" 分割列的文件";                                    }
                                     contextBgein=lineN;
                                 }
                                 //非首次遇到-并且解析到了更多的列-则更新起始行
@@ -4244,15 +4261,18 @@ void MainWindow::editCompareData(){
             }
             else{
                 //数据加入
-                QStringList rowdata;
-                for(int i=0;i<(ptr_table->columnCount());i++){
-                    QString col="";
-                    if(ptr_table->item(topRow,i)!=nullptr){
-                        col=ptr_table->item(topRow,i)->text();
-                    }
-                    rowdata.append(col);
+                //OFD
+                if(currentOpenFileType==1){
+                    compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent));
                 }
-                compareData.insert(rowRealInContent+1,rowdata);
+                //CSV
+                else if(currentOpenFileType==2){
+                    compareData.insert(rowRealInContent+1,Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent,csv.getEcoding()));
+                }
+                //FIXED
+                else if(currentOpenFileType==3){
+                    compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent,fixed.getEcoding()));
+                }
                 statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(compareData.count()));
             }
         }
@@ -4962,6 +4982,15 @@ void MainWindow::showCharacter(){
     dialog->raise();
     dialog->activateWindow();
 }
+
+
+void MainWindow::forceNumber(){
+    if(!(fieldIsNumberOrNot.contains(tableColCurrent)&&fieldIsNumberOrNot.value(tableColCurrent).getIsNumber())&&!forceNumberList.contains(tableColCurrent)){
+        forceNumberList.append(tableColCurrent);
+    }
+    on_tableWidget_itemSelectionChanged();
+}
+
 /**
 * @brief MainWindow::copyMessage 复制状态栏信息
 */
@@ -5291,16 +5320,7 @@ void MainWindow::showModifyOFDCell(){
                 if(compareData.contains(rowRealInContent+1)){
                     //移除原数据
                     compareData.remove(rowRealInContent+1);
-                    //数据重新加入
-                    QStringList rowdata;
-                    for(int i=0;i<(ptr_table->columnCount());i++){
-                        QString col="";
-                        if(ptr_table->item(editRow,i)!=nullptr){
-                            col=ptr_table->item(editRow,i)->text();
-                        }
-                        rowdata.append(col);
-                    }
-                    compareData.insert(rowRealInContent+1,rowdata);
+                    compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent));
                 }
                 //提示用户保存//////////////////////////////////////////////////////////////
                 statusBar_disPlayMessage("单元格数据修改成功,请记得保存文件哟...");
@@ -5462,16 +5482,8 @@ void MainWindow::showModifyOFDCellBatch(){
                         if(compareData.contains(editRow+1)){
                             //移除原数据
                             compareData.remove(editRow+1);
-                            //数据重新加入
-                            QStringList rowdata;
-                            for(int i=0;i<(ptr_table->columnCount());i++){
-                                QString col="";
-                                if(ptr_table->item(editRow,i)!=nullptr){
-                                    col=ptr_table->item(editRow,i)->text();
-                                }
-                                rowdata.append(col);
-                            }
-                            compareData.insert(editRow+1,rowdata);
+                            compareData.insert(editRow+1,Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRow));
+
                         }
                         updatedRow++;
                         if((updatedRow%1000==0)){
@@ -5668,7 +5680,7 @@ void MainWindow::showMoaifyOFDRow(){
                     //移除原数据
                     compareData.remove(rowRealInContent+1);
                     //数据重新加入
-                    compareData.insert(rowRealInContent+1,rowDataNew);
+                    compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent));
                 }
                 //提示用户保存//////////////////////////////////////////////////////////////
                 statusBar_disPlayMessage("单元格数据修改成功,请记得保存文件哟...");
@@ -6074,6 +6086,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
 
 void MainWindow::showMessage_customContextMenuRequested(const QPoint &pos)
 {
+    UNUSED(pos);
     showMessagePopMenu->exec(QCursor::pos());
 }
 
@@ -6274,6 +6287,9 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     tablePopMenu->addAction(action_ShowDetails);
                     tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
+                    if(!(fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber())){
+                        tablePopMenu->addAction(action_CsvForceNumber);
+                    }
                     //csv文件暂不支持编辑
                     //tablePopMenu->addAction(action_ModifyCell);
                     //比对器
@@ -6310,15 +6326,18 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                         tablePopMenu->addAction(action_ShowCopyColum);
                         //tablePopMenu->addAction(action_ModifyCellBatch);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
-
-                    }
+                        if(!(fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber())){
+                            tablePopMenu->addAction(action_CsvForceNumber);
+                        }                    }
                     //多个选择器
                     else{
                         //将会弹出复制错误
                         tablePopMenu->addAction(action_ShowCopyColum);
                         //tablePopMenu->addAction(action_ModifyCellBatch);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
-
+                        if(!(fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber())){
+                            tablePopMenu->addAction(action_CsvForceNumber);
+                        }
                     }
                 }
                 //多行多列
@@ -6475,10 +6494,34 @@ void MainWindow::on_actionsOpenCompare_triggered()
             QStringList title;
             QStringList fieldType;
             title.append("数据行号");
-            for(int i=0;i<ofd.getFieldList().count();i++){
-                //仅获取列的中文备注当作列标题
-                title.append(ofd.getFieldList().at(i).getFieldDescribe());
-                fieldType.append(ofd.getFieldList().at(i).getFieldType());
+            //OFD
+            if(currentOpenFileType==1){
+                for(int i=0;i<ofd.getFieldList().count();i++){
+                    //仅获取列的中文备注当作列标题
+                    title.append(ofd.getFieldList().at(i).getFieldDescribe());
+                    fieldType.append(ofd.getFieldList().at(i).getFieldType());
+                }
+            }
+            //CSV
+            else if(currentOpenFileType==2){
+                for(int i=0;i<csv.getFieldList().count();i++){
+                    //仅获取列的中文备注当作列标题
+                    title.append(csv.getFieldList().at(i).getFieldName());
+                    if(fieldIsNumberOrNot.contains(i)&&fieldIsNumberOrNot.value(i).getIsNumber()){
+                        fieldType.append("N");
+                    }
+                    else{
+                        fieldType.append("S");
+                    }
+                }
+            }
+            //FIXED
+            else if(currentOpenFileType==3){
+                for(int i=0;i<fixed.getFieldList().count();i++){
+                    //仅获取列的中文备注当作列标题
+                    title.append(fixed.getFieldList().at(i).getFieldDescribe());
+                    fieldType.append(fixed.getFieldList().at(i).getFieldType());
+                }
             }
             //打开窗口
             if(title.count()>0){
@@ -8062,10 +8105,6 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
             int editCol=itemsRange.at(0).leftColumn();
             //总和
             double selectSum=0;
-            //统计成功标记
-            bool sucessFlag=true;
-            //统计失败原因
-            QString faultMessage;
             //跳过的空
             int skipEmpty=0;
             //跳过的非数值
@@ -8105,7 +8144,15 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 }
             }
             else  if(currentOpenFileType==2){
-                if(fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber()){
+                if((fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber())||forceNumberList.contains(itemsRange.at(0).leftColumn())){
+                    //设定小数长度
+                    int dec=0;
+                    if(fieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber()){
+                        dec=fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getDecimalLength();
+                    }
+                    else{
+                        dec=2;
+                    }
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
                             editRowinFileContent=(currentPage-1)*pageRowSize+editRow;
@@ -8131,7 +8178,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                             }
                         }
                     }
-                    statusBar_disPlayMessage("[所有:"+QString::number(selectedAllItemCount)+"  计数:"+QString::number(numberCount)+"  平均值:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum/selectedAllItemCount,'f',fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getDecimalLength()))+"  求和:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum,'f',fieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getDecimalLength()))+"]  [空值:"+QString::number(skipEmpty)+"  非法数值:"+QString::number(skipNotNumber)+"]");
+                    statusBar_disPlayMessage("[所有:"+QString::number(selectedAllItemCount)+"  计数:"+QString::number(numberCount)+"  平均值:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum/selectedAllItemCount,'f',dec))+"  求和:"+Utils::CovertDoubleQStringWithThousandSplit(QString::number(selectSum,'f',dec))+"]  [空值:"+QString::number(skipEmpty)+"  非法数值:"+QString::number(skipNotNumber)+"]");
                 }
                 //非数值型字段，仅仅统计计数
                 else{
@@ -8928,6 +8975,9 @@ void MainWindow::on_actionedit_triggered()
             }
         }
     }
+    else{
+        statusBar_disPlayMessage("暂不支持编辑此类文件,敬请期待");
+    }
 }
 
 void MainWindow::on_actionedit2_triggered()
@@ -8964,6 +9014,9 @@ void MainWindow::on_actionedit2_triggered()
                 statusBar_disPlayMessage("不能同时编辑多行整行数据!!!");
             }
         }
+    }
+    else{
+        statusBar_disPlayMessage("暂不支持编辑此类文件,敬请期待");
     }
 }
 
