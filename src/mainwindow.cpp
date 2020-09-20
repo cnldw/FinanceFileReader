@@ -3368,14 +3368,16 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
         QApplication::restoreOverrideCursor();
         dataFile.close();
         //从文件读取到内存后，修正文件内容
-        //文件尾部提取
+        //文件尾部提取//基于配置
         if(csv.getEndIgnoreRow()>0&&csvFileContentQByteArrayList.count()>csv.getEndIgnoreRow()){
             for(int ic=1;ic<=csv.getEndIgnoreRow();ic++){
                 csvFileContentQByteArrayList.removeLast();
             }
         }
+        //文件尾部提取//基于自动分析
         //自动分析csv时，配置文件结尾忽略为-1，自动检查
         else if(csv.getEndIgnoreRow()==-1){
+            int ignore=0;
             for(int i=csvFileContentQByteArrayList.count()-1;i>=0;i--){
                 QString lastline=codec->fromUnicode(qUncompress(csvFileContentQByteArrayList.last()));
                 //字段拆分
@@ -3386,12 +3388,15 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
                 //列数小于自动识别出来的列
                 if(fieldList.count()<csv.getFieldCount()){
                     csvFileContentQByteArrayList.removeLast();
+                    ignore++;
                 }
                 //列数等于配置，终止
                 else{
                     break;
                 }
             }
+            //回填csv配置
+            csv.setEndIgnoreRow(ignore);
         }
     }
     //初始化表格
@@ -4075,18 +4080,15 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
         }
     }
     else if(currentOpenFileType==2){
-        if(csvFileContentQByteArrayList.count()>0){
-            //组织要显示的内容
-            QString info;
-            info.append("文件解析情况如下:\r\n");
-            info.append("使用的配置文件:").append(csv.getFileIni()).append("\r\n");
-            info.append("使用的解析器配置:[").append(csv.getFileNameWithCount()).append("]\r\n");
-            info.append("加载的文件头行数").append(QString::number(csvFileHeaderQStringList.count())).append("\r\n");
-            info.append("加载的数据行数(含文件结尾行)").append(QString::number(csvFileContentQByteArrayList.count())).append("\r\n");
-            QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
-        }else{
-            QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
-        }
+        //组织要显示的内容
+        QString info;
+        info.append("文件解析情况如下:\r\n");
+        info.append("使用的配置文件:").append(csv.getFileIni()).append("\r\n");
+        info.append("使用的解析器配置:[").append(csv.getFileNameWithCount()).append("]\r\n");
+        info.append("加载的文件头行数:").append(QString::number(csvFileHeaderQStringList.count())).append("\r\n");
+        info.append("加载的数据行数:").append(QString::number(csvFileContentQByteArrayList.count())).append("\r\n");
+        info.append("加载的文件尾行数:").append(QString::number(csv.getEndIgnoreRow())).append("\r\n");
+        QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
     }
     else if(currentOpenFileType==3){
         //组织要显示的内容
@@ -4094,9 +4096,9 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
         info.append("文件解析情况如下:\r\n");
         info.append("使用的配置文件:").append(fixed.getFileIni()).append("\r\n");
         info.append("使用的解析器配置:[").append(fixed.getFileNameWithVersion()).append("]\r\n");
-        info.append("加载的文件头行数").append(QString::number(fixedFileHeaderQStringList.count())).append("\r\n");
-        info.append("加载的数据行数").append(QString::number(fixedContenQByteArrayList.count())).append("\r\n");
-        info.append("加载的文件尾部行数").append(QString::number(fixedFooterQStringList.count())).append("\r\n");
+        info.append("加载的文件头行数:").append(QString::number(fixedFileHeaderQStringList.count())).append("\r\n");
+        info.append("加载的数据行数:").append(QString::number(fixedContenQByteArrayList.count())).append("\r\n");
+        info.append("加载的文件尾行数:").append(QString::number(fixedFooterQStringList.count())).append("\r\n");
         QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
     }
     //数据类型插入点
@@ -6789,6 +6791,7 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
             data.flush();
             //文本内容
             sb.clear();
+            int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row);
@@ -6800,13 +6803,14 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
                         sb.append(rowdata.at(col)).append("\r\n");
                     }
                 }
+                exprow++;
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==rowEnd-1)){
+                if((exprow%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
-                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(exprow)));
                     qApp->processEvents();
                     //强制终止事件-立即return退出
                     if(abortExit){
@@ -6845,6 +6849,7 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
             data.flush();
             //文本内容
             sb.clear();
+            int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,row,fixed.getEcoding());
@@ -6856,13 +6861,14 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
                         sb.append(col<rowdata.count()?rowdata.at(col):"").append("\r\n");
                     }
                 }
+                exprow++;
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==rowEnd-1)){
+                if((exprow%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
-                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(exprow)));
                     qApp->processEvents();
                     //强制终止事件-立即return退出
                     if(abortExit){
@@ -7003,6 +7009,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
         sb.clear();
         //数据类型插入点
         if(currentOpenFileType==1){
+            int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 sb.append("<tr>");
@@ -7017,13 +7024,14 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                     sb.append(ofd.getFieldList().at(col).getFieldType()=="N"?Utils::CovertDoubleQStringWithThousandSplit(rowdata.at(col)):rowdata.at(col)).append("</td>");
                 }
                 sb.append("</tr>\r\n");
+                exprow++;
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==rowEnd-1)){
+                if((exprow%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
-                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(exprow)));
                     qApp->processEvents();
                     //强制终止事件-立即return退出
                     if(abortExit){
@@ -7035,6 +7043,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
             }
         }
         if(currentOpenFileType==2){
+            int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 //csv文件按行获取数据
@@ -7055,13 +7064,14 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                     }
                 }
                 sb.append("</tr>\r\n");
+                exprow++;
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==rowEnd-1)){
+                if((exprow%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
-                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(exprow)));
                     qApp->processEvents();
                     //强制终止事件-立即return退出
                     if(abortExit){
@@ -7073,6 +7083,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
             }
         }
         if(currentOpenFileType==3){
+            int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
                 sb.append("<tr>");
@@ -7093,13 +7104,14 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                     }
                 }
                 sb.append("</tr>\r\n");
+                exprow++;
                 //为了降低磁盘写入频率,每1000行写入一次,写入后清空sb
                 //仅1000行或者到最后一行时进行写入
-                if((row%1000==0)||(row==rowEnd-1)){
+                if((exprow%1000==0)||(row==rowEnd-1)){
                     data.write(codec->fromUnicode(sb));
                     data.flush();
                     sb.clear();
-                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(row)));
+                    statusBar_disPlayMessage(QString("文件导出中,请勿进行其他操作,已导出%1行").arg(QString::number(exprow)));
                     qApp->processEvents();
                     //强制终止事件-立即return退出
                     if(abortExit){
@@ -7145,17 +7157,17 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
     default:
         break;
     }
-    //禁止导出过大的excel文件
-    if(rowEnd>maxExcelRow){
-        statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
-        dataBlocked=false;
-        isExportFile=false;
-        return;
-    }
     //分页导出,需要按当前页计算
     if(pageNum>0){
         rowBegin=(pageNum-1)*pageRowSize;
         rowEnd=qMin(pageNum*pageRowSize,rowEnd);
+    }
+    //禁止导出过大的excel文件-目前不会发生这个情况-目前单页最大100万行=最大允许导出的excel行
+    if((rowEnd-rowBegin)>maxExcelRow){
+        statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
+        dataBlocked=false;
+        isExportFile=false;
+        return;
     }
     xlsxSaveName=filename;
     //鼠标响应进入等待
@@ -7212,6 +7224,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
             }
         }
         //文本内容
+        int exprow=0;
         for (int row=rowBegin;row<rowEnd;row++){
             //数据写入--按行读取
             QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,row);
@@ -7248,10 +7261,11 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                     xlsx->write(excelRowNumber,col+1,value,formatBody);
                 }
             }
+            exprow++;
             //每100行读取下事件循环
             //excel导出较慢
-            if(row%100==0){
-                statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(row)));
+            if(exprow%100==0){
+                statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(exprow)));
                 qApp->processEvents();
                 //强制终止事件-立即return退出
                 if(abortExit){
@@ -7296,6 +7310,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
             }
         }
         //文本内容
+        int exprow=0;
         for (int row=rowBegin;row<rowEnd;row++){
             //数据写入--按行读取
             //csv文件按行获取数据
@@ -7336,10 +7351,11 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                     xlsx->write(excelRowNumber,col+1,value,formatBody);
                 }
             }
+            exprow++;
             //每100行读取下事件循环
             //excel导出较慢
-            if(row%100==0){
-                statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(row)));
+            if(exprow%100==0){
+                statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(exprow)));
                 qApp->processEvents();
                 //强制终止事件-立即return退出
                 if(abortExit){
@@ -7384,6 +7400,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                 numberFormatQhash.insert(i,formatNumber);
             }
         }
+        int exprow=0;
         //文本内容
         for (int row=rowBegin;row<rowEnd;row++){
             //数据写入--按行读取
@@ -7421,10 +7438,11 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                     xlsx->write(excelRowNumber,col+1,value,formatBody);
                 }
             }
+            exprow++;
             //每100行读取下事件循环
             //excel导出较慢
-            if(row%100==0){
-                statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(row)));
+            if(exprow%100==0){
+                statusBar_disPlayMessage(QString("正在生成xlsx文件数据记录,已生成%1行").arg(QString::number(exprow)));
                 qApp->processEvents();
                 //强制终止事件-立即return退出
                 if(abortExit){
