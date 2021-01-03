@@ -19,7 +19,13 @@ win32{
 }
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = FFReader-x64
+#根据位数设置target名称
+contains(QT_ARCH, i386) {
+    TARGET = FFReader-x86
+}
+contains(QT_ARCH, x86_64) {
+    TARGET = FFReader-x64
+}
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use

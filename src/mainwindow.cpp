@@ -5783,9 +5783,10 @@ void MainWindow::on_pushButtonPreSearch_clicked()
         //数据类型插入点
         if(currentOpenFileType==1){
             for(int row=tableRowCurrent;row>=0;row--){
+                rowRealInContent=(currentPage-1)*pageRowSize+row;
+                QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent);
                 for(int col=beginCol;col>=0;col--){
-                    rowRealInContent=(currentPage-1)*pageRowSize+row;
-                    if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,col).contains(searchText,Qt::CaseInsensitive)){
+                    if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
                         ptr_table->setCurrentCell(row,col);
                         ptr_table->setFocus();
                         ui->pushButtonPreSearch->setEnabled(true);
@@ -5973,8 +5974,9 @@ void MainWindow::on_pushButtonNextSearch_clicked()
         if(currentOpenFileType==1){
             for(int row=tableRowCurrent;row<currentPageRowCount;row++){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
+                QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent);
                 for(int col=beginCol;col<colCount;col++){
-                    if(Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,col).contains(searchText,Qt::CaseInsensitive)){
+                    if(rowdata.at(col).contains(searchText,Qt::CaseInsensitive)){
                         ptr_table->setCurrentCell(row,col);
                         ptr_table->setFocus();
                         ui->pushButtonNextSearch->setEnabled(true);
