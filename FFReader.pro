@@ -49,6 +49,7 @@ include(src/libucd/libucd.pri)
 SOURCES += \
     src/dialogchooseofdconfig.cpp \
     src/dialogeditheaderfooter.cpp \
+    src/dialogforcenumber.cpp \
     src/dialogmagnify.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
@@ -84,6 +85,7 @@ SOURCES += \
 HEADERS += \
     src/dialogchooseofdconfig.h \
     src/dialogeditheaderfooter.h \
+    src/dialogforcenumber.h \
     src/dialogmagnify.h \
         src/mainwindow.h \
     src/ucdutils.h \
@@ -120,6 +122,7 @@ HEADERS += \
 FORMS += \
     src/dialogchooseofdconfig.ui \
     src/dialogeditheaderfooter.ui \
+    src/dialogforcenumber.ui \
     src/dialogmagnify.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
@@ -149,7 +152,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.2
+VERSION = 1.9.4
 ############以下注意按版本修改###############
 
 # 语言

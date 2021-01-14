@@ -77,6 +77,22 @@ QString Utils::getCompileDate(){
     return QLocale(QLocale::English).toDate( QString( __DATE__ ).replace( "  ", " 0" ), "MMM dd yyyy").toString("yyyy-MM-dd");
 }
 
+/**
+ * @brief Utils::qStringTrimRight 右侧trim
+ * @param str
+ * @return
+ */
+
+QString Utils::qStringTrimRight(const QString& str) {
+    int n = str.size() - 1;
+    for (; n >= 0; --n) {
+        if (!str.at(n).isSpace()) {
+            return str.left(n + 1);
+        }
+    }
+    return "";
+}
+
 QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
 {
     QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
@@ -89,62 +105,43 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
     //字段类型
     QString fileType=ofd->getFieldList().at(col).getFieldType();
     //开始获取此字段的值
-    QString filed="";
+    QString field="";
     //字段长度
-    int filedlength=ofd->getFieldList().at(col).getLength();
+    int fieldlength=ofd->getFieldList().at(col).getLength();
     //小数长度
-    int filedDeclength=ofd->getFieldList().at(col).getDecLength();
+    int fieldDeclength=ofd->getFieldList().at(col).getDecLength();
     //获取此字段的值
-    filed=codecOFD->toUnicode(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
+    field=codecOFD->toUnicode(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
     //数据信息处理
     if(fileType=="C"){
-        //C类型从右去除多余空格
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
+        field=qStringTrimRight(field);
     }
     else if(fileType=="A"){
-        //A类型从右移除多余空格,移除空格后剩余的应该是0-9的数值
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
+        field=qStringTrimRight(field);
     }
     else if(fileType=="N"){
         //如果字段为全部是空格，则认为字段为空
-        if(filed.trimmed().isEmpty()){
-            filed="";
+        if(field.trimmed().isEmpty()){
+            field="";
+        }
+        //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
+        //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
+        else if(field.trimmed()=="0"&&fieldDeclength==0){
+            field="0";
         }
         else{
             //N类型为双精度数字
             //需要检查整数位需要切除的0，如果整数位为全0，则至少也要保留一位
-            int needCheck=filedlength-filedDeclength-1;
+            int needCheck=fieldlength-fieldDeclength-1;
             int needCutZero=0;
             int needCutZeroBegin=0;
             //判断负数标志位，如果是负数则从第二位开始切除不必要的0
-            if(filed.at(0)=='-'){
+            if(field.at(0)=='-'){
                 needCutZeroBegin=1;
             }
             //循环切除0
             for(int s=needCutZeroBegin;s<needCheck;s++){
-                if(filed.at(s)=='0'){
+                if(field.at(s)=='0'){
                     needCutZero++;
                 }
                 else{
@@ -152,35 +149,22 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
                 }
             }
             //获取整数
-            QString left=filed.left(filedlength-filedDeclength).remove(needCutZeroBegin,needCutZero);
+            QString left=field.left(fieldlength-fieldDeclength).remove(needCutZeroBegin,needCutZero);
             //获取小数--如果小数长度为0,就不必处理小数了
-            if(filedDeclength==0){
-                filed=left;
+            if(fieldDeclength==0){
+                field=left;
             }else{
                 //获取小数
-                QString right=filed.right(filedDeclength);
+                QString right=field.right(fieldDeclength);
                 //拼接整数部分和小数部分
-                filed=left.append(".").append(right);
+                field=left.append(".").append(right);
             }
         }
     }
     else if(fileType=="TEXT"){
-        //TEXT类型从右去除多余空格
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            //遇到第一个不是空格的字段就立即退出循环
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
+        field=qStringTrimRight(field);
     }
-    return filed;
+    return field;
 }
 
 QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row){
@@ -196,15 +180,15 @@ QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByt
             //字段类型
             QString fileType=ofd->getFieldList().at(col).getFieldType();
             //开始获取此字段的值
-            QString filed="";
+            QString field="";
             //字段长度
-            int filedlength=ofd->getFieldList().at(col).getLength();
+            int fieldlength=ofd->getFieldList().at(col).getLength();
             //小数长度
-            int filedDeclength=ofd->getFieldList().at(col).getDecLength();
+            int fieldDeclength=ofd->getFieldList().at(col).getDecLength();
             //获取此字段的值
-            if(rowdata.count()>=ofd->getFieldList().at(col).getRowBeginIndex()+filedlength){
+            if(rowdata.count()>=ofd->getFieldList().at(col).getRowBeginIndex()+fieldlength){
                 //对字节mid后返回字符串
-                filed=codecOFD->toUnicode(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
+                field=codecOFD->toUnicode(rowdata.mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
             }
             //越界表示本行后续不再有内容，终止
             else{
@@ -212,55 +196,36 @@ QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByt
             }
             //数据信息处理
             if(fileType=="C"){
-                //C类型从右去除多余空格
-                int spaceLength=0;
-                for(int i=filed.length()-1;i>=0;i--){
-                    if(filed.at(i)==' '){
-                        spaceLength++;
-                    }
-                    else{
-                        break;
-                    }
-                }
-                if(spaceLength>0){
-                    filed=filed.left(filed.length()-spaceLength);
-                }
+                field=qStringTrimRight(field);
             }
             else if(fileType=="A"){
-                //A类型从右移除多余空格,移除空格后剩余的应该是0-9的数值
-                int spaceLength=0;
-                for(int i=filed.length()-1;i>=0;i--){
-                    if(filed.at(i)==' '){
-                        spaceLength++;
-                    }
-                    else{
-                        break;
-                    }
-                }
-                if(spaceLength>0){
-                    filed=filed.left(filed.length()-spaceLength);
-                }
+                field=qStringTrimRight(field);
             }
             else if(fileType=="N"){
                 //N类型为双精度数字
                 //需要检查整数位需要切除的0，如果整数位为全0，则至少也要保留一位
                 //如果字段为全部是空格，则认为字段为空
-                if(filed.trimmed().isEmpty()){
-                    filed="";
+                if(field.trimmed().isEmpty()){
+                    field="";
+                }
+                //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
+                //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
+                else if(field.trimmed()=="0"&&fieldDeclength==0){
+                    field="0";
                 }
                 else{
                     //N类型为双精度数字
                     //需要检查整数位需要切除的0，如果整数位为全0，则至少也要保留一位
-                    int needCheck=filedlength-filedDeclength-1;
+                    int needCheck=fieldlength-fieldDeclength-1;
                     int needCutZero=0;
                     int needCutZeroBegin=0;
                     //判断负数标志位，如果是负数则从第二位开始切除不必要的0
-                    if(filed.at(0)=='-'){
+                    if(field.at(0)=='-'){
                         needCutZeroBegin=1;
                     }
                     //循环切除0
                     for(int s=needCutZeroBegin;s<needCheck;s++){
-                        if(filed.at(s)=='0'){
+                        if(field.at(s)=='0'){
                             needCutZero++;
                         }
                         else{
@@ -268,36 +233,23 @@ QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByt
                         }
                     }
                     //获取整数
-                    QString left=filed.left(filedlength-filedDeclength).remove(needCutZeroBegin,needCutZero);
+                    QString left=field.left(fieldlength-fieldDeclength).remove(needCutZeroBegin,needCutZero);
                     //获取小数--如果小数长度为0,就不必处理小数了
-                    if(filedDeclength==0){
-                        filed=left;
+                    if(fieldDeclength==0){
+                        field=left;
                     }else{
                         //获取小数
-                        QString right=filed.right(filedDeclength);
+                        QString right=field.right(fieldDeclength);
                         //拼接整数部分和小数部分
-                        filed=left.append(".").append(right);
+                        field=left.append(".").append(right);
                     }
                 }
             }
             else if(fileType=="TEXT"){
-                //TEXT类型从右去除多余空格
-                int spaceLength=0;
-                for(int i=filed.length()-1;i>=0;i--){
-                    if(filed.at(i)==' '){
-                        spaceLength++;
-                    }
-                    //遇到第一个不是空格的字段就立即退出循环
-                    else{
-                        break;
-                    }
-                }
-                if(spaceLength>0){
-                    filed=filed.left(filed.length()-spaceLength);
-                }
+                field=qStringTrimRight(field);
             }
             //其他类型直接原地返回
-            rowList.append(filed);
+            rowList.append(field);
         }
     }
     return rowList;
@@ -311,8 +263,8 @@ QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArra
         return "";
     }
     else{
-        int filedlength=ofd->getFieldList().at(col).getLength();
-        return codecOFD->toUnicode(qUncompress(ofdFileContentQByteArrayList->at(row)).mid(ofd->getFieldList().at(col).getRowBeginIndex(),filedlength));
+        int fieldlength=ofd->getFieldList().at(col).getLength();
+        return codecOFD->toUnicode(qUncompress(ofdFileContentQByteArrayList->at(row)).mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
     }
 }
 
@@ -326,11 +278,11 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     //字段类型
     QString fileType=fixed->getFieldList().at(col).getFieldType();
     //开始获取此字段的值
-    QString filed="";
+    QString field="";
     //字段长度
-    int filedlength=fixed->getFieldList().at(col).getLength();
+    int fieldlength=fixed->getFieldList().at(col).getLength();
     //小数长度
-    int filedDeclength=fixed->getFieldList().at(col).getDecLength();
+    int fieldDeclength=fixed->getFieldList().at(col).getDecLength();
     //获取本行记录
     QByteArray rowdata=qUncompress(fixedContentQByteArrayList->at(row));
     //获取此字段的值
@@ -338,9 +290,9 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     if(fixed->getFieldlengthtype()=="0"){
         //字节截取
         //定长文件兼容多种行长度，判断越界
-        if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+filedlength){
+        if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+fieldlength){
             //对字节mid后返回字符串
-            filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
+            field=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),fieldlength));
         }
         else{
             return "";
@@ -349,9 +301,9 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     //字符截取
     else{
         //判断越界
-        if(rowdata.length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+filedlength)){
+        if(rowdata.length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+fieldlength)){
             //转成字符串后mid
-            filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
+            field=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),fieldlength));
         }
         else{
             return "";
@@ -359,55 +311,36 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     }
     //数据信息处理
     if(fileType=="C"){
-        //C类型从右去除多余空格
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
+        field=qStringTrimRight(field);
     }
     else if(fileType=="A"){
-        //A类型从右移除多余空格,移除空格后剩余的应该是0-9的数值
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
+        field=qStringTrimRight(field);
     }
     else if(fileType=="N"){
         //N类型为双精度数字
         //需要检查整数位需要切除的0，如果整数位为全0，则至少也要保留一位
         //如果字段为全部是空格，则认为字段为空
-        if(filed.trimmed().isEmpty()){
-            filed="";
+        if(field.trimmed().isEmpty()){
+            field="";
+        }
+        //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
+        //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
+        else if(field.trimmed()=="0"&&fieldDeclength==0){
+            field="0";
         }
         else{
             //N类型为双精度数字
             //需要检查整数位需要切除的0，如果整数位为全0，则至少也要保留一位
-            int needCheck=filedlength-filedDeclength-1;
+            int needCheck=fieldlength-fieldDeclength-1;
             int needCutZero=0;
             int needCutZeroBegin=0;
             //判断负数标志位，如果是负数则从第二位开始切除不必要的0
-            if(filed.at(0)=='-'){
+            if(field.at(0)=='-'){
                 needCutZeroBegin=1;
             }
             //循环切除0
             for(int s=needCutZeroBegin;s<needCheck;s++){
-                if(filed.at(s)=='0'){
+                if(field.at(s)=='0'){
                     needCutZero++;
                 }
                 else{
@@ -415,36 +348,23 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
                 }
             }
             //获取整数
-            QString left=filed.left(filedlength-filedDeclength).remove(needCutZeroBegin,needCutZero);
+            QString left=field.left(fieldlength-fieldDeclength).remove(needCutZeroBegin,needCutZero);
             //获取小数--如果小数长度为0,就不必处理小数了
-            if(filedDeclength==0){
-                filed=left;
+            if(fieldDeclength==0){
+                field=left;
             }else{
                 //获取小数
-                QString right=filed.right(filedDeclength);
+                QString right=field.right(fieldDeclength);
                 //拼接整数部分和小数部分
-                filed=left.append(".").append(right);
+                field=left.append(".").append(right);
             }
         }
     }
     else if(fileType=="TEXT"){
-        //TEXT类型从右去除多余空格
-        int spaceLength=0;
-        for(int i=filed.length()-1;i>=0;i--){
-            if(filed.at(i)==' '){
-                spaceLength++;
-            }
-            //遇到第一个不是空格的字段就立即退出循环
-            else{
-                break;
-            }
-        }
-        if(spaceLength>0){
-            filed=filed.left(filed.length()-spaceLength);
-        }
+        field=qStringTrimRight(field);
     }
     //其他类型直接原地返回
-    return filed;
+    return field;
 }
 
 QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row,QString charset){
@@ -460,19 +380,19 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
             //字段类型
             QString fileType=fixed->getFieldList().at(col).getFieldType();
             //开始获取此字段的值
-            QString filed="";
+            QString field="";
             //字段长度
-            int filedlength=fixed->getFieldList().at(col).getLength();
+            int fieldlength=fixed->getFieldList().at(col).getLength();
             //小数长度
-            int filedDeclength=fixed->getFieldList().at(col).getDecLength();
+            int fieldDeclength=fixed->getFieldList().at(col).getDecLength();
             //获取此字段的值
             //字符定长和字节定长判断
             if(fixed->getFieldlengthtype()=="0"){
                 //字节截取
                 //定长文件兼容多种行长度，判断越界
-                if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+filedlength){
+                if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+fieldlength){
                     //对字节mid后返回字符串
-                    filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
+                    field=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),fieldlength));
                 }
                 //越界表示本行后续不再有内容，终止
                 else{
@@ -482,9 +402,9 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
             //字符截取
             else{
                 //判断越界
-                if(rowdata.length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+filedlength)){
+                if(rowdata.length()>=(fixed->getFieldList().at(col).getRowBeginIndex()+fieldlength)){
                     //转成字符串后mid
-                    filed=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),filedlength));
+                    field=codec->toUnicode(rowdata.mid(fixed->getFieldList().at(col).getRowBeginIndex(),fieldlength));
                 }
                 //越界表示本行后续不再有内容，终止
                 else{
@@ -493,55 +413,36 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
             }
             //数据信息处理
             if(fileType=="C"){
-                //C类型从右去除多余空格
-                int spaceLength=0;
-                for(int i=filed.length()-1;i>=0;i--){
-                    if(filed.at(i)==' '){
-                        spaceLength++;
-                    }
-                    else{
-                        break;
-                    }
-                }
-                if(spaceLength>0){
-                    filed=filed.left(filed.length()-spaceLength);
-                }
+                field=qStringTrimRight(field);
             }
             else if(fileType=="A"){
-                //A类型从右移除多余空格,移除空格后剩余的应该是0-9的数值
-                int spaceLength=0;
-                for(int i=filed.length()-1;i>=0;i--){
-                    if(filed.at(i)==' '){
-                        spaceLength++;
-                    }
-                    else{
-                        break;
-                    }
-                }
-                if(spaceLength>0){
-                    filed=filed.left(filed.length()-spaceLength);
-                }
+                field=qStringTrimRight(field);
             }
             else if(fileType=="N"){
                 //N类型为双精度数字
                 //需要检查整数位需要切除的0，如果整数位为全0，则至少也要保留一位
                 //如果字段为全部是空格，则认为字段为空
-                if(filed.trimmed().isEmpty()){
-                    filed="";
+                if(field.trimmed().isEmpty()){
+                    field="";
+                }
+                //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
+                //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
+                else if(field.trimmed()=="0"&&fieldDeclength==0){
+                    field="0";
                 }
                 else{
                     //N类型为双精度数字
                     //需要检查整数位需要切除的0，如果整数位为全0，则至少也要保留一位
-                    int needCheck=filedlength-filedDeclength-1;
+                    int needCheck=fieldlength-fieldDeclength-1;
                     int needCutZero=0;
                     int needCutZeroBegin=0;
                     //判断负数标志位，如果是负数则从第二位开始切除不必要的0
-                    if(filed.at(0)=='-'){
+                    if(field.at(0)=='-'){
                         needCutZeroBegin=1;
                     }
                     //循环切除0
                     for(int s=needCutZeroBegin;s<needCheck;s++){
-                        if(filed.at(s)=='0'){
+                        if(field.at(s)=='0'){
                             needCutZero++;
                         }
                         else{
@@ -549,36 +450,23 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
                         }
                     }
                     //获取整数
-                    QString left=filed.left(filedlength-filedDeclength).remove(needCutZeroBegin,needCutZero);
+                    QString left=field.left(fieldlength-fieldDeclength).remove(needCutZeroBegin,needCutZero);
                     //获取小数--如果小数长度为0,就不必处理小数了
-                    if(filedDeclength==0){
-                        filed=left;
+                    if(fieldDeclength==0){
+                        field=left;
                     }else{
                         //获取小数
-                        QString right=filed.right(filedDeclength);
+                        QString right=field.right(fieldDeclength);
                         //拼接整数部分和小数部分
-                        filed=left.append(".").append(right);
+                        field=left.append(".").append(right);
                     }
                 }
             }
             else if(fileType=="TEXT"){
-                //TEXT类型从右去除多余空格
-                int spaceLength=0;
-                for(int i=filed.length()-1;i>=0;i--){
-                    if(filed.at(i)==' '){
-                        spaceLength++;
-                    }
-                    //遇到第一个不是空格的字段就立即退出循环
-                    else{
-                        break;
-                    }
-                }
-                if(spaceLength>0){
-                    filed=filed.left(filed.length()-spaceLength);
-                }
+                field=qStringTrimRight(field);
             }
             //其他类型直接原地返回
-            rowList.append(filed);
+            rowList.append(field);
         }
     }
     return rowList;

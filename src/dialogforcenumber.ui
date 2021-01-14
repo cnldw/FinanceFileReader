@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DialogForceNumber</class>
+ <widget class="QDialog" name="DialogForceNumber">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>200</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>400</width>
+    <height>200</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>400</width>
+    <height>200</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>调整数据格式</string>
+  </property>
+  <widget class="QPushButton" name="pushButtonAll">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>160</y>
+     <width>124</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>确定</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonCurrentPage">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>160</y>
+     <width>124</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>取消</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>26</y>
+     <width>341</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>宋体</family>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>错误的进行数值统计可能造成数值溢出,计算错误,调整数据格式为数值后,在数据解析上程序仍按照原始数据小数位数展示,设置的小数位数仅作用于统计功能和excel导出功能</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBox">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>95</y>
+     <width>341</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>非数值类型</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-整数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-1位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-2位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-3位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-4位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-5位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-6位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-7位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-8位小数</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>数值-9位小数</string>
+    </property>
+   </item>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

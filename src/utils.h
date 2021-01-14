@@ -44,6 +44,7 @@ public:
     Utils();
      static bool isDirExist(QString fullPath);
      static bool isFileExist(QString fullFileName);
+     static QString qStringTrimRight(const QString& str);
      static QString getConfigPath();
      static QString getCompileDate();
      static QString getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);

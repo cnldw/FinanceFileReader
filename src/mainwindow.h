@@ -35,6 +35,7 @@
 #include <QSettings>
 #include <QDebug>
 #include <QHash>
+#include <QSet>
 #include <QStringList>
 #include <QByteArray>
 #include <QTextCodec>
@@ -85,6 +86,7 @@
 #include "src/dialogmagnify.h"
 #include "src/dialogchooseofdconfig.h"
 #include "src/dialogeditheaderfooter.h"
+#include "src/dialogforcenumber.h"
 #include "src/ucdutils.h"
 
 namespace Ui {
@@ -155,6 +157,8 @@ private slots:
     void showMagnify();
 
     void copyMessage();
+
+    void gotoFirstNotNumber();
 
     void showOFDFiledAnalysis();
 
@@ -284,7 +288,6 @@ private:
     CsvFileDefinition csv;
     //用于记录csv等类别文件哪些列是数值的变量，注意，这个是否是数值是猜出来的，根据前几行的数据，进猜取小数，不猜整数
     QHash<int,FieldIsNumber> fieldIsNumberOrNot;
-    QList<int> forceNumberList;
     //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
     FIXEDFileDefinition fixed;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
@@ -332,6 +335,9 @@ private:
     //当第一行中英文占比低于上述设定值时，通过校验第一行和第2到11行数据中英文占比平均值的差值，如果差异大于下属设定值，则依然识别第一行数据行为标题
     float titleandcontextcheck=0.2;
 
+    //第一个非法数值的行号
+    int firstNotNumberLine=0;
+
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
@@ -356,6 +362,7 @@ private:
     //详情增加可复制功能
     QMenu *showMessagePopMenu;
     QAction *action_ShowCopy;
+    QAction *action_GoToFirstNotNumberLine;
     /*
       极其重要的表格相关参数
     */
