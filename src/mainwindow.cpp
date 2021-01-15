@@ -8140,13 +8140,15 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                     QString addinfo="";
                     int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
                     QString fieldOaiginal=Utils::getOriginalValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,tableColCurrent);
-                    //空格
-                    if(fieldOaiginal.contains(" ")){
-                        addinfo="数值型字段非空时不建议填充空格,极易造成兼容问题!!!";
-                    }
-                    //其余情况统一处理
-                    else if(!fieldOaiginal.contains(QRegExp("^\\d+$"))){
-                        addinfo="数值型字段混入了0-9外的字符,极易造成兼容问题!!!";
+                    if(ofd.getFieldList().at(tableColCurrent).getFieldType()=="N"){
+                        //空格
+                        if(fieldOaiginal.contains(" ")){
+                            addinfo="数值型字段非空时不建议填充空格,极易造成兼容问题!!!";
+                        }
+                        //其余情况统一处理
+                        else if(!fieldOaiginal.contains(QRegExp("^\\d+$"))){
+                            addinfo="数值型字段混入了0-9外的字符,极易造成兼容问题!!!";
+                        }
                     }
                     statusBar_disPlayMessage(ofd.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(ofd.getFieldList().at(tableColCurrent).getFieldType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)).append(addinfo.isEmpty()?"":("|"+addinfo)));
                 }
