@@ -124,9 +124,9 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
         if(field.trimmed().isEmpty()){
             field="";
         }
-        //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
+        //左0或者右0//或者中间0
         //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
-        else if(field.trimmed()=="0"&&fieldDeclength==0){
+        else if(field.trimmed()=="0"){
             field="0";
         }
         else{
@@ -208,9 +208,7 @@ QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByt
                 if(field.trimmed().isEmpty()){
                     field="";
                 }
-                //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
-                //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
-                else if(field.trimmed()=="0"&&fieldDeclength==0){
+                else if(field.trimmed()=="0"){
                     field="0";
                 }
                 else{
@@ -323,9 +321,7 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
         if(field.trimmed().isEmpty()){
             field="";
         }
-        //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
-        //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
-        else if(field.trimmed()=="0"&&fieldDeclength==0){
+        else if(field.trimmed()=="0"){
             field="0";
         }
         else{
@@ -425,9 +421,7 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
                 if(field.trimmed().isEmpty()){
                     field="";
                 }
-                //左0或者右0-且小数长度为0,仅仅占位1个0其余是空格，或者说就只有一位长度
-                //这种是不合理的数据格式//除非这个字段原本长度就1位且值是0
-                else if(field.trimmed()=="0"&&fieldDeclength==0){
+                else if(field.trimmed()=="0"){
                     field="0";
                 }
                 else{

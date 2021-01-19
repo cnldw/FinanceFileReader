@@ -133,9 +133,11 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("可以使用本程序新建OFD文件,以及初始化自己的新建模板...");
     tips.append("导出功能可以分页导出或者导出全部数据,自由选择导出范围,是否使用UTF-8编码...");
     tips.append("在程序主窗口或者查看行详细信息界面,使用Ctrl+Alt+R(command+option+R)可以进行快速截图保存...");
+    tips.append("固定分隔符文件可以在任意单元格右键对此列手工设置数据格式,调整为数值或者自定义小数长度哟,方便进行数值统计...");
 #ifdef Q_OS_WIN32
     tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
     tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
+    tips.append("想要比对同一个文件不同版本的差异?试试导出到csv固定分隔符文件后同时把两个文件拖向FFReader,它会问你是否要比对差异...");
 #endif
     specialCharacter.insert("00","NUL (null):空字符");
     specialCharacter.insert("01","SOH (start of headling):标题开始");
@@ -1956,7 +1958,8 @@ NOT_OF_FILE:
                                         else {
                                             flagd=thisflag;
                                         }
-                                        fileName="基于 "+flagd+" 分割列的文件";                                    }
+                                        fileName="基于 "+flagd+" 分割列的文件";
+                                    }
                                     contextBgein=lineN;
                                 }
                                 //非首次遇到-并且解析到了更多的列-则更新起始行
@@ -1966,9 +1969,6 @@ NOT_OF_FILE:
                                         lastCount=previousRowFieldCount;
                                     }
                                     contextBgein=lineN;
-                                }
-                                else{
-
                                 }
                             }
                             /////////////////step3////////////////////////////////////////
@@ -2037,6 +2037,7 @@ NOT_OF_FILE:
                                     }
                                 }
                                 if(firstRowIsTitle){
+                                    fieldTitleStrList.clear();
                                     titleRow=contextBgein+1;
                                     dataBeginRow=contextBgein+2;
                                     fieldCount=firstRowfieldList.count();
@@ -2053,6 +2054,7 @@ NOT_OF_FILE:
                                     }
                                 }
                                 else{
+                                    fieldTitleStrList.clear();
                                     titleRow=0;
                                     dataBeginRow=contextBgein+1;
                                     fieldCount=firstRowfieldList.count();
@@ -2068,7 +2070,6 @@ NOT_OF_FILE:
                                     }
                                 }
                             }
-
                         }
                     }
                     //////////////检查识别结果开始解析/////////////////////////
@@ -4833,7 +4834,6 @@ void MainWindow::addOFDRowData(int location){
                         acceptVScrollValueChanged(0);
                         this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
                     }
-                    //////////////////////////////////////////////////////////
                 }
             }
         }
@@ -6308,7 +6308,6 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                         tablePopMenu->addSeparator();
                         tablePopMenu->addAction(action_EditCompareDataBatch);
                         tablePopMenu->addSeparator();
-
                     }
                 }
                 //多行多列
@@ -8141,13 +8140,21 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                     int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
                     QString fieldOaiginal=Utils::getOriginalValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,tableColCurrent);
                     if(ofd.getFieldList().at(tableColCurrent).getFieldType()=="N"){
-                        //空格
-                        if(fieldOaiginal.contains(" ")){
-                            addinfo="数值型字段非空时不建议填充空格,极易造成兼容问题!!!";
+                        //长度大于1存在左侧空格右对齐
+                        if(fieldOaiginal.length()>1&&fieldOaiginal.startsWith(" ")&&fieldOaiginal.endsWith("0")&&text=="0"){
+                            addinfo="警告:发现字段左填充空格,数值型字段值为0时不建议右对齐左填充空格,建议全填充0!!!";
+                        }
+                        //长度大于1存在左对齐右侧空格
+                        else  if(fieldOaiginal.length()>1&&fieldOaiginal.startsWith("0")&&fieldOaiginal.endsWith(" ")&&text=="0"){
+                            addinfo="警告:发现字段右填充空格,数值型字段值为0时不建议左对齐右填充空格,建议全填充0!!!";
+                        }
+                        //中间含有空格
+                        else if((!text.isEmpty())&&fieldOaiginal.contains(" ")){
+                            addinfo="警告:发现字段含有空格,数值型字段非空时不建议填充或者含有空格,极易造成解析兼容问题!!!";
                         }
                         //其余情况统一处理
-                        else if(!fieldOaiginal.contains(QRegExp("^\\d+$"))){
-                            addinfo="数值型字段混入了0-9外的字符,极易造成兼容问题!!!";
+                        else if((!text.isEmpty())&&(!fieldOaiginal.contains(QRegExp("^\\d+$")))){
+                            addinfo="警告:数值型字段混入了0-9外的字符,极易造成兼容问题!!!";
                         }
                     }
                     statusBar_disPlayMessage(ofd.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(ofd.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(ofd.getFieldList().at(tableColCurrent).getFieldType()).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)).append(addinfo.isEmpty()?"":("|"+addinfo)));
@@ -8235,6 +8242,15 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
             int editRowinFileContent=0;
             //显示类别
             int displayType=0;
+            //用于触发窗口事件的计数器
+            int itmCount=0;
+            //本次统计任务的index
+            int currentCalculateIndex=++calculateIndex;
+            qDebug()<<"本次统计任务id"<<currentCalculateIndex;
+            //当要进行数值统计的单元格较多时，运算往往需要一定的事件，温馨提示用户，呜呜呜
+            if(selectedAllItemCount>10000){
+                statusBar_disPlayMessage("统计中,请稍等...");
+            }
             //判断当前打开的文件类型
             if(currentOpenFileType==1){
                 if(ofd.getFieldList().at(itemsRange.at(0).leftColumn()).getFieldType()=="N"){
@@ -8245,7 +8261,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                             QString vvv=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRowinFileContent,editCol);
                             if(vvv==nullptr){
                                 skipEmpty++;
-                            }
+                            }                            
                             else{
                                 bool covertOk=false;
                                 double valueitem=vvv.toDouble(&covertOk);
@@ -8258,6 +8274,16 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                                     if(skipNotNumber==1){
                                         firstNotNumberLine=editRowinFileContent+1;
                                     }
+                                }
+                            }
+                            itmCount++;
+                            if((itmCount%1000)==0||selectedAllItemCount==itmCount){
+                                if(currentCalculateIndex==calculateIndex){
+                                    qApp->processEvents();
+                                }
+                                else{
+                                    qDebug()<<currentCalculateIndex<<"终止,不再展示统计结果";
+                                    return;
                                 }
                             }
                         }
@@ -8296,6 +8322,16 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                                     }
                                 }
                             }
+                            itmCount++;
+                            if((itmCount%1000)==0||selectedAllItemCount==itmCount){
+                                if(currentCalculateIndex==calculateIndex){
+                                    qApp->processEvents();
+                                }
+                                else{
+                                    qDebug()<<currentCalculateIndex<<"终止,不再展示统计结果";
+                                    return;
+                                }
+                            }
                         }
                     }
                     displayType=0;
@@ -8326,6 +8362,16 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                                     if(skipNotNumber==1){
                                         firstNotNumberLine=editRowinFileContent+1;
                                     }
+                                }
+                            }
+                            itmCount++;
+                            if((itmCount%1000)==0||selectedAllItemCount==itmCount){
+                                if(currentCalculateIndex==calculateIndex){
+                                    qApp->processEvents();
+                                }
+                                else{
+                                    qDebug()<<currentCalculateIndex<<"终止,不再展示统计结果";
+                                    return;
                                 }
                             }
                         }

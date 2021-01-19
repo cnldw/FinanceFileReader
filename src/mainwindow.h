@@ -327,7 +327,7 @@ private:
     //编码识别
     LibUcd         m_libucd;
     //允许解析的编码白名单
-    QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
+    QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-8","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
     //编码识别尝试识别的分隔符-如考虑新增分隔符则写到这里
     QList<QString> autoFlagList={"|",",","\t",";","#",""};
     //尝试自动检测标题时，中英文字符占比（我们姑且认为如果第一行数据中英文占比大于此值，识别第一行数据行为标题）
@@ -337,7 +337,9 @@ private:
 
     //第一个非法数值的行号
     int firstNotNumberLine=0;
-
+    //统计index,当用户选中一列或者数值区域进行数值统计时对此变量自增并记录
+    //如果统计途中发现此变量变了，则代码有新的统计任务，此任务立即return废弃
+    int calculateIndex=0;
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
