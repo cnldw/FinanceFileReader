@@ -100,6 +100,9 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_ShowCharacter, SIGNAL(triggered()), this, SLOT(showCharacter()));
     action_CsvForceNumber= new QAction(tr("对此列调整数据格式"),this);
     connect(action_CsvForceNumber, SIGNAL(triggered()), this, SLOT(forceNumber()));
+    //qrcode
+    action_ShareUseQrCode = new QAction(tr("使用二维码分享此单元格"),this);
+    connect(action_ShareUseQrCode, SIGNAL(triggered()), this, SLOT(showQrcode()));
 
     tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
     tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
@@ -6240,6 +6243,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
                     tablePopMenu->addAction(action_ShowOFDAnalysis);
+                    action_ShareUseQrCode->setText("使用二维码分享此单元格数据");
+                    tablePopMenu->addAction(action_ShareUseQrCode);
                     tablePopMenu->addSeparator();
                     tablePopMenu->addAction(action_ModifyOFDCell);
                     tablePopMenu->addAction(action_ModifyOFDRow);
@@ -6259,6 +6264,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 else{
                     tablePopMenu->addAction(action_ShowCopyColum);
                     tablePopMenu->addAction(action_ShowDetails);
+                    action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                    tablePopMenu->addAction(action_ShareUseQrCode);
                     tablePopMenu->addSeparator();
                     tablePopMenu->addAction(action_ModifyOFDRow);
                     tablePopMenu->addSeparator();
@@ -6293,6 +6300,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     //单个选择器
                     if(rangeCount==1){
                         tablePopMenu->addAction(action_ShowCopyColum);
+                        action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                        tablePopMenu->addAction(action_ShareUseQrCode);
                         tablePopMenu->addSeparator();
                         tablePopMenu->addAction(action_ModifyOFDCellBatch);
                         tablePopMenu->addSeparator();
@@ -6315,6 +6324,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     //单个选择器
                     if(rangeCount==1){
                         tablePopMenu->addAction(action_ShowCopyColum);
+                        action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                        tablePopMenu->addAction(action_ShareUseQrCode);
                         tablePopMenu->addSeparator();
                         tablePopMenu->addAction(action_EditCompareDataBatch);
                         tablePopMenu->addSeparator();
@@ -6374,6 +6385,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 if(allSelectIsOneColumn){
                     tablePopMenu->addAction(action_ShowCopyColum);
                     tablePopMenu->addAction(action_ShowDetails);
+                    action_ShareUseQrCode->setText("使用二维码分享此单元格数据");
+                    tablePopMenu->addAction(action_ShareUseQrCode);
                     tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
                     tablePopMenu->addAction(action_CsvForceNumber);
@@ -6391,8 +6404,10 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 }
                 //单行多列
                 else{
-                    tablePopMenu->addAction(action_ShowDetails);
                     tablePopMenu->addAction(action_ShowCopyColum);
+                    tablePopMenu->addAction(action_ShowDetails);
+                    action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                    tablePopMenu->addAction(action_ShareUseQrCode);
                     //比对器
                     tablePopMenu->addAction(action_EditCompareData);
                     //行比对齐文字描述的替换
@@ -6411,6 +6426,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     //单个选择器
                     if(rangeCount==1){
                         tablePopMenu->addAction(action_ShowCopyColum);
+                        action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                        tablePopMenu->addAction(action_ShareUseQrCode);
                         //tablePopMenu->addAction(action_ModifyCellBatch);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
                         tablePopMenu->addAction(action_CsvForceNumber);
@@ -6429,6 +6446,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     //单个选择器
                     if(rangeCount==1){
                         tablePopMenu->addAction(action_ShowCopyColum);
+                        action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                        tablePopMenu->addAction(action_ShareUseQrCode);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
 
                     }
@@ -6474,6 +6493,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 if(allSelectIsOneColumn){
                     tablePopMenu->addAction(action_ShowCopyColum);
                     tablePopMenu->addAction(action_ShowDetails);
+                    action_ShareUseQrCode->setText("使用二维码分享此单元格数据");
+                    tablePopMenu->addAction(action_ShareUseQrCode);
                     tablePopMenu->addAction(action_Magnify);
                     tablePopMenu->addAction(action_ShowCharacter);
                     //csv文件暂不支持编辑
@@ -6490,8 +6511,10 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 }
                 //单行多列
                 else{
-                    tablePopMenu->addAction(action_ShowDetails);
                     tablePopMenu->addAction(action_ShowCopyColum);
+                    tablePopMenu->addAction(action_ShowDetails);
+                    action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                    tablePopMenu->addAction(action_ShareUseQrCode);
                     //比对器
                     tablePopMenu->addAction(action_EditCompareData);
                     //行比对齐文字描述的替换
@@ -6510,6 +6533,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     //单个选择器
                     if(rangeCount==1){
                         tablePopMenu->addAction(action_ShowCopyColum);
+                        action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                        tablePopMenu->addAction(action_ShareUseQrCode);
                         //tablePopMenu->addAction(action_ModifyCellBatch);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
                     }
@@ -6526,6 +6551,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     //单个选择器
                     if(rangeCount==1){
                         tablePopMenu->addAction(action_ShowCopyColum);
+                        action_ShareUseQrCode->setText("使用二维码分享选中的单元格数据");
+                        tablePopMenu->addAction(action_ShareUseQrCode);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
                     }
                     //多个选择器
@@ -8261,7 +8288,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                             QString vvv=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,editRowinFileContent,editCol);
                             if(vvv==nullptr){
                                 skipEmpty++;
-                            }                            
+                            }
                             else{
                                 bool covertOk=false;
                                 double valueitem=vvv.toDouble(&covertOk);
@@ -9506,4 +9533,168 @@ void MainWindow::on_actioneditheaderfooter_triggered()
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
+}
+
+void MainWindow::showQrcode(){
+    //获取数据
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    QString text="";
+    int rangeCount=itemsRange.count();
+    if(rangeCount>0){
+        int topRow=itemsRange.at(0).topRow();
+        int bottomRow=itemsRange.at(0).bottomRow();
+        int leftColumn=itemsRange.at(0).leftColumn();
+        int rigthColumn=itemsRange.at(0).rightColumn();
+        //单个-只取值
+        if(topRow==bottomRow&&leftColumn==rigthColumn){
+            if(ptr_table->item(topRow,leftColumn)!=nullptr){
+                text= ptr_table->item(topRow,leftColumn)->text();
+            }
+        }
+        //多个
+        else{
+            //先判断选择的单元格数据
+            if((bottomRow-topRow+1)*(rigthColumn-leftColumn+1)>120){
+                statusBar_disPlayMessage("数据太多了,生成二维码的数据限制最多120个单元格且不大于2300字节");
+                return;
+            }else{
+                //判断是跨行单列还是跨列单行
+                //同一行的一些列--行列交换展示
+                if((bottomRow==topRow)&&(rigthColumn!=leftColumn)){
+                    for(int i=leftColumn;i<=rigthColumn;i++){
+                        if(ptr_table->item(tableRowCurrent,i)==nullptr){
+                            text.append(ptr_table->horizontalHeaderItem(i)->text());
+                        }
+                        else{
+                            text.append(ptr_table->horizontalHeaderItem(i)->text()).append(" ").append(ptr_table->item(topRow,i)->text());
+                        }
+                        if(i<rigthColumn){
+                            text.append("\r\n");
+                        }
+                    }
+                }
+                //同一列的多行-不要标题直接一行有一行
+                else if((bottomRow!=topRow)&&(rigthColumn==leftColumn)){
+                    int rowRealInContent=0;
+                    if(currentOpenFileType==1){
+                        for(int row=topRow;row<=bottomRow;row++){
+                            rowRealInContent=(currentPage-1)*pageRowSize+row;
+                            QString value=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,leftColumn);
+                            if(ofd.getFieldList().at(leftColumn).getFieldType()=="N"){
+                                text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
+                            }
+                            else{
+                                text.append(value);
+                            }
+                            if(row<bottomRow&&(!value.isEmpty())){
+                                text.append("\r\n");
+                            }
+                        }
+                    }
+                    else if(currentOpenFileType==2){
+                        for(int row=topRow;row<=bottomRow;row++){
+                            rowRealInContent=(currentPage-1)*pageRowSize+row;
+                            QStringList line=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent,csv.getEcoding());
+                            QString value=line.count()>leftColumn?line.at(leftColumn):"";
+                            if(fieldIsNumberOrNot.contains(leftColumn)&&fieldIsNumberOrNot.value(leftColumn).getIsNumber()){
+                                text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
+                            }
+                            else{
+                                text.append(value);
+                            }
+                            if(row<bottomRow&&(!value.isEmpty())){
+                                text.append("\r\n");
+                            }
+                        }
+                    }
+                    else if(currentOpenFileType==3){
+                        for(int row=topRow;row<=bottomRow;row++){
+                            rowRealInContent=(currentPage-1)*pageRowSize+row;
+                            QString value=Utils::getFormatValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent,leftColumn,fixed.getEcoding());
+                            if(fixed.getFieldList().at(leftColumn).getFieldType()=="N"){
+                                text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
+                            }
+                            else{
+                                text.append(value);
+                            }
+                            if(row<bottomRow&&(!value.isEmpty())){
+                                text.append("\r\n");
+                            }
+                        }
+                    }
+                }
+                //多行多列
+                else{
+                    int rowRealInContent=0;
+                    //标题行
+                    for(int i=leftColumn;i<=rigthColumn;i++){
+                        if(i<rigthColumn){
+                            text.append(ptr_table->horizontalHeaderItem(i)->text()).append(" ");
+                        }
+                        else{
+                            text.append(ptr_table->horizontalHeaderItem(i)->text()).append("\r\n");
+                        }
+                    }
+                    //数据
+                    for(int row=topRow;row<=bottomRow;row++){
+                        rowRealInContent=(currentPage-1)*pageRowSize+row;
+                        QStringList line;
+                        if(currentOpenFileType==1){
+                            line=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent);
+                        }
+                        else if(currentOpenFileType==2){
+                            line=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent,csv.getEcoding());
+                        }
+                        else if(currentOpenFileType==3){
+                            line=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent,fixed.getEcoding());
+                        }
+                        for(int i=leftColumn;i<=rigthColumn&&i<line.count();i++){
+                            QString value=line.at(i);
+                            if (value.isEmpty()){
+                                text.append("");
+                            }
+                            else if(currentOpenFileType==1&&ofd.getFieldList().at(i).getFieldType()=="N"){
+                                text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
+                            }
+                            else if(currentOpenFileType==2&&fieldIsNumberOrNot.contains(i)&&fieldIsNumberOrNot.value(i).getIsNumber()){
+                                text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
+                            }else if(currentOpenFileType==3&&fixed.getFieldList().at(i).getFieldType()=="N"){
+                                text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
+                            }
+                            else{
+                                text.append(value);
+                            }
+                            //分割
+                            if(i<rigthColumn&&(i<line.count()-1)){
+                                text.append(" ");
+                            }
+                            //换行
+                            else if((i==rigthColumn&&row<bottomRow)||((i==line.count()-1)&&row<bottomRow)){
+                                text.append("\r\n");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    QString trimd=QString(text).replace("\r\n","").replace(" ","");
+    if(!trimd.isEmpty()){
+        if(text.toUtf8().count()>2300){
+            statusBar_disPlayMessage(QString("数据太多了,生成二维码的数据限制最多120个单元格且不大于2300字节,当前%1字节").arg(text.toUtf8().count()));
+        }
+        else{
+            //打开窗口
+            DialogShareQrCode * dialog = new DialogShareQrCode(text,this);
+            dialog->setWindowTitle(QString("二维码分享数据-请扫一扫获得数据"));
+            dialog->setModal(false);
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            dialog->show();
+            dialog->raise();
+            dialog->activateWindow();
+        }
+    }
+    else{
+        statusBar_disPlayMessage("没有有效数据可供生成二维码,数据为空或者全是空格!!!");
+    }
 }

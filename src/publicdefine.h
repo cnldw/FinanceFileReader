@@ -16,7 +16,7 @@
 #ifndef PUBLICDEFINE_H
 #define PUBLICDEFINE_H
 
-#define VERSION_V "V1.9.5"
+#define VERSION_V "V1.9.6"
 #define AUTHOR_PHONE "MTUyMzg4NzIxMDE="
 #define AUTHOR_NAME "NzkzNTU0MjYyQHFxLmNvbSjliJjlvrfkvY0p"
 #define AUTHOR_EMAIL "NzkzNTU0MjYyQHFxLmNvbQ=="

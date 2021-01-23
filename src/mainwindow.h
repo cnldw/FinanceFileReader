@@ -88,6 +88,7 @@
 #include "src/dialogeditheaderfooter.h"
 #include "src/dialogforcenumber.h"
 #include "src/ucdutils.h"
+#include "src/dialogshareqrcode.h"
 
 namespace Ui {
 class MainWindow;
@@ -246,6 +247,8 @@ private slots:
 
     void on_actioneditheaderfooter_triggered();
 
+    void showQrcode();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
@@ -359,7 +362,7 @@ private:
     QAction *action_addNewLineOFDData2End;
     QAction *action_ModifyOFDRow;
     QAction *action_CsvForceNumber;
-
+    QAction *action_ShareUseQrCode;
 
     //详情增加可复制功能
     QMenu *showMessagePopMenu;

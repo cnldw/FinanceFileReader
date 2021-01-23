@@ -45,12 +45,14 @@ include(src/xlsx/qtxlsx.pri)
 include(src/2048/2048.pri)
 #引入编码检测库
 include(src/libucd/libucd.pri)
-
+#引入qrcode
+include(src/qrcode/Qrcode.pri)
 SOURCES += \
     src/dialogchooseofdconfig.cpp \
     src/dialogeditheaderfooter.cpp \
     src/dialogforcenumber.cpp \
     src/dialogmagnify.cpp \
+    src/dialogshareqrcode.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/utils.cpp \
@@ -87,6 +89,7 @@ HEADERS += \
     src/dialogeditheaderfooter.h \
     src/dialogforcenumber.h \
     src/dialogmagnify.h \
+    src/dialogshareqrcode.h \
         src/mainwindow.h \
     src/ucdutils.h \
     src/utils.h \
@@ -124,6 +127,7 @@ FORMS += \
     src/dialogeditheaderfooter.ui \
     src/dialogforcenumber.ui \
     src/dialogmagnify.ui \
+    src/dialogshareqrcode.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
     src/dialogshowtablecompareview.ui \
@@ -152,7 +156,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.5
+VERSION = 1.9.6
 ############以下注意按版本修改###############
 
 # 语言
