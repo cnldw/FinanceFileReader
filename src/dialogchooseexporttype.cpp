@@ -61,6 +61,14 @@ DialogChooseExportType::DialogChooseExportType(int currentFileType,int pageCount
         ui->comboBox->addItem("Csv文件-制表符分割(*.csv)");
         ui->comboBox->addItem("Csv文件-逗号分割(*.csv)");
         break;
+        //DBF
+    case 4:
+        ui->comboBox->addItem("Excel文件(*.xlsx)");
+        ui->comboBox->addItem("Html文件(*.html)");
+        ui->comboBox->addItem("Csv文件-竖线分割(*.csv)");
+        ui->comboBox->addItem("Csv文件-制表符分割(*.csv)");
+        ui->comboBox->addItem("Csv文件-逗号分割(*.csv)");
+        break;
     default:
         break;
     }

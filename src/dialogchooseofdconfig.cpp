@@ -48,9 +48,9 @@ DialogChooseOFDConfig::DialogChooseOFDConfig(QString ofdini,QList<OFDFileDefinit
     ptr_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     ptr_table->setColumnWidth(0, 80);
     ptr_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-    ptr_table->setColumnWidth(1, 100);
+    ptr_table->setColumnWidth(1, 220);
     ptr_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
-    ptr_table->setColumnWidth(3, 80);
+    ptr_table->setColumnWidth(3, 160);
     //设置表格列标题
     QStringList title;
     title.append("配置文件");

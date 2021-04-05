@@ -73,7 +73,6 @@
 #include "src/dialogmergetip.h"
 #include "src/csvfiledefinition.h"
 #include "src/faultcause.h"
-#include "src/dialogopenfileadv.h"
 #include "fieldisnumber.h"
 #include "src/dialogpreference.h"
 #include "src/dialogmodifyrow.h"
@@ -85,10 +84,29 @@
 #include "src/dialogmodifymtime.h"
 #include "src/dialogmagnify.h"
 #include "src/dialogchooseofdconfig.h"
+#include "src/dialogchoosedbfconfig.h"
 #include "src/dialogeditheaderfooter.h"
 #include "src/dialogforcenumber.h"
 #include "src/ucdutils.h"
 #include "src/dialogshareqrcode.h"
+#include "src/qdbf/qdbftable.h"
+#include "src/qdbf/qdbfrecord.h"
+#include "src/qdbf/qdbffield.h"
+#include "src/dbffielddefinition.h"
+#include "src/dbffiledefinition.h"
+#include "src/dbffileconfig.h"
+#include "src/qsourcehighlite/qsourcehighliter.h"
+#include "src/dialogoktools.h"
+
+/**
+ * @brief The dbfMatchInfo struct 存储匹配到的DBF配置的结构体
+ */
+struct dbfMatchInfo{
+    QString ini;
+    QString matchFileType;
+    QString matchfileDescribe;
+    float matchDegree;
+};
 
 namespace Ui {
 class MainWindow;
@@ -197,8 +215,6 @@ private slots:
 
     void on_tableWidget_itemSelectionChanged();
 
-    void on_actionfileOpenAdv_triggered();
-
     void on_actionpreference_triggered();
 
     void on_actionnewWindow_triggered();
@@ -249,6 +265,44 @@ private slots:
 
     void showQrcode();
 
+    void on_actionalldata_triggered();
+
+    void on_actionnotdelete_triggered();
+
+    void on_actionjustdelete_triggered();
+
+    void on_actionGB18030_GB2312_triggered();
+
+    void on_actionIBM437_triggered();
+
+    void on_actionIBM850_triggered();
+
+    void on_actionIBM866_triggered();
+
+    void on_actionWindows1250_triggered();
+
+    void on_actionWindows1251_triggered();
+
+    void on_actionWindows1252_triggered();
+
+    void on_actionBig5_triggered();
+
+    void on_actionShift_JIS_triggered();
+
+    void on_actioncloseFile_triggered();
+
+    void on_actionautcolwidth_triggered();
+
+    void on_actionleftright_triggered();
+
+    void on_actionleft_triggered();
+
+    void on_actionright_triggered();
+
+    void on_actionswitchsqlmode_triggered();
+
+    void on_actionOKTools_triggered();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
@@ -281,6 +335,8 @@ private:
     QList<CsvFileDefinition> loadedCsvDefinitionList;
     //已经加载的FIXED文件类别信息,定长文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
     QList<FIXEDFileDefinition> loadedFixedDefinitionList;
+    //已经加载的dbf配置
+    QHash<QString,DbfFileConfig>loadedDbfDefinitionHash;
     //用来记录文件头部内容的map,此信息用于文件检查
     QHash<QString,QString> ofdIndexFileHeaderMap;
     //用来记录文件标题和内容的list,解析索引类文件时使用
@@ -289,8 +345,10 @@ private:
     OFDFileDefinition ofd;
     //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到改文件的csv定义
     CsvFileDefinition csv;
-    //用于记录csv等类别文件哪些列是数值的变量，注意，这个是否是数值是猜出来的，根据前几行的数据，进猜取小数，不猜整数
-    QHash<int,FieldIsNumber> fieldIsNumberOrNot;
+    //当前打开的dbf文件使用的定义,和其他类型文件不同，这个变量的内容基于打开的dbf文件里的元信息生成而不是取自配置文件
+    DbfFileDefinition dbf;
+    //用于记录csv文件哪些列是数值的变量，注意，这个是否是数值是猜出来的，根据前几行的数据，仅猜取小数，不猜整数
+    QHash<int,FieldIsNumber> CsvFieldIsNumberOrNot;
     //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
     FIXEDFileDefinition fixed;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
@@ -305,14 +363,22 @@ private:
     QList<QString> fixedFileHeaderQStringList;
     //打开的Fixed文件的数据体
     QList<QByteArray> fixedContenQByteArrayList;
+    //当前打开的dbf文件
+    QDbf::QDbfTable dbftablefile;
+    //0显示所有记录-1仅显示未删除的记录-2仅显示已删除的记录
+    int  dbfDisplayType=0;
+    //字段修剪方式 0 trim 1 lefttrim 2 righttrim
+    int  dbfTrimType=0;
+    //哪些数据类型的列会被认为是数字处理//针对dbf文件
+    QList<int> dbfIsNumberFieldType;
+    //行映射关系-用于在全浏览和非删除数据和仅删除数据的浏览模式切换
+    QHash<int,int> dbfRowMap;
     //打开的Fixed文件的文件尾
     QList<QString> fixedFooterQStringList;
     //当前打开的文件类别,目前已支持的文件类型0索引,1:OFD数据,2:CSV文件,3:FIXED定长文件，-1未打开文件或者显示了错误信息
     int currentOpenFileType=-1;
-
     //OFD字典参数，专用于OFD文件，打开文件类别为1时使用
     Dictionary ofdDictionary;
-
     //通用字典配置-用于csv和定长文件
     QHash<QString,Dictionary> commonDictionary;
     //监控xlsx文件导出是否完成
@@ -328,7 +394,7 @@ private:
     //OFD文件专用编码
     QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
     //编码识别
-    LibUcd         m_libucd;
+    LibUcd m_libucd;
     //允许解析的编码白名单
     QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-8","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
     //编码识别尝试识别的分隔符-如考虑新增分隔符则写到这里
@@ -337,12 +403,13 @@ private:
     float titlecheck=0.7;
     //当第一行中英文占比低于上述设定值时，通过校验第一行和第2到11行数据中英文占比平均值的差值，如果差异大于下属设定值，则依然识别第一行数据行为标题
     float titleandcontextcheck=0.2;
-
     //第一个非法数值的行号
     int firstNotNumberLine=0;
     //统计index,当用户选中一列或者数值区域进行数值统计时对此变量自增并记录
-    //如果统计途中发现此变量变了，则代码有新的统计任务，此任务立即return废弃
+    //如果统计途中发现此变量变了，则代表有新的统计任务，此任务立即return废弃
     int calculateIndex=0;
+
+    QSourceHighlite::QSourceHighliter *highlighter;
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
@@ -431,7 +498,8 @@ private:
     int pageCount=1;
     //目前在第几页
     int currentPage=1;
-
+    //sql模式
+    bool sqlMode=false;
     //支持导出excel文件的最大行数
     //导出超大excel将占用很大的内存，这里初步限制60万行，需要再高的需要定制该功能
     //1.8.6开始支持导出100万行
@@ -451,8 +519,8 @@ private:
     void clear_Table_Info();
     void clear_Table_Contents();
     void clear_Display_Info();
-    void clear_oldData();
-    void initFile(QString filePath);
+    void clear_oldData( bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
+    void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
     void initStatusBar();
     void open_file_Dialog();
     void load_OFDCodeInfo();
@@ -463,23 +531,27 @@ private:
     void load_OFDDefinition();
     void load_CSVDefinition();
     void load_FIXEDDefinition();
+    void load_DBFDefinition();
     void load_indexFile();
     void load_ofdFile(QString fileType);
     void load_csvFile(QStringList fileType);
     void load_fixedFile(QStringList fileType);
     void load_fixedFileData();
     void load_csvFileData(QStringList title);
+    void load_dbfFile();
     void save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8=false);
     void save2Html(QString filename,int pageNum, bool useUTF8=false);
     void save2Xlsx(QString filename,int pageNum);
     int save2XlxsFile();
     void init_display_IndexTable();
     void init_OFDTable();
+    void init_DBFTable();
     void init_CSVTable(QStringList title);
     void init_FIXEDTable();
     void display_OFDTable();
     void display_CSVTable();
     void display_FIXEDTable();
+    void display_DBFTable();
     void display_CSVFaultCause(QList<FaultCause> faultList);
     void display_FIXEDFaultCause(QList<FaultCause> faultList);
     void display_OFDFaultCause(QString useini,QList<OFDFaultCause> faultList);
@@ -493,6 +565,8 @@ private:
     QString StringToHexStringWithEnCode(QString data,QTextCodec *codec,bool withSouceChar=true);
     QString HexStringToBinaryString(QString HexString);
     static bool compareOFDData(const OFDFileDefinition &ofd1, const OFDFileDefinition &ofd2);
+    static bool compareDBFData(const dbfMatchInfo &dbf1, const dbfMatchInfo &dbf2);
+    bool dbfColIsNumber(int col);
 
 };
 

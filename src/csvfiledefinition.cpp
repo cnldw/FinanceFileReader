@@ -175,6 +175,16 @@ void CsvFileDefinition::setFfAuto(bool value)
     ffAuto = value;
 }
 
+bool CsvFileDefinition::getTrim() const
+{
+    return trim;
+}
+
+void CsvFileDefinition::setTrim(bool value)
+{
+    trim = value;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     

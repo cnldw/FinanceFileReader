@@ -93,6 +93,18 @@ QString Utils::qStringTrimRight(const QString& str) {
     return "";
 }
 
+QString Utils::qStringTrimLeft(const QString& str) {
+    int n = str.size() - 1;
+    int i=0;
+    for (; i<=n; i++) {
+        if (!str.at(i).isSpace()) {
+            return str.mid(i);
+        }
+    }
+    return "";
+}
+
+
 QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
 {
     QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
@@ -266,9 +278,9 @@ QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArra
     }
 }
 
-QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col,QString charset)
+QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col)
 {
-    QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
+    QTextCodec *codec=QTextCodec::codecForName(fixed->getEcoding().toLocal8Bit());
     //判断越界
     if(row>=fixedContentQByteArrayList->count()||col>=fixed->getFieldCountMax()){
         return "";
@@ -363,11 +375,11 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     return field;
 }
 
-QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row,QString charset){
+QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row){
     QStringList rowList;
     //判断越界
     if(row<fixedContentQByteArrayList->count()){
-        QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
+        QTextCodec *codec=QTextCodec::codecForName(fixed->getEcoding().toLocal8Bit());
         //获取本行数据
         QByteArray rowdata=qUncompress(fixedContentQByteArrayList->at(row));
         //遍历获取各个字段
@@ -466,13 +478,13 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
     return rowList;
 }
 
-QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset){
+QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row){
     //判断越界
     QStringList rowData;
     if(row>=csvFileContentQByteArrayList->count()){
         return rowData;
     }else{
-        QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
+        QTextCodec *codec=QTextCodec::codecForName(csv->getEcoding().toLocal8Bit());
         //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
         if(csv->getClearQuotes()&&csv->getSplit().length()==1){
             QRegExp rx("\\"+csv->getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
@@ -487,21 +499,158 @@ QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray
             for(int i=0;i<rowData.count();i++){
                 rowData2.append(clearQuotes(rowData.at(i)));
             }
-            return rowData2;
+            rowData=rowData2;
         }
-        else{
-            return rowData;
+        if(csv->getTrim()&&rowData.count()>0){
+            QStringList rowData2;
+            for(int i=0;i<rowData.count();i++){
+                rowData2.append(rowData.at(i).trimmed());
+            }
+            rowData=rowData2;
         }
+        return rowData;
     }
 }
 
-QStringList Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset){
+QStringList Utils::getFormatRowValuesFromdbfTableFile(QDbf::QDbfTable * dbftablefile,DbfFileDefinition * dbf,int row,QHash<int,int> * rowMap,bool adddeletedFlag,int trimType){
+    int rowintablefile=rowMap->value(row);
+    int colCount=dbf->getFieldCount();
+    dbftablefile->seek(rowintablefile);
+    QStringList list;
+    for (int col=0;col<colCount;col++){
+        int type=dbf->getFieldList().at(col).getFieldType();
+        //NULL值不考虑数据类型直接填充空
+        if(dbftablefile->record().field(col).isNull()){
+            list.append(nullptr);
+        }
+        //字符串特殊处理
+        else if(type==0){
+            switch (trimType){
+            case 0:
+                list.append(dbftablefile->record().field(col).value().toString().trimmed());
+                break;
+            case 1:
+                list.append(Utils::qStringTrimLeft(dbftablefile->record().field(col).value().toString()));
+                break;
+            case 2:
+                list.append(Utils::qStringTrimRight(dbftablefile->record().field(col).value().toString()));
+                break;
+            default:
+                list.append(dbftablefile->record().field(col).value().toString());
+            }
+        }
+        else if(type==-1||type==4){
+            list.append(dbftablefile->record().field(col).value().toString().trimmed());
+        }
+        //浮点2，数值5，货币型8
+        else if(type==2||type==5||type==8){
+            int declength=dbf->getFieldList().at(col).getDecLength();
+            list.append(QString::number(dbftablefile->record().field(col).value().toDouble(), 'f', declength).trimmed());
+        }
+        //6整数
+        else if(type==6){
+            list.append(dbftablefile->record().field(col).value().toString().trimmed());
+        }
+        //
+        else if(type==1||type==7){
+            list.append(dbftablefile->record().field(col).value().toString().trimmed());
+        }
+        //bool型3
+        else if(type==3){
+            bool vale=dbftablefile->record().field(col).value().toBool();
+            if(vale){
+                list.append("True");
+            }
+            else{
+                list.append("False");
+            }
+        }
+        //其他类型
+        else{
+            list.append(dbftablefile->record().field(col).value().toString().trimmed());
+        }
+    }
+    //插入删除标记
+    if(adddeletedFlag){
+        if(dbftablefile->record().isDeleted()){
+            list.append("1");
+        }
+        else{
+            list.append("0");
+        }
+    }
+    return list;
+}
+
+QString Utils::getFormatValuesFromdbfTableFile(QDbf::QDbfTable * dbftablefile,DbfFileDefinition * dbf,int row,int col,QHash<int,int> * rowMap,int trimType){
+    int rowintablefile=rowMap->value(row);
+    int colCount=dbf->getFieldCount();
+    dbftablefile->seek(rowintablefile);
+    QString value=NULL;
+    if(col<colCount){
+        int type=dbf->getFieldList().at(col).getFieldType();
+        //NULL值不考虑数据类型直接填充空
+        if(dbftablefile->record().field(col).isNull()){
+            value="";
+        }
+        //字符串特殊处理
+        else if(type==0){
+            switch (trimType){
+            case 0:
+                value=dbftablefile->record().field(col).value().toString().trimmed();
+                break;
+            case 1:
+                value=Utils::qStringTrimLeft(dbftablefile->record().field(col).value().toString());
+                break;
+            case 2:
+                value=Utils::qStringTrimRight(dbftablefile->record().field(col).value().toString());
+                break;
+            default:
+                value=dbftablefile->record().field(col).value().toString();
+            }
+        }
+        else if(type==-1||type==4){
+            value=dbftablefile->record().field(col).value().toString().trimmed();
+        }
+        //浮点2，数值5，货币型8
+        else if(type==2||type==5||type==8){
+            int declength=dbf->getFieldList().at(col).getDecLength();
+            value=QString::number(dbftablefile->record().field(col).value().toDouble(), 'f', declength).trimmed();
+        }
+        else if(type==6){
+            value=dbftablefile->record().field(col).value().toString().trimmed();
+        }
+        //
+        else if(type==1||type==7){
+            value=dbftablefile->record().field(col).value().toString().trimmed();
+        }
+        //bool型3
+        else if(type==3){
+            bool vale=dbftablefile->record().field(col).value().toBool();
+            if(vale){
+                value="True";
+            }
+            else{
+                value="False";
+            }
+        }
+        //其他类型
+        else{
+            value=dbftablefile->record().field(col).value().toString().trimmed();
+        }
+        return value;
+    }
+    return "";
+}
+
+
+QStringList Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row){
     //判断越界
     QStringList rowData;
     if(row>=csvFileContentQByteArrayList->count()){
         return rowData;
     }else{
-        QTextCodec *codec=QTextCodec::codecForName(charset.toLocal8Bit());
+        QTextCodec *codec=QTextCodec::codecForName(csv->getEcoding().toLocal8Bit());
         if(csv->getClearQuotes()&&csv->getSplit().length()==1){
             QRegExp rx("\\"+csv->getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
             rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(rx);
@@ -632,7 +781,6 @@ void Utils::getFileListFromDir(QString dirpath,QStringList *filelist){
  * @return
  */
 QString Utils::clearQuotes(QString stringS){
-
     if(!stringS.isEmpty() && stringS.length()>=2) {
         if(stringS.indexOf("\"")==0) {
             stringS = stringS.mid(1,-1);
@@ -643,4 +791,41 @@ QString Utils::clearQuotes(QString stringS){
         stringS = stringS.replace("\"\"","\"");
     }
     return stringS;
+}
+
+
+void Utils::sleep(unsigned int msec)
+{
+QTime dieTime = QTime::currentTime().addMSecs(msec);
+while( QTime::currentTime() < dieTime )
+QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+}
+
+void Utils::getFileListFromDirSkipOkfile(QString dirpath,QStringList *filelist){
+    QDir dir(dirpath);
+    if (!dir.exists()) {
+        return;
+    }
+    dir.setFilter(QDir::Dirs|QDir::Files|QDir::NoDotAndDotDot);
+    dir.setSorting(QDir::DirsFirst);
+    QFileInfoList list = dir.entryInfoList();
+    if(list.size()< 1 ) {
+        return;
+    }
+    int i=0;
+    do{
+        QFileInfo fileInfo = list.at(i);
+        bool bisDir = fileInfo.isDir();
+        if(bisDir) {
+            QString path=fileInfo.filePath();
+            Utils::getFileListFromDirSkipOkfile(path,filelist);
+        }
+        else{
+            if(!fileInfo.filePath().endsWith(".ok",Qt::CaseInsensitive)){
+                filelist->append(fileInfo.filePath());
+            }
+        }
+        i++;
+    } while(i < list.size());
+    return;
 }

@@ -6,20 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>651</width>
-    <height>300</height>
+    <width>700</width>
+    <height>365</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
-    <width>651</width>
-    <height>300</height>
+    <width>700</width>
+    <height>365</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>862</width>
-    <height>300</height>
+    <width>700</width>
+    <height>365</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -34,150 +40,205 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>651</width>
-     <height>301</height>
+     <width>700</width>
+     <height>375</height>
     </rect>
    </property>
-   <widget class="QComboBox" name="comboBox">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>271</width>
-      <height>22</height>
+      <x>0</x>
+      <y>0</y>
+      <width>331</width>
+      <height>371</height>
      </rect>
     </property>
-    <item>
-     <property name="text">
-      <string>申请类文件</string>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="leftMargin">
+      <number>6</number>
      </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>信息类文件</string>
+     <property name="topMargin">
+      <number>6</number>
      </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>确认类文件</string>
+     <property name="rightMargin">
+      <number>3</number>
      </property>
-    </item>
+     <property name="bottomMargin">
+      <number>11</number>
+     </property>
+     <item>
+      <widget class="QComboBox" name="comboBox">
+       <item>
+        <property name="text">
+         <string>申请类文件</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>信息类文件</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>确认类文件</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBox_2"/>
+     </item>
+     <item>
+      <widget class="QCalendarWidget" name="calendarWidget">
+       <property name="firstDayOfWeek">
+        <enum>Qt::Sunday</enum>
+       </property>
+       <property name="gridVisible">
+        <bool>true</bool>
+       </property>
+       <property name="horizontalHeaderFormat">
+        <enum>QCalendarWidget::ShortDayNames</enum>
+       </property>
+       <property name="verticalHeaderFormat">
+        <enum>QCalendarWidget::NoVerticalHeader</enum>
+       </property>
+       <property name="dateEditAcceptDelay">
+        <number>300</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
-   <widget class="QLineEdit" name="lineEditSendCode">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>373</x>
-      <y>40</y>
-      <width>91</width>
-      <height>20</height>
+      <x>330</x>
+      <y>-2</y>
+      <width>371</width>
+      <height>371</height>
      </rect>
     </property>
-    <property name="toolTip">
-     <string>填写文件交互的TA代码</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="lineEditRecvCode">
-    <property name="geometry">
-     <rect>
-      <x>549</x>
-      <y>40</y>
-      <width>91</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>填写文件交互的销售商代码</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>290</x>
-      <y>41</y>
-      <width>80</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>发送方代码：</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>470</x>
-      <y>41</y>
-      <width>81</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>接收方代码：</string>
-    </property>
-   </widget>
-   <widget class="QCalendarWidget" name="calendarWidget">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>70</y>
-      <width>271</width>
-      <height>221</height>
-     </rect>
-    </property>
-    <property name="firstDayOfWeek">
-     <enum>Qt::Sunday</enum>
-    </property>
-    <property name="gridVisible">
-     <bool>true</bool>
-    </property>
-    <property name="horizontalHeaderFormat">
-     <enum>QCalendarWidget::ShortDayNames</enum>
-    </property>
-    <property name="verticalHeaderFormat">
-     <enum>QCalendarWidget::NoVerticalHeader</enum>
-    </property>
-    <property name="dateEditAcceptDelay">
-     <number>300</number>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton">
-    <property name="geometry">
-     <rect>
-      <x>289</x>
-      <y>9</y>
-      <width>351</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::NoFocus</enum>
-    </property>
-    <property name="text">
-     <string>一键生成</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="comboBox_2">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>40</y>
-      <width>271</width>
-      <height>22</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="logOut">
-    <property name="geometry">
-     <rect>
-      <x>290</x>
-      <y>70</y>
-      <width>351</width>
-      <height>221</height>
-     </rect>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::ClickFocus</enum>
-    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="leftMargin">
+      <number>6</number>
+     </property>
+     <property name="topMargin">
+      <number>6</number>
+     </property>
+     <property name="rightMargin">
+      <number>6</number>
+     </property>
+     <property name="bottomMargin">
+      <number>9</number>
+     </property>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QCheckBox" name="checkBox">
+         <property name="toolTip">
+          <string>生成OK文件，方便通过FDEP发送</string>
+         </property>
+         <property name="text">
+          <string>生成OK</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBox_3">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <item>
+          <property name="text">
+           <string>大写OK</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>小写OK</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>23</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>23</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="text">
+          <string>一键生成</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>发送方代码：</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEditSendCode">
+         <property name="toolTip">
+          <string>填写文件交互的TA代码</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>接收方代码：</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEditRecvCode">
+         <property name="toolTip">
+          <string>填写文件交互的销售商代码</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QTextEdit" name="logOut">
+       <property name="focusPolicy">
+        <enum>Qt::ClickFocus</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
  </widget>

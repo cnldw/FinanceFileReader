@@ -24,10 +24,14 @@
 #include <QLocale>
 #include <QDateTime>
 #include <QApplication>
+#include <QTime>
 #include <QTextCodec>
 #include "src/ofdfiledefinition.h"
 #include "src/csvfiledefinition.h"
 #include "src/fixedfiledefinition.h"
+#include "src/qdbf/qdbftable.h"
+#include "src/qdbf/qdbfrecord.h"
+#include "src/dbffiledefinition.h"
 #include "time.h"
 #ifdef Q_OS_WIN32
 #include "sys/utime.h"
@@ -45,20 +49,26 @@ public:
      static bool isDirExist(QString fullPath);
      static bool isFileExist(QString fullFileName);
      static QString qStringTrimRight(const QString& str);
+     static QString qStringTrimLeft(const QString& str);
      static QString getConfigPath();
      static QString getCompileDate();
      static QString getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
      static QStringList getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row);
      static QString getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col);
-     static QString getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col,QString charset);
-     static QStringList getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row,QString charset);
-     static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset);
-     static QStringList getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row,QString charset);
+     static QString getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col);
+     static QStringList getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row);
+     static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row);
+     static QStringList getFormatRowValuesFromdbfTableFile(QDbf::QDbfTable * dbftablefile,DbfFileDefinition * dbf,int row,QHash<int,int> * rowMap,bool adddeletedFlag=false,int trimType=0);
+     static QString getFormatValuesFromdbfTableFile(QDbf::QDbfTable * dbftablefile,DbfFileDefinition * dbf,int row,int col,QHash<int,int> * rowMap,int trimType=0);
+     static QStringList getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int row);
      static QString CovertInt2ExcelCol(int number);
      static QString CovertDoubleQStringWithThousandSplit(QString doubleString);
      static QString clearQuotes(QString stringS);
      static void UpdateFileTime(QString file,QDateTime lastModifyTime=QDateTime::currentDateTime());
      static void getFileListFromDir(QString dirpath,QStringList *filelist);
+     static void  sleep(unsigned int msec);
+     static void getFileListFromDirSkipOkfile(QString dirpath,QStringList *filelist);
+
 };
 
 #endif // UTILS_H

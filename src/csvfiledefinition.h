@@ -53,6 +53,8 @@ private:
     QString fileIni;
     //是否清除双引号边界符
     bool clearQuotes;
+    //是否对字段trim，有些固定分隔符文件同时也是定长的，需要trim
+    bool trim;
     //字段信息
     QList <CsvFieldDefinition> fieldList;
 
@@ -92,6 +94,8 @@ public:
     void setClearQuotes(bool value);
     bool getFfAuto() const;
     void setFfAuto(bool value);
+    bool getTrim() const;
+    void setTrim(bool value);
 };
 
 #endif // CSVFILEDEFINITION_H

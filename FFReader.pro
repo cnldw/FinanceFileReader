@@ -47,11 +47,20 @@ include(src/2048/2048.pri)
 include(src/libucd/libucd.pri)
 #引入qrcode
 include(src/qrcode/Qrcode.pri)
+#引入qdbf
+include(src/qdbf/qdbf.pri)
+#引入语法高亮库
+include(src/qsourcehighlite/QSourceHighlite.pri)
 SOURCES += \
+    src/dbffielddefinition.cpp \
+    src/dbffileconfig.cpp \
+    src/dbffiledefinition.cpp \
+    src/dialogchoosedbfconfig.cpp \
     src/dialogchooseofdconfig.cpp \
     src/dialogeditheaderfooter.cpp \
     src/dialogforcenumber.cpp \
     src/dialogmagnify.cpp \
+    src/dialogoktools.cpp \
     src/dialogshareqrcode.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
@@ -67,7 +76,6 @@ SOURCES += \
     src/csvfielddefinition.cpp \
     src/csvfiledefinition.cpp \
     src/fieldisnumber.cpp \
-    src/dialogopenfileadv.cpp \
     src/fixedfielddefinition.cpp \
     src/ofdfielddefinition.cpp \
     src/ofdcodeinfo.cpp \
@@ -85,10 +93,15 @@ SOURCES += \
     src/dialogmodifymtime.cpp
 
 HEADERS += \
+    src/dbffielddefinition.h \
+    src/dbffileconfig.h \
+    src/dbffiledefinition.h \
+    src/dialogchoosedbfconfig.h \
     src/dialogchooseofdconfig.h \
     src/dialogeditheaderfooter.h \
     src/dialogforcenumber.h \
     src/dialogmagnify.h \
+    src/dialogoktools.h \
     src/dialogshareqrcode.h \
         src/mainwindow.h \
     src/ucdutils.h \
@@ -104,7 +117,6 @@ HEADERS += \
     src/csvfielddefinition.h \
     src/csvfiledefinition.h \
     src/fieldisnumber.h \
-    src/dialogopenfileadv.h \
     src/fixedfielddefinition.h \
     src/ofdcodeinfo.h \
     src/ofdfielddefinition.h \
@@ -123,10 +135,12 @@ HEADERS += \
     src/dialogmodifymtime.h
 
 FORMS += \
+    src/dialogchoosedbfconfig.ui \
     src/dialogchooseofdconfig.ui \
     src/dialogeditheaderfooter.ui \
     src/dialogforcenumber.ui \
     src/dialogmagnify.ui \
+    src/dialogoktools.ui \
     src/dialogshareqrcode.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
@@ -135,7 +149,6 @@ FORMS += \
     src/dialogaboutauthor.ui \
     src/dialogmergetip.ui \
     src/dialogaboutthis.ui \
-    src/dialogopenfileadv.ui \
     src/dialogchoosefiletype.ui \
     src/dialogpreference.ui \
     src/dialogmytip.ui \
@@ -147,7 +160,6 @@ FORMS += \
     src/dialogmodifymtime.ui
 
 RESOURCES += \
-    res.qrc \
     res.qrc
 
 DISTFILES +=
@@ -156,7 +168,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.6
+VERSION = 1.9.8
 ############以下注意按版本修改###############
 
 # 语言

@@ -24,6 +24,11 @@ DialogMyTip::DialogMyTip(QString tip,QWidget *parent) :
     ui->setupUi(this);
     ui->label->setText(tip);
     ui->label->setWordWrap(true);
+#ifdef Q_OS_MAC
+    //修正macos下按钮怪异的表现形状
+    ui->pushButton->setFixedHeight(30);
+    ui->pushButton_2->setFixedHeight(30);
+#endif
 }
 
 DialogMyTip::~DialogMyTip()

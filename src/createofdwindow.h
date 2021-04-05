@@ -51,6 +51,10 @@ private slots:
     void on_comboBox_currentIndexChanged(int index);
     void on_calendarWidget_selectionChanged();
 
+    void on_checkBox_stateChanged(int arg1);
+
+    void on_comboBox_3_currentIndexChanged(int index);
+
 private:
     bool copyFile(QString srcFile ,QString dstFile, bool coverFileIfExist,bool upDateTime);
     Ui::CreateOFDWindow *ui;
@@ -67,5 +71,9 @@ private:
     QStringList confirmFileList;
     //OFD文件体系编码
     QTextCodec *codecGb18030 = QTextCodec::codecForName("GB18030");
+
+    bool needOK =true;
+
+    int okType=0;
 };
 #endif // CREATEOFDWINDOW_H

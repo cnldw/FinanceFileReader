@@ -1,3 +1,4 @@
 /*.pro.user*
 /tools/bin-Configured/*.csv
 /tools/bin-Configured/*.ini
+*.o

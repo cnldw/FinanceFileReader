@@ -33,6 +33,11 @@ DialogModifyMtime::DialogModifyMtime(QWidget *parent) :
 #ifdef Q_OS_LINUX
     this->setStyleSheet("font-size:13px");
 #endif
+#ifdef Q_OS_MAC
+    //修正macos下按钮怪异的表现形状
+    ui->pushButton->setFixedHeight(30);
+    ui->pushButton_2->setFixedHeight(30);
+#endif
     /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;

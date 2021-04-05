@@ -23,6 +23,10 @@ CreateOFDWindow::CreateOFDWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+#ifdef Q_OS_MAC
+    //修正macos下按钮怪异的表现形状
+    ui->pushButton->setFixedHeight(30);
+#endif
     //初始化显示日期
     QDate date=ui->calendarWidget->selectedDate();
     setWindowTitle(windowTitle+"-[文件日期:"+date.toString("yyyy-MM-dd")+"]");
@@ -191,11 +195,9 @@ void CreateOFDWindow::on_pushButton_clicked()
         QDir sourceDir=QDir(sourcePath);
         QStringList  sourcefiles = sourceDir.entryList(QDir::Files | QDir::NoDotAndDotDot);
         //复制到目标目录的所有文件
-        QString  targetdataandokfiles;
-        //源目录的ok模板文件
-        QStringList sourceokfiles;
-        //复制到目标目录的OK文件
-        QStringList  targetokfiles;
+        QString  targetdataandokfileName;
+        //目标数据文件，为创建OK文件做准备;
+        QStringList targetdatafiles;
         //循环拷贝文件使用的变量
         QString sourceFile;
         QString targetFileName;
@@ -208,15 +210,14 @@ void CreateOFDWindow::on_pushButton_clicked()
                 //拷贝过去的文件名--注意这里基于模板变量替换文件名
                 targetFileName=QString(sourcefiles.at(ff)).replace("sendcode",data.value("sendcode")).replace("recvcode",data.value("recvcode")).replace("transferdate",data.value("transferdate"));
                 targetFile=targetPath+targetFileName;
-                targetdataandokfiles.append("\r\n").append(targetFileName);
-                //ok文件延后拷贝-确保ok文件在数据文件生成后生成
-                if(targetFile.endsWith("ok")||targetFile.endsWith("OK")){
-                    sourceokfiles.append(sourceFile);
-                    targetokfiles.append(targetFileName);
+                //ok文件延后拷贝-确保ok文件在数据文件生成后生成-1.9.7废弃,改为程序自动生成OK
+                if(targetFile.endsWith("ok",Qt::CaseInsensitive)){
                     continue;
                 }
                 //数据文件现在拷贝
                 else{
+                    targetdatafiles.append(targetFile);
+                    targetdataandokfileName.append(targetFileName+"\r\n");
                     //如果拷贝失败则终止
                     if(!copyFile(sourceFile,targetFile,true,true)){
                         ui->logOut->setText("写入如下模板文件失败,生成失败!!!:\r\n"+sourceFile);
@@ -261,23 +262,41 @@ void CreateOFDWindow::on_pushButton_clicked()
                 }
             }
         }
-        //如果ok文件的更新时间早于数据文件，在某些系统环境下会认为数据没更新，所以OK文件在这里拷贝并更新时间戳
-        if(targetokfiles.count()>0){
-            for(int okindex=0;okindex<targetokfiles.count();okindex++){
-                //源模板文件
-                sourceFile=sourceokfiles.at(okindex);
-                //目标写入文件
-                targetFile=targetPath+targetokfiles.at(okindex);
-                //如果拷贝失败则终止
-                if(!copyFile(sourceFile,targetFile,true,true)){
-                    ui->logOut->setText("写入如下模板文件失败,生成失败!!!:\r\n"+sourceFile);
-                    return;
+        if(targetdatafiles.count()>0&&needOK){
+            ui->logOut->setText("等待3秒再生成OK文件,确保OK文件时间戳晚于数据文件,请耐心等待不要关闭窗口!");
+            Utils::sleep(2000);
+            for(int i=0;i<targetdatafiles.count();i++){
+                QString okfile=targetdatafiles.at(i);
+                if(okType==0){
+                    okfile=okfile.append(".OK");
                 }
-                //注意,ok文件我们认为是空文件，不再打开进行文件内的模板变量替换
+                else if (okType==1){
+                    okfile=okfile.append(".ok");
+                }
+                else{
+                    okfile=okfile.append(".OK");
+                }
+                //存在OK
+                if(Utils::isFileExist(okfile)){
+                    QFile file(okfile);
+                    if(!file.remove()){
+                        ui->logOut->setText("删除原OK文件失败!");
+                        continue;
+                    }
+                }
+                QFile fp (okfile);
+                if(fp.open(QIODevice::ReadWrite|QIODevice::Text)){
+                    fp.write("\r\n");
+                    fp.close();
+                    targetdataandokfileName.append(QFileInfo(okfile).fileName()+"\r\n");
+                }
+                else{
+                    ui->logOut->setText("写入OK文件失败:"+okfile);
+                }
             }
         }
         //数据生成完毕
-        ui->logOut->setText("数据已生成在如下路径:\r\n"+targetPath+"\r\n包含如下文件:"+targetdataandokfiles);
+        ui->logOut->setText("数据已生成在如下路径:\r\n"+targetPath+"\r\n包含如下文件:\r\n"+targetdataandokfileName);
     }
     else{
         ui->logOut->setText("创建文件导出目录"+targetPath+"失败,请检查路径权限");
@@ -342,4 +361,21 @@ void CreateOFDWindow::on_calendarWidget_selectionChanged()
     //初始化显示日期
     QDate date=ui->calendarWidget->selectedDate();
     setWindowTitle(windowTitle+"-[文件日期:"+date.toString("yyyy-MM-dd")+"]");
+}
+
+void CreateOFDWindow::on_checkBox_stateChanged(int arg1)
+{
+    if(ui->checkBox->isChecked()){
+        needOK=true;
+        ui->comboBox_3->setEnabled(true);
+    }
+    else{
+        needOK=false;
+        ui->comboBox_3->setEnabled(false);
+    }
+}
+
+void CreateOFDWindow::on_comboBox_3_currentIndexChanged(int index)
+{
+    okType=index;
 }

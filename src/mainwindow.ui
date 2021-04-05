@@ -93,6 +93,9 @@ border-radius:3px;
          <height>20</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>复制文件路径到这里,按下回车即可加载文件!!!</string>
+       </property>
        <property name="readOnly">
         <bool>false</bool>
        </property>
@@ -317,6 +320,128 @@ border-radius:3px;
        </property>
        <property name="text">
         <string>文件检查</string>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frameSql">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>100</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>100</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">.QFrame{
+border-left: 1px solid rgb(198, 198, 198);
+border-right: 1px solid rgb(198, 198, 198);
+border-top: 1px solid rgb(198, 198, 198);
+border-bottom: 1px solid rgb(198, 198, 198);
+border-radius:3px;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <widget class="QPlainTextEdit" name="plainTextEdit">
+       <property name="geometry">
+        <rect>
+         <x>13</x>
+         <y>9</y>
+         <width>930</width>
+         <height>86</height>
+        </rect>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <family>Microsoft YaHei</family>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="framesqltools">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>954</width>
+        <height>37</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>37</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">.QFrame{
+border-left: 1px solid rgb(198, 198, 198);
+border-right: 1px solid rgb(198, 198, 198);
+border-top: 1px solid rgb(198, 198, 198);
+border-bottom: 1px solid rgb(198, 198, 198);
+border-radius:3px;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <widget class="QPushButton" name="pushButtonrunsql">
+       <property name="geometry">
+        <rect>
+         <x>13</x>
+         <y>8</y>
+         <width>75</width>
+         <height>23</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>执行</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>8</y>
+         <width>131</width>
+         <height>23</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>查看和插入字段</string>
        </property>
       </widget>
      </widget>
@@ -711,8 +836,8 @@ border-radius:3px;
      <string>文件</string>
     </property>
     <addaction name="fileOpen"/>
-    <addaction name="actionfileOpenAdv"/>
     <addaction name="actionsss"/>
+    <addaction name="actioncloseFile"/>
     <addaction name="actionSave"/>
     <addaction name="actionSaveAS"/>
     <addaction name="actioncreatenewofdfile"/>
@@ -740,6 +865,7 @@ border-radius:3px;
      <string>视图</string>
     </property>
     <addaction name="viewMode"/>
+    <addaction name="actionautcolwidth"/>
    </widget>
    <widget class="QMenu" name="menuSetting">
     <property name="title">
@@ -762,6 +888,7 @@ border-radius:3px;
     <addaction name="actionfileedit"/>
     <addaction name="actionopeninexcel"/>
     <addaction name="actionmtime"/>
+    <addaction name="actionOKTools"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -772,10 +899,57 @@ border-radius:3px;
     <addaction name="actionedit2"/>
     <addaction name="actioneditheaderfooter"/>
    </widget>
+   <widget class="QMenu" name="menudbftools">
+    <property name="title">
+     <string>DBF工具箱</string>
+    </property>
+    <widget class="QMenu" name="menu_4">
+     <property name="title">
+      <string>数据过滤器</string>
+     </property>
+     <addaction name="actionalldata"/>
+     <addaction name="actionnotdelete"/>
+     <addaction name="actionjustdelete"/>
+    </widget>
+    <widget class="QMenu" name="menu_5">
+     <property name="title">
+      <string>代码页(编码)选择</string>
+     </property>
+     <addaction name="actionGB18030_GB2312"/>
+     <addaction name="actionBig5"/>
+     <addaction name="actionShift_JIS"/>
+     <addaction name="actionIBM437"/>
+     <addaction name="actionIBM850"/>
+     <addaction name="actionIBM866"/>
+     <addaction name="actionWindows1250"/>
+     <addaction name="actionWindows1251"/>
+     <addaction name="actionWindows1252"/>
+    </widget>
+    <widget class="QMenu" name="menuspaceTrim">
+     <property name="title">
+      <string>字符串空格修剪方式</string>
+     </property>
+     <addaction name="actionleftright"/>
+     <addaction name="actionleft"/>
+     <addaction name="actionright"/>
+    </widget>
+    <addaction name="menu_4"/>
+    <addaction name="menuspaceTrim"/>
+    <addaction name="menu_5"/>
+    <addaction name="actionTableStructure"/>
+   </widget>
+   <widget class="QMenu" name="menusqlmode">
+    <property name="title">
+     <string>DB模式</string>
+    </property>
+    <addaction name="actionswitchsqlmode"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
+   <addaction name="menusqlmode"/>
+   <addaction name="menudbftools"/>
    <addaction name="menuwindow"/>
    <addaction name="menu_3"/>
    <addaction name="menuSetting"/>
@@ -860,17 +1034,6 @@ border-radius:3px;
    </property>
    <property name="shortcut">
     <string>Ctrl+G</string>
-   </property>
-  </action>
-  <action name="actionfileOpenAdv">
-   <property name="text">
-    <string>打开文件(手工选择配置)</string>
-   </property>
-   <property name="toolTip">
-    <string>高级打开文件(手工选择配置)</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+O</string>
    </property>
   </action>
   <action name="actionpreference">
@@ -972,6 +1135,121 @@ border-radius:3px;
   <action name="actioneditheaderfooter">
    <property name="text">
     <string>编辑文件头文件尾</string>
+   </property>
+  </action>
+  <action name="actionalldata">
+   <property name="text">
+    <string>显示所有数据</string>
+   </property>
+  </action>
+  <action name="actionnotdelete">
+   <property name="text">
+    <string>仅显示未删除的数据</string>
+   </property>
+  </action>
+  <action name="actionjustdelete">
+   <property name="text">
+    <string>仅显示已删除的数据</string>
+   </property>
+  </action>
+  <action name="actionGB18030_GB2312">
+   <property name="text">
+    <string>GB18030/GB2312/GBK</string>
+   </property>
+  </action>
+  <action name="actionIBM437">
+   <property name="text">
+    <string>IBM437</string>
+   </property>
+  </action>
+  <action name="actionIBM850">
+   <property name="text">
+    <string>IBM850</string>
+   </property>
+  </action>
+  <action name="actionIBM866">
+   <property name="text">
+    <string>IBM866</string>
+   </property>
+  </action>
+  <action name="actionWindows1250">
+   <property name="text">
+    <string>Windows1250</string>
+   </property>
+  </action>
+  <action name="actionWindows1251">
+   <property name="text">
+    <string>Windows1251</string>
+   </property>
+  </action>
+  <action name="actionWindows1252">
+   <property name="text">
+    <string>Windows1252</string>
+   </property>
+  </action>
+  <action name="actionBig5">
+   <property name="text">
+    <string>Big5</string>
+   </property>
+  </action>
+  <action name="actionShift_JIS">
+   <property name="text">
+    <string>Shift-JIS</string>
+   </property>
+  </action>
+  <action name="actionTableStructure">
+   <property name="text">
+    <string>表结构信息</string>
+   </property>
+  </action>
+  <action name="actioncloseFile">
+   <property name="text">
+    <string>关闭当前打开的文件</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+C</string>
+   </property>
+  </action>
+  <action name="actionautcolwidth">
+   <property name="text">
+    <string>自适应列宽</string>
+   </property>
+   <property name="toolTip">
+    <string>自适应列宽</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+W</string>
+   </property>
+  </action>
+  <action name="actionleftright">
+   <property name="text">
+    <string>全部修剪(默认)</string>
+   </property>
+  </action>
+  <action name="actionleft">
+   <property name="text">
+    <string>左边修剪</string>
+   </property>
+  </action>
+  <action name="actionright">
+   <property name="text">
+    <string>右边修剪</string>
+   </property>
+  </action>
+  <action name="actionswitchsqlmode">
+   <property name="text">
+    <string>进入DB模式</string>
+   </property>
+   <property name="toolTip">
+    <string>进入DB模式</string>
+   </property>
+  </action>
+  <action name="actionOKTools">
+   <property name="text">
+    <string>OK文件工具-新建-删除-刷新OK文件</string>
+   </property>
+   <property name="toolTip">
+    <string>一键创建/清除OK文件</string>
    </property>
   </action>
  </widget>

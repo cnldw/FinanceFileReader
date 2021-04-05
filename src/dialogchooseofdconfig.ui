@@ -6,19 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
+    <width>800</width>
     <height>320</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="minimumSize">
    <size>
-    <width>600</width>
+    <width>800</width>
     <height>320</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>600</width>
+    <width>800</width>
     <height>320</height>
    </size>
   </property>
@@ -30,7 +36,7 @@
     <rect>
      <x>4</x>
      <y>3</y>
-     <width>591</width>
+     <width>791</width>
      <height>271</height>
     </rect>
    </property>
@@ -38,7 +44,7 @@
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
-     <x>454</x>
+     <x>654</x>
      <y>284</y>
      <width>141</width>
      <height>23</height>

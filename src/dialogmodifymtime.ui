@@ -10,14 +10,20 @@
     <height>480</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="minimumSize">
    <size>
-    <width>320</width>
-    <height>200</height>
+    <width>800</width>
+    <height>480</height>
    </size>
   </property>
   <property name="windowTitle">
-   <string>文件时间戳【修改时间】修改器-请拖放文件/文件夹</string>
+   <string>文件时间戳【修改时间】修改器-请拖放文件/文件夹到窗口</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../res.qrc">
@@ -54,6 +60,36 @@
      <property name="horizontalSpacing">
       <number>6</number>
      </property>
+     <property name="verticalSpacing">
+      <number>3</number>
+     </property>
+     <item row="3" column="0">
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
+       <property name="text">
+        <string>执行时间戳更新</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QTextBrowser" name="textBrowser">
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QPushButton" name="pushButton">
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
+       <property name="text">
+        <string>清空文件列表</string>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="0">
       <widget class="QDateTimeEdit" name="dateTimeEdit">
        <property name="dateTime">
@@ -142,33 +178,6 @@
          <string>比原来的时间早1天</string>
         </property>
        </item>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QPushButton" name="pushButton_2">
-       <property name="focusPolicy">
-        <enum>Qt::NoFocus</enum>
-       </property>
-       <property name="text">
-        <string>执行时间戳更新</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QTextBrowser" name="textBrowser">
-       <property name="focusPolicy">
-        <enum>Qt::NoFocus</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QPushButton" name="pushButton">
-       <property name="focusPolicy">
-        <enum>Qt::NoFocus</enum>
-       </property>
-       <property name="text">
-        <string>清空文件列表</string>
-       </property>
       </widget>
      </item>
     </layout>
