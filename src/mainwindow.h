@@ -65,8 +65,8 @@
 #include "src/dialogmytip.h"
 #include "src/dictionary.h"
 #include "src/ofdcodeinfo.h"
-#include "src/xlsx/xlsxdocument.h"
-#include "src/xlsx/xlsxcellrange.h"
+#include "src/QXlsx/header/xlsxdocument.h"
+#include "src/QXlsx/header/xlsxcellrange.h"
 #include "src/dialogmodifycell.h"
 #include "src/dialogaboutauthor.h"
 #include "src/dialogaboutthis.h"
@@ -97,6 +97,7 @@
 #include "src/dbffileconfig.h"
 #include "src/qsourcehighlite/qsourcehighliter.h"
 #include "src/dialogoktools.h"
+#include "dialogshowimportexcelerror.h"
 
 /**
  * @brief The dbfMatchInfo struct 存储匹配到的DBF配置的结构体
@@ -177,6 +178,8 @@ private slots:
 
     void copyMessage();
 
+    int importFromExcel();
+
     void gotoFirstNotNumber();
 
     void showOFDFiledAnalysis();
@@ -184,6 +187,8 @@ private slots:
     void showModifyOFDCell();
 
     void save2XlsxFinished();
+
+    void importFromXlsxFinished();
 
     void loadFileOnWindowisOpenOrDragEnter();
 
@@ -303,6 +308,10 @@ private slots:
 
     void on_actionOKTools_triggered();
 
+    void on_actionimportfromexcel_triggered();
+
+    void update_import_excel_status();
+
 private:
     Ui::MainWindow *ui;
     //应用程序名字
@@ -383,6 +392,15 @@ private:
     QHash<QString,Dictionary> commonDictionary;
     //监控xlsx文件导出是否完成
     QFutureWatcher<int>* watcherXlsxSaveStatus_;
+    //导入Excel分析进度
+    QFutureWatcher<int>* watcherXlsxImportStatus_;
+    QString fromExcelImportFilePath="";
+    //导入excel过程中遇到的致命错误
+    QStringList importExcelErrorDetail;
+    //导入excel行数
+    int importExcelRow=0;
+    //从Exccel中导入的数据记录
+    QList<QByteArray> ofdFileContentQByteArrayListFromExcel;
     //创建成员xlsx变量//xlsx文件数据存放到堆内存,注意使用完毕释放
     QXlsx::Document *xlsx=new QXlsx::Document();
     //xlsx文件保存文件名
@@ -519,7 +537,7 @@ private:
     void clear_Table_Info();
     void clear_Table_Contents();
     void clear_Display_Info();
-    void clear_oldData( bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
+    void clear_OldData( bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
     void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
     void initStatusBar();
     void open_file_Dialog();

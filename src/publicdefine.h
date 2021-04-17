@@ -17,7 +17,7 @@
 #define PUBLICDEFINE_H
 #include <QString>
 
-#define VERSION_V "V1.9.8"
+#define VERSION_V "V1.9.10"
 #define AUTHOR_PHONE "MTUyMzg4NzIxMDE="
 #define AUTHOR_NAME "NzkzNTU0MjYyQHFxLmNvbSjliJjlvrfkvY0p"
 #define AUTHOR_EMAIL "NzkzNTU0MjYyQHFxLmNvbQ=="

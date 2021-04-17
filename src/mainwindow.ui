@@ -897,6 +897,7 @@ border-radius:3px;
     <addaction name="actioncopy"/>
     <addaction name="actionedit"/>
     <addaction name="actionedit2"/>
+    <addaction name="actionimportfromexcel"/>
     <addaction name="actioneditheaderfooter"/>
    </widget>
    <widget class="QMenu" name="menudbftools">
@@ -1250,6 +1251,14 @@ border-radius:3px;
    </property>
    <property name="toolTip">
     <string>一键创建/清除OK文件</string>
+   </property>
+  </action>
+  <action name="actionimportfromexcel">
+   <property name="text">
+    <string>从Excel导入数据(仅支持OFD文件)</string>
+   </property>
+   <property name="toolTip">
+    <string>从Excel导入数据(仅支持OFD文件)</string>
    </property>
   </action>
  </widget>

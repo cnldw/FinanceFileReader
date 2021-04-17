@@ -149,6 +149,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("在程序主窗口或者查看行详细信息界面,使用Ctrl+Alt+R(command+option+R)可以进行快速截图保存...");
     tips.append("固定分隔符文件可以在任意单元格右键对此列手工设置数据格式,调整为数值或者自定义小数长度哟,方便进行数值统计...");
     tips.append("在设置-首选项里设置默认精简视图,即可默认获得最大化的数据展示空间...");
+    tips.append("本程序支持解析证券各类DBF文件,直接解析或者配置解析均可,使用配置获得更好的解析体验...");
+    tips.append("需要编辑手工创造OFD数据文件？尝试新建文件后导出到Excel编辑，编辑后可以立即导入本程序生成OFD数据文件...");
 #ifdef Q_OS_WIN32
     tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
     tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
@@ -279,6 +281,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     //关联后台线程导出xlsx和前台线程接受结果的曹函数
     watcherXlsxSaveStatus_ = new QFutureWatcher<int>;
     connect(watcherXlsxSaveStatus_, &QFutureWatcher<int>::finished,this, &MainWindow::save2XlsxFinished);
+    watcherXlsxImportStatus_ = new QFutureWatcher<int>;
+    connect(watcherXlsxImportStatus_, &QFutureWatcher<int>::finished,this, &MainWindow::importFromXlsxFinished);
 }
 
 /**
@@ -358,6 +362,8 @@ MainWindow::~MainWindow()
     loadFiletimer=nullptr;
     delete watcherXlsxSaveStatus_;
     watcherXlsxSaveStatus_=nullptr;
+    delete watcherXlsxImportStatus_;
+    watcherXlsxImportStatus_=nullptr;
 }
 
 /**
@@ -472,7 +478,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     fileChanged=false;
     this->setWindowTitle(appName);
     //首先清除原来的显示信息
-    clear_oldData();
+    clear_OldData();
     clear_Display_Info();
     clear_Table_Info();
     //升起窗口
@@ -622,57 +628,7 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
 }
 
 
-/**
- * @brief MainWindow::clear_oldData重新加载数据时，清除旧数据将会加载到内存的数据全部清除-重新加载文件前请务必调用此方法
- */
-void MainWindow::clear_oldData( bool keepdbfDisplayType, bool keepdbfTrimType){
-    //不同数据类型插入点
-    ofdIndexFileHeaderMap.clear();
-    indexFileDataList.clear();
-    ofdFileHeaderQStringList.clear();
-    ofdFileContentQByteArrayList.clear();
-    csvFileHeaderQStringList.clear();
-    csvFileContentQByteArrayList.clear();
-    fixedFileHeaderQStringList.clear();
-    fixedContenQByteArrayList.clear();
-    fixedFooterQStringList.clear();
-    if(dbftablefile.isOpen()){
-        dbftablefile.close();
-    }
-    if(!keepdbfDisplayType){
-        dbfDisplayType=0;
-    }
-    if(!keepdbfTrimType){
-        dbfTrimType=0;
-    }
-    //默认隐藏dbf工具箱
-    ui->menudbftools->menuAction()->setVisible(false);
-    //清理行映射关系
-    dbfRowMap.clear();
-    rowHasloaded.clear();
-    compareData.clear();
-    columnWidth.clear();
-    CsvFieldIsNumberOrNot.clear();
-    //记录当前所在行
-    tableRowCurrent=0;
-    //当前所在列
-    tableColCurrent=0;
-    //更新列跳转搜索开始列
-    tableColSearch=0;
-    firstNotNumberLine=0;
-    ///////////////分页组件重置/////////////////////
-    //当前页号和总页数
-    currentPage=1;
-    pageCount=1;
-    //隐藏分页组件
-    ui->framePage->setVisible(false);
-    //恢复按钮可点击性
-    ui->pushButtonPageFirst->setEnabled(true);
-    ui->pushButtonPagePrevious->setEnabled(true);
-    ui->pushButtonPageNext->setEnabled(true);
-    ui->pushButtonPageLast->setEnabled(true);
-    /////////////////////////////////////////////
-}
+
 
 /**
  * @brief MainWindow::load_Setting 程序设置加载方法-读取程序配置文件，如果失败则创建一个默认的配置文件
@@ -1695,7 +1651,6 @@ void MainWindow::load_DBFDefinition(){
                     QStringList names=line.split("|");
                     if(names.count()>0){
                         for(int k=0;k<names.count();k++){
-                            qDebug()<<names.at(k);
                             QStringList nameanddescribe=names.at(k).split(":");
                             if(nameanddescribe.count()==2){
                                 FileNameAndDescribe a;
@@ -1792,7 +1747,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
     //恢复文件修改标志
     fileChanged=false;
     //首先清除原来的显示信息
-    clear_oldData(keepdbfDisplayType,keepdbfTrimType);
+    clear_OldData(keepdbfDisplayType,keepdbfTrimType);
     clear_Display_Info();
     clear_Table_Info();
     //获取完整的文件名
@@ -4749,31 +4704,24 @@ void MainWindow::display_DBFTable(){
 }
 
 /**
- * @brief MainWindow::clear_Table_Info 清空表格内容--包含行列信息
+ * @brief MainWindow::clear_Table_Info 清空表格内容--包含包含数据信息等
  */
 void MainWindow::clear_Table_Info(){
     ptr_table->clearContents();
     ptr_table->setRowCount(0);
     ptr_table->setColumnCount(0);
+    ptr_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
 }
 
 /**
- * @brief MainWindow::clear_Table_Contents清空表格信息-仅内容
+ * @brief MainWindow::clear_Table_Contents清空表格信息-仅清理内容，用于当前文件重新加载内容
  */
 void MainWindow::clear_Table_Contents(){
     ptr_table->clearContents();
 }
 
 /**
- * @brief MainWindow::statusBar_disPlayMessage 状态栏显示消息的函数
- * @param text
- */
-void MainWindow::statusBar_disPlayMessage(QString text){
-    statusLabel_ptr_showMessage->setText(text);
-}
-
-/**
- * @brief MainWindow::clear_Display_Info清理文件信息栏的函数
+ * @brief MainWindow::clear_Display_Info清理文件信息栏的函数，用于清理工具栏的所有框框
  */
 void MainWindow::clear_Display_Info(){
     ui->lineEditSendCode->setText(nullptr);
@@ -4788,6 +4736,68 @@ void MainWindow::clear_Display_Info(){
     ui->lineEditUseIni->setToolTip(nullptr);
     statusBar_clear_statusBar();
 }
+
+/**
+ * @brief MainWindow::clear_OldData清除旧数据，将加载到内存的数据全部清除-重新加载文件前请务必调用此方法
+ */
+void MainWindow::clear_OldData( bool keepdbfDisplayType, bool keepdbfTrimType){
+    //不同数据类型插入点
+    ofdIndexFileHeaderMap.clear();
+    indexFileDataList.clear();
+    ofdFileHeaderQStringList.clear();
+    ofdFileContentQByteArrayList.clear();
+    ofdFileContentQByteArrayListFromExcel.clear();
+    csvFileHeaderQStringList.clear();
+    csvFileContentQByteArrayList.clear();
+    fixedFileHeaderQStringList.clear();
+    fixedContenQByteArrayList.clear();
+    fixedFooterQStringList.clear();
+    if(dbftablefile.isOpen()){
+        dbftablefile.close();
+    }
+    if(!keepdbfDisplayType){
+        dbfDisplayType=0;
+    }
+    if(!keepdbfTrimType){
+        dbfTrimType=0;
+    }
+    //默认隐藏dbf工具箱
+    ui->menudbftools->menuAction()->setVisible(false);
+    //清理行映射关系
+    dbfRowMap.clear();
+    rowHasloaded.clear();
+    compareData.clear();
+    columnWidth.clear();
+    CsvFieldIsNumberOrNot.clear();
+    //记录当前所在行
+    tableRowCurrent=0;
+    //当前所在列
+    tableColCurrent=0;
+    //更新列跳转搜索开始列
+    tableColSearch=0;
+    firstNotNumberLine=0;
+    ///////////////分页组件重置/////////////////////
+    //当前页号和总页数
+    currentPage=1;
+    pageCount=1;
+    //隐藏分页组件
+    ui->framePage->setVisible(false);
+    //恢复按钮可点击性
+    ui->pushButtonPageFirst->setEnabled(true);
+    ui->pushButtonPagePrevious->setEnabled(true);
+    ui->pushButtonPageNext->setEnabled(true);
+    ui->pushButtonPageLast->setEnabled(true);
+    /////////////////////////////////////////////
+}
+
+/**
+ * @brief MainWindow::statusBar_disPlayMessage 状态栏显示消息的函数
+ * @param text
+ */
+void MainWindow::statusBar_disPlayMessage(QString text){
+    statusLabel_ptr_showMessage->setText(text);
+}
+
 
 /**
  * @brief MainWindow::on_fileOpen_triggered点击打开文件按钮的槽函数
@@ -5458,7 +5468,7 @@ void MainWindow::addOFDRowData(int location){
         //使用更为安全的方式新增空记录
         int Length=ofd.getRowLength();
         for(int charIndex=0;charIndex<Length;charIndex++){
-            newLine.append(QChar(' '));
+            newLine.append(QChar(' ').toLatin1());
         }
         ofdFileContentQByteArrayList.insert(insertIndexInContent,qCompress(newLine,dataCompressLevel));
         //更新OFD记录数标记--在文件头的最后一行
@@ -5663,7 +5673,7 @@ void MainWindow::showRowDetails(){
                 //字段值
                 colitem.append(colvalue);
                 //字典翻译
-                colitem.append(ofdDictionary.getDictionary(ofd.getDictionary()+"_"+ofd.getFieldList().at(i).getFieldName().toUpper(),colvalue));
+                colitem.append(ofdDictionary.getDictionary(ofd.getDictionary()+"_"+ofd.getFieldList().at(i).getFieldName(),colvalue));
             }
             //tips
             colitem.append(ptr_table->horizontalHeaderItem(i)->toolTip());
@@ -6283,10 +6293,10 @@ void MainWindow::showModifyOFDCellBatch(){
             }
             //数值型
             else if(fieldType=="N"){
-                //全空数据自动补充0
+                //全空数据自动补充空格
                 if(valueNew.isEmpty()){
                     for(int i=0;i<fieldLength;i++){
-                        valueNewArray.append(codecOFD->fromUnicode(QString("0")).at(0));
+                        valueNewArray.append(codecOFD->fromUnicode(QString(" ")).at(0));
                     }
                 }
                 //仅包含整数部分
@@ -8879,6 +8889,7 @@ void MainWindow::save2XlsxFinished(){
     }
 }
 
+
 /**
  * @brief MainWindow::on_pushButtonRowJump_clicked 行跳转
  */
@@ -10754,7 +10765,7 @@ void MainWindow::on_actionopeninexcel_triggered()
         return;
     }
     //弹窗提示
-    DialogMyTip dialog2("确定导出当前文件为xlsx并在Excel中打开么?\r\n使用此功能将在文件原始目录生成一个同名xlsx文件\r\n在Excel中你可以进行更为细致的数据统计分析",this);
+    DialogMyTip dialog2("确定导出当前文件为xlsx并在Excel中打开么?\r\n使用此功能将在文件原始目录生成一个同名xlsx文件\r\n在Excel中你可以进行更为细致的数据统计分析或者编辑文件后再导入本工具",this);
     dialog2.setWindowTitle("提示！");
     dialog2.setModal(true);
     dialog2.exec();
@@ -10848,16 +10859,16 @@ void MainWindow::on_actiontipslist_triggered()
     currentOpenFilePath="";
     ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
     fileChanged=false;
-    clear_oldData();
+    clear_OldData();
     clear_Display_Info();
     clear_Table_Info();
-    int colCount=1;
     int rowCount=tips.count();
-    ptr_table->setColumnCount(colCount);
+    ptr_table->setColumnCount(1);
     ptr_table->setRowCount(rowCount);
     //设置表格列标题
     QStringList title;
     title.append("提示内容");
+    ptr_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ptr_table->setHorizontalHeaderLabels(title);
     //设置表格的选择方式
     ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
@@ -11382,7 +11393,7 @@ void MainWindow::on_actioncloseFile_triggered()
     currentOpenFilePath="";
     ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
     fileChanged=false;
-    clear_oldData();
+    clear_OldData();
     clear_Display_Info();
     clear_Table_Info();
     setWindowTitle(appName);
@@ -11486,4 +11497,413 @@ void MainWindow::on_actionOKTools_triggered()
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
+}
+
+void MainWindow::on_actionimportfromexcel_triggered()
+{
+    if(isUpdateData){
+        statusBar_disPlayMessage("正在加载数据,请稍后再使用此功能...");
+        return;
+    }
+    //检测阻断的任务
+    if(dataBlocked){
+        statusBar_disPlayMessage(dataBlockedMessage);
+        return;
+    }
+    if(currentOpenFileType==1){
+        DialogMyTip dialog2("请确认是否从Excel导入数据到当前打开的OFD文件，此功能将会覆盖当前文件的数据,请注意备份，导入的Excel第一行的标题必须和本文件一致，建议使用本程序导出xlsx文件编辑后再导入！\r\n数值型数据将会按照字段小数长度截取,建议在Excel中按数值存储精确数据,以免造成数据错误",this);
+        dialog2.setWindowTitle("警告-从xlsx文件导入数据！");
+        dialog2.setModal(true);
+        dialog2.exec();
+        if(dialog2.getBoolFlag()){
+            QString openpath=QFileInfo(currentOpenFilePath).absoluteFilePath();
+            if(!currentOpenFilePath.isEmpty()){
+                if(currentOpenFilePath.contains("/",Qt::CaseSensitive)){
+                    openpath=currentOpenFilePath.left(currentOpenFilePath.lastIndexOf("/")+1);
+                }
+            }
+            fromExcelImportFilePath = QFileDialog::getOpenFileName(this, tr("打开"),openpath , "Excel文件(*.xlsx)");
+            if(fromExcelImportFilePath.length() != 0) {
+                //导入文件比较耗时，放到新的线程
+                statusBar_disPlayMessage("正在分析校验Excel文件，请耐心等待...");
+                auto future = QtConcurrent::run(this, &MainWindow::importFromExcel);
+                watcherXlsxImportStatus_->setFuture(future);
+            } else {
+                //放弃了读取文件
+                return;
+            }
+        }
+        else{
+            return;
+        }
+    }
+    else{
+        statusBar_disPlayMessage("仅支持OFD数据文件从Excel导入数据...");
+    }
+}
+
+/**
+ * @brief MainWindow::importFromExcel 从Excel导入文件到OFD的主体函数
+ * @return
+ */
+
+int MainWindow::importFromExcel(){
+    dataBlocked=true;
+    importExcelErrorDetail.clear();
+    ofdFileContentQByteArrayListFromExcel.clear();
+    dataBlockedMessage="正在装载Excel文件,请稍候...";
+    if (Utils::isFileExist(fromExcelImportFilePath)){
+        QXlsx::Document xlsxread(fromExcelImportFilePath);
+        int colCount=ofd.getFieldCount();
+        if(xlsxread.load()){
+            //读取第一行标题
+            for(int col=1;col<=colCount;col++){
+                if(xlsxread.read(1,col).toString()!=ofd.getFieldList().at(col-1).getFieldDescribe()){
+                    importExcelErrorDetail.append("选择的文件第"+Utils::CovertInt2ExcelCol(col)+"列不是["+ofd.getFieldList().at(col-1).getFieldDescribe()+"],请确认你导入的文件第一行标题和当前打开的文件列名一致,你可以使用数据导出导出一份Excel文件后编辑导入！");
+                    return 1;
+                }
+            }
+            //开始读取数据
+            importExcelRow=0;
+            int row=2;
+            //如果某一行数据都是空，则结束导入
+            bool allColIsEmpty=true;
+            while (true){
+                QStringList rowdata;
+                allColIsEmpty=true;
+                //遍历列
+                for(int col=1;col<=colCount;col++){
+                    //数据类型
+                    QString filedType=this->ofd.getFieldList().at(col-1).getFieldType();
+                    QString fieldDesc=this->ofd.getFieldList().at(col-1).getFieldDescribe();
+                    int filedLength=this->ofd.getFieldList().at(col-1).getLength();
+                    int filedDecLength=this->ofd.getFieldList().at(col-1).getDecLength();
+                    //提取数据
+                    QVariant colvalQVariant=xlsxread.read(row,col);
+                    QString colval="";
+                    //数值///////////////
+                    if(colvalQVariant.type() == QVariant::Double){
+                        //先预留截取10位小数-不要千位分隔符
+                        colval=QString::number(colvalQVariant.toDouble(),'f',10).replace(",","");
+                    }
+                    else if(colvalQVariant.type() == QVariant::Int){
+                        colval=QString::number(colvalQVariant.toInt(),'f',0).replace(",","");
+                    }
+                    else if(colvalQVariant.type() == QVariant::UInt){
+                        colval=QString::number(colvalQVariant.toUInt(),'f',0).replace(",","");
+                    }
+                    else if(colvalQVariant.type() == QVariant::LongLong){
+                        colval=QString::number(colvalQVariant.toLongLong(),'f',0).replace(",","");
+                    }
+                    else if(colvalQVariant.type() == QVariant::ULongLong){
+                        colval=QString::number(colvalQVariant.toULongLong(),'f',0).replace(",","");
+                    }
+                    //////////////////
+                    //非数值
+                    else{
+                        //但是本列是数值
+                        if(filedType=="N"){
+                            bool ok=false;
+                            colvalQVariant.toDouble(&ok);
+                            if(ok){
+                                colval=QString::number(colvalQVariant.toDouble(),'f',10).replace(",","");
+                            }
+                            else{
+                                colval=colvalQVariant.toString();
+                            }
+                        }else{
+                            colval=colvalQVariant.toString();
+                        }
+                    }
+                    //只要有一列非空就非空
+                    if(!colval.isEmpty()){
+                        allColIsEmpty=false;
+                    }
+                    //数据校验
+                    int textLength=codecOFD->fromUnicode(colval).length();
+                    //字符类和文本类的只需要判断长度
+                    if(filedType=="C"||filedType=="TEXT"){
+                        //长度校验
+                        if(textLength>filedLength){
+                            importExcelErrorDetail.append(QString("第[%1]行,字段[%2]长度不应当大于[%3]").arg(row).arg(fieldDesc).arg(filedLength));
+                        }
+                    }
+                    //数字字符型
+                    else if(filedType=="A"){
+                        //长度校验
+                        if(textLength>filedLength){
+                            importExcelErrorDetail.append(QString("第[%1]行,字段[%2]长度不应当大于[%3]").arg(row).arg(fieldDesc).arg(filedLength));
+                        }
+                    }
+                    //数字型
+                    else if(filedType=="N"){
+                        if(!colval.isEmpty()){
+                            bool ok=false;
+                            colval.toDouble(&ok);
+                            //如果无法转化为Double直接认为不合规//兼容负数
+                            if(!ok){
+                                importExcelErrorDetail.append(QString("第[%1]行,字段[%2]应当是一个数值或者为空,但是现在看起来并不是").arg(row).arg(fieldDesc));
+                            }
+                            else{
+                                //无小数部分
+                                if(!colval.contains("."))
+                                {
+                                    if(textLength>(filedLength-filedDecLength)){
+                                        importExcelErrorDetail.append(QString("第[%1]行,字段[%2]整数部分长度不能超过[%3]").arg(row).arg(fieldDesc).arg(filedLength-filedDecLength));
+                                    }
+                                }
+                                //如果包含小数点
+                                else{
+                                    //拆分出来整数和小数
+                                    int index=colval.indexOf(".");
+                                    //整数部分
+                                    QString intS=colval.mid(0,index);
+                                    //整数部分有问题
+                                    if(intS.length()>(filedLength-filedDecLength)){
+                                        importExcelErrorDetail.append(QString("第[%1]行,字段[%2]的整数部分长度不能超过[%3]").arg(row).arg(fieldDesc).arg(filedLength-filedDecLength));
+                                    }
+                                    //整数部分没问题开始检查小数部分
+                                    else {
+                                        //小数部分
+                                        QString intD=colval.mid(index+1,-1);
+                                        //小数部分超长则直接截取
+                                        if(intD.length()>filedDecLength){
+                                            colval=colval.mid(0,index+filedDecLength+1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //其他未知类型,仅校验长度
+                    else{
+                        //长度校验
+                        if(textLength>filedLength){
+                            importExcelErrorDetail.append(QString("第[%1]行,字段[%2]的长度不应当大于[%3]").arg(row).arg(fieldDesc).arg(filedLength));
+                        }
+                    }
+                    //插入数据
+                    rowdata.append(colval);
+                }
+                row++;
+                importExcelRow++;
+                //全空就代表结束了，不再往下读取
+                if(allColIsEmpty){
+                    break;
+                }
+                //没错误的情况下插入数据，只要有一条错误就不插入
+                else if (importExcelErrorDetail.count()==0){
+                    QByteArray byteArrayRow;
+                    int length=ofd.getRowLength();
+                    //先做一个空行
+                    for(int charIndex=0;charIndex<length;charIndex++){
+                        byteArrayRow.append(QChar(' ').toLatin1());
+                    }
+                    //开始填充更新数据，按列更新
+                    if(rowdata.count()>0){
+                        //列循环/////////////////////////
+                        for(int editCol=0;editCol<rowdata.count()&&editCol<colCount;editCol++){
+                            //字段类型
+                            QString fieldType=ofd.getFieldList().at(editCol).getFieldType();
+                            //字段长度
+                            int fieldLength=ofd.getFieldList().at(editCol).getLength();
+                            //字段小数长度
+                            int fieldDecLength=ofd.getFieldList().at(editCol).getDecLength();
+                            //导入的值
+                            QString valueNew=rowdata.at(editCol);
+                            //要更新的范围
+                            int updateBegin=ofd.getFieldList().at(editCol).getRowBeginIndex();
+                            int updateEnd=updateBegin+fieldLength;
+                            //新的单元格值的字节数组
+                            QByteArray valueNewArray=codecOFD->fromUnicode(valueNew);
+                            //判断数据类型处理
+                            //数值字符型,字符型,长文本型对于长度不够的情况直接补充空格即可
+                            if(fieldType=="C"||fieldType=="TEXT"||fieldType=="A"){
+                                int index=0;
+                                for(int i=updateBegin;i<updateEnd;i++){
+                                    if(index<valueNewArray.length()){
+                                        byteArrayRow[i]=valueNewArray[index];
+                                        index++;
+                                    }
+                                    //超过填写的参数的部分使用空格补充
+                                    else{
+                                        byteArrayRow[i]=' ';
+                                    }
+                                }
+                            }
+                            //数值型
+                            else if(fieldType=="N"){
+                                //空数据自动补充为空格，0自动补充为全0，不再强制将空补充为0
+                                if(valueNew.isEmpty()){
+                                    for(int i=updateBegin;i<updateEnd;i++){
+                                        byteArrayRow[i]=codecOFD->fromUnicode(QString(" ")).at(0);
+                                    }
+                                }
+                                //仅包含整数部分
+                                else if(!valueNew.contains("."))
+                                {
+                                    //合成整数和小数部分
+                                    int zLength=fieldLength-fieldDecLength;
+                                    //整数部分不够前补0,缺少多少补多少
+                                    QString intS=valueNew;
+                                    if(intS.length()<zLength){
+                                        int zeroAdd=zLength-intS.length();
+                                        for(int zz=0;zz<zeroAdd;zz++){
+                                            intS.insert(0,'0');
+                                        }
+                                    }
+                                    //小数部分直接全部补0
+                                    QString intD="";
+                                    if(intD.length()<fieldDecLength){
+                                        int zeroAdd=fieldDecLength-intD.length();
+                                        for(int zz=0;zz<zeroAdd;zz++){
+                                            intD.append('0');
+                                        }
+                                    }
+                                    //整数和小数补充缺少的0结束后开始填充数据
+                                    QString number=intS+intD;
+                                    int index=0;
+                                    for(int i=updateBegin;i<updateEnd;i++){
+                                        byteArrayRow[i]=codecOFD->fromUnicode(number).at(index);
+                                        index++;
+                                    }
+                                }
+                                //整数部分和小数部分都有值
+                                else{
+                                    //分别获取整数和小数
+                                    int zLength=fieldLength-fieldDecLength;
+                                    QString intS=valueNew.mid(0,valueNew.indexOf("."));
+                                    if(intS.length()<zLength){
+                                        int zeroAdd=zLength-intS.length();
+                                        for(int zz=0;zz<zeroAdd;zz++){
+                                            intS.insert(0,'0');
+                                        }
+                                    }
+                                    //小数部分后补0
+                                    QString intD=valueNew.mid(valueNew.indexOf(".")+1,-1);
+                                    if(intD.length()<fieldDecLength){
+                                        int zeroAdd=fieldDecLength-intD.length();
+                                        for(int zz=0;zz<zeroAdd;zz++){
+                                            intD.append('0');
+                                        }
+                                    }
+                                    //整数和小数补充缺少的0结束后开始填充数据
+                                    QString number=intS+intD;
+                                    int index=0;
+                                    for(int i=updateBegin;i<updateEnd;i++){
+                                        byteArrayRow[i]=codecOFD->fromUnicode(number).at(index);
+                                        index++;
+                                    }
+                                }
+                            }
+                            //其他未知类型
+                            else{
+                                int index=0;
+                                for(int i=updateBegin;i<updateEnd;i++){
+                                    if(index<valueNewArray.length()){
+                                        byteArrayRow[i]=valueNewArray[index];
+                                        index++;
+                                    }
+                                    //超过填写的参数的部分使用空格补充
+                                    else{
+                                        byteArrayRow[i]=' ';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ofdFileContentQByteArrayListFromExcel.append(qCompress(byteArrayRow,dataCompressLevel));
+                    //刷新UI
+                    if (importExcelRow%100==0){
+                        emit update_import_excel_status();
+                    }
+                }
+            }
+        }
+        else{
+            importExcelErrorDetail.append("加载Excel失败,请尝试重试或者确认文件是可读取的...");
+        }
+    }
+    else{
+        importExcelErrorDetail.append("加载Excel失败,请尝试重试或者确认文件是可读取的...");
+    }
+    return 1;
+}
+
+/**
+ * @brief MainWindow::importFromXlsxFinished 导入excel结束
+ */
+void MainWindow::importFromXlsxFinished(){
+    //显示错误
+    if (importExcelErrorDetail.count()>0){
+        if(importExcelErrorDetail.count()==1){
+            DialogMyTip dialog2(importExcelErrorDetail.at(0),this,true);
+            dialog2.setWindowTitle("导入失败警告！");
+            dialog2.setModal(true);
+            dialog2.exec();
+            statusBar_disPlayMessage("导入失败,Excel列不符和当前文件规范...");
+        }
+        //多条-展示为表格
+        else{
+            statusBar_disPlayMessage("导入失败,请查看具体失败原因...");
+            DialogShowImportExcelError dialog2(&importExcelErrorDetail,this);
+            dialog2.setWindowTitle("Excel导入失败详情");
+            dialog2.setModal(true);
+            dialog2.exec();
+        }
+        dataBlocked=false;
+    }
+    //导入数据
+    else{
+        dataBlocked=false;
+        int rowCount=ofdFileContentQByteArrayListFromExcel.count();
+        if(rowCount==0){
+            statusBar_disPlayMessage("导入的Excel有效数据行数为0...");
+        }
+        else{
+            ofdFileContentQByteArrayList=ofdFileContentQByteArrayListFromExcel;
+            //更新OFD记录数标记--在文件头的最后一行
+            ofdFileHeaderQStringList.replace(ofdFileHeaderQStringList.count()-1,QString("%1").arg(ofdFileContentQByteArrayList.count(), ofd.getRowCountLength(), 10, QLatin1Char('0')));
+            //新的总行数
+            int rowCount=ofdFileContentQByteArrayList.count();
+            clear_Table_Contents();
+            ptr_table->setRowCount(rowCount);
+            //添加完数据没有引发分页-原来也就1页
+            if(rowCount<=pageRowSize){
+                //关闭分页组件
+                ui->framePage->setVisible(false);
+                pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+                currentPage=1;
+                fileChanged=true;
+                rowHasloaded.clear();
+                compareData.clear();
+                display_OFDTable();
+                acceptVScrollValueChanged(0);
+                statusBar_display_rowsCount(rowCount);
+                this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
+            }
+            //添加完数据数据大于1页，或者原本数据就大于1页-需要判断跳转的位置
+            else{
+                //展示分页组件
+                ui->framePage->setVisible(true);
+                statusBar_display_rowsCount(rowCount);
+                //统计新的页数
+                pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
+                fileChanged=true;
+                rowHasloaded.clear();
+                compareData.clear();
+                display_OFDTable();
+                acceptVScrollValueChanged(0);
+                this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
+            }
+            statusBar_disPlayMessage(QString("导入完毕,从Excel导入数据%1行").arg(rowCount));
+        }
+    }
+}
+
+/**
+ * @brief MainWindow::update_import_excel_status 刷新UI
+ */
+void MainWindow::update_import_excel_status(){
+    statusBar_disPlayMessage(QString("已分析数据%1行,请耐心等待...").arg(importExcelRow));
 }

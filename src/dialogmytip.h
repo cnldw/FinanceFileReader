@@ -31,7 +31,7 @@ class DialogMyTip : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogMyTip(QString tip,QWidget *parent = nullptr);
+    explicit DialogMyTip(QString tip,QWidget *parent = nullptr,bool information=false);
     ~DialogMyTip();
 
     bool getBoolFlag() const;

@@ -16,7 +16,7 @@
 #include "dialogmytip.h"
 #include "ui_dialogmytip.h"
 
-DialogMyTip::DialogMyTip(QString tip,QWidget *parent) :
+DialogMyTip::DialogMyTip(QString tip,QWidget *parent,bool information) :
     QDialog(parent),
     ui(new Ui::DialogMyTip)
 {
@@ -29,6 +29,11 @@ DialogMyTip::DialogMyTip(QString tip,QWidget *parent) :
     ui->pushButton->setFixedHeight(30);
     ui->pushButton_2->setFixedHeight(30);
 #endif
+    //非选择题，只是展示个信息
+    if(information){
+        ui->pushButton->setVisible(false);
+        ui->pushButton_2->setText("关闭");
+    }
 }
 
 DialogMyTip::~DialogMyTip()

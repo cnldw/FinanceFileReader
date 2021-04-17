@@ -39,8 +39,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-#引入excel操作库
-include(src/xlsx/qtxlsx.pri)
+#引入excel操作库-切换到新版本
+#include(src/xlsx/qtxlsx.pri)
+include(src/Qxlsx/QXlsx.pri)
 #引入2048小游戏
 include(src/2048/2048.pri)
 #引入编码检测库
@@ -62,6 +63,7 @@ SOURCES += \
     src/dialogmagnify.cpp \
     src/dialogoktools.cpp \
     src/dialogshareqrcode.cpp \
+    src/dialogshowimportexcelerror.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/utils.cpp \
@@ -103,6 +105,7 @@ HEADERS += \
     src/dialogmagnify.h \
     src/dialogoktools.h \
     src/dialogshareqrcode.h \
+    src/dialogshowimportexcelerror.h \
         src/mainwindow.h \
     src/ucdutils.h \
     src/utils.h \
@@ -142,6 +145,7 @@ FORMS += \
     src/dialogmagnify.ui \
     src/dialogoktools.ui \
     src/dialogshareqrcode.ui \
+    src/dialogshowimportexcelerror.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
     src/dialogshowtablecompareview.ui \
@@ -168,7 +172,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.8
+VERSION = 1.9.10
 ############以下注意按版本修改###############
 
 # 语言
