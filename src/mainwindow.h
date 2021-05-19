@@ -170,7 +170,9 @@ private slots:
 
     void showMoaifyOFDRow();
 
-    void copyToClipboard();
+    void copyToClipboardWithoutTitle();
+
+    void copyToClipboardWithTitle();
 
     void showRowDetails();
 
@@ -433,6 +435,7 @@ private:
     QAction *action_ShowDetails;
     QAction *action_ShowCharacter;
     QAction *action_ShowCopyColum;
+    QAction *action_ShowCopyColumWithTitle;
     QAction *action_Magnify;
     QAction *action_ShowOFDAnalysis;
     QAction *action_EditCompareData;
@@ -527,6 +530,8 @@ private:
     //如果程序正在进行诸如文件读取,文件导出,搜索任务时,程序强制退出时使用,主动告知进行中的任务进行退出函数，方式程序在后台驻留
     //只允许退出程序时使用此标志,遇到此标志一切进行中的耗时任务都会终止并退出
     bool abortExit=false;
+
+    void copyToClipboard(bool withTitle=false);
 
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
     void statusBar_clear_statusBar();
