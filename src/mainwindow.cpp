@@ -11549,7 +11549,7 @@ void MainWindow::on_actionimportfromexcel_triggered()
         return;
     }
     if(currentOpenFileType==1){
-        DialogMyTip dialog2("请确认是否从Excel导入数据到当前打开的OFD文件，此功能将会覆盖当前文件的数据,请注意备份，导入的Excel第一行的标题必须和本文件一致，建议使用本程序导出xlsx文件编辑后再导入！\r\n数值型数据将会按照字段小数长度截取,建议在Excel中按数值存储精确数据,以免造成数据错误",this);
+        DialogMyTip dialog2("请确认是否从Excel导入数据到当前打开的OFD文件，此功能将会覆盖当前文件的数据,请注意备份，导入的Excel第一行的标题必须和本文件一致，建议使用本程序导出xlsx文件编辑后再导入！\r\n数值型数据将会按照字段小数长度四舍五入截取,建议在Excel中按数值存储精确数据,以免造成数据错误",this);
         dialog2.setWindowTitle("警告-从xlsx文件导入数据！");
         dialog2.setModal(true);
         dialog2.exec();
@@ -11617,29 +11617,31 @@ int MainWindow::importFromExcel(){
                     QString fieldDesc=this->ofd.getFieldList().at(col-1).getFieldDescribe();
                     int filedLength=this->ofd.getFieldList().at(col-1).getLength();
                     int filedDecLength=this->ofd.getFieldList().at(col-1).getDecLength();
+                    std::string filedDecLengthString=QString("%.%1f").arg(filedDecLength).toStdString();
                     //提取数据
                     QVariant colvalQVariant=xlsxread.read(row,col);
                     QString colval="";
+                    qDebug()<<colvalQVariant;
                     //数值///////////////
                     if(colvalQVariant.type() == QVariant::Double){
                         if(filedType=="N"){
-                            colval=QString::number(colvalQVariant.toDouble(),'f',filedDecLength).replace(",","");
+                            colval=QString::asprintf(filedDecLengthString.c_str(),colvalQVariant.toDouble());
                         }
                         else{
-                            colval=QString::number(colvalQVariant.toDouble(),'f',0).replace(",","");
+                            colval=QString::asprintf("%.0f",colvalQVariant.toDouble());
                         }
                     }
                     else if(colvalQVariant.type() == QVariant::Int){
-                        colval=QString::number(colvalQVariant.toInt(),'f',0).replace(",","");
+                        colval=QString::asprintf("%d",colvalQVariant.toInt());
                     }
                     else if(colvalQVariant.type() == QVariant::UInt){
-                        colval=QString::number(colvalQVariant.toUInt(),'f',0).replace(",","");
+                        colval=QString::asprintf("%d",colvalQVariant.toUInt());
                     }
                     else if(colvalQVariant.type() == QVariant::LongLong){
-                        colval=QString::number(colvalQVariant.toLongLong(),'f',0).replace(",","");
+                        colval=QString::asprintf("%lld",colvalQVariant.toLongLong());
                     }
                     else if(colvalQVariant.type() == QVariant::ULongLong){
-                        colval=QString::number(colvalQVariant.toULongLong(),'f',0).replace(",","");
+                        colval=QString::asprintf("%llu",colvalQVariant.toULongLong());
                     }
                     //////////////////
                     //excel记录非数值
@@ -11649,7 +11651,7 @@ int MainWindow::importFromExcel(){
                             bool ok=false;
                             colvalQVariant.toDouble(&ok);
                             if(ok){
-                                colval=QString::number(colvalQVariant.toDouble(),'f',filedDecLength).replace(",","");
+                                colval=QString::asprintf(filedDecLengthString.c_str(),colvalQVariant.toDouble());
                             }
                             else{
                                 colval=colvalQVariant.toString();
