@@ -199,6 +199,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     dbfIsNumberFieldType.append(QDbf::QDbfField::Integer);
     dbfIsNumberFieldType.append(QDbf::QDbfField::Currency);
 
+
     //语法高亮-SQL
     QFont f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     ui->plainTextEdit->setFont(f);
@@ -249,7 +250,6 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     load_OFDDefinition();
     //加载OFD字典
     load_OFDDictionary();
-    //加载OFD tips字典
     load_OFDTipDictionary();
     //加载各类CSV文件的定义
     load_CSVDefinition();
@@ -325,12 +325,14 @@ void MainWindow::initStatusBar(){
     ui->statusBar->addWidget(statusLabel_ptr_showRowAndCol);
     statusLabel_ptr_showRowAndCol->setText(tr("文件内0行0列"));
     statusLabel_ptr_showRowAndCol->setToolTip(tr("此处显示当前选择的字段在原文件中的行和列(每个中文字符计两列)"));
+
     //显示通用消息的标签
     statusLabel_ptr_showMessage = new QLabel;
     statusLabel_ptr_showMessage->setMinimumSize(500, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showMessage);
     statusLabel_ptr_showMessage->setText(tr(""));
     statusLabel_ptr_showMessage->setToolTip(tr("此处显示各种信息,可右键复制"));
+
     //设置自定义菜单
     showMessagePopMenu=new QMenu(statusLabel_ptr_showMessage);
     action_ShowCopy = new QAction(tr("复制到剪切板"),this);
@@ -603,6 +605,7 @@ void MainWindow::statusBar_display_rowsCount(int rowsCount){
     statusLabel_ptr_showCount->setText(tr("记录数:%1行,共计%2页").arg(QString::number(rowsCount, 10)).arg(count));
 }
 
+
 void MainWindow::statusBar_display_rowsCount(int rowsCount, QString charset){
     int count=(rowsCount + pageRowSize - 1) / pageRowSize;
     statusLabel_ptr_showCount->setText(tr("记录数:%1行,共计%2页-%3").arg(QString::number(rowsCount, 10)).arg(count).arg(charset));
@@ -625,6 +628,9 @@ void MainWindow::statusBar_display_rowsAndCol(int row,int col,int length){
         statusLabel_ptr_showRowAndCol->setText("源文件"+QString::number(row)+"行,"+QString::number(col)+"列,长度为"+QString::number(length));
     }
 }
+
+
+
 
 /**
  * @brief MainWindow::load_Setting 程序设置加载方法-读取程序配置文件，如果失败则创建一个默认的配置文件
@@ -795,6 +801,7 @@ void MainWindow::load_OFDDictionary(){
         statusBar_disPlayMessage(Utils::getConfigPath()+tr("OFD_Dictionary.ini配置丢失"));
     }
 }
+
 
 void MainWindow::load_OFDTipDictionary(){
     QString TipDictionaryInipath=Utils::getConfigPath()+"OFD_TipDictionary.ini";
@@ -6590,6 +6597,7 @@ void MainWindow::showMoaifyOFDRow(){
                             itemValue=Utils::CovertDoubleQStringWithThousandSplit(itemValue);
                         }
                         if(ptr_table->item(editRow,editCol)!=nullptr){
+
                             ptr_table->item(editRow,editCol)->setText(itemValue);
                         }
                         //如果这个单元格未填充过数据,则QTableWidgetItem不存在
