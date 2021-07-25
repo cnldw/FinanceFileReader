@@ -1,13 +1,13 @@
 ================================================================================
-Notepad2, metapath and Notepad2-mod is licensed under the BSD 3-Clause License
+Notepad2, metapath and Notepad2-mod are licensed under the BSD 3-Clause License
 ================================================================================
 
 http://www.flos-freeware.ch
 https://xhmikosr.github.io/notepad2-mod/
 
-metapath Copyright © 1996-2019 Florian Balmer et al.
-Notepad2 Copyright © 2004-2019 Florian Balmer et al.
-Notepad2-mod Copyright © 2010-2017 All contributors.
+metapath Copyright © 1996-2012 Florian Balmer, 2011-2021 Zufu Liu and All contributors.
+Notepad2 Copyright © 2004-2012 Florian Balmer, 2011-2021 Zufu Liu and All contributors.
+Notepad2-mod Copyright © 2010-2017 XhmikosR and All contributors.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,12 +40,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ================================================================================
 
-License for Scintilla and SciTE
+License for Lexilla, Scintilla, and SciTE
 
 https://www.scintilla.org/
 https://www.scintilla.org/License.txt
 
-Copyright 1998-2019 by Neil Hodgson <neilh@scintilla.org>
+Copyright 1998-2021 by Neil Hodgson <neilh@scintilla.org>
 
 All Rights Reserved
 
@@ -105,7 +105,7 @@ IN THE SOFTWARE.
 
 License for "Andersson trees"
 
-http://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_andersson.aspx
+https://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_andersson.aspx
 
 Copyright 2019 Eternally Confuzzled
 
@@ -153,3 +153,59 @@ License for "Bit Twiddling Hacks"
 https://graphics.stanford.edu/~seander/bithacks.html
 
 Copyright 1997-2005 Sean Eron Anderson
+
+
+================================================================================
+
+License for "faster-utf8-validator"
+
+https://github.com/zwegner/faster-utf8-validator
+
+// faster-utf8-validator
+// Copyright (c) 2019 Zach Wegner
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
+================================================================================
+
+Visual Studio 2017 Image Library
+
+https://www.microsoft.com/en-us/download/details.aspx?id=35825
+http://download.microsoft.com/download/0/6/0/0607D8EA-9BB7-440B-A36A-A24EB8C9C67E/Visual%20Studio%202017%20Image%20Library%20EULA.RTF
+
+
+================================================================================
+Bootstrap Icons
+
+https://github.com/twbs/icons
+https://github.com/twbs/icons/blob/main/LICENSE.md
+
+
+
+The MIT License (MIT)
+
+Copyright (c) 2019-2020 The Bootstrap Authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
