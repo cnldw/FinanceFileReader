@@ -1,0 +1,16 @@
+{
+   "plugin": [
+      {
+         "name": "JSON编辑格式化工具",
+         "path": "jsoneditor/jsontools.html"
+      },
+      {
+         "name": "XML编辑格式化工具",
+         "path": "xmlformatter/index.html"
+      },
+      {
+         "name": "SQL编辑格式化工具",
+         "path": "sqlformatter/index.html"
+      }
+   ]
+}

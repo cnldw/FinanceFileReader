@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>JSON编辑格式化工具</title>
+  <link href="./jsoneditor.css" rel="stylesheet" type="text/css">
+  <script src="./jsoneditor.js"></script>
+  <style type="text/css">
+    body {
+      font: 11pt arial;
+    }
+*{
+padding: 0;
+margin: 0;
+}
+
+html{
+width: 100%;
+height: 100%;
+}
+
+body{
+width: 100%;
+height: 100%;
+}
+
+#jsoneditor {
+width: 100%;
+height: 100%;
+}
+  </style>
+</head>
+<body>
+<div id="jsoneditor"></div>
+
+<script>
+  const container = document.getElementById('jsoneditor')
+  const options = {
+    language: 'zh-CN',
+    modes: ['text', 'code', 'tree', 'form', 'view'],
+    mode: 'code'
+  }
+  var editor = new JSONEditor(container, options, "")
+  editor.setText("")
+</script>
+</body>
+</html>
