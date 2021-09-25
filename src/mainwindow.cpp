@@ -73,6 +73,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
     //强制让表格获取焦点,避免在mac上打开工具时第一个输入框获取焦点显得很难看,强迫症系列
     ptr_table->setFocus();
+
     //初始化表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
     action_ShowDetails = new QAction(tr("查看此行记录"),this);
@@ -241,6 +242,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
         ui->labelPageSize->setText("(10万行/页)");
         this->pageRowSize=100000;
     }
+    //加载web平台插件
+    load_PluginList();
     //加载基金销售商和TA代码信息
     load_OFDCodeInfo();
     //加载OFD文件类别信息
@@ -439,7 +442,7 @@ void MainWindow::dropEvent(QDropEvent *event)
         fileNameFromDrag=fileNameFromDrag.replace("\\","/");
 #endif
         //判断是否是同一个文件--不是同一个--则新实例打开
-        if(fileNameFromDrag!=currentOpenFilePath&&!currentOpenFilePath.isEmpty()&&currentOpenFileType!=-1){
+        if(fileNameFromDrag!=currentOpenFilePath&&!currentOpenFilePath.isEmpty()&&currentOpenFileType!=openFileType::NotFileOrErr){
             qDebug()<<"即将启动新的实例,从"<<QCoreApplication::applicationFilePath();
             QString program=QCoreApplication::applicationFilePath();
             QStringList arguments;
@@ -450,7 +453,7 @@ void MainWindow::dropEvent(QDropEvent *event)
         }
     }
     //只要是新文件直接新实例打开
-    else if (defaultNewFileMode=="2"&&!currentOpenFilePath.isEmpty()&&currentOpenFileType!=-1){
+    else if (defaultNewFileMode=="2"&&!currentOpenFilePath.isEmpty()&&currentOpenFileType!=openFileType::NotFileOrErr){
         qDebug()<<"即将启动新的实例,从"<<QCoreApplication::applicationFilePath();
         QString program=QCoreApplication::applicationFilePath();
         QStringList arguments;
@@ -503,16 +506,16 @@ void MainWindow:: resizeEvent (QResizeEvent * event ){
         tableRowBegin=ptr_table->rowAt(ptr_table->verticalScrollBar()->y());
         tableRowEnd=tableRowBegin+(higth/rowHight);
         //不同数据类型插入点
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             display_OFDTable();
         }
-        else if(currentOpenFileType==2){
+        else if(currentOpenFileType==openFileType::CSVFile){
             display_CSVTable();
         }
-        else if(currentOpenFileType==3){
+        else if(currentOpenFileType==openFileType::FIXEDFile){
             display_FIXEDTable();
         }
-        else if(currentOpenFileType==4){
+        else if(currentOpenFileType==openFileType::DBFFile){
             display_DBFTable();
         }
     }
@@ -534,16 +537,16 @@ void MainWindow::acceptVScrollValueChanged(int value)
         //计算要结束的行
         tableRowEnd=tableRowBegin+(higth/rowHight);
         //不同数据类型插入点
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             display_OFDTable();
         }
-        else if(currentOpenFileType==2){
+        else if(currentOpenFileType==openFileType::CSVFile){
             display_CSVTable();
         }
-        else if(currentOpenFileType==3){
+        else if(currentOpenFileType==openFileType::FIXEDFile){
             display_FIXEDTable();
         }
-        else if(currentOpenFileType==4){
+        else if(currentOpenFileType==openFileType::DBFFile){
             display_DBFTable();
         }
     }
@@ -709,6 +712,69 @@ void MainWindow::load_Setting(){
         loadedSettingInfoIni.endGroup();
         loadedSettingInfoIni.sync();
     }
+}
+
+void MainWindow::load_PluginList(){
+#ifdef Q_OS_MAC
+    return;
+#endif
+#ifdef Q_OS_LINUX
+    return;
+#endif
+#ifdef Q_OS_WIN32
+    //仅windows支持web插件平台
+    QString path=QApplication::applicationDirPath()+"/plugin-web/plugin-list.json";
+    if(Utils::isFileExist(path)){
+        QFile loadFile(path);
+
+        if(!loadFile.open(QIODevice::ReadOnly))
+        {
+            return;
+        }
+
+        QByteArray allData = loadFile.readAll();
+        loadFile.close();
+
+        QJsonParseError jsonError;
+        QJsonDocument jsonDoc(QJsonDocument::fromJson(allData, &jsonError));
+
+        if(jsonError.error != QJsonParseError::NoError)
+        {
+            return;
+        }
+        QJsonObject rootObj = jsonDoc.object();
+        if(rootObj.value("plugin").isArray()){
+            QJsonArray array=rootObj.value("plugin").toArray();
+            if(array.count()>0){
+                for(int i=0;i<array.count();i++){
+                    QJsonObject item=array.at(i).toObject();
+                    QString name="";
+                    QString path="";
+                    if(item.value("name").isString()){
+                        name=item.value("name").toString();
+                    }
+                    if(item.value("path").isString()){
+                        path=item.value("path").toString();
+                    }
+                    if(!name.isEmpty()&&!path.isEmpty()){
+                        qDebug()<<name<<path;
+                    }
+                    if(pluginpath.count()==0){
+                        ui->menu_3->addSeparator();
+                    }
+                    //存储插件到插件列表
+                    pluginpath.insert(i,path);
+                    //建立action
+                    QAction *action=new QAction(name,this);
+                    //存储objectname为插件名|插件id,方便在槽函数中获取
+                    action->setObjectName(name+"|"+QString::number(i));
+                    ui->menu_3->addAction(action);
+                    connect(action, SIGNAL(triggered()), this, SLOT(openPlugin()));
+                }
+            }
+        }
+    }
+#endif
 }
 
 /**
@@ -1728,7 +1794,7 @@ void MainWindow::load_DBFDefinition(){
  * @param filePath
  */
 void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdbfTrimType){
-    currentOpenFileType=-1;
+    currentOpenFileType=openFileType::NotFileOrErr;
     //设置当前打开的路径////////////////////////////////////////////
     currentOpenFilePath=filePath;
     ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
@@ -1761,7 +1827,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             ||currentFileName.endsWith(".tbz",Qt::CaseInsensitive)||currentFileName.endsWith(".tbz2",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".xz",Qt::CaseInsensitive)||currentFileName.endsWith(".txz",Qt::CaseInsensitive)){
         statusBar_disPlayMessage("压缩文件请解压后解析!");
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         return;
     }
     //前置拦击-常用音频视频文件
@@ -1782,7 +1848,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             currentFileName.endsWith(".mkv",Qt::CaseInsensitive)||
             currentFileName.endsWith(".wmv",Qt::CaseInsensitive)){
         statusBar_disPlayMessage("不支持解析音视频文件!");
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         return;
     }
     //前置拦击-常用图像文件
@@ -1796,7 +1862,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             currentFileName.endsWith(".tif",Qt::CaseInsensitive)||
             currentFileName.endsWith(".webp",Qt::CaseInsensitive)){
         statusBar_disPlayMessage("不支持解析图像文件!");
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         return;
     }
     //其他
@@ -1806,7 +1872,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             ||currentFileName.endsWith(".html",Qt::CaseInsensitive)||currentFileName.endsWith(".zip",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".sql",Qt::CaseInsensitive)||currentFileName.endsWith(".pdf",Qt::CaseInsensitive)){
         statusBar_disPlayMessage("不支持解析此类文件!");
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         return;
     }
     /*
@@ -2271,8 +2337,8 @@ NOT_OF_FILE:
                     fileDef.setDatabeginrowindex(dataBeginRow);
                     fileDef.setFileNameWithCount(fileName);
                     fileDef.setFieldList(fieldTitleList);
-                    //当前打开的文件类型为2
-                    currentOpenFileType=2;
+                    //当前打开的文件类型为csv
+                    currentOpenFileType=openFileType::CSVFile;
                     //开始加载数据
                     csv=fileDef;
                     load_csvFileData(fieldTitleStrList);
@@ -2291,7 +2357,7 @@ NOT_OF_FILE:
  * @brief MainWindow::load_indexFile索引文件的加载方法
  */
 void MainWindow::load_indexFile(){
-    currentOpenFileType=0;
+    currentOpenFileType=openFileType::OFDIndex;
     ui->labelFileTransferDate->setText("文件传递日期");
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
@@ -2341,7 +2407,7 @@ void MainWindow::load_indexFile(){
         }
         //判断文件是否为空
         if(lineNumber<2){
-            currentOpenFileType=-1;
+            currentOpenFileType=openFileType::NotFileOrErr;
             statusBar_disPlayMessage("无效的文件,请检查文件是否满足索引文件规范...");
             return;
         }
@@ -2364,7 +2430,7 @@ void MainWindow::load_indexFile(){
 void MainWindow::load_ofdFile(QString fileType){
     qDebug()<<"开始加载的文件类别"<<fileType;
     //当前打开的文件类别为1，OFD文件
-    currentOpenFileType=1;
+    currentOpenFileType=openFileType::OFDFile;
     //读取文件结束位置
     //第10行文件字段记录数//先读取到这一行看能否获取到字段记录数
     int lineEnd=9;
@@ -2399,7 +2465,7 @@ void MainWindow::load_ofdFile(QString fileType){
                 versionFromFile=lineQString.trimmed();
                 //获取不到版本号，退出
                 if(versionFromFile.isEmpty()){
-                    currentOpenFileType=-1;
+                    currentOpenFileType=openFileType::NotFileOrErr;
                     dataFile.close();
                     statusBar_disPlayMessage("解析失败,未从文件第2行读取到OFD文件的版本号信息");
                     return;
@@ -2413,7 +2479,7 @@ void MainWindow::load_ofdFile(QString fileType){
                 countNumberFromFile=count.toInt(&flag);
                 if(!flag)
                 {
-                    currentOpenFileType=-1;
+                    currentOpenFileType=openFileType::NotFileOrErr;
                     dataFile.close();
                     statusBar_disPlayMessage("解析失败,从文件第10行读取该文件接口字段总数失败,请检查文件");
                     return;
@@ -2439,7 +2505,7 @@ void MainWindow::load_ofdFile(QString fileType){
                     }
                 }
                 else{
-                    currentOpenFileType=-1;
+                    currentOpenFileType=openFileType::NotFileOrErr;
                     dataFile.close();
                     statusBar_disPlayMessage("解析失败,文件数据记录数["+lineQString+"]不是有效的数值,请检查文件是否合法");
                     return;
@@ -2461,7 +2527,7 @@ void MainWindow::load_ofdFile(QString fileType){
         //判断是否读取到了一个空的文件
         //OFD文件行记录数最小也不可能小于10行
         if(lineNumber<10){
-            currentOpenFileType=-1;
+            currentOpenFileType=openFileType::NotFileOrErr;
             statusBar_disPlayMessage("无效的文件,请检查文件是否满足OFD文件规范...");
             return;
         }
@@ -2664,7 +2730,7 @@ void MainWindow::load_ofdFile(QString fileType){
                                 //如果下一行是文件结束标志,则不再进行合并尝试,直接报错
                                 if(nextLine.length()==8&&QString::compare(nextLine,"OFDCFEND",Qt::CaseInsensitive)==0){
                                     sucessFlag=false;
-                                    currentOpenFileType=-1;
+                                    currentOpenFileType=openFileType::NotFileOrErr;
                                     statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
                                     QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(lineQByteArray.length())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                     break;
@@ -2766,7 +2832,7 @@ void MainWindow::load_ofdFile(QString fileType){
                                         else{
                                             sucessFlag=false;
                                             mergeSucessFlag=false;
-                                            currentOpenFileType=-1;
+                                            currentOpenFileType=openFileType::NotFileOrErr;
                                             statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
                                             QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(lineQByteArray.length())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                             break;
@@ -2775,7 +2841,7 @@ void MainWindow::load_ofdFile(QString fileType){
                                     //如果放弃合并,则放弃读取
                                     else{
                                         sucessFlag=false;
-                                        currentOpenFileType=-1;
+                                        currentOpenFileType=openFileType::NotFileOrErr;
                                         statusBar_disPlayMessage(path+"文件中第["+QString::number(lineNumber+1)+"]行数据解析失败...");
                                         QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n"+path+"中定义的记录长度和文件中不一致,解析失败\r\n"+path+"中"+fileType+"文件定义的数据行长度为["+QString::number(ofd.getRowLength())+"]\r\n实际打开的文件中第["+QString::number(lineNumber+1)+"]行长度为["+QString::number(lineQByteArray.length())+"]\r\n请检查是否是文件错误,或者定义错误",QMessageBox::Ok,QMessageBox::Ok);
                                         break;
@@ -2815,14 +2881,14 @@ void MainWindow::load_ofdFile(QString fileType){
                         ofdFileContentQByteArrayList.clear();
                     }
                 }else{
-                    currentOpenFileType=-1;
+                    currentOpenFileType=openFileType::NotFileOrErr;
                     statusBar_disPlayMessage("解析失败:文件读取失败,请重试...");
                     return;
                 }
             }
             //如果没找到满足的解析配置
             else{
-                currentOpenFileType=-1;
+                currentOpenFileType=openFileType::NotFileOrErr;
                 //显示失败原因
                 if(faultList.count()>0){
                     //调用展示OFD加载失败的函数
@@ -2842,7 +2908,7 @@ void MainWindow::load_ofdFile(QString fileType){
         }
     }
     else{
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         statusBar_disPlayMessage("解析失败,文件打开失败...");
         return;
     }
@@ -2853,7 +2919,7 @@ void MainWindow::load_ofdFile(QString fileType){
  * @param fileType
  */
 void MainWindow::load_csvFile(QStringList fileType){
-    currentOpenFileType=2;
+    currentOpenFileType=openFileType::CSVFile;
     //由于csv文件有可能同一个文件名，但是实际文件版本不同，所以需要做版本校验
     QFile dataFile(currentOpenFilePath);
     //关于CSV文件类型可用的版本
@@ -3096,7 +3162,7 @@ void MainWindow::load_csvFile(QStringList fileType){
         }
         display_CSVFaultCause(faultList);
         //如果遍历完还没找到合适的配置，则提示
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         statusBar_disPlayMessage("解析失败,请查看具体解析失败原因后修正配置或者确认是否文件格式错误");
         return;
     }
@@ -3108,7 +3174,7 @@ void MainWindow::load_csvFile(QStringList fileType){
  */
 void MainWindow::load_fixedFile(QStringList fileType){
     //当前打开的文件类别3
-    currentOpenFileType=3;
+    currentOpenFileType=openFileType::FIXEDFile;
     //由于fixed文件有可能同一个文件名，但是实际文件版本不同，所以需要做版本校验
     QFile dataFile(currentOpenFilePath);
     //关于定长文件类型可用的版本
@@ -3226,7 +3292,7 @@ void MainWindow::load_fixedFile(QStringList fileType){
         }
         display_FIXEDFaultCause(faultList);
         //如果遍历完还没找到合适的配置，则提示
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         statusBar_disPlayMessage("解析失败,请查看具体解析失败原因后修正配置或者确认是否文件格式错误");
         return;
     }
@@ -3313,7 +3379,7 @@ void MainWindow::load_fixedFileData(){
                     }
                     QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n["+fixed.getFileNameWithVersion()+"]中定义的记录长度和打开的文件中不一致,解析失败\r\n["+fixed.getFileNameWithVersion()+"]中文件定义的数据行长度可以为["+lengths+"]字节\r\n实际打开的文件中第["+QString::number(row+1+fixedFileHeaderQStringList.count())+"]行长度为["+QString::number(rowLengthList.at(row))+"]\r\n请检查是否是文件错误,或者配置定义错误,或者你打开的是别的版本的文件(如果是请先配置!)",QMessageBox::Ok,QMessageBox::Ok);
                     statusBar_disPlayMessage("文件解析失败!");
-                    currentOpenFileType=-1;
+                    currentOpenFileType=openFileType::NotFileOrErr;
                     fixedFileHeaderQStringList.clear();
                     fixedContenQByteArrayList.clear();
                     fixedFooterQStringList.clear();
@@ -3333,7 +3399,7 @@ void MainWindow::load_fixedFileData(){
                     }
                     QMessageBox::information(this,tr("提示"),"重要提示\r\n\r\n["+fixed.getFileNameWithVersion()+"]中定义的记录长度和打开的文件中不一致,解析失败\r\n["+fixed.getFileNameWithVersion()+"]中文件定义的数据行长度可以为["+lengths+"]字符\r\n实际打开的文件中第["+QString::number(row+1+fixedFileHeaderQStringList.count())+"]行长度为["+QString::number(rowLengthList.at(row))+"]\r\n请检查是否是文件错误,或者配置定义错误,或者你打开的是别的版本的文件(如果是请先配置!)",QMessageBox::Ok,QMessageBox::Ok);
                     statusBar_disPlayMessage("文件解析失败!");
-                    currentOpenFileType=-1;
+                    currentOpenFileType=openFileType::NotFileOrErr;
                     fixedFileHeaderQStringList.clear();
                     fixedContenQByteArrayList.clear();
                     fixedFooterQStringList.clear();
@@ -3466,7 +3532,7 @@ void MainWindow::display_CSVFaultCause(QList<FaultCause> faultList){
         }
         ptr_table->resizeColumnsToContents();
         statusBar_display_rowsCount(rowCount);
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
     }
 }
 
@@ -3567,7 +3633,7 @@ void MainWindow::display_FIXEDFaultCause(QList<FaultCause> faultList){
         }
         ptr_table->resizeColumnsToContents();
         statusBar_display_rowsCount(rowCount);
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
     }
 }
 
@@ -3608,7 +3674,7 @@ void MainWindow::display_OFDFaultCause(QString useini,QList<OFDFaultCause> fault
         }
         ptr_table->resizeColumnsToContents();
         statusBar_display_rowsCount(rowCount);
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
     }
 }
 
@@ -3701,7 +3767,7 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
 void MainWindow::load_dbfFile(){
     //默认只读
     if (!dbftablefile.open(currentOpenFilePath,QDbf::QDbfTable::ReadOnly)) {
-        currentOpenFileType=-1;
+        currentOpenFileType=openFileType::NotFileOrErr;
         statusBar_disPlayMessage("无法打开此DBF文件,可能文件被占用/文件损坏/不支持的格式,请检查...");
         return;
     }
@@ -3753,7 +3819,7 @@ void MainWindow::load_dbfFile(){
         break;
     }
     //当前打开的文件类别为4，dbf文件
-    currentOpenFileType=4;
+    currentOpenFileType=openFileType::DBFFile;
     //dbf工具箱-只有打开dbf文件时才显示
     ui->menudbftools->menuAction()->setVisible(true);
     ui->actionTableStructure->setVisible(false);
@@ -4840,7 +4906,7 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
         statusBar_disPlayMessage("正在加载数据,请稍后再使用文件检查功能...");
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         if(!ofdIndexFileHeaderMap.isEmpty()){
             //组织要显示的内容
             QString info;
@@ -4854,7 +4920,7 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
         }
     }
-    else if(currentOpenFileType==1){
+    else if(currentOpenFileType==openFileType::OFDFile){
         if(!ofdFileHeaderQStringList.isEmpty()||ofdFileHeaderQStringList.count()>=10){
             //组织要显示的内容
             QString info;
@@ -4880,7 +4946,7 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
         }
     }
-    else if(currentOpenFileType==2){
+    else if(currentOpenFileType==openFileType::CSVFile){
         //组织要显示的内容
         QString info;
         info.append("文件解析情况如下:\r\n");
@@ -4891,7 +4957,7 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
         info.append("加载的文件尾行数:").append(QString::number(csv.getEndIgnoreRow())).append("\r\n");
         QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
     }
-    else if(currentOpenFileType==3){
+    else if(currentOpenFileType==openFileType::FIXEDFile){
         //组织要显示的内容
         QString info;
         info.append("文件解析情况如下:\r\n");
@@ -4969,7 +5035,7 @@ void MainWindow::copyToClipboard(bool withTitle){
                 }
                 int rowRealInContent=0;
                 //在错误展示和OFD索引文件模式下复制取表格数据
-                if(currentOpenFileType==-1||currentOpenFileType==0){
+                if(currentOpenFileType==openFileType::NotFileOrErr||currentOpenFileType==openFileType::OFDIndex){
                     for(int row=topRow;row<=bottomRow;row++){
                         for(int col=leftColumn;col<=rigthColumn;col++){
                             if(ptr_table->item(row,col)==nullptr){
@@ -4987,7 +5053,7 @@ void MainWindow::copyToClipboard(bool withTitle){
                     }
                 }
                 //OFD模式下的复制
-                else if(currentOpenFileType==1){
+                else if(currentOpenFileType==openFileType::OFDFile){
                     for(int row=topRow;row<=bottomRow;row++){
                         rowRealInContent=(currentPage-1)*pageRowSize+row;
                         for(int col=leftColumn;col<=rigthColumn;col++){
@@ -5007,7 +5073,7 @@ void MainWindow::copyToClipboard(bool withTitle){
                     }
                 }
                 //CSV文件下的复制
-                else if(currentOpenFileType==2){
+                else if(currentOpenFileType==openFileType::CSVFile){
                     for(int row=topRow;row<=bottomRow;row++){
                         rowRealInContent=(currentPage-1)*pageRowSize+row;
                         QStringList rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent);
@@ -5033,7 +5099,7 @@ void MainWindow::copyToClipboard(bool withTitle){
                     }
                 }
                 //FIXED模式下的复制
-                else if(currentOpenFileType==3){
+                else if(currentOpenFileType==openFileType::FIXEDFile){
                     for(int row=topRow;row<=bottomRow;row++){
                         rowRealInContent=(currentPage-1)*pageRowSize+row;
                         for(int col=leftColumn;col<=rigthColumn;col++){
@@ -5053,7 +5119,7 @@ void MainWindow::copyToClipboard(bool withTitle){
                     }
                 }
                 //DBF
-                else if(currentOpenFileType==4){
+                else if(currentOpenFileType==openFileType::DBFFile){
                     for(int row=topRow;row<=bottomRow;row++){
                         rowRealInContent=(currentPage-1)*pageRowSize+row;
                         for(int col=leftColumn;col<=rigthColumn;col++){
@@ -5102,19 +5168,19 @@ void MainWindow::editCompareData(){
             else{
                 //数据加入
                 //OFD
-                if(currentOpenFileType==1){
+                if(currentOpenFileType==openFileType::OFDFile){
                     compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent));
                 }
                 //CSV
-                else if(currentOpenFileType==2){
+                else if(currentOpenFileType==openFileType::CSVFile){
                     compareData.insert(rowRealInContent+1,Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent));
                 }
                 //FIXED
-                else if(currentOpenFileType==3){
+                else if(currentOpenFileType==openFileType::FIXEDFile){
                     compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent));
                 }
                 //DBF
-                else if(currentOpenFileType==4){
+                else if(currentOpenFileType==openFileType::DBFFile){
                     compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromdbfTableFile(&dbftablefile,&dbf,rowRealInContent,&dbfRowMap,false,dbfTrimType));
                 }
                 statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(compareData.count()));
@@ -5149,7 +5215,7 @@ void MainWindow::editCompareData(){
         //开始数据加入
         else{
             //OFD
-            if(currentOpenFileType==1){
+            if(currentOpenFileType==openFileType::OFDFile){
                 for(int l1=0;l1<rangeCount;l1++){
                     for(int l2=itemsRange.at(l1).topRow();l2<=itemsRange.at(l1).bottomRow();l2++){
                         rowRealInContent=(currentPage-1)*pageRowSize+l2;
@@ -5163,7 +5229,7 @@ void MainWindow::editCompareData(){
                 }
             }
             //CSV
-            else if(currentOpenFileType==2){
+            else if(currentOpenFileType==openFileType::CSVFile){
                 for(int l1=0;l1<rangeCount;l1++){
                     for(int l2=itemsRange.at(l1).topRow();l2<=itemsRange.at(l1).bottomRow();l2++){
                         rowRealInContent=(currentPage-1)*pageRowSize+l2;
@@ -5177,7 +5243,7 @@ void MainWindow::editCompareData(){
                 }
             }
             //FIXED
-            else if(currentOpenFileType==3){
+            else if(currentOpenFileType==openFileType::FIXEDFile){
                 for(int l1=0;l1<rangeCount;l1++){
                     for(int l2=itemsRange.at(l1).topRow();l2<=itemsRange.at(l1).bottomRow();l2++){
                         rowRealInContent=(currentPage-1)*pageRowSize+l2;
@@ -5190,7 +5256,7 @@ void MainWindow::editCompareData(){
                     }
                 }
             }
-            else if(currentOpenFileType==4){
+            else if(currentOpenFileType==openFileType::DBFFile){
                 for(int l1=0;l1<rangeCount;l1++){
                     for(int l2=itemsRange.at(l1).topRow();l2<=itemsRange.at(l1).bottomRow();l2++){
                         rowRealInContent=(currentPage-1)*pageRowSize+l2;
@@ -5220,7 +5286,7 @@ void MainWindow::deleteRowDataFromFileAndTable(){
         return;
     }
     //此函数目前仅支持OFD数据
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         DialogMyTip  dialog2("真的要删除选择的数据行吗？",this);
         dialog2.setWindowTitle("警告！");
         dialog2.setModal(true);
@@ -5354,7 +5420,7 @@ void MainWindow::deleteRowDataFromFileAndTable(){
  * @brief MainWindow::copyOFDRowData 根据选取范围复制OFD数据
  */
 void MainWindow::copyOFDRowData(){
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         QString version=ui->lineEditUseIni->text()+"|Author:"+QString(QByteArray::fromBase64(AUTHOR_EMAIL));
         QString type=ui->lineEditFileType->text();
         QString needCopyData=QString().append(version).append("\r\n").append(type).append("\r\n");
@@ -5665,7 +5731,7 @@ void MainWindow::showRowDetails(){
     //数据内容从表格取，从原始数据取还需要转换
     QList<QStringList> rowdata;
     //数据类型插入点
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         for(int i=0;i<colCount;i++){
             QStringList colitem;
             if(ptr_table->item(tableRowCurrent,i)==nullptr){
@@ -5693,7 +5759,7 @@ void MainWindow::showRowDetails(){
             rowdata.append(colitem);
         }
     }
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         for(int i=0;i<colCount;i++){
             QStringList colitem;
             if(ptr_table->item(tableRowCurrent,i)==nullptr){
@@ -5721,7 +5787,7 @@ void MainWindow::showRowDetails(){
             rowdata.append(colitem);
         }
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         for(int i=0;i<colCount;i++){
             QStringList colitem;
             if(ptr_table->item(tableRowCurrent,i)==nullptr){
@@ -5749,7 +5815,7 @@ void MainWindow::showRowDetails(){
             rowdata.append(colitem);
         }
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         for(int i=0;i<colCount;i++){
             QStringList colitem;
             if(ptr_table->item(tableRowCurrent,i)==nullptr){
@@ -5787,6 +5853,7 @@ void MainWindow::showRowDetails(){
     dialog->activateWindow();
 }
 
+
 /**
  * @brief MainWindow::showMagnify 打开放大镜
  */
@@ -5823,19 +5890,19 @@ void MainWindow::showCharacter(){
         //获取编码方案
         QTextCodec *codec=QTextCodec::codecForName("UTF-8");
         //获得当前打开的文件的编码方案
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             charset="GB18030";
             codec=codecOFD;
         }
-        else if (currentOpenFileType==2){
+        else if (currentOpenFileType==openFileType::CSVFile){
             charset=csv.getEcoding();
             codec=QTextCodec::codecForName(charset.toLocal8Bit());
         }
-        else if (currentOpenFileType==3){
+        else if (currentOpenFileType==openFileType::FIXEDFile){
             charset=fixed.getEcoding();
             codec=QTextCodec::codecForName(charset.toLocal8Bit());
         }
-        else if (currentOpenFileType==4){
+        else if (currentOpenFileType==openFileType::DBFFile){
             //todo
             charset=dbf.getEcoding();
             codec=QTextCodec::codecForName(charset.toLocal8Bit());
@@ -5934,7 +6001,7 @@ void MainWindow:: gotoFirstNotNumber(){
  */
 void MainWindow:: showOFDFiledAnalysis(){
     //注意，这个函数不建议复用，如果需要进行别的文件类别合法性分析，建议设置单独的函数
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
         statusBar_disPlayMessage(QString("分析第%1行第%2列数据数据").arg(rowRealInContent+1).arg(tableColCurrent+1));
         //字段中文名
@@ -6092,7 +6159,7 @@ void MainWindow:: showOFDFiledAnalysis(){
  * @brief MainWindow::showModifyOFDCell OFD专用修改工具函数
  */
 void MainWindow::showModifyOFDCell(){
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         //标记要编辑的位置--注意做行转换
         int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
         //表格中的行
@@ -6269,7 +6336,7 @@ void MainWindow::showModifyOFDCell(){
  */
 //待修改
 void MainWindow::showModifyOFDCellBatch(){
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         //标记要编辑的列
         int editCol=tableColCurrent;
         //字段类型
@@ -6644,33 +6711,33 @@ void MainWindow::on_pushButtonPreSearch_clicked()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==-1){
+    if(currentOpenFileType==openFileType::NotFileOrErr){
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("不支持索引文件使用此功能...");
         return;
     }
     //数据类型加入点
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         if(ofdFileContentQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
             return;
         }
     }
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         if(csvFileContentQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的CSV文件没有数据记录...");
             return;
         }
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         if(fixedContenQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
             return;
         }
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(dbfDisplayType==0){
             if(dbfRowMap.count()<1){
                 statusBar_disPlayMessage("打开的DBF文件没有数据记录...");
@@ -6707,23 +6774,23 @@ void MainWindow::on_pushButtonPreSearch_clicked()
     int beginCol=tableColCurrent-1;
     //查询总列数
     int colCount=0;
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         colCount=ofd.getFieldCount();
     }
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         colCount=csv.getFieldCount();
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         colCount=fixed.getFieldCountMax();
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         colCount=dbf.getFieldCount();
     }
     //分页模式下的跨页搜索
     int rowRealInContent=0;
     while(currentPage>0){
         //数据类型插入点
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             for(int row=tableRowCurrent;row>=0;row--){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
                 QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent);
@@ -6750,7 +6817,7 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 }
             }
         }
-        if(currentOpenFileType==2){
+        if(currentOpenFileType==openFileType::CSVFile){
             for(int row=tableRowCurrent;row>=0;row--){
                 //csv文件按行获取数据
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
@@ -6782,7 +6849,7 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 }
             }
         }
-        if(currentOpenFileType==3){
+        if(currentOpenFileType==openFileType::FIXEDFile){
             for(int row=tableRowCurrent;row>=0;row--){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
                 QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent);
@@ -6813,7 +6880,7 @@ void MainWindow::on_pushButtonPreSearch_clicked()
                 }
             }
         }
-        if(currentOpenFileType==4){
+        if(currentOpenFileType==openFileType::DBFFile){
             for(int row=tableRowCurrent;row>=0;row--){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
                 QStringList rowdata=Utils::getFormatRowValuesFromdbfTableFile(&dbftablefile,&dbf,rowRealInContent,&dbfRowMap,false,dbfTrimType);
@@ -6881,10 +6948,10 @@ void MainWindow::on_pushButtonNextSearch_clicked()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==-1){
+    if(currentOpenFileType==openFileType::NotFileOrErr){
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("不支持索引文件使用此功能...");
         return;
     }
@@ -6892,7 +6959,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     int rowcount=0;
     int colCount=0;
     //数据类型加入点
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         if(ofdFileContentQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
             return;
@@ -6901,7 +6968,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
             colCount=ofd.getFieldCount();
         }
     }
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         if(csvFileContentQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的CSV文件没有数据记录...");
             return;
@@ -6910,7 +6977,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
             colCount=csv.getFieldCount();
         }
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         if(fixedContenQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
             return;
@@ -6919,7 +6986,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
             colCount=fixed.getFieldCountMax();
         }
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(dbfRowMap.count()<1){
             statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
             return;
@@ -6953,7 +7020,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
     int rowRealInContent=0;
     while(currentPage<=pageCount){
         //数据类型加入点
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             for(int row=tableRowCurrent;row<currentPageRowCount;row++){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
                 QStringList rowdata=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent);
@@ -6980,7 +7047,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 }
             }
         }
-        if(currentOpenFileType==2){
+        if(currentOpenFileType==openFileType::CSVFile){
             for(int row=tableRowCurrent;row<currentPageRowCount;row++){
                 //csv文件按行获取数据
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
@@ -7012,7 +7079,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 }
             }
         }
-        if(currentOpenFileType==3){
+        if(currentOpenFileType==openFileType::FIXEDFile){
             for(int row=tableRowCurrent;row<currentPageRowCount;row++){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
                 QStringList rowdata=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent);
@@ -7043,7 +7110,7 @@ void MainWindow::on_pushButtonNextSearch_clicked()
                 }
             }
         }
-        if(currentOpenFileType==4){
+        if(currentOpenFileType==openFileType::DBFFile){
             for(int row=tableRowCurrent;row<currentPageRowCount;row++){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
                 QStringList rowdata=Utils::getFormatRowValuesFromdbfTableFile(&dbftablefile,&dbf,rowRealInContent,&dbfRowMap,false,dbfTrimType);
@@ -7122,7 +7189,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     tablePopMenu->clear();
     //判断当前鼠标位置是不是在表格单元格位置内
     //特殊情况当前打开的文件是OFD文件，总行数是0的空文件允许插入内容--仅仅允许插入数据
-    if(currentOpenFileType==1&&ptr_table->rowCount()<1&&ptr_table->rowAt(pos.y()) <0){
+    if(currentOpenFileType==openFileType::OFDFile&&ptr_table->rowCount()<1&&ptr_table->rowAt(pos.y()) <0){
         tablePopMenu->addAction(action_addCopyedOFDData2End);
         tablePopMenu->addAction(action_addNewLineOFDData2End);
         tablePopMenu->exec(QCursor::pos());
@@ -7137,7 +7204,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
         return;
     }
     //当打开的是OFD文件时,菜单里添加行预览和显示行详情和编辑的菜单
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         /////////////////////动态右键菜单///////////////////////////////////////////
         //分模式启用不同的菜单
         //判断启用批量编辑还是使用单个单元格编辑器
@@ -7295,7 +7362,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
         }
     }
     //csv类型的文件
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         /////////////////////动态右键菜单///////////////////////////////////////////
         //分模式启用不同的菜单
         //判断启用批量编辑还是使用单个单元格编辑器
@@ -7416,7 +7483,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
             }
         }
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         /////////////////////动态右键菜单///////////////////////////////////////////
         //分模式启用不同的菜单
         //判断启用批量编辑还是使用单个单元格编辑器
@@ -7533,7 +7600,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
             }
         }
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         /////////////////////动态右键菜单///////////////////////////////////////////
         //分模式启用不同的菜单
         //判断启用批量编辑还是使用单个单元格编辑器
@@ -7652,7 +7719,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
     }
     //索引模式也支持复制
     //为打开文件或者打开失败时，有可能表格显示了失败原因，开启复制功能
-    if(currentOpenFileType==-1||currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::NotFileOrErr||currentOpenFileType==openFileType::OFDIndex){
         tablePopMenu->addAction(action_ShowCopyColum);
     }
     //显示菜单在鼠标点击的位置
@@ -7673,11 +7740,11 @@ void MainWindow::on_pushButtonColumnJump_clicked()
  */
 void MainWindow::on_actionsOpenCompare_triggered()
 {
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("索引文件不支持使用比对器...");
     }
     //数据类型插入点
-    else if(currentOpenFileType==1||currentOpenFileType==2||currentOpenFileType==3||currentOpenFileType==4){
+    else if(currentOpenFileType==openFileType::OFDFile||currentOpenFileType==openFileType::CSVFile||currentOpenFileType==openFileType::FIXEDFile||currentOpenFileType==openFileType::DBFFile){
         if(compareData.count()<1){
             statusBar_disPlayMessage("请将需要对比的行加入比对器...");
         }
@@ -7691,7 +7758,7 @@ void MainWindow::on_actionsOpenCompare_triggered()
             QStringList fieldType;
             title.append("数据行号");
             //OFD
-            if(currentOpenFileType==1){
+            if(currentOpenFileType==openFileType::OFDFile){
                 for(int i=0;i<ofd.getFieldList().count();i++){
                     //仅获取列的中文备注当作列标题
                     title.append(ofd.getFieldList().at(i).getFieldDescribe());
@@ -7699,7 +7766,7 @@ void MainWindow::on_actionsOpenCompare_triggered()
                 }
             }
             //CSV
-            else if(currentOpenFileType==2){
+            else if(currentOpenFileType==openFileType::CSVFile){
                 for(int i=0;i<csv.getFieldList().count();i++){
                     //仅获取列的中文备注当作列标题
                     title.append(csv.getFieldList().at(i).getFieldName());
@@ -7712,14 +7779,14 @@ void MainWindow::on_actionsOpenCompare_triggered()
                 }
             }
             //FIXED
-            else if(currentOpenFileType==3){
+            else if(currentOpenFileType==openFileType::FIXEDFile){
                 for(int i=0;i<fixed.getFieldList().count();i++){
                     //仅获取列的中文备注当作列标题
                     title.append(fixed.getFieldList().at(i).getFieldDescribe());
                     fieldType.append(fixed.getFieldList().at(i).getFieldType());
                 }
             }
-            else if(currentOpenFileType==4){
+            else if(currentOpenFileType==openFileType::DBFFile){
                 for(int i=0;i<dbf.getFieldList().count();i++){
                     title.append(dbf.getFieldList().at(i).getFieldName()+(dbf.getFieldList().at(i).getFieldDescribe().isEmpty()?"":"-"+dbf.getFieldList().at(i).getFieldDescribe()));
                     if(dbfColIsNumber(i)){
@@ -7767,11 +7834,11 @@ void MainWindow::on_pushButtonExport_clicked()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==-1){
+    if(currentOpenFileType==openFileType::NotFileOrErr){
         return;
     }
     //数据类型判断
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("索引数据不支持导出");
         return;
     }
@@ -7804,7 +7871,7 @@ void MainWindow::on_pushButtonExport_clicked()
         return;
     }
     //数据类型插入点
-    else if(currentOpenFileType==1||currentOpenFileType==2||currentOpenFileType==3||currentOpenFileType==4){
+    else if(currentOpenFileType==openFileType::OFDFile||currentOpenFileType==openFileType::CSVFile||currentOpenFileType==openFileType::FIXEDFile||currentOpenFileType==openFileType::DBFFile){
         //标记阻断事件---正在导出数据
         dataBlocked=true;
         isExportFile=true;
@@ -7839,7 +7906,7 @@ void MainWindow::on_pushButtonExport_clicked()
         //默认0为导出所有数据
         int exportPage=0;
         //如果当前是OFD文件且要导出csv
-        if((exportFileType==12||exportFileType==13||exportFileType==14)&&useUTF8&&currentOpenFileType==1){
+        if((exportFileType==12||exportFileType==13||exportFileType==14)&&useUTF8&&currentOpenFileType==openFileType::OFDFile){
             filename=filename.append("_UTF-8");
         }
         //如果是按页导出的
@@ -7976,7 +8043,7 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
     QTextCodec *codec=QTextCodec::codecForName("UTF-8");
     QFile data(filename);
     //数据类型插入点
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         if(!useUTF8){
             codec=codecOFD;
         }
@@ -8034,7 +8101,7 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
             statusBar_disPlayMessage(tr("数据导出失败,请重试"));
         }
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         if(useUTF8){
             codec=QTextCodec::codecForName("UTF-8");
         }
@@ -8092,7 +8159,7 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
             statusBar_disPlayMessage(tr("数据导出失败,请重试"));
         }
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(useUTF8){
             codec=QTextCodec::codecForName("UTF-8");
         }
@@ -8202,16 +8269,16 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
         //html文件头
         //csv文件按描述的编码配置
         //数据类型插入点
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+(useUTF8?"UTF-8":"GB18030")+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
         }
-        if(currentOpenFileType==2){
+        if(currentOpenFileType==openFileType::CSVFile){
             sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+(useUTF8?"UTF-8":csv.getEcoding())+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
         }
-        if(currentOpenFileType==3){
+        if(currentOpenFileType==openFileType::FIXEDFile){
             sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+(useUTF8?"UTF-8":fixed.getEcoding())+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
         }
-        if(currentOpenFileType==4){
+        if(currentOpenFileType==openFileType::DBFFile){
             sb.append("<!DOCTYPE html>\r\n<html>\r\n<!--Design By Liudewei("+QByteArray::fromBase64(AUTHOR_EMAIL)+")-->\r\n<head>\r\n<meta charset=\""+(useUTF8?"UTF-8":dbf.getEcoding())+"\">\r\n<title>"+title+"</title>\r\n</head>\r\n<body>\r\n");
         }
         //内联的表格样式,内容太多,base64存储
@@ -8223,7 +8290,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
         int colCount=0;
         //默认赋值utf-8
         QTextCodec *codec=QTextCodec::codecForName("UTF-8");
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             colCount=ofd.getFieldCount();
             if(!useUTF8){
                 codec=codecOFD;
@@ -8240,7 +8307,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                 }
             }
         }
-        if(currentOpenFileType==2){
+        if(currentOpenFileType==openFileType::CSVFile){
             colCount=csv.getFieldCount();
             if(useUTF8){
                 codec=QTextCodec::codecForName("UTF-8");
@@ -8257,7 +8324,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                 }
             }
         }
-        if(currentOpenFileType==3){
+        if(currentOpenFileType==openFileType::FIXEDFile){
             colCount=fixed.getFieldCountMax();
             if(useUTF8){
                 codec=QTextCodec::codecForName("UTF-8");
@@ -8274,7 +8341,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                 }
             }
         }
-        if(currentOpenFileType==4){
+        if(currentOpenFileType==openFileType::DBFFile){
             colCount=dbf.getFieldCount();
             if(!useUTF8){
                 codec=QTextCodec::codecForName(dbf.getEcoding().toLocal8Bit());
@@ -8297,7 +8364,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
         //文本内容
         sb.clear();
         //数据类型插入点
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
@@ -8331,7 +8398,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                 }
             }
         }
-        if(currentOpenFileType==2){
+        if(currentOpenFileType==openFileType::CSVFile){
             int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
@@ -8382,7 +8449,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                 }
             }
         }
-        if(currentOpenFileType==3){
+        if(currentOpenFileType==openFileType::FIXEDFile){
             int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
@@ -8421,7 +8488,7 @@ void MainWindow::save2Html (QString filename,int pageNum, bool useUTF8){
                 }
             }
         }
-        if(currentOpenFileType==4){
+        if(currentOpenFileType==openFileType::DBFFile){
             int exprow=0;
             for (int row=rowBegin;row<rowEnd;row++){
                 //数据写入--按行读取
@@ -8532,7 +8599,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
     formatBody.setNumberFormat("@");
     int excelRowNumber=2;
     //导出OFD文件的内容
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         //插入标题和数值列的专用格式
         for(int i=0;i<columnCount;i++){
             //插入标题
@@ -8616,7 +8683,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
         }
     }
     //导出CSV文件的内容
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         //标题内容
         for(int i=0;i<columnCount;i++){
             xlsx->write(1,i+1,ptr_table->horizontalHeaderItem(i)->text(),formatTitle);
@@ -8706,7 +8773,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
         }
     }
     //fixed文件
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         //插入标题和数值列的专用格式
         for(int i=0;i<columnCount;i++){
             //插入标题
@@ -8789,7 +8856,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
             excelRowNumber++;
         }
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         //插入标题和数值列的专用格式
         for(int i=0;i<columnCount;i++){
             //插入标题
@@ -8934,10 +9001,10 @@ void MainWindow::on_pushButtonRowJump_clicked()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==-1){
+    if(currentOpenFileType==openFileType::NotFileOrErr){
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("不支持索引文件使用此功能...");
         return;
     }
@@ -8957,7 +9024,7 @@ void MainWindow::on_pushButtonRowJump_clicked()
     else{
         //数据类型加入点
         int targetIndex=0;
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             if(ofdFileContentQByteArrayList.count()<1){
                 statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
                 return;
@@ -8970,7 +9037,7 @@ void MainWindow::on_pushButtonRowJump_clicked()
                 targetIndex=lineNumber-1;
             }
         }
-        if(currentOpenFileType==2){
+        if(currentOpenFileType==openFileType::CSVFile){
             if(csvFileContentQByteArrayList.count()<1){
                 statusBar_disPlayMessage("打开的CSV文件没有数据记录...");
                 return;
@@ -8983,7 +9050,7 @@ void MainWindow::on_pushButtonRowJump_clicked()
                 targetIndex=lineNumber-1;
             }
         }
-        if(currentOpenFileType==3){
+        if(currentOpenFileType==openFileType::FIXEDFile){
             if(fixedContenQByteArrayList.count()<1){
                 statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
                 return;
@@ -8996,7 +9063,7 @@ void MainWindow::on_pushButtonRowJump_clicked()
                 targetIndex=lineNumber-1;
             }
         }
-        if(currentOpenFileType==4){
+        if(currentOpenFileType==openFileType::DBFFile){
             if(dbfDisplayType==0){
                 if(dbfRowMap.count()<1){
                     statusBar_disPlayMessage("打开的DBF文件没有数据记录...");
@@ -9075,10 +9142,10 @@ void MainWindow::on_actionSave_triggered()
     if(currentOpenFilePath.isEmpty()){
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("索引文件不支持编辑保存");
     }
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         if(fileChanged){
             //先备份原文件
             if(Utils::isFileExist(currentOpenFilePath)){
@@ -9098,7 +9165,7 @@ void MainWindow::on_actionSave_triggered()
             statusBar_disPlayMessage("文件没有被修改,无需保存");
         }
     }
-    if(currentOpenFileType==2||currentOpenFileType==3||currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::CSVFile||currentOpenFileType==openFileType::FIXEDFile||currentOpenFileType==openFileType::DBFFile){
         statusBar_disPlayMessage("暂不支持保存此类文件");
     }
 }
@@ -9195,11 +9262,11 @@ void MainWindow::on_actionSaveAS_triggered()
     if(currentOpenFilePath.isEmpty()){
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("索引文件不支持编辑保存");
         return;
     }
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         if(ofdFileHeaderQStringList.size()<1){
             statusBar_disPlayMessage("未打开有效的OFD文件,或者文件记录数为0,无法使用另存功能,请尝试打开一个有效非空的文件...");
             return;
@@ -9217,7 +9284,7 @@ void MainWindow::on_actionSaveAS_triggered()
             saveOFDFile(fileNameSave);
         }
     }
-    if(currentOpenFileType==2||currentOpenFileType==3||currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::CSVFile||currentOpenFileType==openFileType::FIXEDFile||currentOpenFileType==openFileType::DBFFile){
         statusBar_disPlayMessage("暂不支持另存此类文件");
     }
 }
@@ -9245,7 +9312,7 @@ void MainWindow::on_tableWidget_cellDoubleClicked(int row, int column)
     //数据类型判断点
     tableRowCurrent=row;
     tableColCurrent=column;
-    if(currentOpenFileType==1||currentOpenFileType==2||currentOpenFileType==3||currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::OFDFile||currentOpenFileType==openFileType::CSVFile||currentOpenFileType==openFileType::FIXEDFile||currentOpenFileType==openFileType::DBFFile){
         showRowDetails();
     }
 }
@@ -9282,31 +9349,31 @@ void MainWindow::on_pushButtonRowJump2_clicked()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==-1){
+    if(currentOpenFileType==openFileType::NotFileOrErr){
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("不支持索引文件使用此功能...");
         return;
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         statusBar_disPlayMessage("不支持DBF文件使用此功能...");
         return;
     }
     //数据类型加入点
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         if(ofdFileContentQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
             return;
         }
     }
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         if(csvFileContentQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的CSV文件没有数据记录...");
             return;
         }
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         if(fixedContenQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
             return;
@@ -9328,7 +9395,7 @@ void MainWindow::on_pushButtonRowJump2_clicked()
     else {
         //数据类型加入点
         int targetIndex=0;
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             int headerCount=ofdFileHeaderQStringList.count();
             if(lineNumber<=headerCount){
                 statusBar_disPlayMessage(tr("你输入的行号所在行在源文件中记录的是文件头:[%1]").arg(ofdFileHeaderQStringList.at(lineNumber-1)));
@@ -9348,7 +9415,7 @@ void MainWindow::on_pushButtonRowJump2_clicked()
                 targetIndex=lineNumber-1;
             }
         }
-        if(currentOpenFileType==2){
+        if(currentOpenFileType==openFileType::CSVFile){
             int headerCount=csvFileHeaderQStringList.count();
             if(lineNumber==csv.getTitlerowindex()){
                 statusBar_disPlayMessage(tr("你输入的行号所在行在源文件中记录的是标题行"));
@@ -9364,7 +9431,7 @@ void MainWindow::on_pushButtonRowJump2_clicked()
                 targetIndex=lineNumber-1;
             }
         }
-        if(currentOpenFileType==3){
+        if(currentOpenFileType==openFileType::FIXEDFile){
             int headerCount=fixedFileHeaderQStringList.count();
             int contentCount=fixedContenQByteArrayList.count();
             int footerCount=fixedFooterQStringList.count();
@@ -9419,17 +9486,17 @@ void MainWindow::on_viewMode_triggered()
             //窗口变大不会影响起始行
             tableRowEnd=tableRowBegin+(higth/rowHight);
             //OFD文件
-            if(currentOpenFileType==1){
+            if(currentOpenFileType==openFileType::OFDFile){
                 display_OFDTable();
             }
             //CSV文件
-            else if(currentOpenFileType==2){
+            else if(currentOpenFileType==openFileType::CSVFile){
                 display_CSVTable();
             }
-            else if(currentOpenFileType==3){
+            else if(currentOpenFileType==openFileType::FIXEDFile){
                 display_FIXEDTable();
             }
-            else if(currentOpenFileType==4){
+            else if(currentOpenFileType==openFileType::DBFFile){
                 display_DBFTable();
             }
         }
@@ -9478,7 +9545,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
         //分页改造
         int dataRowCurrent=(currentPage-1)*pageRowSize+tableRowCurrent;
         //OFD索引文件
-        if(currentOpenFileType==0){
+        if(currentOpenFileType==openFileType::OFDIndex){
             statusBar_display_rowsAndCol(dataRowCurrent+5,0,-1);
             //判断数据记录是否包含空格
             if(ptr_table->item(dataRowCurrent,0)->text().endsWith(" ")){
@@ -9486,7 +9553,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
             }
         }
         //OFD数据文件
-        else if(currentOpenFileType==1){
+        else if(currentOpenFileType==openFileType::OFDFile){
             int rowInFile=ofdFileHeaderQStringList.count()+dataRowCurrent+1;
             int colInFile=ofd.getFieldList().at(tableColCurrent).getRowBeginIndex()+1;
             //显示当前行列
@@ -9528,7 +9595,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
             }
         }
         //CSV文件
-        else if(currentOpenFileType==2){
+        else if(currentOpenFileType==openFileType::CSVFile){
             int rowInFile=csvFileHeaderQStringList.count()+dataRowCurrent+1;
             int colInFile=tableColCurrent+1;
             statusBar_display_rowsAndCol(rowInFile,colInFile,0);
@@ -9552,7 +9619,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 }
             }
         }
-        else if(currentOpenFileType==3){
+        else if(currentOpenFileType==openFileType::FIXEDFile){
             int rowInFile=fixedFileHeaderQStringList.count()+dataRowCurrent+1;
             int colInFile=tableColCurrent+1;
             statusBar_display_rowsAndCol(rowInFile,colInFile,fixed.getFieldList().at(tableColCurrent).getLength());
@@ -9564,7 +9631,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 }
             }
         }
-        else if(currentOpenFileType==4){
+        else if(currentOpenFileType==openFileType::DBFFile){
             int colInFile=tableColCurrent+1;
             statusBar_display_rowsAndCol(dbfRowMap.value(dataRowCurrent)+1,colInFile,dbf.getFieldList().at(tableColCurrent).getLength());
             if(ptr_table->item(tableRowCurrent,tableColCurrent)!=nullptr){
@@ -9661,7 +9728,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 statusBar_disPlayMessage("统计中,请稍等...");
             }
             //判断当前打开的文件类型
-            if(currentOpenFileType==1){
+            if(currentOpenFileType==openFileType::OFDFile){
                 if(ofd.getFieldList().at(itemsRange.at(0).leftColumn()).getFieldType()=="N"){
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
@@ -9703,7 +9770,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                     displayType=1;
                 }
             }
-            else  if(currentOpenFileType==2){
+            else  if(currentOpenFileType==openFileType::CSVFile){
                 if((CsvFieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&CsvFieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber())){
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
@@ -9749,7 +9816,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                     displayType=1;
                 }
             }
-            if(currentOpenFileType==3){
+            if(currentOpenFileType==openFileType::FIXEDFile){
                 if(fixed.getFieldList().at(itemsRange.at(0).leftColumn()).getFieldType()=="N"){
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
@@ -9791,7 +9858,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                     displayType=1;
                 }
             }
-            if(currentOpenFileType==4){
+            if(currentOpenFileType==openFileType::DBFFile){
                 if(dbfColIsNumber(itemsRange.at(0).leftColumn())){
                     for(int rangeIndex=0;rangeIndex<itemsRange.count();rangeIndex++){
                         for(int editRow=itemsRange.at(rangeIndex).topRow();editRow<=itemsRange.at(rangeIndex).bottomRow();editRow++){
@@ -9839,10 +9906,10 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 ////////////小数长度
                 int declength=0;
                 /////////数据类型插入点/////////////////////////////////////////
-                if(currentOpenFileType==1){
+                if(currentOpenFileType==openFileType::OFDFile){
                     declength=ofd.getFieldList().at(editCol).getDecLength();
                 }
-                else if(currentOpenFileType==2){
+                else if(currentOpenFileType==openFileType::CSVFile){
                     if(CsvFieldIsNumberOrNot.contains(itemsRange.at(0).leftColumn())&&CsvFieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getIsNumber()){
                         declength=CsvFieldIsNumberOrNot.value(itemsRange.at(0).leftColumn()).getDecimalLength();
                     }
@@ -9850,10 +9917,10 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                         declength=2;
                     }
                 }
-                else if(currentOpenFileType==3){
+                else if(currentOpenFileType==openFileType::FIXEDFile){
                     declength=fixed.getFieldList().at(editCol).getDecLength();
                 }
-                else if(currentOpenFileType==4){
+                else if(currentOpenFileType==openFileType::DBFFile){
                     declength=dbf.getFieldList().at(editCol).getDecLength();
                 }
                 //开始显示统计结果
@@ -9954,16 +10021,16 @@ void MainWindow::on_actionpreference_triggered()
             }
             //如果每页条数变化了，并且当前打开了文件，需要跳到第一页-并且判断是否需要打开或者隐藏分页控件
             int rowCount=0;
-            if(currentOpenFileType==1){
+            if(currentOpenFileType==openFileType::OFDFile){
                 rowCount=ofdFileContentQByteArrayList.count();
             }
-            else if(currentOpenFileType==2){
+            else if(currentOpenFileType==openFileType::CSVFile){
                 rowCount=csvFileContentQByteArrayList.count();
             }
-            else if(currentOpenFileType==3){
+            else if(currentOpenFileType==openFileType::FIXEDFile){
                 rowCount=fixedContenQByteArrayList.count();
             }
-            else if(currentOpenFileType==4){
+            else if(currentOpenFileType==openFileType::DBFFile){
                 rowCount=dbfRowMap.count();
             }
             pageCount=(rowCount + pageRowSize - 1) / pageRowSize;
@@ -9975,7 +10042,7 @@ void MainWindow::on_actionpreference_triggered()
             }
             statusBar_display_rowsCount(rowCount);
             currentPage=1;
-            if(currentOpenFileType!=-1){
+            if(currentOpenFileType!=openFileType::NotFileOrErr){
                 pageJump(currentPage,0);
             }
         }
@@ -10108,15 +10175,15 @@ void MainWindow::columnJump(int type){
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==-1){
+    if(currentOpenFileType==openFileType::NotFileOrErr){
         return;
     }
-    if(currentOpenFileType==0){
+    if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("不支持索引文件使用此功能...");
         return;
     }
     //数据类型插入点
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         if(ofdFileContentQByteArrayList.count()<1){
             statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
             return;
@@ -10174,7 +10241,7 @@ void MainWindow::columnJump(int type){
             }
         }
     }
-    if(currentOpenFileType==2){
+    if(currentOpenFileType==openFileType::CSVFile){
         if(csvFileContentQByteArrayList.size()<1){
             statusBar_disPlayMessage("打开的CSV文件没有数据记录...");
             return;
@@ -10232,7 +10299,7 @@ void MainWindow::columnJump(int type){
             }
         }
     }
-    if(currentOpenFileType==3){
+    if(currentOpenFileType==openFileType::FIXEDFile){
         if(fixedContenQByteArrayList.size()<1){
             statusBar_disPlayMessage("打开的字段定长文件没有数据记录...");
             return;
@@ -10290,7 +10357,7 @@ void MainWindow::columnJump(int type){
             }
         }
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(dbfDisplayType==0){
             if(dbfRowMap.count()<1){
                 statusBar_disPlayMessage("打开的DBF文件没有数据记录...");
@@ -10556,16 +10623,16 @@ void MainWindow:: pageJump(int page,int scrollIndex){
     }
     else{
         //数据类型插入点
-        if(currentOpenFileType==1){
+        if(currentOpenFileType==openFileType::OFDFile){
             currentPageRowSize=ofdFileContentQByteArrayList.count()-(pageRowSize*(pageCount-1));
         }
-        else if(currentOpenFileType==2){
+        else if(currentOpenFileType==openFileType::CSVFile){
             currentPageRowSize=csvFileContentQByteArrayList.count()-(pageRowSize*(pageCount-1));
         }
-        else if(currentOpenFileType==3){
+        else if(currentOpenFileType==openFileType::FIXEDFile){
             currentPageRowSize=fixedContenQByteArrayList.count()-(pageRowSize*(pageCount-1));
         }
-        else if(currentOpenFileType==4){
+        else if(currentOpenFileType==openFileType::DBFFile){
             currentPageRowSize=dbfRowMap.count()-(pageRowSize*(pageCount-1));
         }
     }
@@ -10580,16 +10647,16 @@ void MainWindow:: pageJump(int page,int scrollIndex){
     statusBar_disPlayMessage(QString("第%1页,本页记录数%2行").arg(page).arg(currentPageRowSize));
     //加载本页数据
     //数据类型插入点
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         display_OFDTable();
     }
-    else if(currentOpenFileType==2){
+    else if(currentOpenFileType==openFileType::CSVFile){
         display_CSVTable();
     }
-    else if(currentOpenFileType==3){
+    else if(currentOpenFileType==openFileType::FIXEDFile){
         display_FIXEDTable();
     }
-    else if(currentOpenFileType==4){
+    else if(currentOpenFileType==openFileType::DBFFile){
         display_DBFTable();
     }
     //跳转位置
@@ -10607,7 +10674,7 @@ void MainWindow:: pageJump(int page,int scrollIndex){
 
 bool MainWindow::dbfColIsNumber(int col){
     bool s=false;
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(col<dbf.getFieldCount()){
             if(dbfIsNumberFieldType.contains(dbf.getFieldList().at(col).getFieldType())){
                 s=true;
@@ -10635,7 +10702,7 @@ void MainWindow::on_actiondifftools_triggered()
 
 void MainWindow::on_actionfileedit_triggered()
 {
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         statusBar_disPlayMessage("DBF文件不支持在文本编辑器中打开,DBF文件是二进制文件！");
         return;
     }
@@ -10671,7 +10738,7 @@ void MainWindow::on_actioncopy_triggered()
 
 void MainWindow::on_actionedit_triggered()
 {
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
         int rangeCount=itemsRange.count();
         int selectedRow=0;
@@ -10725,7 +10792,7 @@ void MainWindow::on_actionedit_triggered()
 
 void MainWindow::on_actionedit2_triggered()
 {
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
         int selectRowNum=0;
         int rangeCount=itemsRange.count();
@@ -10775,19 +10842,19 @@ void MainWindow::on_actionopeninexcel_triggered()
         return;
     }
     int row=0;
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         row=ofdFileContentQByteArrayList.count();
     }
-    else if(currentOpenFileType==2){
+    else if(currentOpenFileType==openFileType::CSVFile){
         row=csvFileContentQByteArrayList.count();
     }
-    else if(currentOpenFileType==3){
+    else if(currentOpenFileType==openFileType::FIXEDFile){
         row=fixedContenQByteArrayList.count();
     }
-    else if(currentOpenFileType==4){
+    else if(currentOpenFileType==openFileType::DBFFile){
         row=dbfRowMap.count();
     }
-    else if(currentOpenFileType==0){
+    else if(currentOpenFileType==openFileType::OFDIndex){
         statusBar_disPlayMessage("不支持在excel中打开OFD索引文件...");
         return;
     }
@@ -10885,7 +10952,7 @@ void MainWindow::on_actiontipslist_triggered()
         return;
     }
     setWindowTitle(appName);
-    currentOpenFileType=-1;
+    currentOpenFileType=openFileType::NotFileOrErr;
     currentOpenFilePath="";
     ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
     fileChanged=false;
@@ -11105,7 +11172,7 @@ void MainWindow::showQrcode(){
                 //同一列的多行-不要标题直接一行有一行
                 else if((bottomRow!=topRow)&&(rigthColumn==leftColumn)){
                     int rowRealInContent=0;
-                    if(currentOpenFileType==1){
+                    if(currentOpenFileType==openFileType::OFDFile){
                         for(int row=topRow;row<=bottomRow;row++){
                             rowRealInContent=(currentPage-1)*pageRowSize+row;
                             QString value=Utils::getFormatValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent,leftColumn);
@@ -11120,7 +11187,7 @@ void MainWindow::showQrcode(){
                             }
                         }
                     }
-                    else if(currentOpenFileType==2){
+                    else if(currentOpenFileType==openFileType::CSVFile){
                         for(int row=topRow;row<=bottomRow;row++){
                             rowRealInContent=(currentPage-1)*pageRowSize+row;
                             QStringList line=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent);
@@ -11136,7 +11203,7 @@ void MainWindow::showQrcode(){
                             }
                         }
                     }
-                    else if(currentOpenFileType==3){
+                    else if(currentOpenFileType==openFileType::FIXEDFile){
                         for(int row=topRow;row<=bottomRow;row++){
                             rowRealInContent=(currentPage-1)*pageRowSize+row;
                             QString value=Utils::getFormatValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent,leftColumn);
@@ -11151,7 +11218,7 @@ void MainWindow::showQrcode(){
                             }
                         }
                     }
-                    else if(currentOpenFileType==4){
+                    else if(currentOpenFileType==openFileType::DBFFile){
                         for(int row=topRow;row<=bottomRow;row++){
                             rowRealInContent=(currentPage-1)*pageRowSize+row;
                             QString value=Utils::getFormatValuesFromdbfTableFile(&dbftablefile,&dbf,rowRealInContent,leftColumn,&dbfRowMap,dbfTrimType);
@@ -11183,16 +11250,16 @@ void MainWindow::showQrcode(){
                     for(int row=topRow;row<=bottomRow;row++){
                         rowRealInContent=(currentPage-1)*pageRowSize+row;
                         QStringList line;
-                        if(currentOpenFileType==1){
+                        if(currentOpenFileType==openFileType::OFDFile){
                             line=Utils::getFormatRowValuesFromofdFileContentQByteArrayList(&ofdFileContentQByteArrayList,&ofd,rowRealInContent);
                         }
-                        else if(currentOpenFileType==2){
+                        else if(currentOpenFileType==openFileType::CSVFile){
                             line=Utils::getRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,rowRealInContent);
                         }
-                        else if(currentOpenFileType==3){
+                        else if(currentOpenFileType==openFileType::FIXEDFile){
                             line=Utils::getFormatRowValuesFromfixedFileContentQStringList(&fixedContenQByteArrayList,&fixed,rowRealInContent);
                         }
-                        else if(currentOpenFileType==4){
+                        else if(currentOpenFileType==openFileType::DBFFile){
                             line=Utils::getFormatRowValuesFromdbfTableFile(&dbftablefile,&dbf,rowRealInContent,&dbfRowMap,false,dbfTrimType);
                         }
                         for(int i=leftColumn;i<=rigthColumn&&i<line.count();i++){
@@ -11200,15 +11267,15 @@ void MainWindow::showQrcode(){
                             if (value.isEmpty()){
                                 text.append("");
                             }
-                            else if(currentOpenFileType==1&&ofd.getFieldList().at(i).getFieldType()=="N"){
+                            else if(currentOpenFileType==openFileType::OFDFile&&ofd.getFieldList().at(i).getFieldType()=="N"){
                                 text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
                             }
-                            else if(currentOpenFileType==2&&CsvFieldIsNumberOrNot.contains(i)&&CsvFieldIsNumberOrNot.value(i).getIsNumber()){
+                            else if(currentOpenFileType==openFileType::CSVFile&&CsvFieldIsNumberOrNot.contains(i)&&CsvFieldIsNumberOrNot.value(i).getIsNumber()){
                                 text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
-                            }else if(currentOpenFileType==3&&fixed.getFieldList().at(i).getFieldType()=="N"){
+                            }else if(currentOpenFileType==openFileType::FIXEDFile&&fixed.getFieldList().at(i).getFieldType()=="N"){
                                 text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
                             }
-                            else if(currentOpenFileType==4&&dbfColIsNumber(i)){
+                            else if(currentOpenFileType==openFileType::DBFFile&&dbfColIsNumber(i)){
                                 text.append(Utils::CovertDoubleQStringWithThousandSplit(value));
                             }
                             else{
@@ -11251,7 +11318,7 @@ void MainWindow::showQrcode(){
 
 void MainWindow::on_actionalldata_triggered()
 {
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(dbfDisplayType==0){
             return;
         }
@@ -11274,7 +11341,7 @@ void MainWindow::on_actionalldata_triggered()
 
 void MainWindow::on_actionnotdelete_triggered()
 {
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(dbfDisplayType==1){
             return;
         }
@@ -11297,7 +11364,7 @@ void MainWindow::on_actionnotdelete_triggered()
 
 void MainWindow::on_actionjustdelete_triggered()
 {
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if(dbfDisplayType==2){
             return;
         }
@@ -11419,7 +11486,7 @@ void MainWindow::on_actionShift_JIS_triggered()
 
 void MainWindow::on_actioncloseFile_triggered()
 {
-    currentOpenFileType=-1;
+    currentOpenFileType=openFileType::NotFileOrErr;
     currentOpenFilePath="";
     ui->currentOpenFilePathLineText->setText(currentOpenFilePath);
     fileChanged=false;
@@ -11427,7 +11494,7 @@ void MainWindow::on_actioncloseFile_triggered()
     clear_Display_Info();
     clear_Table_Info();
     setWindowTitle(appName);
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         if (dbftablefile.isOpen()){
             dbftablefile.close();
         }
@@ -11449,7 +11516,7 @@ void MainWindow::on_actionleftright_triggered()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         ui->actionleftright->setEnabled(false);
         ui->actionleft->setEnabled(true);
         ui->actionright->setEnabled(true);
@@ -11469,7 +11536,7 @@ void MainWindow::on_actionleft_triggered()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         ui->actionleftright->setEnabled(true);
         ui->actionleft->setEnabled(false);
         ui->actionright->setEnabled(true);
@@ -11489,7 +11556,7 @@ void MainWindow::on_actionright_triggered()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==4){
+    if(currentOpenFileType==openFileType::DBFFile){
         ui->actionleftright->setEnabled(true);
         ui->actionleft->setEnabled(true);
         ui->actionright->setEnabled(false);
@@ -11540,7 +11607,7 @@ void MainWindow::on_actionimportfromexcel_triggered()
         statusBar_disPlayMessage(dataBlockedMessage);
         return;
     }
-    if(currentOpenFileType==1){
+    if(currentOpenFileType==openFileType::OFDFile){
         DialogMyTip dialog2("请确认是否从Excel导入数据到当前打开的OFD文件，此功能将会覆盖当前文件的数据,请注意备份，导入的Excel第一行的标题必须和本文件一致，建议使用本程序导出xlsx文件编辑后再导入！\r\n数值型数据将会按照字段小数长度四舍五入截取,建议在Excel中按数值存储精确数据,以免造成数据错误",this);
         dialog2.setWindowTitle("警告-从xlsx文件导入数据！");
         dialog2.setModal(true);
@@ -11943,4 +12010,19 @@ void MainWindow::importFromXlsxFinished(){
  */
 void MainWindow::update_import_excel_status(){
     statusBar_disPlayMessage(QString("已分析数据%1行,请耐心等待...").arg(importExcelRow));
+}
+
+
+void MainWindow::openPlugin(){
+#ifdef Q_OS_WIN32
+    QObject *object = QObject::sender();
+    qDebug()<<"准备打开插件"<<object->objectName();
+    QString pluginName=object->objectName().split("|").at(0);
+    int pluginIndex=object->objectName().split("|").at(1).toInt();
+    FormWebTools *web=new FormWebTools(pluginName,QApplication::applicationDirPath()+"/plugin-web/"+pluginpath.value(pluginIndex));
+    web->setAttribute(Qt::WA_DeleteOnClose);
+    web->show();
+    web->raise();
+    web->activateWindow();
+#endif
 }

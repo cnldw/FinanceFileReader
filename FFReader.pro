@@ -17,6 +17,7 @@ CONFIG += c++11
 win32{
     CONFIG += static
 }
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 #根据位数设置target名称
@@ -26,6 +27,36 @@ contains(QT_ARCH, i386) {
 contains(QT_ARCH, x86_64) {
     TARGET = FFReader-x64
 }
+
+RESOURCES += \
+    res.qrc
+
+DISTFILES +=
+win32{
+#windows下应用图标
+RC_ICONS =res/icon.ico
+############以下注意按版本修改###############
+#版本号-给windows生成到程序包使用
+VERSION = 1.9.15
+############以下注意按版本修改###############
+
+# 语言
+# 0x0004 表示 简体中文
+RC_LANG = 0x0004
+# 产品名称
+QMAKE_TARGET_PRODUCT = FFReader
+# 详细描述
+QMAKE_TARGET_DESCRIPTION = Finance File Reader
+# 版权
+QMAKE_TARGET_COPYRIGHT = Copyright(C) 2018 Liudewei
+}
+macx{
+#macOS下应用图标
+ICON = res/icon.icns
+#macoOS下自动删除上次打包产生的配置文件和打包产生的镜像后，打包配置文件到Resources目录
+QMAKE_POST_LINK =cp -rf $$PWD/config/* $$OUT_PWD/FFReader-x64.app/Contents/Resources/
+}
+
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -170,32 +201,3 @@ FORMS += \
     src/dialogchooseexporttype.ui \
     src/dialogshowcharset.ui \
     src/dialogmodifymtime.ui
-
-RESOURCES += \
-    res.qrc
-
-DISTFILES +=
-win32{
-#windows下应用图标
-RC_ICONS =res/icon.ico
-############以下注意按版本修改###############
-#版本号-给windows生成到程序包使用
-VERSION = 1.9.14
-############以下注意按版本修改###############
-
-# 语言
-# 0x0004 表示 简体中文
-RC_LANG = 0x0004
-# 产品名称
-QMAKE_TARGET_PRODUCT = FFReader
-# 详细描述
-QMAKE_TARGET_DESCRIPTION = Finance File Reader
-# 版权
-QMAKE_TARGET_COPYRIGHT = Copyright(C) 2018 Liudewei
-}
-macx{
-#macOS下应用图标
-ICON = res/icon.icns
-#macoOS下自动删除上次打包产生的配置文件和打包产生的镜像后，打包配置文件到Resources目录
-QMAKE_POST_LINK =cp -rf $$PWD/config/* $$OUT_PWD/FFReader-x64.app/Contents/Resources/
-}

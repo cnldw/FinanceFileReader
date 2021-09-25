@@ -98,6 +98,14 @@
 #include "src/qsourcehighlite/qsourcehighliter.h"
 #include "src/dialogoktools.h"
 #include "dialogshowimportexcelerror.h"
+#ifdef Q_OS_WIN32
+#include "src/formwebtools.h"
+#endif
+
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QJsonObject>
+#include <QJsonArray>
 
 /**
  * @brief The dbfMatchInfo struct 存储匹配到的DBF配置的结构体
@@ -175,6 +183,8 @@ private slots:
     void copyToClipboardWithTitle();
 
     void showRowDetails();
+
+    void openPlugin();
 
     void showMagnify();
 
@@ -315,6 +325,7 @@ private slots:
     void update_import_excel_status();
 
 private:
+
     Ui::MainWindow *ui;
     //应用程序名字
     QString appName=tr("金融文件阅读器-").append(VERSION_V);
@@ -360,6 +371,8 @@ private:
     DbfFileDefinition dbf;
     //用于记录csv文件哪些列是数值的变量，注意，这个是否是数值是猜出来的，根据前几行的数据，仅猜取小数，不猜整数
     QHash<int,FieldIsNumber> CsvFieldIsNumberOrNot;
+    //各个插件的地址
+    QHash<int,QString> pluginpath;
     //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
     FIXEDFileDefinition fixed;
     //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
@@ -386,8 +399,9 @@ private:
     QHash<int,int> dbfRowMap;
     //打开的Fixed文件的文件尾
     QList<QString> fixedFooterQStringList;
-    //当前打开的文件类别,目前已支持的文件类型0索引,1:OFD数据,2:CSV文件,3:FIXED定长文件，-1未打开文件或者显示了错误信息
-    int currentOpenFileType=-1;
+    //当前打开的文件类别,目前已支持的文件类型0:OFD索引,1:OFD数据,2:CSV文件,3:FIXED定长文件，4:DBF文件，-1未打开文件或者显示了错误信息
+    enum openFileType {NotFileOrErr=-1, OFDIndex=0, OFDFile=1, CSVFile=2, FIXEDFile=3, DBFFile=4};
+    int currentOpenFileType=openFileType::NotFileOrErr;
     //OFD字典参数，专用于OFD文件，打开文件类别为1时使用
     Dictionary ofdDictionary;
     //通用字典配置-用于csv和定长文件
@@ -548,6 +562,7 @@ private:
     void open_file_Dialog();
     void load_OFDCodeInfo();
     void load_Setting();
+    void load_PluginList();
     void load_OFDIndexFile();
     void load_OFDDictionary();
     void load_OFDTipDictionary();
