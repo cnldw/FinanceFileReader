@@ -105,7 +105,7 @@ QString Utils::qStringTrimLeft(const QString& str) {
 }
 
 
-QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
+QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row ,int col)
 {
     QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
     //判断越界
@@ -113,7 +113,13 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
         return "";
     }
     //本行数据
-    QByteArray rowdata=qUncompress(ofdFileContentQByteArrayList->at(row));
+    QByteArray rowdata;
+    if(dataCompressLevel==0){
+        rowdata=ofdFileContentQByteArrayList->at(row);
+    }
+    else{
+        rowdata=qUncompress(ofdFileContentQByteArrayList->at(row));
+    }
     //字段类型
     QString fileType=ofd->getFieldList().at(col).getFieldType();
     //开始获取此字段的值
@@ -179,13 +185,19 @@ QString Utils::getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray>
     return field;
 }
 
-QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row){
+QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row){
     QStringList rowList;
     QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
     //判断越界
     if(row<ofdFileContentQByteArrayList->count()){
-        //获取本行数据
-        QByteArray rowdata=qUncompress(ofdFileContentQByteArrayList->at(row));
+        //本行数据
+        QByteArray rowdata;
+        if(dataCompressLevel==0){
+            rowdata=ofdFileContentQByteArrayList->at(row);
+        }
+        else{
+            rowdata=qUncompress(ofdFileContentQByteArrayList->at(row));
+        }
         //遍历获取各个字段
         int colCount=ofd->getFieldCount();
         for(int col=0;col<colCount;col++){
@@ -265,7 +277,7 @@ QStringList Utils::getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByt
     return rowList;
 }
 
-QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int row ,int col)
+QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row ,int col)
 {
     QTextCodec *codecOFD = QTextCodec::codecForName("GB18030");
     //判断越界
@@ -274,11 +286,16 @@ QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArra
     }
     else{
         int fieldlength=ofd->getFieldList().at(col).getLength();
-        return codecOFD->toUnicode(qUncompress(ofdFileContentQByteArrayList->at(row)).mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
+        if(dataCompressLevel==0){
+            return codecOFD->toUnicode(ofdFileContentQByteArrayList->at(row).mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
+        }
+        else{
+            return codecOFD->toUnicode(qUncompress(ofdFileContentQByteArrayList->at(row)).mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
+        }
     }
 }
 
-QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row ,int col)
+QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int dataCompressLevel,int row ,int col)
 {
     QTextCodec *codec=QTextCodec::codecForName(fixed->getEcoding().toLocal8Bit());
     //判断越界
@@ -294,7 +311,13 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     //小数长度
     int fieldDeclength=fixed->getFieldList().at(col).getDecLength();
     //获取本行记录
-    QByteArray rowdata=qUncompress(fixedContentQByteArrayList->at(row));
+    QByteArray rowdata;
+    if(dataCompressLevel==0){
+        rowdata=fixedContentQByteArrayList->at(row);
+    }
+    else{
+        rowdata=qUncompress(fixedContentQByteArrayList->at(row));
+    }
     //获取此字段的值
     //字符定长和字节定长判断
     if(fixed->getFieldlengthtype()=="0"){
@@ -375,13 +398,19 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     return field;
 }
 
-QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int row){
+QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int dataCompressLevel,int row){
     QStringList rowList;
     //判断越界
     if(row<fixedContentQByteArrayList->count()){
         QTextCodec *codec=QTextCodec::codecForName(fixed->getEcoding().toLocal8Bit());
         //获取本行数据
-        QByteArray rowdata=qUncompress(fixedContentQByteArrayList->at(row));
+        QByteArray rowdata;
+        if(dataCompressLevel==0){
+            rowdata=fixedContentQByteArrayList->at(row);
+        }
+        else{
+            rowdata=qUncompress(fixedContentQByteArrayList->at(row));
+        }
         //遍历获取各个字段
         int colCount=fixed->getFieldCountMax();
         for(int col=0;col<colCount;col++){
@@ -478,7 +507,7 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
     return rowList;
 }
 
-QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row){
+QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int dataCompressLevel,int row){
     //判断越界
     QStringList rowData;
     if(row>=csvFileContentQByteArrayList->count()){
@@ -488,10 +517,20 @@ QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray
         //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
         if(csv->getClearQuotes()&&csv->getSplit().length()==1){
             QRegExp rx("\\"+csv->getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
-            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(rx);
+            if(dataCompressLevel==0){
+                rowData=codec->toUnicode(csvFileContentQByteArrayList->at(row)).split(rx);
+            }
+            else{
+                rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(rx);
+            }
         }
         else{
-            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+            if(dataCompressLevel==0){
+                rowData=codec->toUnicode(csvFileContentQByteArrayList->at(row)).split(csv->getSplit());
+            }
+            else{
+                rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+            }
         }
         //需要处理分隔符
         if(csv->getClearQuotes()&&rowData.count()>0){
@@ -644,7 +683,7 @@ QString Utils::getFormatValuesFromdbfTableFile(QDbf::QDbfTable * dbftablefile,Db
 }
 
 
-QStringList Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int row){
+QStringList Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> *  csvFileContentQByteArrayList,CsvFileDefinition * csv,int dataCompressLevel,int row){
     //判断越界
     QStringList rowData;
     if(row>=csvFileContentQByteArrayList->count()){
@@ -653,10 +692,20 @@ QStringList Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(QList<QB
         QTextCodec *codec=QTextCodec::codecForName(csv->getEcoding().toLocal8Bit());
         if(csv->getClearQuotes()&&csv->getSplit().length()==1){
             QRegExp rx("\\"+csv->getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
-            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(rx);
+            if(dataCompressLevel==0){
+                rowData=codec->toUnicode(csvFileContentQByteArrayList->at(row)).split(rx);
+            }
+            else{
+                rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(rx);
+            }
         }
         else{
-            rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+            if(dataCompressLevel==0){
+                rowData=codec->toUnicode(csvFileContentQByteArrayList->at(row)).split(csv->getSplit());
+            }
+            else{
+                rowData=codec->toUnicode(qUncompress(csvFileContentQByteArrayList->at(row))).split(csv->getSplit());
+            }
         }
         return rowData;
     }
