@@ -325,128 +325,6 @@ border-radius:3px;
      </widget>
     </item>
     <item>
-     <widget class="QFrame" name="frameSql">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>100</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>100</height>
-       </size>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">.QFrame{
-border-left: 1px solid rgb(198, 198, 198);
-border-right: 1px solid rgb(198, 198, 198);
-border-top: 1px solid rgb(198, 198, 198);
-border-bottom: 1px solid rgb(198, 198, 198);
-border-radius:3px;
-}</string>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <widget class="QPlainTextEdit" name="plainTextEdit">
-       <property name="geometry">
-        <rect>
-         <x>13</x>
-         <y>9</y>
-         <width>930</width>
-         <height>86</height>
-        </rect>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="font">
-        <font>
-         <family>Microsoft YaHei</family>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-      </widget>
-     </widget>
-    </item>
-    <item>
-     <widget class="QFrame" name="framesqltools">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>954</width>
-        <height>37</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>37</height>
-       </size>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">.QFrame{
-border-left: 1px solid rgb(198, 198, 198);
-border-right: 1px solid rgb(198, 198, 198);
-border-top: 1px solid rgb(198, 198, 198);
-border-bottom: 1px solid rgb(198, 198, 198);
-border-radius:3px;
-}</string>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <widget class="QPushButton" name="pushButtonrunsql">
-       <property name="geometry">
-        <rect>
-         <x>13</x>
-         <y>8</y>
-         <width>75</width>
-         <height>23</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>执行</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_2">
-       <property name="geometry">
-        <rect>
-         <x>90</x>
-         <y>8</y>
-         <width>131</width>
-         <height>23</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>查看和插入字段</string>
-       </property>
-      </widget>
-     </widget>
-    </item>
-    <item>
      <widget class="QFrame" name="frameTools">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -897,8 +775,8 @@ border-radius:3px;
     <addaction name="actioncopy"/>
     <addaction name="actionedit"/>
     <addaction name="actionedit2"/>
-    <addaction name="actionimportfromexcel"/>
     <addaction name="actioneditheaderfooter"/>
+    <addaction name="actionimportfromexcel"/>
    </widget>
    <widget class="QMenu" name="menudbftools">
     <property name="title">
@@ -939,17 +817,10 @@ border-radius:3px;
     <addaction name="menu_5"/>
     <addaction name="actionTableStructure"/>
    </widget>
-   <widget class="QMenu" name="menusqlmode">
-    <property name="title">
-     <string>DB模式</string>
-    </property>
-    <addaction name="actionswitchsqlmode"/>
-   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
-   <addaction name="menusqlmode"/>
    <addaction name="menudbftools"/>
    <addaction name="menuwindow"/>
    <addaction name="menu_3"/>
@@ -1135,7 +1006,7 @@ border-radius:3px;
   </action>
   <action name="actioneditheaderfooter">
    <property name="text">
-    <string>编辑文件头文件尾</string>
+    <string>编辑/查看文件头文件尾(仅支持OFD文件)</string>
    </property>
   </action>
   <action name="actionalldata">

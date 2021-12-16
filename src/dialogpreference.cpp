@@ -87,6 +87,15 @@ DialogPreference::DialogPreference(QMap <QString,QString> par,QWidget *parent) :
             this->defaultPageSizeType="3";
             ui->comboBox_4->setCurrentIndex(3);
         }
+        else if(par.value("defaultpagesizetype")=="4"){
+            this->defaultPageSizeType="4";
+            ui->comboBox_4->setCurrentIndex(4);
+        }
+        //找不到就按10w
+        else{
+            this->defaultPageSizeType="0";
+            ui->comboBox_4->setCurrentIndex(0);
+        }
     }
 }
 
@@ -182,6 +191,9 @@ void DialogPreference::on_comboBox_4_currentIndexChanged(int index)
     }
     else if(index==3){
         defaultPageSizeType="3";
+    }
+    else if(index==4){
+        defaultPageSizeType="4";
     }
 }
 

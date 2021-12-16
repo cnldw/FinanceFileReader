@@ -37,7 +37,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.16
+VERSION = 1.9.18
 ############以下注意按版本修改###############
 
 # 语言
@@ -81,8 +81,6 @@ include(src/libucd/libucd.pri)
 include(src/qrcode/Qrcode.pri)
 #引入qdbf
 include(src/qdbf/qdbf.pri)
-#引入语法高亮库
-include(src/qsourcehighlite/QSourceHighlite.pri)
 #引入minibink模块,引入浏览器窗口组件,仅支持windows
 win32{
     include (src/miniblink/miniblink.pri)

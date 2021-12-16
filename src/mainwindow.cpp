@@ -39,9 +39,6 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     this->setStyleSheet("font-size:13px");
 #endif
     /*临时隐藏未开发完毕的功能***************************************/
-    ui->actioneditheaderfooter->setVisible(false);
-    ui->menusqlmode->menuAction()->setVisible(false);
-    /**************************************************************/
 
     /*插件功能*****************************************************/
     //仅Windows系统支持文件比对和在文本编辑器中打开
@@ -56,9 +53,6 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     /**************************************************************/
 
     /*默认隐藏***************************************************/
-    //默认隐藏sql模式框框
-    ui->frameSql->setVisible(false);
-    ui->framesqltools->setVisible(false);
     //默认隐藏dbf工具箱
     ui->menudbftools->menuAction()->setVisible(false);
     /**************************************************************/
@@ -158,7 +152,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
     tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
     tips.append("想要比对同一个文件不同版本的差异?试试导出到csv固定分隔符文件后同时把两个文件拖向FFReader,它会问你是否要比对差异...");
-    tips.append("禁用压缩功能,可以极大的提高文件加载速度,如果你的电脑内存足够,建议禁用压缩功能(打开2GB的文件大概需要2.5GB内存)");
+    tips.append("禁用压缩功能,可以极大的提高文件加载速度,如果你的电脑内存足够,建议禁用压缩功能(打开2GB的文件大概需要2.5GB内存)...");
+    tips.append("如果没有特殊情况,请使用64位FFReader,32位版本的FFReader难以打开超大的文件...");
 #endif
     specialCharacter.insert("00","NUL (null):空字符");
     specialCharacter.insert("01","SOH (start of headling):标题开始");
@@ -201,14 +196,6 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     dbfIsNumberFieldType.append(QDbf::QDbfField::Integer);
     dbfIsNumberFieldType.append(QDbf::QDbfField::Currency);
 
-    //语法高亮-SQL
-    QFont f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    ui->plainTextEdit->setFont(f);
-    ui->plainTextEdit->setStyleSheet("font-size:13px");
-    highlighter = new QSourceHighlite::QSourceHighliter(ui->plainTextEdit->document());
-    highlighter->setCurrentLanguage(QSourceHighlite::QSourceHighliter::CodeSQL);
-    highlighter->setTheme(QSourceHighlite::QSourceHighliter::Themes::Monokai);
-
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
     //开始初始化状态栏
@@ -238,6 +225,10 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     else if(this->defaultPageSizeType=="3"){
         ui->labelPageSize->setText("(100万行/页)");
         this->pageRowSize=1000000;
+    }
+    else if(this->defaultPageSizeType=="4"){
+        ui->labelPageSize->setText("(200万行/页)");
+        this->pageRowSize=2000000;
     }
     else{
         ui->labelPageSize->setText("(10万行/页)");
@@ -685,7 +676,7 @@ void MainWindow::load_Setting(){
                 }
                 //默认每页行数类别
                 if(key=="defaultpagesizetype"){
-                    if(value!="0"&&value!="1"&&value!="2"&&value!="3"){
+                    if(value!="0"&&value!="1"&&value!="2"&&value!="3"&&value!="4"){
                         this->defaultPageSizeType="0";
                     }else{
                         this->defaultPageSizeType=value;
@@ -1795,6 +1786,8 @@ void MainWindow::load_DBFDefinition(){
  * @param filePath
  */
 void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdbfTrimType){
+    //重设开始时间
+    time_Start = (double)clock();
     currentOpenFileType=openFileType::NotFileOrErr;
     //设置当前打开的路径////////////////////////////////////////////
     currentOpenFilePath=filePath;
@@ -1959,8 +1952,10 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
         }
         //索引文件名处理完毕后，开始拆解文件名
         QStringList nameList=fixName.split("_");
-        //正常的OFD索引文件应该有4段信息组成
-        if(nameList.count()!=4){
+        //OFX_发送方_接受方_日期.TXT
+        //OFX_发送方_接受方_日期_批次号.TXT
+        //正常的OFD索引文件应该至少有4段信息组成
+        if(nameList.count()<4){
             goto NOT_OF_FILE;
         }
         if(!loadedOfdIndexFileInfo.value(nameList.at(0)).isEmpty()){
@@ -1992,6 +1987,8 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
         }
         else{
             qDebug()<<"索引识别异常";
+            //加载索引异常,尝试识别下是不是其他类型文件
+            goto NOT_OF_FILE;
         }
     }
     //非OF体系的文件，既不是OFD数据文件，又不是索引文件，则不放弃，检测下是否是csv或者定长文件
@@ -2428,7 +2425,8 @@ void MainWindow::load_indexFile(){
  * @brief MainWindow::load_ofdFile OFD文件的加载方法
  * @param fileType
  */
-void MainWindow::load_ofdFile(QString fileType){
+void MainWindow::load_ofdFile(QString fileTypeFromFileName){
+    QString fileType=fileTypeFromFileName;
     qDebug()<<"开始加载的文件类别"<<fileType;
     //当前打开的文件类别为1，OFD文件
     currentOpenFileType=openFileType::OFDFile;
@@ -2449,10 +2447,12 @@ void MainWindow::load_ofdFile(QString fileType){
     {
         QString lineQString;
         int lineNumber=0;
+        bool atLastRow=false;
         while (!dataFile.atEnd())
         {
             //根据OFD文件的编码解开成unicode字符串
             lineQString = codecOFD->toUnicode(dataFile.readLine());
+            atLastRow=dataFile.atEnd();
             //记录需要截取的换行符长度
             if(lineNumber==0){
                 if(lineQString.endsWith("\r\n")){
@@ -2466,12 +2466,30 @@ void MainWindow::load_ofdFile(QString fileType){
                 }
             }
             //第一行数据不trim
-            if(lineNumber==lineEnd&&lineNumber!=9){
+            if(lineNumber==lineEnd&&lineNumber!=9&&!atLastRow){
                 //数据行不能trim
                 lineQString=lineQString.left(lineQString.length()-newLineCharsetLength);
             }
             else{
-                lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
+                if(!atLastRow){
+                    lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
+                }
+                else{
+                    //最后一行可能没有换行符
+                    if(lineQString.endsWith("\r\n")){
+                        lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
+                    }
+                    else if(lineQString.endsWith("\r")){
+                        lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
+                    }
+                    else if(lineQString.endsWith("\n")){
+                        lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
+                    }
+                    else{
+                        //没有换行符
+                        lineQString=lineQString.trimmed();
+                    }
+                }
             }
             //文件的第二行是文件版本
             if(lineNumber==1){
@@ -2482,6 +2500,14 @@ void MainWindow::load_ofdFile(QString fileType){
                     dataFile.close();
                     statusBar_disPlayMessage("解析失败,未从文件第2行读取到OFD文件的版本号信息");
                     return;
+                }
+            }
+            if(lineNumber==6){
+                QString fileTypeFromFile=lineQString.trimmed();
+                if(fileTypeFromFile!=fileType){
+                    qDebug()<<"文件内的文件类型和文件名里的不一致,取文件里的";
+                    fileType=fileTypeFromFile;
+                    ui->lineEditFileType->setText(fileTypeFromFile);
                 }
             }
             //文件的第10行记录了该文件有多少个字段
@@ -2526,8 +2552,14 @@ void MainWindow::load_ofdFile(QString fileType){
             }
             //读取到了第一行记录，哈哈哈
             if(lineNumber>9&&lineNumber==lineEnd){
-                //记录到了文件记录数
-                firstLineDateLenght=codecOFD->fromUnicode(lineQString).length();
+                //当记录数大于0的情况下，如果有极端情况，数据记录数大于0，但是却没任何记录，直接是结束符号，则特殊判断
+                if(lineQString!="OFDCFEND"){
+                    firstLineDateLenght=codecOFD->fromUnicode(lineQString).length();
+                }
+                else{
+                    firstLineDateLenght=-1;
+                    break;
+                }
             }
             lineNumber++;
             //如果到达了终止点就跳出
@@ -2666,6 +2698,9 @@ void MainWindow::load_ofdFile(QString fileType){
                     bool mergeFlag=false;
                     int ofdrowLength=ofd.getRowLength();
                     QApplication::setOverrideCursor(Qt::WaitCursor);
+                    bool lastRowIsOFDCFEND=false;
+                    bool readToLastRow=true;
+                    bool atLastRow=false;
                     while (!dataFile.atEnd())
                     {
                         //如果此行记录小于数据开始行,则认为是文件头,存入文件头
@@ -2679,17 +2714,39 @@ void MainWindow::load_ofdFile(QString fileType){
                             /*******标准数据行*******/
                             //gb18030编码的字节数组-不包含换行符
                             QByteArray lineQByteArray=dataFile.readLine();
+                            atLastRow=dataFile.atEnd();
                             //移除换行符
-                            lineQByteArray=lineQByteArray.left(lineQByteArray.length()-newLineCharsetLength);
+                            if(!atLastRow){
+                                lineQByteArray=lineQByteArray.left(lineQByteArray.length()-newLineCharsetLength);
+                            }
+                            //最后一行，要判断最后一行数据结尾是否有换行符
+                            else{
+                                //最后一行可能没有换行符
+                                if(codecOFD->toUnicode(lineQByteArray).endsWith("\r\n")){
+                                    lineQByteArray=lineQByteArray.left(lineQByteArray.length()-2);
+                                }
+                                else if(codecOFD->toUnicode(lineQByteArray).endsWith("\r")){
+                                    lineQByteArray=lineQByteArray.left(lineQByteArray.length()-1);
+                                }
+                                else if(codecOFD->toUnicode(lineQByteArray).endsWith("\n")){
+                                    lineQByteArray=lineQByteArray.left(lineQByteArray.length()-1);
+                                }
+                            }
                             //转换为unicode字符串
                             line = codecOFD->toUnicode(lineQByteArray);
                             //分析是否读取到了OFDCFEND结束标记,是的话直接跳出循环
                             if(line.length()==8){
                                 if(QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
+                                    lastRowIsOFDCFEND=true;
+                                    ofdFooterQString="OFDCFEND";
+                                    ofdFooterRowNumber=lineNumber+1;
+                                    if(!dataFile.atEnd()){
+                                        readToLastRow=false;
+                                    }
                                     break;
                                 }
                             }
-                            //本行记录和接口约束的一致,存入--排除特殊情况，字段中存在换行符但是Qt读取数据时没换行
+                            //本行记录长度和接口约束的一致,存入--排除特殊情况，字段中存在换行符但是Qt读取数据时没换行
                             if(lineQByteArray.length()==ofdrowLength&&!line.contains("\r")&&!line.contains("\n")){
                                 if(dataCompressLevel==0){
                                     ofdFileContentQByteArrayList.append(lineQByteArray);
@@ -2701,6 +2758,13 @@ void MainWindow::load_ofdFile(QString fileType){
                             /*******其他情况*******/
                             //如果本行数据长度和接口定义不一致,则尝试读取下一行,分析是否进行数据合并
                             else{
+                                //如果已经是最后一行了,且内容不是结束标志--这个问题比较严肃,要提醒用户
+                                if(dataFile.atEnd()){
+                                    lastRowIsOFDCFEND=false;
+                                    ofdFooterQString=line;
+                                    ofdFooterRowNumber=lineNumber+1;
+                                    break;
+                                }
                                 QString nextLine = "";
                                 //情况1Qt没换行但是含换行符号
                                 if(line.contains("\r")){
@@ -2899,12 +2963,22 @@ void MainWindow::load_ofdFile(QString fileType){
                         }
                         statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行");
                         init_OFDTable();
+                        //没读取到最后一行就遇到了结束标志
+                        if(!readToLastRow){
+                            QMessageBox::warning(this,tr("提示"),QString("\r\n\r\n当前打开的OFD文件还没读取到最后一行就遇到了\"OFDCFEND\"行,所以提前结束了数据读取,\"OFDCFEND\"正常应该出现在最后一行作为文件结束行!!!\r\n\r\n"),QMessageBox::Ok,QMessageBox::Ok);
+                        }
+                        //读取到了最后一行,但是不是结束标志,提示最后一行是不是OFDCFEND
+                        else if(!lastRowIsOFDCFEND){
+                            QMessageBox::warning(this,tr("提示"),QString("\r\n\r\n当前打开的OFD文件最后一行当前内容是\"%1\"不是\"OFDCFEND\",正常来说OFD文件应该以\"OFDCFEND\"为结束行!!!\r\n\r\n").arg(ofdFooterQString),QMessageBox::Ok,QMessageBox::Ok);
+                        }
                     }
                     //如果失败了,则释放内存
                     //此处很重要,是否启用文件另存使用了ofdFileHeaderQStringList是否为空的判断
                     else{
                         ofdFileHeaderQStringList.clear();
                         ofdFileContentQByteArrayList.clear();
+                        ofdFooterQString="";
+                        ofdFooterRowNumber=0;
                     }
                 }else{
                     currentOpenFileType=openFileType::NotFileOrErr;
@@ -4173,7 +4247,7 @@ void MainWindow::init_OFDTable(){
             ptr_table->resizeColumnsToContents();
         }
         statusBar_display_rowsCount(rowCount);
-        statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
+        statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒").arg(QString::number(rowCount)).arg(QString::number(((double)clock() - time_Start)/1000.0)));
     }
     else
     {
@@ -4248,15 +4322,15 @@ void MainWindow::init_DBFTable(){
     statusBar_display_rowsCount(rowCount);
     QString add="";
     if(dbfDisplayType==0){
-        add="-显示所有记录";
+        add="显示所有记录";
     }
     else if(dbfDisplayType==1){
-        add="-仅显示未删除的记录";
+        add="仅显示未删除的记录";
     }
     else if(dbfDisplayType==2){
-        add="-仅显示已删除的记录";
+        add="仅显示已删除的记录";
     }
-    statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行"+add);
+    statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-%2-耗时%3秒").arg(QString::number(rowCount)).arg(add).arg(QString::number(((double)clock() - time_Start)/1000.0)));
 }
 
 /**
@@ -4324,7 +4398,7 @@ void MainWindow::init_FIXEDTable(){
         ptr_table->resizeColumnsToContents();
     }
     statusBar_display_rowsCount(rowCount);
-    statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
+    statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒").arg(QString::number(rowCount)).arg(QString::number(((double)clock() - time_Start)/1000.0)));
 }
 
 /**
@@ -4516,10 +4590,10 @@ void MainWindow::init_CSVTable(QStringList title){
         }
         statusBar_display_rowsCount(rowCount,csv.getEcoding());
         if(csv.getFfAuto()){
-            statusBar_disPlayMessage("成功读取记录"+QString::number(rowCount)+"行-[当前使用自动解析引擎解析,建议配置解析规则获得更好解析体验]");
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-[使用自动解析引擎解析,建议配置解析规则获得更好体验]-耗时%2秒").arg(QString::number(rowCount)).arg(QString::number(((double)clock() - time_Start)/1000.0)));
         }
         else{
-            statusBar_disPlayMessage("文件解析完毕!成功读取记录"+QString::number(rowCount)+"行");
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒").arg(QString::number(rowCount)).arg(QString::number(((double)clock() - time_Start)/1000.0)));
         }
     }
     else{
@@ -4853,6 +4927,7 @@ void MainWindow::clear_OldData( bool keepdbfDisplayType, bool keepdbfTrimType){
     ofdIndexFileHeaderMap.clear();
     indexFileDataList.clear();
     ofdFileHeaderQStringList.clear();
+    ofdFooterQString="";
     ofdFileContentQByteArrayList.clear();
     ofdFileContentQByteArrayListFromExcel.clear();
     csvFileHeaderQStringList.clear();
@@ -8667,7 +8742,7 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
     }
     //禁止导出过大的excel文件-目前不会发生这个情况-目前单页最大100万行=最大允许导出的excel行
     if((rowEnd-rowBegin)>maxExcelRow){
-        statusBar_disPlayMessage("记录数大于"+QString::number(maxExcelRow)+"行,无法使用导出到excel,请导出csv或者html(如有需求导出到excel请联系"+QByteArray::fromBase64(AUTHOR_EMAIL)+")");
+        statusBar_disPlayMessage("当前数据记录大于"+QString::number(maxExcelRow)+"行,请降低分页条数到1000000万行或者以下按分页导出Excel...");
         dataBlocked=false;
         isExportFile=false;
         return;
@@ -9328,7 +9403,7 @@ void MainWindow::saveOFDFile(QString filepath)
             row++;
         }
         //写入文件结束标志位//////////////////////////////////////////////////////////////////
-        newfile.write(codecOFD->fromUnicode("OFDCFEND\r\n"));
+        newfile.write(codecOFD->fromUnicode(ofdFooterQString+"\r\n"));
         newfile.flush();
         newfile.close();
         fileChanged=false;
@@ -10125,6 +10200,10 @@ void MainWindow::on_actionpreference_triggered()
             else if(this->defaultPageSizeType=="3"){
                 ui->labelPageSize->setText("(100万行/页)");
                 this->pageRowSize=1000000;
+            }
+            else if(this->defaultPageSizeType=="4"){
+                ui->labelPageSize->setText("(200万行/页)");
+                this->pageRowSize=2000000;
             }
             else{
                 ui->labelPageSize->setText("(10万行/页)");
@@ -11242,13 +11321,115 @@ bool MainWindow::compareDBFData(const dbfMatchInfo &dbf1, const dbfMatchInfo &db
 
 void MainWindow::on_actioneditheaderfooter_triggered()
 {
-    //打开窗口
-    DialogEditHeaderFooter * dialog = new DialogEditHeaderFooter(this);
-    dialog->setModal(false);
-    dialog->setAttribute(Qt::WA_DeleteOnClose);
-    dialog->show();
-    dialog->raise();
-    dialog->activateWindow();
+    if(currentOpenFileType==openFileType::OFDFile){
+        QList<QStringList> header;
+        QList<QStringList> footer;
+        //////
+        QStringList row1;
+        row1.append("1");
+        row1.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(0):"");
+        row1.append("文件标识");
+        header.append(row1);
+
+        QStringList row2;
+        row2.append("2");
+        row2.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(1):"");
+        row2.append("文件版本号");
+        header.append(row2);
+
+        QStringList row3;
+        row3.append("3");
+        row3.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(2):"");
+        row3.append("文件创建人");
+        header.append(row3);
+
+        QStringList row4;
+        row4.append("4");
+        row4.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(3):"");
+        row4.append("文件接收人");
+        header.append(row4);
+
+        QStringList row5;
+        row5.append("5");
+        row5.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(4):"");
+        row5.append("日期");
+        header.append(row5);
+
+        QStringList row6;
+        row6.append("6");
+        row6.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(5):"");
+        row6.append("汇总表号");
+        header.append(row6);
+
+        QStringList row7;
+        row7.append("7");
+        row7.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(6):"");
+        row7.append("文件类型码");
+        header.append(row7);
+
+        QStringList row8;
+        row8.append("8");
+        row8.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(7):"");
+        row8.append("发送人");
+        header.append(row8);
+
+        QStringList row9;
+        row9.append("9");
+        row9.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(8):"");
+        row9.append("接收人");
+        header.append(row9);
+
+        QStringList row10;
+        row10.append("10");
+        row10.append(ofdFileHeaderQStringList.count()>=10?ofdFileHeaderQStringList.at(9):"");
+        row10.append("字段数");
+        header.append(row10);
+
+        //字段信息和文件记录数信息
+        if(ofdFileHeaderQStringList.count()>10){
+            for(int hn=10;hn<ofdFileHeaderQStringList.count();hn++){
+                QStringList rowdata;
+                rowdata.append(QString::number(hn+1));
+                rowdata.append(ofdFileHeaderQStringList.at(hn));
+                //文件记录数
+                if(hn==ofdFileHeaderQStringList.count()-1){
+                    rowdata.append("文件记录数");
+                }
+                //字段名
+                else if(hn<ofdFileHeaderQStringList.count()-1&&ofd.getFieldList().count()>hn-10){
+                    rowdata.append(ofd.getFieldList().at(hn-10).getFieldDescribe());
+                }
+                else {
+                    rowdata.append("");
+                }
+                //添加到文件头
+                header.append(rowdata);
+            }
+        }
+
+        QStringList rowend;
+        if(!ofdFooterQString.isEmpty()){
+            rowend.append(QString::number(ofdFooterRowNumber));
+            rowend.append(ofdFooterQString);
+            rowend.append("文件结束标识");
+        }
+        else{
+            rowend.append(QString::number(ofdFooterRowNumber));
+            rowend.append("OFDCFEND");
+            rowend.append("文件结束标识缺失,自动设置为OFDCFEND");
+        }
+        footer.append(rowend);
+
+        //打开窗口
+        DialogEditHeaderFooter * dialog = new DialogEditHeaderFooter(&ofd,header,footer,this);
+        connect(dialog,&DialogEditHeaderFooter::sendNewHeaderAndFooter,this,&MainWindow::getNewHeaderAndFooter);
+        dialog->setModal(true);
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+        dialog->show();
+        dialog->raise();
+        dialog->activateWindow();
+
+    }
 }
 
 void MainWindow::showQrcode(){
@@ -11686,25 +11867,6 @@ void MainWindow::on_actionright_triggered()
     }
 }
 
-void MainWindow::on_actionswitchsqlmode_triggered()
-{
-    //当前是sql模式，则清理sql模式现场,退出sql模式
-    if(sqlMode){
-
-    }
-    else{
-        if(currentOpenFileType<=0){
-            return;
-        }
-        //开始为进入sql模式做准备
-        else{
-            //切换UI视图
-            ui->frameInfo->setVisible(false);
-            ui->frameSql->setVisible(true);
-            ui->framesqltools->setVisible(true);
-        }
-    }
-}
 
 void MainWindow::on_actionOKTools_triggered()
 {
@@ -12150,4 +12312,45 @@ void MainWindow::openPlugin(){
     web->raise();
     web->activateWindow();
 #endif
+}
+
+/**
+ * @brief MainWindow::getNewHeaderAndFooter 从弹窗中获取文件头文件尾编辑结果
+ * @param header
+ * @param footer
+ */
+void MainWindow::getNewHeaderAndFooter(QStringList header,QStringList footer){
+    qDebug()<<header;
+    qDebug()<<footer;
+    if(currentOpenFileType==openFileType::OFDFile){
+        if(header.count()!=ofdFileHeaderQStringList.count()){
+            statusBar_disPlayMessage("文件头读取异常,跳过更新文件头文件尾");
+            return;
+        }
+        else{
+            bool modify=false;
+            if(header.count()>0){
+                for (int i=0;i<header.count();i++){
+                    if(0!=header.at(i).compare(ofdFileHeaderQStringList.at(i),Qt::CaseSensitive)){
+                        ofdFileHeaderQStringList.replace(i,header.at(i));
+                        modify=true;
+                    }
+                }
+            }
+            if(footer.count()>0){
+               if(0!=footer.at(0).compare(ofdFooterQString,Qt::CaseSensitive)){
+                   ofdFooterQString=footer.at(0);
+                   modify=true;
+               }
+            }
+            if(modify){
+                statusBar_disPlayMessage("已修改文件头文件尾,请保存文件!");
+                this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
+                fileChanged=true;
+            }
+            else{
+                statusBar_disPlayMessage("文件头文件尾未修改...");
+            }
+        }
+    }
 }

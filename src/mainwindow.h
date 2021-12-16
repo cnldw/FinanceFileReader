@@ -95,7 +95,6 @@
 #include "src/dbffielddefinition.h"
 #include "src/dbffiledefinition.h"
 #include "src/dbffileconfig.h"
-#include "src/qsourcehighlite/qsourcehighliter.h"
 #include "src/dialogoktools.h"
 #include "dialogshowimportexcelerror.h"
 #ifdef Q_OS_WIN32
@@ -316,13 +315,14 @@ private slots:
 
     void on_actionright_triggered();
 
-    void on_actionswitchsqlmode_triggered();
-
     void on_actionOKTools_triggered();
 
     void on_actionimportfromexcel_triggered();
 
     void update_import_excel_status();
+
+public slots:
+    void getNewHeaderAndFooter(QStringList header,QStringList footer);
 
 private:
 
@@ -379,6 +379,9 @@ private:
     QList<QString> ofdFileHeaderQStringList;
     //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
     QList<QByteArray> ofdFileContentQByteArrayList;
+    //打开的ofd文件的文件尾
+    QString ofdFooterQString;
+    int ofdFooterRowNumber;
     //打开的CSV文件的文件头
     QList<QString> csvFileHeaderQStringList;
     //打开的CSV文件的数据体
@@ -443,7 +446,6 @@ private:
     //如果统计途中发现此变量变了，则代表有新的统计任务，此任务立即return废弃
     int calculateIndex=0;
 
-    QSourceHighlite::QSourceHighliter *highlighter;
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
@@ -548,6 +550,9 @@ private:
     //只允许退出程序时使用此标志,遇到此标志一切进行中的耗时任务都会终止并退出
     bool abortExit=false;
 
+    //统计读取文件耗时
+    double time_Start = (double)clock();
+
     void copyToClipboard(bool withTitle=false);
 
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
@@ -574,7 +579,7 @@ private:
     void load_FIXEDDefinition();
     void load_DBFDefinition();
     void load_indexFile();
-    void load_ofdFile(QString fileType);
+    void load_ofdFile(QString fileTypeFromFileName);
     void load_csvFile(QStringList fileType);
     void load_fixedFile(QStringList fileType);
     void load_fixedFileData();
