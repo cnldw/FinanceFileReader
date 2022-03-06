@@ -435,7 +435,9 @@ private:
     //允许解析的编码白名单
     QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-8","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
     //编码识别尝试识别的分隔符-如考虑新增分隔符则写到这里
-    QList<QString> autoFlagList={"|",",","\t",";","#",""};
+    //QChar(1)=SOH=标题开始
+    //QChar(31)=1FH=单元分隔符
+    QList<QString> autoFlagList={"|",",","\t",";","#",QChar(1),QChar(31)};
     //尝试自动检测标题时，中英文字符占比（我们姑且认为如果第一行数据中英文占比大于此值，识别第一行数据行为标题）
     float titlecheck=0.7;
     //当第一行中英文占比低于上述设定值时，通过校验第一行和第2到11行数据中英文占比平均值的差值，如果差异大于下属设定值，则依然识别第一行数据行为标题
@@ -445,7 +447,10 @@ private:
     //统计index,当用户选中一列或者数值区域进行数值统计时对此变量自增并记录
     //如果统计途中发现此变量变了，则代表有新的统计任务，此任务立即return废弃
     int calculateIndex=0;
-
+    //类OFD索引和数据文件名规则
+    QHash<QString, QString>  likeOFDDataFilename;
+    QHash<QString, QString>  likeOFDIndexFilename;
+    QString likeOFFFileType;
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
@@ -572,6 +577,7 @@ private:
     void load_Setting();
     void load_PluginList();
     void load_OFDIndexFile();
+    void load_OFDLikeFileDefinition();
     void load_OFDDictionary();
     void load_OFDTipDictionary();
     void load_OFDDefinition();

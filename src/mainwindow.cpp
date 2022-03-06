@@ -78,7 +78,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_ShowCopyColumWithTitle, SIGNAL(triggered()), this, SLOT(copyToClipboardWithTitle()));
     action_Magnify = new QAction(tr("放大镜"),this);
     connect(action_Magnify, SIGNAL(triggered()), this, SLOT(showMagnify()));
-    action_ShowOFDAnalysis = new QAction(tr("OFD字段合法分析"),this);
+    action_ShowOFDAnalysis = new QAction(tr("OFD/类OFD字段合法分析"),this);
     connect(action_ShowOFDAnalysis, SIGNAL(triggered()), this, SLOT(showOFDFiledAnalysis()));
     action_EditCompareData= new QAction(tr("将此行数据加入比对器"),this);
     connect(action_EditCompareData, SIGNAL(triggered()), this, SLOT(editCompareData()));
@@ -90,7 +90,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_ModifyOFDCellBatch, SIGNAL(triggered()), this, SLOT(showModifyOFDCellBatch()));
     action_DeleteOFDRowData= new QAction(tr("从文件中删除光标所在行的整行记录"),this);
     connect(action_DeleteOFDRowData, SIGNAL(triggered()), this, SLOT(deleteRowDataFromFileAndTable()));
-    action_CopyOFDRowData= new QAction(tr("复制光标所在整行原始数据(专用于合并OFD数据)"),this);
+    action_CopyOFDRowData= new QAction(tr("复制光标所在整行原始数据(专用于合并OFD/类OFD数据)"),this);
     connect(action_CopyOFDRowData, SIGNAL(triggered()), this, SLOT(copyOFDRowData()));
     action_addCopyedOFDData2PreviousRow= new QAction(tr("将剪切板上的数据插入到此行上方"),this);
     connect(action_addCopyedOFDData2PreviousRow, SIGNAL(triggered()), this, SLOT(addOFDRowDataPreviousRow()));
@@ -123,7 +123,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("右键菜单有不少小功能哟...");
     tips.append("数据修改后点击保存,程序会自动创建备份,避免找不回原文件...");
     tips.append("数据修改后点击另存保存,可以覆盖保存或者保存文件到其他位置...");
-    tips.append("你可以在"+Utils::getConfigPath()+"目录下进行配置文件修改,可以让工具支持新增的各种OFD文件...");
+    tips.append("你可以在"+Utils::getConfigPath()+"目录下进行配置文件修改,可以让工具支持新增的各种OFD/类OFD文件...");
     tips.append("拖放文件到程序主窗口,即可打开文件,又快又省心...");
     tips.append("程序里有一个彩蛋哟,快去找一下...");
     tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
@@ -136,18 +136,18 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     tips.append("对于全是数值的列，选择同一列多行数据时，状态栏会自动对选择的数据进行求和，求平均数");
     tips.append("尝试使用本工具解析各种固定字符/字节长度文件吧，高效解析,且支持导出excel...");
     tips.append("尝试进行设置本程序,可以实现默认拖进文件时打开一个新窗口解析,默认使用精简模式打开程序,你的爱好你做主...");
-    tips.append("基金、银行理财领域的OFD文件,本程序都支持解析哟...");
+    tips.append("基金、银行理财领域的OFD/类OFD文件,本程序都支持解析哟...");
     tips.append("需要打开超大文件?,建议在设置里设置开启压缩模式和分页支持,支持的文件大小立即提升到GB级别...");
     tips.append("本程序是业余无偿开发的,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
     tips.append("小额捐赠给予支持,FFReader将获得更好的发展,捐赠信息在菜单[帮助-关于程序下]...");
     tips.append("FFReader是一个免费的工具软件,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
-    tips.append("可以使用本程序新建OFD文件,以及初始化自己的新建模板...");
+    tips.append("可以使用本程序新建OFD/类OFD文件,以及初始化自己的新建模板...");
     tips.append("导出功能可以分页导出或者导出全部数据,自由选择导出范围,是否使用UTF-8编码...");
     tips.append("在程序主窗口或者查看行详细信息界面,使用Ctrl+Alt+R(command+option+R)可以进行快速截图保存...");
     tips.append("固定分隔符文件可以在任意单元格右键对此列手工设置数据格式,调整为数值或者自定义小数长度哟,方便进行数值统计...");
     tips.append("在设置-首选项里设置默认精简视图,即可默认获得最大化的数据展示空间...");
     tips.append("本程序支持解析证券各类DBF文件,直接解析或者配置解析均可,使用配置获得更好的解析体验...");
-    tips.append("需要编辑手工创造OFD数据文件？尝试新建文件后导出到Excel编辑，编辑后可以立即导入本程序生成OFD数据文件...");
+    tips.append("需要编辑手工创造OFD/类OFD数据文件？尝试新建文件后导出到Excel编辑，编辑后可以立即导入本程序生成OFD/类OFD数据文件...");
 #ifdef Q_OS_WIN32
     tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
     tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
@@ -242,6 +242,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     load_OFDIndexFile();
     //加载各类OFD文件的定义
     load_OFDDefinition();
+    //加载类OFD体系的文件的文件名前缀信息
+    load_OFDLikeFileDefinition();
     //加载OFD字典
     load_OFDDictionary();
     //加载OFD tips字典
@@ -819,6 +821,40 @@ void MainWindow::load_OFDIndexFile(){
     }
 }
 
+void MainWindow::load_OFDLikeFileDefinition(){
+    QString fileTypeInipath=Utils::getConfigPath()+"OFD_Like.ini";
+    if(Utils::isFileExist(fileTypeInipath)){
+        //加载ini文件
+        QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        fileTypeIni.setIniCodec("UTF-8");
+        QStringList infoList;
+        //读取INDEXFILEPREFIX
+        fileTypeIni.beginGroup("INDEXFILEPREFIX");
+        infoList =fileTypeIni.childKeys();
+        fileTypeIni.endGroup();
+        likeOFDIndexFilename.clear();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                likeOFDIndexFilename.insert(infoList.at(i),fileTypeIni.value("INDEXFILEPREFIX/"+infoList.at(i)).toString());
+            }
+        }
+        infoList.clear();
+        ////////////////////////////////////////////////////////
+        //读取DATAFILEPREFIX
+        fileTypeIni.beginGroup("DATAFILEPREFIX");
+        infoList =fileTypeIni.childKeys();
+        fileTypeIni.endGroup();
+        likeOFDDataFilename.clear();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                likeOFDDataFilename.insert(infoList.at(i),fileTypeIni.value("DATAFILEPREFIX/"+infoList.at(i)).toString());
+            }
+        }
+        infoList.clear();
+    }
+}
+
 /**
  * @brief MainWindow::load_Dictionary加载OFD的字典信息
  */
@@ -909,7 +945,7 @@ void MainWindow::load_OFDDefinition(){
             QString fileName=list.at(f).fileName();
             QString fixName=fileName;
             //排除几个文件
-            if(fileName=="OFD_CodeInfo.ini"||fileName=="OFD_Dictionary.ini"||fileName=="OFD_IndexFile.ini"||fileName=="OFD_TipDictionary.ini"){
+            if(fileName=="OFD_CodeInfo.ini"||fileName=="OFD_Dictionary.ini"||fileName=="OFD_IndexFile.ini"||fileName=="OFD_TipDictionary.ini"||fileName=="OFD_Like.ini"){
                 continue;
             }
             if(fileName.startsWith("OFD",Qt::CaseInsensitive)&&fileName.endsWith("ini",Qt::CaseInsensitive)){
@@ -1993,6 +2029,144 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
     }
     //非OF体系的文件，既不是OFD数据文件，又不是索引文件，则不放弃，检测下是否是csv或者定长文件
 NOT_OF_FILE:
+    //20220302新加逻辑,先看看是不是类OFD的文件
+    bool isLikeOFD=false;
+    bool isLikeOFDIndex=false;
+    if(likeOFDDataFilename.count()>0){
+        QHash<QString, QString>::iterator h2;
+        for (h2=likeOFDDataFilename.begin(); h2!=likeOFDDataFilename.end(); ++h2){
+            QString Name=h2.key();
+            Name.replace("*","\\S*");
+            QString pattern(Name.toUpper());
+            QRegExp rx(pattern);
+            bool match = rx.exactMatch(currentFileName.toUpper());
+            //一旦匹配到，则把此文件当作OFD文件去尝试解析
+            if(match){
+                isLikeOFD=true;
+                likeOFFFileType=likeOFDDataFilename.value(h2.key());
+                break;
+            }
+        }
+    }
+    if(likeOFDIndexFilename.count()>0){
+        QHash<QString, QString>::iterator h2;
+        for (h2=likeOFDIndexFilename.begin(); h2!=likeOFDIndexFilename.end(); ++h2){
+            QString Name=h2.key();
+            Name.replace("*","\\S*");
+            QString pattern(Name.toUpper());
+            QRegExp rx(pattern);
+            bool match = rx.exactMatch(currentFileName.toUpper());
+            if(match){
+                isLikeOFDIndex=true;
+                likeOFFFileType=likeOFDIndexFilename.value(h2.key());
+                break;
+            }
+        }
+    }
+
+    if(isLikeOFD&&!isLikeOFDIndex){
+        qDebug()<<likeOFFFileType;
+        qDebug()<<"类OFD文件";
+        //开始拆解文件名
+        QString fixName=currentFileName;
+        if(fixName.contains(".",Qt::CaseInsensitive)){
+            fixName=fixName.mid(0,fixName.indexOf("."));
+        }
+        //类OFD文件名处理完毕后，开始拆解文件名---对于类OFD我们允许文件名不符合OFD的几段规范
+        QStringList nameList=fixName.split("_");
+        //正常的OFD文件应该至少有5段信息组成,另外中登TA和管理人交互的文件还有批次号,如果不是，则跳转到非OF文件检查
+        if(nameList.count()<5){
+            //尝试直接去解析文件,对于类OFD只要配置了OFD_like.ini就当ofd去解析，哪怕文件名不是标准的
+            load_ofdFile("@@");
+            return;
+        }
+        else{
+            /*开始初步分析文件*/
+            //从文件头获取各种信息
+            //Code
+            QString sendCode=nameList.at(1);
+            QString recCode=nameList.at(2);
+            QString dateInfo=nameList.at(3);
+            QString fileTypeCode=nameList.at(4);
+            //从配置文件获取名称信息
+            QString sendName=(loadedOfdCodeInfo.value(sendCode)).getName();
+            QString recName=(loadedOfdCodeInfo.value(recCode)).getName();
+            //刷新UI
+            ui->lineEditSendCode->setText(sendCode);
+            ui->lineEditRecCode->setText(recCode);
+            ui->labelFileTransferDate->setText("文件传递日期");
+            ui->lineEditFileTransferDate->setText(dateInfo);
+            ui->lineEditFileType->setText(fileTypeCode);
+            ui->lineEditSenfInfo->setText(sendName);
+            ui->lineEditRecInfo->setText(recName);
+            //判断是否是ok文件
+            if(currentOpenFilePath.toUpper().endsWith(".OK")){
+                statusBar_disPlayMessage("这是一个类OFD文件的OK文件,请解析原始数据文件...");
+                return;
+            }
+            //判断是否是恒生系统sqllder导入时生成的bad文件
+            if(currentOpenFilePath.toUpper().endsWith(".BAD")){
+                statusBar_disPlayMessage("这是一个sqlldr导入生成的bad文件,请解析原始数据文件...");
+                return;
+            }
+            //判断是否是恒生系统sqllder导入时的控制文件
+            if(currentOpenFilePath.toUpper().endsWith(".CTL")){
+                statusBar_disPlayMessage("是一个sqlldr导入使用的控制文件,请解析原始数据文件...");
+                return;
+            }
+            //判断是否是快捷方式
+            if(currentOpenFilePath.toUpper().endsWith(".LNK")){
+                statusBar_disPlayMessage("我没猜错的话这是一个文件快捷方式,请解析原始数据文件...");
+                return;
+            }
+            //记录从文件里读取的文件发送信息
+            //此处开始加载OFD数据文件
+            load_ofdFile(fileTypeCode);
+            return;
+        }
+    }
+    else if(!isLikeOFD&&isLikeOFDIndex){
+        qDebug()<<"类OFD索引文件";
+        //开始拆解文件名
+        QString fixName=currentFileName;
+        if(fixName.contains(".",Qt::CaseInsensitive)){
+            fixName=fixName.mid(0,fixName.indexOf("."));
+        }
+        //索引文件名处理完毕后，开始拆解文件名
+        QStringList nameList=fixName.split("_");
+        //OFX_发送方_接受方_日期.TXT
+        //OFX_发送方_接受方_日期_批次号.TXT
+        //正常的OFD索引文件应该至少有4段信息组成---类OFD的索引，不要求遵守此规则
+        if(nameList.count()<4){
+            load_indexFile();
+            return;
+        }
+        else{
+                /*开始初步分析文件*/
+                //从文件头获取各种信息
+                //Code
+                QString sendCode=nameList.at(1);
+                QString recCode=nameList.at(2);
+                QString dateInfo=nameList.at(3);
+                QString fileIndexTypeCode=nameList.at(0);
+                //名称信息
+                QString sendName=loadedOfdCodeInfo.value(sendCode).getName();
+                QString recName=loadedOfdCodeInfo.value(recCode).getName();
+                QString fileIndexTypeName=loadedOfdIndexFileInfo.value(fileIndexTypeCode);
+                //刷新UI
+                ui->lineEditSendCode->setText(sendCode);
+                ui->lineEditRecCode->setText(recCode);
+                ui->lineEditFileTransferDate->setText(dateInfo);
+                ui->lineEditFileType->setText(fileIndexTypeCode);
+                ui->lineEditSenfInfo->setText(sendName);
+                ui->lineEditRecInfo->setText(recName);
+                ui->lineEditFileDescribe->setText(fileIndexTypeName);
+                ui->lineEditFileDescribe->setToolTip(fileIndexTypeName);
+                //此处开始加载索引文件
+                load_indexFile();
+                return;
+        }
+    }
     //开始判断是不是csv类别的文件
     ////////////////////////////////////////////
     QStringList resultCsvType;
@@ -2113,10 +2287,16 @@ NOT_OF_FILE:
                         if(fieldList.count()>lastCount){
                             lastCount=fieldList.count();
                             useflag=thisflag;
-                            //优化描述展示,毕竟直接展示制表符不是很优雅
+                            //优化描述展示,毕竟直接展示制表符等控制字符不是很优雅
                             QString flagd="";
                             if(thisflag=="\t"){
                                 flagd="制表符";
+                            }
+                            else if(thisflag==QChar(1)){
+                                flagd="SOH控制符";
+                            }
+                            else if(thisflag==QChar(31)){
+                                flagd="1FH(US)单元分割符";
                             }
                             else {
                                 flagd=thisflag;
@@ -2196,6 +2376,12 @@ NOT_OF_FILE:
                                     QString flagd="";
                                     if(thisflag=="\t"){
                                         flagd="制表符";
+                                    }
+                                    else if(thisflag==QChar(1)){
+                                        flagd="SOH控制符";
+                                    }
+                                    else if(thisflag==QChar(31)){
+                                        flagd="1FH(US)单元分割符";
                                     }
                                     else {
                                         flagd=thisflag;
@@ -2498,13 +2684,14 @@ void MainWindow::load_ofdFile(QString fileTypeFromFileName){
                 if(versionFromFile.isEmpty()){
                     currentOpenFileType=openFileType::NotFileOrErr;
                     dataFile.close();
-                    statusBar_disPlayMessage("解析失败,未从文件第2行读取到OFD文件的版本号信息");
+                    statusBar_disPlayMessage("解析失败,未从文件第2行读取到OFD/类OFD文件的版本号信息");
                     return;
                 }
             }
             if(lineNumber==6){
                 QString fileTypeFromFile=lineQString.trimmed();
-                if(fileTypeFromFile!=fileType){
+                //类OFD取文件里的文件类型
+                if(fileTypeFromFile!=fileType||fileType=="@@"){
                     qDebug()<<"文件内的文件类型和文件名里的不一致,取文件里的";
                     fileType=fileTypeFromFile;
                     ui->lineEditFileType->setText(fileTypeFromFile);
@@ -2573,7 +2760,7 @@ void MainWindow::load_ofdFile(QString fileTypeFromFileName){
         //OFD文件行记录数最小也不可能小于10行
         if(lineNumber<10){
             currentOpenFileType=openFileType::NotFileOrErr;
-            statusBar_disPlayMessage("无效的文件,请检查文件是否满足OFD文件规范...");
+            statusBar_disPlayMessage("无效的文件,请检查文件是否满足OFD/类OFD文件规范...");
             return;
         }
         QString useini="OFD_"+versionFromFile+".ini";
@@ -2961,15 +3148,14 @@ void MainWindow::load_ofdFile(QString fileTypeFromFileName){
                         if(mergeSucessFlag){
                             this->setWindowTitle(appName+"-"+currentFileName+"-文件修复待保存");
                         }
-                        statusBar_disPlayMessage("读取到数据行"+QString::number(ofdFileContentQByteArrayList.count())+"行");
                         init_OFDTable();
                         //没读取到最后一行就遇到了结束标志
                         if(!readToLastRow){
-                            QMessageBox::warning(this,tr("提示"),QString("\r\n\r\n当前打开的OFD文件还没读取到最后一行就遇到了\"OFDCFEND\"行,所以提前结束了数据读取,\"OFDCFEND\"正常应该出现在最后一行作为文件结束行!!!\r\n\r\n"),QMessageBox::Ok,QMessageBox::Ok);
+                            QMessageBox::warning(this,tr("提示"),QString("\r\n\r\n当前打开的OFD/类OFD文件还没读取到最后一行就遇到了\"OFDCFEND\"行,所以提前结束了数据读取,\"OFDCFEND\"正常应该出现在最后一行作为文件结束行!!!\r\n\r\n"),QMessageBox::Ok,QMessageBox::Ok);
                         }
                         //读取到了最后一行,但是不是结束标志,提示最后一行是不是OFDCFEND
                         else if(!lastRowIsOFDCFEND){
-                            QMessageBox::warning(this,tr("提示"),QString("\r\n\r\n当前打开的OFD文件最后一行当前内容是\"%1\"不是\"OFDCFEND\",正常来说OFD文件应该以\"OFDCFEND\"为结束行!!!\r\n\r\n").arg(ofdFooterQString),QMessageBox::Ok,QMessageBox::Ok);
+                            QMessageBox::warning(this,tr("提示"),QString("\r\n\r\n当前打开的OFD/类OFD文件最后一行当前内容是\"%1\"不是\"OFDCFEND\",正常来说OFD/类OFD文件应该以\"OFDCFEND\"为结束行!!!\r\n\r\n").arg(ofdFooterQString),QMessageBox::Ok,QMessageBox::Ok);
                         }
                     }
                     //如果失败了,则释放内存
@@ -4171,6 +4357,9 @@ void MainWindow::init_display_IndexTable(){
         }
         ptr_table->resizeColumnsToContents();
         statusBar_display_rowsCount(rowCount);
+        if(!likeOFFFileType.isEmpty()){
+            statusBar_disPlayMessage(likeOFFFileType);
+        }
     }
     else
     {
@@ -4247,7 +4436,12 @@ void MainWindow::init_OFDTable(){
             ptr_table->resizeColumnsToContents();
         }
         statusBar_display_rowsCount(rowCount);
-        statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒").arg(QString::number(rowCount)).arg(QString::number(((double)clock() - time_Start)/1000.0)));
+        if(!likeOFFFileType.isEmpty()){
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-(%3)").arg(QString::number(rowCount)).arg(QString::number(((double)clock() - time_Start)/1000.0)).arg(likeOFFFileType));
+        }
+        else {
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒").arg(QString::number(rowCount)).arg(QString::number(((double)clock() - time_Start)/1000.0)));
+        }
     }
     else
     {
@@ -4928,6 +5122,7 @@ void MainWindow::clear_OldData( bool keepdbfDisplayType, bool keepdbfTrimType){
     indexFileDataList.clear();
     ofdFileHeaderQStringList.clear();
     ofdFooterQString="";
+    likeOFFFileType="";
     ofdFileContentQByteArrayList.clear();
     ofdFileContentQByteArrayListFromExcel.clear();
     csvFileHeaderQStringList.clear();
@@ -5727,7 +5922,7 @@ void MainWindow::addOFDRowData(int location){
         QStringList data=board->text().replace("\r\n","\n").replace("\r","\n").split("\n");
         //开始进行数据比对
         if(data.count()<3||!data.at(0).startsWith("OFD")){
-            statusBar_disPlayMessage("剪切板上无有效的OFD专用数据，无法插入!");
+            statusBar_disPlayMessage("剪切板上无有效的OFD/类OFD专用数据，无法插入!");
             return;
         }
         else {
@@ -7457,7 +7652,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 tablePopMenu->addAction(action_addNewLineOFDData2End);
                 tablePopMenu->addSeparator();
                 tablePopMenu->addAction(action_CopyOFDRowData);
-                action_CopyOFDRowData->setText("复制光标所在整行数据记录(专用于合并插入OFD数据)");
+                action_CopyOFDRowData->setText("复制光标所在整行数据记录(专用于合并插入OFD/类OFD数据)");
                 //数据插入菜单
                 tablePopMenu->addAction(action_addCopyedOFDData2PreviousRow);
                 tablePopMenu->addAction(action_addCopyedOFDData2NextRow);
@@ -7525,7 +7720,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                 tablePopMenu->addAction(action_addNewLineOFDData2End);
                 tablePopMenu->addSeparator();
                 tablePopMenu->addAction(action_CopyOFDRowData);
-                action_CopyOFDRowData->setText("复制选择范围内的整行数据记录(专用于合并插入OFD数据)");
+                action_CopyOFDRowData->setText("复制选择范围内的整行数据记录(专用于合并插入OFD/类OFD数据)");
                 //多行时展示插入到文件尾部
                 tablePopMenu->addAction(action_addCopyedOFDData2End);
             }
@@ -9196,7 +9391,7 @@ void MainWindow::on_pushButtonRowJump_clicked()
         int targetIndex=0;
         if(currentOpenFileType==openFileType::OFDFile){
             if(ofdFileContentQByteArrayList.count()<1){
-                statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
+                statusBar_disPlayMessage("打开的OFD/类OFD文件没有数据记录...");
                 return;
             }
             else if(lineNumber>ofdFileContentQByteArrayList.count()){
@@ -9449,10 +9644,10 @@ void MainWindow::on_actionSaveAS_triggered()
         //文件过滤器,用于追踪选择的保存文件类别
         QString selectedFilter=Q_NULLPTR;
         //弹出保存框
-        QString fileNameSave = QFileDialog::getSaveFileName(this,("另存为"),currentOpenFilePath,tr("OFD文本文件(*.TXT);;自定义扩展名(*.*)"),&selectedFilter);
+        QString fileNameSave = QFileDialog::getSaveFileName(this,("另存为"),currentOpenFilePath,tr("OFD/类OFD文本文件(*.TXT);;自定义扩展名(*.*)"),&selectedFilter);
         if(!fileNameSave.isEmpty()){
             //在某些系统下（linux系统）选择要保存的文件类型时,系统并不会自动补全文件后缀名,需要咱们自己补全文件后缀
-            if(selectedFilter=="OFD文本文件(*.TXT)"&&(!fileNameSave.endsWith(".TXT"))){
+            if(selectedFilter=="OFD/类OFD文本文件(*.TXT)"&&(!fileNameSave.endsWith(".TXT"))){
                 fileNameSave.append(".TXT");
             }
             //执行文件另存
@@ -9538,7 +9733,7 @@ void MainWindow::on_pushButtonRowJump2_clicked()
     //数据类型加入点
     if(currentOpenFileType==openFileType::OFDFile){
         if(ofdFileContentQByteArrayList.count()<1){
-            statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
+            statusBar_disPlayMessage("打开的OFD/类OFD文件没有数据记录...");
             return;
         }
     }
@@ -9579,7 +9774,7 @@ void MainWindow::on_pushButtonRowJump2_clicked()
             //重新计算数据行位置
             lineNumber-=headerCount;
             if(lineNumber==ofdFileContentQByteArrayList.count()+1){
-                statusBar_disPlayMessage(tr("你输入的行号所在行应该是OFD文件结束标记[OFDCFEND]"));
+                statusBar_disPlayMessage(tr("你输入的行号所在行应该是OFD/类OFD文件结束标记[OFDCFEND]"));
                 return;
             }
             else if(lineNumber>ofdFileContentQByteArrayList.count()){
@@ -10384,7 +10579,7 @@ void MainWindow::columnJump(int type){
     //数据类型插入点
     if(currentOpenFileType==openFileType::OFDFile){
         if(ofdFileContentQByteArrayList.count()<1){
-            statusBar_disPlayMessage("打开的OFD文件没有数据记录...");
+            statusBar_disPlayMessage("打开的OFD/类OFD文件没有数据记录...");
             return;
         }
         dataBlocked=true;
@@ -11054,7 +11249,7 @@ void MainWindow::on_actionopeninexcel_triggered()
         row=dbfRowMap.count();
     }
     else if(currentOpenFileType==openFileType::OFDIndex){
-        statusBar_disPlayMessage("不支持在excel中打开OFD索引文件...");
+        statusBar_disPlayMessage("暂不支持在excel中打开OFD/类OFD索引文件...");
         return;
     }
     else{
@@ -11890,7 +12085,7 @@ void MainWindow::on_actionimportfromexcel_triggered()
         return;
     }
     if(currentOpenFileType==openFileType::OFDFile){
-        DialogMyTip dialog2("请确认是否从Excel导入数据到当前打开的OFD文件，此功能将会覆盖当前文件的数据,请注意备份，导入的Excel第一行的标题必须和本文件一致，建议使用本程序导出xlsx文件编辑后再导入！\r\n数值型数据将会按照字段小数长度四舍五入截取,建议在Excel中按数值存储精确数据,以免造成数据错误,本程序不支持公式生成的数值字段!",this);
+        DialogMyTip dialog2("请确认是否从Excel导入数据到当前打开的OFD/类OFD文件，此功能将会覆盖当前文件的数据,请注意备份，导入的Excel第一行的标题必须和本文件一致，建议使用本程序导出xlsx文件编辑后再导入！\r\n数值型数据将会按照字段小数长度四舍五入截取,建议在Excel中按数值存储精确数据,以免造成数据错误,本程序不支持公式生成的数值字段!",this);
         dialog2.setWindowTitle("警告-从xlsx文件导入数据！");
         dialog2.setModal(true);
         dialog2.exec();
@@ -12271,7 +12466,6 @@ void MainWindow::importFromXlsxFinished(){
                 display_OFDTable();
                 acceptVScrollValueChanged(0);
                 statusBar_display_rowsCount(rowCount);
-                this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
             }
             //添加完数据数据大于1页，或者原本数据就大于1页-需要判断跳转的位置
             else{
@@ -12285,8 +12479,8 @@ void MainWindow::importFromXlsxFinished(){
                 compareData.clear();
                 display_OFDTable();
                 acceptVScrollValueChanged(0);
-                this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
             }
+            this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
             statusBar_disPlayMessage(QString("导入完毕,从Excel导入数据%1行").arg(rowCount));
         }
     }
@@ -12338,10 +12532,10 @@ void MainWindow::getNewHeaderAndFooter(QStringList header,QStringList footer){
                 }
             }
             if(footer.count()>0){
-               if(0!=footer.at(0).compare(ofdFooterQString,Qt::CaseSensitive)){
-                   ofdFooterQString=footer.at(0);
-                   modify=true;
-               }
+                if(0!=footer.at(0).compare(ofdFooterQString,Qt::CaseSensitive)){
+                    ofdFooterQString=footer.at(0);
+                    modify=true;
+                }
             }
             if(modify){
                 statusBar_disPlayMessage("已修改文件头文件尾,请保存文件!");

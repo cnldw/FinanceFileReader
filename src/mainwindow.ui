@@ -948,7 +948,7 @@ border-radius:3px;
   </action>
   <action name="actioncreatenewofdfile">
    <property name="text">
-    <string>新建OFD文件</string>
+    <string>新建OFD/类OFD文件</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
@@ -964,7 +964,7 @@ border-radius:3px;
   </action>
   <action name="actionedit">
    <property name="text">
-    <string>编辑选择的单元格(仅支持OFD文件)</string>
+    <string>编辑选择的单元格(仅支持OFD/类OFD文件)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
@@ -972,7 +972,7 @@ border-radius:3px;
   </action>
   <action name="actionedit2">
    <property name="text">
-    <string>编辑选择的行(仅支持OFD文件)</string>
+    <string>编辑选择的行(仅支持OFD/类OFD文件)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+E</string>
@@ -1006,7 +1006,7 @@ border-radius:3px;
   </action>
   <action name="actioneditheaderfooter">
    <property name="text">
-    <string>编辑/查看文件头文件尾(仅支持OFD文件)</string>
+    <string>编辑/查看文件头文件尾(仅支持OFD/类OFD文件)</string>
    </property>
   </action>
   <action name="actionalldata">
@@ -1126,7 +1126,7 @@ border-radius:3px;
   </action>
   <action name="actionimportfromexcel">
    <property name="text">
-    <string>从Excel导入数据(仅支持OFD文件)</string>
+    <string>从Excel导入数据(仅支持OFD/类OFD文件)</string>
    </property>
    <property name="toolTip">
     <string>从Excel导入数据(仅支持OFD文件)</string>
