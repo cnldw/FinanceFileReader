@@ -386,6 +386,8 @@ private:
     QList<QString> csvFileHeaderQStringList;
     //打开的CSV文件的数据体
     QList<QByteArray> csvFileContentQByteArrayList;
+    //打开的CSV文件的文件尾
+    QList<QString> csvFooterQStringList;
     //打开的Fixed文件的文件头
     QList<QString> fixedFileHeaderQStringList;
     //打开的Fixed文件的数据体
@@ -450,7 +452,7 @@ private:
     //类OFD索引和数据文件名规则
     QHash<QString, QString>  likeOFDDataFilename;
     QHash<QString, QString>  likeOFDIndexFilename;
-    QString likeOFFFileType;
+    QString likeOFDFileType;
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
@@ -558,6 +560,7 @@ private:
     //统计读取文件耗时
     double time_Start = (double)clock();
 
+    bool checkCSVVersion(CsvFileDefinition  csv,QString versionRowData);
     void copyToClipboard(bool withTitle=false);
 
     void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
@@ -619,6 +622,7 @@ private:
     static bool compareOFDData(const OFDFileDefinition &ofd1, const OFDFileDefinition &ofd2);
     static bool compareDBFData(const dbfMatchInfo &dbf1, const dbfMatchInfo &dbf2);
     bool dbfColIsNumber(int col);
+    void reCalculateTableBeginAndEnd();
 
 };
 

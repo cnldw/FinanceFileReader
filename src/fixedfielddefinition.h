@@ -46,7 +46,7 @@ private:
     int rowBeginIndex;
     int length;
     int decLength;
-    //这个字段应该填充英文字段名，当前没使用
+    //这个字段应该填充英文字段名，当前不强制要求
     QString fieldName;
     //字段中文名
     QString fieldDescribe;

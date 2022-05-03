@@ -57,6 +57,14 @@ private:
     bool trim;
     //字段信息
     QList <CsvFieldDefinition> fieldList;
+    //1.9.20版本开始新增的CSV文件增强校验功能
+    int versioncheckrow=0;
+    //0精确匹配,非0模糊匹配,该行存在版本号内容即可,兼容版本号行还要其他内容时的情况
+    int versioncheckmode=0;
+    QString version="";
+
+    QString firstrowcheck="";
+    QString lastrowcheck="";
 
     bool ffAuto=false;
 
@@ -96,6 +104,16 @@ public:
     void setFfAuto(bool value);
     bool getTrim() const;
     void setTrim(bool value);
+    int getVersioncheckrow() const;
+    void setVersioncheckrow(int newVersioncheckrow);
+    int getVersioncheckmode() const;
+    void setVersioncheckmode(int newVersioncheckmode);
+    const QString &getVersion() const;
+    void setVersion(const QString &newVersion);
+    const QString &getFirstrowcheck() const;
+    void setFirstrowcheck(const QString &newFirstrowcheck);
+    const QString &getLastrowcheck() const;
+    void setLastrowcheck(const QString &newLastrowcheck);
 };
 
 #endif // CSVFILEDEFINITION_H

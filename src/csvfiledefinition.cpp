@@ -185,6 +185,56 @@ void CsvFileDefinition::setTrim(bool value)
     trim = value;
 }
 
+int CsvFileDefinition::getVersioncheckrow() const
+{
+    return versioncheckrow;
+}
+
+void CsvFileDefinition::setVersioncheckrow(int newVersioncheckrow)
+{
+    versioncheckrow = newVersioncheckrow;
+}
+
+int CsvFileDefinition::getVersioncheckmode() const
+{
+    return versioncheckmode;
+}
+
+void CsvFileDefinition::setVersioncheckmode(int newVersioncheckmode)
+{
+    versioncheckmode = newVersioncheckmode;
+}
+
+const QString &CsvFileDefinition::getVersion() const
+{
+    return version;
+}
+
+void CsvFileDefinition::setVersion(const QString &newVersion)
+{
+    version = newVersion;
+}
+
+const QString &CsvFileDefinition::getFirstrowcheck() const
+{
+    return firstrowcheck;
+}
+
+void CsvFileDefinition::setFirstrowcheck(const QString &newFirstrowcheck)
+{
+    firstrowcheck = newFirstrowcheck;
+}
+
+const QString &CsvFileDefinition::getLastrowcheck() const
+{
+    return lastrowcheck;
+}
+
+void CsvFileDefinition::setLastrowcheck(const QString &newLastrowcheck)
+{
+    lastrowcheck = newLastrowcheck;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     

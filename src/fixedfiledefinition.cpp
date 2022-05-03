@@ -155,6 +155,86 @@ void FIXEDFileDefinition::setFieldCountMax(int value)
     fieldCountMax = value;
 }
 
+const QString &FIXEDFileDefinition::getFirstrowcheck() const
+{
+    return firstrowcheck;
+}
+
+void FIXEDFileDefinition::setFirstrowcheck(const QString &newFirstrowcheck)
+{
+    firstrowcheck = newFirstrowcheck;
+}
+
+const QString &FIXEDFileDefinition::getLastrowcheck() const
+{
+    return lastrowcheck;
+}
+
+void FIXEDFileDefinition::setLastrowcheck(const QString &newLastrowcheck)
+{
+    lastrowcheck = newLastrowcheck;
+}
+
+int FIXEDFileDefinition::getVersioncheckrow() const
+{
+    return versioncheckrow;
+}
+
+void FIXEDFileDefinition::setVersioncheckrow(int newVersioncheckrow)
+{
+    versioncheckrow = newVersioncheckrow;
+}
+
+const QString &FIXEDFileDefinition::getVersion() const
+{
+    return version;
+}
+
+void FIXEDFileDefinition::setVersion(const QString &newVersion)
+{
+    version = newVersion;
+}
+
+int FIXEDFileDefinition::getFieldcountcheckrow() const
+{
+    return fieldcountcheckrow;
+}
+
+void FIXEDFileDefinition::setFieldcountcheckrow(int newFieldcountcheckrow)
+{
+    fieldcountcheckrow = newFieldcountcheckrow;
+}
+
+int FIXEDFileDefinition::getFielddetailcheckbeginrow() const
+{
+    return fielddetailcheckbeginrow;
+}
+
+void FIXEDFileDefinition::setFielddetailcheckbeginrow(int newFielddetailcheckbeginrow)
+{
+    fielddetailcheckbeginrow = newFielddetailcheckbeginrow;
+}
+
+int FIXEDFileDefinition::getRowcountcheckrow() const
+{
+    return rowcountcheckrow;
+}
+
+void FIXEDFileDefinition::setRowcountcheckrow(int newRowcountcheckrow)
+{
+    rowcountcheckrow = newRowcountcheckrow;
+}
+
+int FIXEDFileDefinition::getVersioncheckmode() const
+{
+    return versioncheckmode;
+}
+
+void FIXEDFileDefinition::setVersioncheckmode(int newVersioncheckmode)
+{
+    versioncheckmode = newVersioncheckmode;
+}
+
 FIXEDFileDefinition::FIXEDFileDefinition()
 {
     

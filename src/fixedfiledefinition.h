@@ -51,6 +51,18 @@ private:
     //编码信息
     QString ecoding;
 
+    //1.9.20版本开始新增的FIXED文件增强校验功能
+    QString firstrowcheck;
+    QString lastrowcheck;
+    int versioncheckrow=0;
+    //0精确匹配,非0模糊匹配,该行存在版本号内容即可,兼容版本号行还要其他内容时的情况
+    int versioncheckmode;
+    QString version;
+    int fieldcountcheckrow=0;
+    int fielddetailcheckbeginrow=0;
+    int rowcountcheckrow=0;
+
+
 public:
     FIXEDFileDefinition();
     ~FIXEDFileDefinition();
@@ -82,6 +94,22 @@ public:
     void setRowLengthHash(const QHash<int, int> &value);
     int getFieldCountMax() const;
     void setFieldCountMax(int value);
+    const QString &getFirstrowcheck() const;
+    void setFirstrowcheck(const QString &newFirstrowcheck);
+    const QString &getLastrowcheck() const;
+    void setLastrowcheck(const QString &newLastrowcheck);
+    int getVersioncheckrow() const;
+    void setVersioncheckrow(int newVersioncheckrow);
+    const QString &getVersion() const;
+    void setVersion(const QString &newVersion);
+    int getFieldcountcheckrow() const;
+    void setFieldcountcheckrow(int newFieldcountcheckrow);
+    int getFielddetailcheckbeginrow() const;
+    void setFielddetailcheckbeginrow(int newFielddetailcheckbeginrow);
+    int getRowcountcheckrow() const;
+    void setRowcountcheckrow(int newRowcountcheckrow);
+    int getVersioncheckmode() const;
+    void setVersioncheckmode(int newVersioncheckmode);
 };
 
 #endif // FIXEDFILEDEFINITION_H
