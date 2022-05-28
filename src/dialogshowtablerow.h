@@ -22,14 +22,15 @@
 #include <QClipboard>
 #include <QPoint>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QDesktopServices>
 #include <QDateTime>
 #include <QFileDialog>
 #include <QShortcut>
-
+#include <QDebug>
+#include <QTimer>
 #include "src/dialogmagnify.h"
+#include "src/msgtoast.h"
 
 namespace Ui {
 class DialogShowTableRow;
@@ -46,13 +47,24 @@ public:
     explicit DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent = nullptr);
     ~DialogShowTableRow();
 
+protected:
+    void resizeEvent (QResizeEvent * event );
+
 private slots:
 
     void on_tableWidget_customContextMenuRequested(const QPoint &pos);
 
+    void resizeHeight();
+
     void copyToClipboard();
 
     void saveScreen();
+
+    void saveScreen2();
+
+    void saveScreen2ToClipboard();
+
+    void saveScreen2ToClipboard2();
 
     void showMagnify();
 
@@ -67,11 +79,19 @@ private:
     QMenu *tablePopMenu;
     QAction *action_ShowCopyColum;
     QAction *action_ShowSaveScreen;
+    QAction *action_ShowSaveScreen2ToClipboard;
+    QAction *action_ShowSaveScreen2;
+    QAction *action_ShowSaveScreen2ToClipboard2;
     QAction *action_Magnify;
     QPoint posCurrentMenu;
     //
     int searchRow =0;
     int searchColumn=0;
+    int maxSingleLineCharset=24;
+
+    bool dataisOK=false;
+    void SscreenShoot(int Type);
+    QTimer *resizeFiletimer;
 };
 
 #endif // DIALOGSHOWTABLEROW_H

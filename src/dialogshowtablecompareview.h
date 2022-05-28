@@ -26,7 +26,6 @@
 #include <QColor>
 #include <QList>
 #include <QDebug>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QDesktopServices>
 #include <QDateTime>
@@ -34,6 +33,7 @@
 #include <QShortcut>
 #include <QDebug>
 #include "src/utils.h"
+#include "src/msgtoast.h"
 
 namespace Ui {
 class DialogShowTableCompareView;

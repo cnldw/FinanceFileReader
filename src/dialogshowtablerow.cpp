@@ -40,35 +40,79 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
     ptr_table->setColumnCount(4);
     ptr_table->setRowCount(rowdata->count());
     ptr_table->setAlternatingRowColors(true);
+    //自动换行和默认高度
+    ptr_table->setWordWrap(true);
     ptr_table->verticalHeader()->setDefaultSectionSize(22);
-    ptr_table->horizontalHeader()->setStretchLastSection(true);//关键
+    //默认情况下字符数多余此数值的行才进行换行自适应
+    maxSingleLineCharset=24;
+
+    ptr_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ptr_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    ptr_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    ptr_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
 
     //表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
     action_ShowCopyColum = new QAction(tr("复制"),this);
-    QString text="对当前窗口进行截图保存(Ctrl+Alt+R)";
+
+    QString text="对表格进行截图保存(Ctrl+Shift+R)";
 #ifdef Q_OS_MAC
-    text="对当前窗口进行截图保存(command+Option+R)";
+    text="对表格进行截图保存(Command+Shift+R)";
 #endif
     action_ShowSaveScreen= new QAction(text,this);
+
+    QString text_2="对表格滚动截全图保存(Ctrl+Shift+4)";
+#ifdef Q_OS_MAC
+    text_2="对表格滚动截全图保存(Command+Shift+4)";
+#endif
+    action_ShowSaveScreen2= new QAction(text_2,this);
+
+    QString text2="对表格进行截图到剪切板(Ctrl+Shift+C)";
+#ifdef Q_OS_MAC
+    text2="对表格进行截图保存(Ctrl+Shift+C)";
+#endif
+    action_ShowSaveScreen2ToClipboard= new QAction(text2,this);
+
+    QString text2_2="对表格滚动截全图到剪切板(Ctrl+Shift+D)";
+#ifdef Q_OS_MAC
+    text2_2="对表格滚动截全图到剪切板(Ctrl+Shift+D)";
+#endif
+    action_ShowSaveScreen2ToClipboard2= new QAction(text2_2,this);
+
     action_Magnify = new QAction(tr("放大镜"),this);
     connect(action_ShowCopyColum, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
     connect(action_ShowSaveScreen, SIGNAL(triggered()), this, SLOT(saveScreen()));
+    connect(action_ShowSaveScreen2ToClipboard, SIGNAL(triggered()), this, SLOT(saveScreen2ToClipboard()));
+    connect(action_ShowSaveScreen2, SIGNAL(triggered()), this, SLOT(saveScreen2()));
+    connect(action_ShowSaveScreen2ToClipboard2, SIGNAL(triggered()), this, SLOT(saveScreen2ToClipboard2()));
     connect(action_Magnify, SIGNAL(triggered()), this, SLOT(showMagnify()));
     //截图快捷键
     QShortcut *_shortcut;
-    _shortcut = new QShortcut(QKeySequence("Ctrl+Alt+R"), this);
+    _shortcut = new QShortcut(QKeySequence("Ctrl+Shift+R"), this);
     connect(_shortcut, SIGNAL(activated()),this,SLOT(saveScreen()));
     //复制快捷键-拦截系统的复制函数，使用我们写的
     QShortcut *_shortcut2;
     _shortcut2 = new QShortcut(QKeySequence("Ctrl+C"), this);
     connect(_shortcut2, SIGNAL(activated()),this,SLOT(copyToClipboard()));
+    //截图到剪切板快捷键
+    QShortcut *_shortcut3;
+    _shortcut3 = new QShortcut(QKeySequence("Ctrl+Shift+C"), this);
+    connect(_shortcut3, SIGNAL(activated()),this,SLOT(saveScreen2ToClipboard()));
+
+    QShortcut *_shortcut4;
+    _shortcut4 = new QShortcut(QKeySequence("Ctrl+Shift+4"), this);
+    connect(_shortcut4, SIGNAL(activated()),this,SLOT(saveScreen2()));
+    QShortcut *_shortcut5;
+    _shortcut5 = new QShortcut(QKeySequence("Ctrl+Shift+D"), this);
+    connect(_shortcut5, SIGNAL(activated()),this,SLOT(saveScreen2ToClipboard2()));
+
+
     //设置表格列标题
     QStringList title;
-    title.append("字段中文名");
-    title.append("字段英文名");
+    title.append("   字段中文名   ");
+    title.append("   字段英文名   ");
     title.append("字段值");
-    title.append("字典解释");
+    title.append("       字典解释       ");
     ptr_table->setHorizontalHeaderLabels(title);
 
     //设置表格的内容
@@ -91,10 +135,37 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
                 }
             }
         }
-        ptr_table->resizeColumnsToContents();
         //表格初始化完毕后，搜索默认以00开始
         searchColumn=0;
         searchRow=0;
+    }
+    // 在这里设置行高的时候，会出现很诡异的事情，某些行的高度变得非常高，所以改用定时器在页面加载完毕后再设置
+    dataisOK=true;
+    //bug修正,基于定时器在界面初始化完整之后再设置行高
+    resizeFiletimer = new QTimer(this);
+    connect(resizeFiletimer,SIGNAL(timeout()),this,SLOT(resizeHeight()));
+    resizeFiletimer->start(1);
+}
+
+void  DialogShowTableRow:: resizeHeight(){
+    for (int row = 0; row < ptr_table->rowCount();row++)
+    {
+        if (ptr_table->item(row,0)->text().length()>maxSingleLineCharset||ptr_table->item(row,1)->text().length()>maxSingleLineCharset||ptr_table->item(row,2)->text().length()>maxSingleLineCharset||ptr_table->item(row,3)->text().length()>maxSingleLineCharset){
+            ptr_table->resizeRowToContents(row);
+        }
+    }
+    //仅使用一次定时器,后续通过窗口resizeEvent调整
+    resizeFiletimer->stop();
+}
+
+void DialogShowTableRow:: resizeEvent (QResizeEvent * event ){
+    if(dataisOK){
+        for (int row = 0; row < ptr_table->rowCount();row++)
+        {
+            if (ptr_table->item(row,0)->text().length()>maxSingleLineCharset||ptr_table->item(row,1)->text().length()>maxSingleLineCharset||ptr_table->item(row,2)->text().length()>maxSingleLineCharset||ptr_table->item(row,3)->text().length()>maxSingleLineCharset){
+                ptr_table->resizeRowToContents(row);
+            }
+        }
     }
 }
 
@@ -109,6 +180,7 @@ DialogShowTableRow::~DialogShowTableRow()
 
 void DialogShowTableRow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
+    tablePopMenu->clear();
     posCurrentMenu=pos;
     //判断当前鼠标位置是不是在表格单元格位置内
     //空表
@@ -135,6 +207,10 @@ void DialogShowTableRow::on_tableWidget_customContextMenuRequested(const QPoint 
     }
     //截屏
     tablePopMenu->addAction(action_ShowSaveScreen);
+    tablePopMenu->addAction(action_ShowSaveScreen2);
+    tablePopMenu->addAction(action_ShowSaveScreen2ToClipboard);
+    tablePopMenu->addAction(action_ShowSaveScreen2ToClipboard2);
+
     tablePopMenu->exec(QCursor::pos());
 }
 
@@ -176,9 +252,10 @@ void DialogShowTableRow::copyToClipboard(){
             QClipboard *board = QApplication::clipboard();
             board->setText(value);
         }
+        Toast::showMsg(QString("已复制数据到剪切板~"), ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
     }
     else if(rangeCount>1){
-        QMessageBox::warning(this,tr("警告"),"无法对多重选择区域执行复制!",QMessageBox::Ok,QMessageBox::Ok);
+        Toast::showMsg(QString("无法对多重选择区域执行复制！"), ToastTime::Time::ToastTime_normal,ToastType::Type::ToastType_warn,this);
     }
 }
 
@@ -253,24 +330,75 @@ void DialogShowTableRow::on_tableWidget_itemSelectionChanged()
     }
 }
 
-void DialogShowTableRow::saveScreen(){
-    QGuiApplication::primaryScreen();
-    //获取截图
-    QPixmap p = this->grab();
-    //获取桌面路径拼接文件路径
-    QString filePathName=QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)+"/FFReader截图";
-    filePathName += QDateTime::currentDateTime().toString("yyyyMMddhhmmss");
-    filePathName += ".png";
-    //弹出保存框
-    QString selectedFilter=Q_NULLPTR;
-    filePathName = QFileDialog::getSaveFileName(this,("截图另存为"),filePathName,tr("PNG(*.png)"),&selectedFilter);
-    if(!filePathName.isEmpty()){
-        if(selectedFilter=="PNG(*.png)"&&(!filePathName.endsWith(".png"))){
-            filePathName.append(".png");
+/**
+ * @brief DialogShowTableRow::SscreenShoot 1截图当前可视区域到文件,2截图整个表格到文件,3截取当前可视区域到剪切板,4截取整个表格到文件
+ * @param Type
+ */
+void DialogShowTableRow::SscreenShoot(int Type){
+    QHeaderView * vheader = ui->tableWidget->verticalHeader();
+    QHeaderView * hheader = ui->tableWidget->horizontalHeader();
+    ptr_table->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
+    ptr_table->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
+    int iWidth = 0;
+    int iHeight = 0;
+    QSize oldSize = ptr_table->size();
+    //如果截屏全表格,则需要结算表格展开后的宽和高
+    if(Type==2||Type==4){
+        for (int i = 0; i < ptr_table->columnCount(); i++) {
+            iWidth += hheader->sectionSize(i);
         }
-        //开始进行截图
-        p.save(filePathName,"png");
+        iWidth += vheader->width();
+        for (int i = 0; i < ui->tableWidget->rowCount(); i++) {
+            iHeight += vheader->sectionSize(i);
+        }
+        iHeight += hheader->height();
+        ptr_table->resize(iWidth, iHeight);
     }
+    QPixmap pixmap(ui->tableWidget->size());
+    ptr_table->render(&pixmap);
+    //还原宽和高度
+    if(Type==2||Type==4){
+        ptr_table->resize(oldSize);
+    }
+    ptr_table->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAsNeeded);
+    ptr_table->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAsNeeded);
+    //根据选项去保存
+    if (Type==1||Type==2){
+        //获取桌面路径拼接文件路径
+        QString filePathName=QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)+"/FFReader截图";
+        filePathName += QDateTime::currentDateTime().toString("yyyyMMddhhmmss");
+        filePathName += ".png";
+        //弹出保存框
+        QString selectedFilter=Q_NULLPTR;
+        filePathName = QFileDialog::getSaveFileName(this,("截图另存为"),filePathName,tr("PNG(*.png)"),&selectedFilter);
+        if(!filePathName.isEmpty()){
+            if(selectedFilter=="PNG(*.png)"&&(!filePathName.endsWith(".png"))){
+                filePathName.append(".png");
+            }
+            pixmap.save(filePathName,"png");
+        }
+    }
+    else if (Type==3||Type==4){
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        clipboard->setPixmap(pixmap);
+        Toast::showMsg(QString("已复制截图到剪切板~"), ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
+    }
+}
+
+void DialogShowTableRow::saveScreen(){
+    SscreenShoot(1);
+}
+
+void DialogShowTableRow::saveScreen2ToClipboard(){
+    SscreenShoot(3);
+}
+
+void DialogShowTableRow::saveScreen2(){
+    SscreenShoot(2);
+}
+
+void DialogShowTableRow::saveScreen2ToClipboard2(){
+    SscreenShoot(4);
 }
 
 /**

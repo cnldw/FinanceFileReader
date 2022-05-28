@@ -29,7 +29,6 @@
 #include <QTextCodec>
 #include <QTextStream>
 #include <QApplication>
-#include <QMessageBox>
 #include <QStandardPaths>
 #include "src/utils.h"
 #include "src/dialogmytip.h"

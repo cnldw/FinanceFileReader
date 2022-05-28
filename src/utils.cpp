@@ -547,6 +547,48 @@ QStringList Utils::getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray
             }
             rowData=rowData2;
         }
+        //缩放处理
+        for(int i=0;i<rowData.count()&&i<csv->getFieldList().count();i++){
+            //对本字段执行缩放
+            if(csv->getFieldList().at(i).getIsNumber()==1&&csv->getFieldList().at(i).getDecimalPointShift()>0){
+                QString value=rowData.at(i);
+                if(value.isEmpty()){
+                    continue;
+                }
+                bool convertOk=false;
+                double valued=value.toDouble(&convertOk);
+                //非双精度数值
+                if(!convertOk){
+                    continue;
+                }
+                else{
+                    int pointShift=csv->getFieldList().at(i).getDecimalPointShift();
+                    int decLenght=0;
+                    if(value.contains(".")){
+                        decLenght=value.split(".").at(1).length();
+                    }
+                    //计算出新的小数长度
+                    decLenght=decLenght+pointShift;
+                    switch (pointShift){
+                    case 1:
+                        valued=valued/10;
+                        break;
+                    case 2:
+                        valued=valued/100;
+                        break;
+                    case 3:
+                        valued=valued/1000;
+                        break;
+                    case 4:
+                        valued=valued/10000;
+                        break;
+                    default:
+                        break;
+                    }
+                    rowData.replace(i,QString::number(valued,'f', decLenght));
+                }
+            }
+        }
         return rowData;
     }
 }
@@ -845,9 +887,9 @@ QString Utils::clearQuotes(QString stringS){
 
 void Utils::sleep(unsigned int msec)
 {
-QTime dieTime = QTime::currentTime().addMSecs(msec);
-while( QTime::currentTime() < dieTime )
-QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    QTime dieTime = QTime::currentTime().addMSecs(msec);
+    while( QTime::currentTime() < dieTime )
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 }
 
 void Utils::getFileListFromDirSkipOkfile(QString dirpath,QStringList *filelist){

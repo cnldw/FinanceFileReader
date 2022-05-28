@@ -114,6 +114,7 @@ void DialogShowTableFieldCheck::copyToClipboard(){
         QString text= ptr_table->itemAt(posCurrentMenu)->text();
         QClipboard *board = QApplication::clipboard();
         board->setText(text);
+        Toast::showMsg(QString("已复制数据到剪切板~"), ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
     }
 }
 

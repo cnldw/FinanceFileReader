@@ -96,6 +96,7 @@
 #include "src/dbffiledefinition.h"
 #include "src/dbffileconfig.h"
 #include "src/dialogoktools.h"
+#include "src/msgtoast.h"
 #include "dialogshowimportexcelerror.h"
 #ifdef Q_OS_WIN32
 #include "src/formwebtools.h"

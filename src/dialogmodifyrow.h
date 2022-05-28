@@ -26,10 +26,10 @@
 #include <QPoint>
 #include <QHash>
 #include <QMenu>
-#include <QMessageBox>
 #include <QTextCodec>
 #include <QDebug>
 #include "src/ofdfiledefinition.h"
+#include "src/msgtoast.h"
 
 namespace Ui {
 class DialogModifyRow;

@@ -1339,21 +1339,85 @@ void MainWindow::load_CSVDefinition(){
                             fileDef.setFieldCount(fieldCount);
                             QList <CsvFieldDefinition> fieldList;
                             //10开始循环加载本文件类型的字段信息///////////////
+                            bool fieldListIsOK=true;
                             for(int r=0;r<fieldCount;r++){
                                 CsvFieldDefinition fieldItem;
-                                QString name=loadedCsvInfoIni.value(csvType+"/"+(QString::number(r+1,10))).toString();
-                                if(name.isEmpty()){
-                                    fieldItem.setFieldName("未定义的字段名");
+                                QStringList iniStrList=loadedCsvInfoIni.value(csvType+"/"+(QString::number(r+1,10))).toStringList();
+                                if(iniStrList.isEmpty()){
+                                    fieldItem.setFieldDescribe("未定义的字段名");
                                 }
                                 else{
-                                    fieldItem.setFieldName(name);
+                                    //中文字段名
+                                    QString desc=iniStrList.at(0);
+                                    if(desc.isEmpty()){
+                                        fieldItem.setFieldDescribe("未定义的字段名");
+                                    }
+                                    else{
+                                        fieldItem.setFieldDescribe(desc);
+                                    }
+                                    if(iniStrList.count()>=2){
+                                        QString name=iniStrList.at(1);
+                                        fieldItem.setFieldName(name);
+                                    }
+                                    if(iniStrList.count()>=3){
+                                        QString numbercheck=iniStrList.at(2);
+                                        if(numbercheck.isEmpty()){
+                                            fieldItem.setIsNumber(-1);
+                                        }
+                                        else if(numbercheck=="-1"){
+                                            fieldItem.setIsNumber(-1);
+                                        }
+                                        else if(numbercheck=="0"){
+                                            fieldItem.setIsNumber(0);
+                                        }
+                                        else if(numbercheck=="1"){
+                                            fieldItem.setIsNumber(1);
+                                        }
+                                        else{
+                                            fieldListIsOK=false;
+                                            fileDef.setMessage(QString("第%1个字段是否是数值的标志位存在非法值,-1和留空代表程序自动判断,0为非数值,1为数值").arg(QString::number(r+1,10)));
+                                            break;
+                                        }
+                                    }
+                                    if(iniStrList.count()>=4){
+                                        QString numberShift=iniStrList.at(3);
+                                        if(numberShift.isEmpty()){
+                                            fieldItem.setDecimalPointShift(0);
+                                        }
+                                        else{
+                                            bool flag=false;
+                                            int numberShiftint=numberShift.toInt(&flag,10);
+                                            if(flag){
+                                                if(numberShiftint<0||numberShiftint>4){
+                                                    fieldListIsOK=false;
+                                                    fileDef.setMessage(QString("第%1个字段数值缩放位数存在非法值,留空和0代表数值不缩放,1-4代表缩放10倍-1万倍").arg(QString::number(r+1,10)));
+                                                    break;
+                                                }
+                                                else{
+                                                    fieldItem.setDecimalPointShift(numberShiftint);
+                                                }
+                                            }
+                                            else{
+                                                fieldListIsOK=false;
+                                                fileDef.setMessage(QString("第%1个字段数值缩放位数存在非法值,留空和0代表数值不缩放,1-4代表缩放10倍-1万倍").arg(QString::number(r+1,10)));
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
                                 //添加此字段信息到文件定义
                                 fieldList.append(fieldItem);
                             }
-                            fileDef.setFieldList(fieldList);
-                            fileDef.setUseAble(true);
-                            loadedCsvDefinitionList.append(fileDef);
+                            if(fieldListIsOK){
+                                fileDef.setFieldList(fieldList);
+                                fileDef.setUseAble(true);
+                                loadedCsvDefinitionList.append(fileDef);
+                            }
+                            else{
+                                fileDef.setFieldList(fieldList);
+                                fileDef.setUseAble(false);
+                                loadedCsvDefinitionList.append(fileDef);
+                            }
                         }
                         //如果字段数是AUTO，则字段总和设置为-1，在进行文件解析是自动分析标题数量来进行解析
                         //这种模式在带文件标题的情况下，自动解析标题，如果不带标题，则解析是标题全部描述为第XX列
@@ -2595,7 +2659,7 @@ NOT_OF_FILE:
                                     if(name.isEmpty()){
                                         name="未定义的字段名";
                                     }
-                                    fieldItem.setFieldName(name);
+                                    fieldItem.setFieldDescribe(name);
                                     fieldTitleStrList.append(name);
                                     fieldTitleList.append(fieldItem);
                                 }
@@ -2609,7 +2673,7 @@ NOT_OF_FILE:
                                 for(int xx=0;xx<fieldList.count();xx++){
                                     CsvFieldDefinition fieldItem;
                                     QString name="第"+QString::number(xx+1)+"列";
-                                    fieldItem.setFieldName(name);
+                                    fieldItem.setFieldDescribe(name);
                                     //添加此字段信息到文件定义
                                     fieldTitleList.append(fieldItem);
                                     fieldTitleStrList.append(name);
@@ -2743,7 +2807,7 @@ NOT_OF_FILE:
                                     if(name.isEmpty()){
                                         name="未定义的字段名";
                                     }
-                                    fieldItem.setFieldName(name);
+                                    fieldItem.setFieldDescribe(name);
                                     fieldTitleStrList.append(name);
                                     fieldTitleList.append(fieldItem);
                                 }
@@ -2757,7 +2821,7 @@ NOT_OF_FILE:
                                 for(int xx=0;xx<firstRowfieldList.count();xx++){
                                     CsvFieldDefinition fieldItem;
                                     QString name="第"+QString::number(xx+1)+"列";
-                                    fieldItem.setFieldName(name);
+                                    fieldItem.setFieldDescribe(name);
                                     //添加此字段信息到文件定义
                                     fieldTitleList.append(fieldItem);
                                     fieldTitleStrList.append(name);
@@ -3624,10 +3688,10 @@ void MainWindow::load_csvFile(QStringList fileType){
                                                 CsvFieldDefinition fieldItem;
                                                 QString name=fieldTitle.at(r);
                                                 if(name.isEmpty()){
-                                                    fieldItem.setFieldName("未定义的字段名(第"+QString::number(r+1)+"列)");
+                                                    fieldItem.setFieldDescribe("未定义的字段名(第"+QString::number(r+1)+"列)");
                                                 }
                                                 else{
-                                                    fieldItem.setFieldName(name);
+                                                    fieldItem.setFieldDescribe(name);
                                                 }
                                                 //添加此字段信息到文件定义
                                                 fieldList.append(fieldItem);
@@ -3721,7 +3785,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                                                     if(csv.getFieldCount()>0){
                                                         QStringList fieldTitle;
                                                         for(int tc=0;tc<csv.getFieldList().count();tc++){
-                                                            fieldTitle.append(csv.getFieldList().at(tc).getFieldName());
+                                                            fieldTitle.append(csv.getFieldList().at(tc).getFieldDescribe());
                                                         }
                                                         load_csvFileData(fieldTitle);
                                                         return;
@@ -3764,7 +3828,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                                                                     CsvFieldDefinition fieldItem;
                                                                     QString name="未定义的字段名(第"+QString::number(r+1)+"列)";
                                                                     fieldTitle.append(name);
-                                                                    fieldItem.setFieldName(name);
+                                                                    fieldItem.setFieldDescribe(name);
                                                                     //添加此字段信息到文件定义
                                                                     fieldList.append(fieldItem);
                                                                 }
@@ -3866,7 +3930,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                                                 CsvFieldDefinition fieldItem;
                                                 QString name="未定义的字段名(第"+QString::number(r+1)+"列)";
                                                 fieldTitle.append(name);
-                                                fieldItem.setFieldName(name);
+                                                fieldItem.setFieldDescribe(name);
                                                 //添加此字段信息到文件定义
                                                 fieldList.append(fieldItem);
                                             }
@@ -3926,7 +3990,7 @@ void MainWindow::load_csvFile(QStringList fileType){
                                             //文件内没标题的从配置读取
                                             QStringList fieldTitle;
                                             for(int tc=0;tc<csv.getFieldList().count();tc++){
-                                                fieldTitle.append(csv.getFieldList().at(tc).getFieldName());
+                                                fieldTitle.append(csv.getFieldList().at(tc).getFieldDescribe());
                                             }
                                             load_csvFileData(fieldTitle);
                                             return;
@@ -5396,7 +5460,9 @@ void MainWindow::init_CSVTable(QStringList title){
                                 //剥夺数值
                                 if (CsvFieldIsNumberOrNot.contains(colIndex)&&CsvFieldIsNumberOrNot.value(colIndex).getIsNumber()){
                                     isnumber.setIsNumber(false);
-                                    isnumber.setDecimalLength(0);
+                                    if(csv.getFieldList().count()>colIndex&&csv.getFieldList().at(colIndex).getIsNumber()!=1){
+                                        isnumber.setDecimalLength(0);
+                                    }
                                     CsvFieldIsNumberOrNot.insert(colIndex,isnumber);
                                 }
                                 //剥夺空判断
@@ -5435,12 +5501,35 @@ void MainWindow::init_CSVTable(QStringList title){
             ui->pushButtonPagePrevious->setEnabled(false);
         }
         //////////////分页逻辑//////////////////////
+        for(int a=0;a<title.count()&&a<csv.getFieldList().count();a++){
+            int numberShiftint=csv.getFieldList().at(a).getDecimalPointShift();
+            if(csv.getFieldList().at(a).getIsNumber()==1&&numberShiftint>0){
+                //修正标题--增加缩放描述
+                switch (numberShiftint){
+                case 1:
+                    title.replace(a,QString(title.at(a)+"[缩小%1倍]").arg(10));
+                    break;
+                case 2:
+                    title.replace(a,QString(title.at(a)+"[缩小%1倍]").arg(100));
+                    break;
+                case 3:
+                    title.replace(a,QString(title.at(a)+"[缩小%1倍]").arg(1000));
+                    break;
+                case 4:
+                    title.replace(a,QString(title.at(a)+"[缩小%1倍]").arg(10000));
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+
         //设置标题
         ptr_table->setHorizontalHeaderLabels(title);
         if(fieldTips.contains("CSV"+csv.getFileIni())){
             //设置tips
             for(int tipindex=0;tipindex<colCount;tipindex++){
-                QString tips=fieldTips.value("CSV"+csv.getFileIni()).value(csv.getFieldList().at(tipindex).getFieldName());
+                QString tips=fieldTips.value("CSV"+csv.getFileIni()).value(csv.getFieldList().at(tipindex).getFieldDescribe());
                 if(!tips.isEmpty()){
                     ptr_table->horizontalHeaderItem(tipindex)->setToolTip(tips);
                 }
@@ -5549,6 +5638,11 @@ void MainWindow::display_OFDTable(){
     int count=needRestwitdh.count();
     for(int cc=0;cc<count;cc++){
         ptr_table->resizeColumnToContents(needRestwitdh.at(cc));
+        //判断某个字段的长度是不是非常的长,如果超过48字符,则标题栏居左,以免不太好找到标题信息
+        if(columnWidth.contains(needRestwitdh.at(cc))&&columnWidth.value(needRestwitdh.at(cc))>48&&ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->textAlignment()!=Qt::AlignLeft){
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setTextAlignment(Qt::AlignLeft);
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setToolTip(ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip().isEmpty()?"超长字段,标题自动居左显示~":ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip()+"-超长字段,标题自动居左显示~");
+        }
     }
 }
 /**
@@ -5614,6 +5708,11 @@ void MainWindow::display_FIXEDTable(){
     int count=needRestwitdh.count();
     for(int cc=0;cc<count;cc++){
         ptr_table->resizeColumnToContents(needRestwitdh.at(cc));
+        //判断某个字段的长度是不是非常的长,如果超过48字符,则标题栏居左,以免不太好找到标题信息
+        if(columnWidth.contains(needRestwitdh.at(cc))&&columnWidth.value(needRestwitdh.at(cc))>48&&ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->textAlignment()!=Qt::AlignLeft){
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setTextAlignment(Qt::AlignLeft);
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setToolTip(ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip().isEmpty()?"超长字段,标题自动居左显示~":ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip()+"-超长字段,标题自动居左显示~");
+        }
     }
 }
 
@@ -5687,6 +5786,11 @@ void MainWindow::display_CSVTable(){
     int count=needRestwitdh.count();
     for(int cc=0;cc<count;cc++){
         ptr_table->resizeColumnToContents(needRestwitdh.at(cc));
+        //判断某个字段的长度是不是非常的长,如果超过48字符,则标题栏居左,以免不太好找到标题信息
+        if(columnWidth.contains(needRestwitdh.at(cc))&&columnWidth.value(needRestwitdh.at(cc))>48&&ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->textAlignment()!=Qt::AlignLeft){
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setTextAlignment(Qt::AlignLeft);
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setToolTip(ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip().isEmpty()?"超长字段,标题自动居左显示~":ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip()+"-超长字段,标题自动居左显示~");
+        }
     }
 }
 
@@ -5762,6 +5866,11 @@ void MainWindow::display_DBFTable(){
     int count=needRestwitdh.count();
     for(int cc=0;cc<count;cc++){
         ptr_table->resizeColumnToContents(needRestwitdh.at(cc));
+        //判断某个字段的长度是不是非常的长,如果超过48字符,则标题栏居左,以免不太好找到标题信息
+        if(columnWidth.contains(needRestwitdh.at(cc))&&columnWidth.value(needRestwitdh.at(cc))>48&&ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->textAlignment()!=Qt::AlignLeft){
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setTextAlignment(Qt::AlignLeft);
+            ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->setToolTip(ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip().isEmpty()?"超长字段,标题自动居左显示~":ptr_table->horizontalHeaderItem(needRestwitdh.at(cc))->toolTip()+"-超长字段,标题自动居左显示~");
+        }
     }
 }
 
@@ -6055,13 +6164,13 @@ void MainWindow::copyToClipboard(bool withTitle){
                 text= ptr_table->item(topRow,leftColumn)->text();
             }
             board->setText(text);
-            statusBar_disPlayMessage(QString("已复制数据:\"%1\"").arg(text));
+            statusBar_disPlayMessage(QString("已复制数据:\"%1\"到剪切板").arg(text));
         }
         //多个单元格复制-取原始数据
         else{
             int selectSum=(rigthColumn-leftColumn+1)*(bottomRow-topRow+1);
             if(selectSum>1000000){
-                statusBar_disPlayMessage("警告:选择的单元格超过1,000,000,无法复制!");
+                Toast::showMsg(QString("警告:选择的单元格超过1,000,000,无法复制！"), ToastTime::Time::ToastTime_normal,ToastType::Type::ToastType_warn,this);
             }
             else{
                 QString value="";
@@ -6182,12 +6291,12 @@ void MainWindow::copyToClipboard(bool withTitle){
                 }
                 QClipboard *board = QApplication::clipboard();
                 board->setText(value);
-                statusBar_disPlayMessage("复制"+QString::number(selectSum)+"个单元格数据完毕～");
+                statusBar_disPlayMessage("已复制"+QString::number(selectSum)+"个单元格数据到剪切板～");
             }
         }
     }
     else if(rangeCount>1){
-        statusBar_disPlayMessage("警告:无法对多重选择区域执行复制!");
+        Toast::showMsg(QString("无法对多重选择区域执行复制！"), ToastTime::Time::ToastTime_normal,ToastType::Type::ToastType_warn,this);
     }
 }
 
@@ -6822,9 +6931,9 @@ void MainWindow::showRowDetails(){
             QStringList colitem;
             if(ptr_table->item(tableRowCurrent,i)==nullptr){
                 //字段中文名
-                colitem.append(csv.getFieldList().at(i).getFieldName());
+                colitem.append(csv.getFieldList().at(i).getFieldDescribe());
                 //字段英文名
-                colitem.append(nullptr);
+                colitem.append(csv.getFieldList().at(i).getFieldName());
                 //字段值
                 colitem.append(nullptr);
                 //字典翻译
@@ -6833,12 +6942,12 @@ void MainWindow::showRowDetails(){
             else{
                 QString colvalue=ptr_table->item(tableRowCurrent,i)->text();
                 //字段名
+                colitem.append(csv.getFieldList().at(i).getFieldDescribe());
                 colitem.append(csv.getFieldList().at(i).getFieldName());
-                colitem.append(nullptr);
                 //字段值
                 colitem.append(colvalue);
                 //字典翻译
-                colitem.append(commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(i).getFieldName(),colvalue));
+                colitem.append(commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(i).getFieldDescribe(),colvalue));
             }
             //tips
             colitem.append(ptr_table->horizontalHeaderItem(i)->toolTip());
@@ -7010,7 +7119,7 @@ void MainWindow::forceNumber(){
         }
     }
     DialogForceNumber  dialog (flag,this);
-    dialog.setWindowTitle(QString("对此列调整数据格式-%1").arg(csv.getFieldList().at(tableColCurrent).getFieldName()));
+    dialog.setWindowTitle(QString("对此列调整数据格式-%1").arg(csv.getFieldList().at(tableColCurrent).getFieldDescribe()));
     dialog.setModal(true);
     dialog.exec();
     int flag2=dialog.getFlag();
@@ -8273,8 +8382,6 @@ void MainWindow::on_pushButtonNextSearch_clicked()
 }
 
 
-
-
 void MainWindow::showMessage_customContextMenuRequested(const QPoint &pos)
 {
     UNUSED(pos);
@@ -8876,7 +8983,7 @@ void MainWindow::on_actionsOpenCompare_triggered()
             else if(currentOpenFileType==openFileType::CSVFile){
                 for(int i=0;i<csv.getFieldList().count();i++){
                     //仅获取列的中文备注当作列标题
-                    title.append(csv.getFieldList().at(i).getFieldName());
+                    title.append(csv.getFieldList().at(i).getFieldDescribe());
                     if(CsvFieldIsNumberOrNot.contains(i)&&CsvFieldIsNumberOrNot.value(i).getIsNumber()){
                         fieldType.append("N");
                     }
@@ -10713,7 +10820,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
             statusBar_display_rowsAndCol(rowInFile,colInFile,0);
             if(ptr_table->item(tableRowCurrent,tableColCurrent)!=nullptr){
                 QString text=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
-                QString dic=commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(tableColCurrent).getFieldName(),text);
+                QString dic=commonDictionary.value("CSV"+csv.getFileIni()).getDictionary(csv.getFieldList().at(tableColCurrent).getFieldDescribe(),text);
                 if(!text.isEmpty()){
                     //如果文件执行过双引号边界符处理，则附带显示原始数据，方便用户阅览原始值
                     if(csv.getClearQuotes()||csv.getTrim()){
@@ -10723,7 +10830,27 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                     //如果探测到本列是数值,也附带显示原始值
                     else if(CsvFieldIsNumberOrNot.value(tableColCurrent).getIsNumber()){
                         QStringList rowdata=Utils::getOriginalRowCsvValuesFromcsvFileContentQStringList(&csvFileContentQByteArrayList,&csv,dataCompressLevel,dataRowCurrent);
-                        statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)).append("|原始值:").append(rowdata.at(tableColCurrent)));
+                        text=text.append(dic.isEmpty()?"":("|"+dic)).append("|原始值:").append(rowdata.at(tableColCurrent));
+                        int numberShiftint=csv.getFieldList().count()<=tableColCurrent?0:csv.getFieldList().at(tableColCurrent).getDecimalPointShift();
+                        if(numberShiftint>0){
+                            switch (numberShiftint){
+                            case 1:
+                                text.append(QString("|缩小%1倍展示").arg(10));
+                                break;
+                            case 2:
+                                text.append(QString("|缩小%1倍展示").arg(100));
+                                break;
+                            case 3:
+                                text.append(QString("|缩小%1倍展示").arg(1000));
+                                break;
+                            case 4:
+                                text.append(QString("|缩小%1倍展示").arg(10000));
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                        statusBar_disPlayMessage(text);
                     }
                     else{
                         statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)));
@@ -13256,8 +13383,8 @@ void MainWindow::openPlugin(){
  * @param footer
  */
 void MainWindow::getNewHeaderAndFooter(QStringList header,QStringList footer){
-    qDebug()<<header;
-    qDebug()<<footer;
+    //    qDebug()<<header;
+    //    qDebug()<<footer;
     if(currentOpenFileType==openFileType::OFDFile){
         if(header.count()!=ofdFileHeaderQStringList.count()){
             statusBar_disPlayMessage("文件头读取异常,跳过更新文件头文件尾");

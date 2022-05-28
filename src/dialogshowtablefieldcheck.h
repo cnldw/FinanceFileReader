@@ -27,6 +27,7 @@
 #include <QDateTime>
 #include <QFileDialog>
 #include <QShortcut>
+#include "src/msgtoast.h"
 
 namespace Ui {
 class DialogShowTableFieldCheck;

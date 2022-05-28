@@ -22,12 +22,12 @@
 #include <QClipboard>
 #include <QPoint>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QDesktopServices>
 #include <QDateTime>
 #include <QFileDialog>
 #include <QShortcut>
+#include "src/msgtoast.h"
 
 namespace Ui {
 class DialogShowCharset;

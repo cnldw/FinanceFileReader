@@ -158,9 +158,10 @@ void DialogModifyRow::copyToClipboard(){
             QClipboard *board = QApplication::clipboard();
             board->setText(value);
         }
+        Toast::showMsg(QString("已复制数据到剪切板~"), ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
     }
     else if(rangeCount>1){
-        QMessageBox::warning(this,tr("警告"),"无法对多重选择区域执行复制!",QMessageBox::Ok,QMessageBox::Ok);
+        Toast::showMsg(QString("无法对多重选择区域执行复制！"), ToastTime::Time::ToastTime_normal,ToastType::Type::ToastType_warn,this);
     }
 }
 

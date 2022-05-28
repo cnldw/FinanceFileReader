@@ -21,8 +21,8 @@ class FieldIsNumber
 {
 
 private:
- bool isNumber;
- int decimalLength;
+ bool isNumber=false;
+ int decimalLength=0;
 
 public:
     FieldIsNumber();

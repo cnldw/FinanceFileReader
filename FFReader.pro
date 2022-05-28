@@ -37,7 +37,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.20
+VERSION = 1.9.21
 ############以下注意按版本修改###############
 
 # 语言
@@ -103,6 +103,7 @@ SOURCES += \
     src/dialogshowimportexcelerror.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
+    src/msgtoast.cpp \
     src/utils.cpp \
     src/ofdfiledefinition.cpp \
     src/dictionary.cpp \
@@ -144,6 +145,7 @@ HEADERS += \
     src/dialogshareqrcode.h \
     src/dialogshowimportexcelerror.h \
         src/mainwindow.h \
+    src/msgtoast.h \
     src/ucdutils.h \
     src/utils.h \
     src/ofdfiledefinition.h \
