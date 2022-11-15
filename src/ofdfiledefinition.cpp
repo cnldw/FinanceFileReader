@@ -56,6 +56,26 @@ void OFDFileDefinition::setConfigSegment(const QString &value)
     configSegment = value;
 }
 
+QList<fieldcheckitem> OFDFileDefinition::getFieldcheckList() const
+{
+    return fieldcheckList;
+}
+
+void OFDFileDefinition::addFieldcheckItem(const fieldcheckitem &value)
+{
+    fieldcheckList.append(value);
+}
+
+const QString &OFDFileDefinition::getUseForVersionAndType() const
+{
+    return useForVersionAndType;
+}
+
+void OFDFileDefinition::setUseForVersionAndType(const QString &newUseForVersionAndType)
+{
+    useForVersionAndType = newUseForVersionAndType;
+}
+
 OFDFileDefinition::OFDFileDefinition()
 {
     

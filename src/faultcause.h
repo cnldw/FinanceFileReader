@@ -16,6 +16,7 @@
 #ifndef CSVFAULTCAUSE_H
 #define CSVFAULTCAUSE_H
 #include <QString>
+#include "src/configfile.h"
 
 class FaultCause
 {
@@ -28,8 +29,12 @@ public:
     QString getCause() const;
     void setCause(const QString &value);
 
+    const matchIndex &getConfigIndex2() const;
+    void setConfigIndex2(const matchIndex &newConfigIndex2);
+
 private:
     int configIndex;
+    matchIndex configIndex2;
     QString cause;
 };
 

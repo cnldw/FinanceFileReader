@@ -29,7 +29,7 @@ public:
      * @param line
      */
     void addDictionary(QString line);
-
+    void clearDictionary();
 private:
     QHash <QString,QHash<QString,QString>> hash;
 };

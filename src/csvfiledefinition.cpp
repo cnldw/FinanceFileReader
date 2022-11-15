@@ -235,6 +235,16 @@ void CsvFileDefinition::setLastrowcheck(const QString &newLastrowcheck)
     lastrowcheck = newLastrowcheck;
 }
 
+QList<fieldcheckitem> CsvFileDefinition::getFieldcheckList() const
+{
+    return fieldcheckList;
+}
+
+void CsvFileDefinition::addFieldcheckItem(const fieldcheckitem &value)
+{
+    fieldcheckList.append(value);
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     

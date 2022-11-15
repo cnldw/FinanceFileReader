@@ -63,7 +63,6 @@
    <property name="font">
     <font>
      <family>宋体</family>
-     <weight>50</weight>
      <bold>false</bold>
     </font>
    </property>

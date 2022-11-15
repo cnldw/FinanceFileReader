@@ -18,6 +18,7 @@
 #include <QString>
 #include <QList>
 #include "src/csvfielddefinition.h"
+#include "src/fieldcheckitem.h"
 
 /**
  * @brief The CsvFileDefinition class CSV文件类的定义
@@ -68,6 +69,10 @@ private:
 
     bool ffAuto=false;
 
+    //本文件的必填检查规则列表
+    QList <fieldcheckitem> fieldcheckList;
+
+
 public:
     CsvFileDefinition();
     bool getUseAble() const;
@@ -114,6 +119,8 @@ public:
     void setFirstrowcheck(const QString &newFirstrowcheck);
     const QString &getLastrowcheck() const;
     void setLastrowcheck(const QString &newLastrowcheck);
+    QList<fieldcheckitem> getFieldcheckList() const;
+    void addFieldcheckItem(const fieldcheckitem &value);
 };
 
 #endif // CSVFILEDEFINITION_H

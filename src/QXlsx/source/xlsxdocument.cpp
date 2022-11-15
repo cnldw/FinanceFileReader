@@ -657,6 +657,14 @@ bool Document::getImage(int imageIndex, QImage& img)
     return  false;
 }
 
+bool Document::getImage(int row, int col, QImage &img)
+{
+    if (Worksheet *sheet = currentWorksheet())
+        return sheet->getImage(row, col, img);
+
+    return  false;
+}
+
 uint Document::getImageCount()
 {
     if (Worksheet *sheet = currentWorksheet())
@@ -1194,6 +1202,16 @@ bool Document::selectSheet(const QString &name)
 {
 	Q_D(Document);
 	return d->workbook->setActiveSheet(sheetNames().indexOf(name));
+}
+
+/*!
+ * \brief Set worksheet whose index is \a index to be active sheet.
+ * Returns true if success.
+ */
+bool Document::selectSheet(int index)
+{
+	Q_D(Document);
+	return d->workbook->setActiveSheet(index);
 }
 
 /*!

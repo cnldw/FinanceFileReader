@@ -109,6 +109,7 @@ void DialogChooseOFDConfig::setConfirm(bool value)
 
 void DialogChooseOFDConfig::on_tableWidget_cellDoubleClicked(int row, int column)
 {
+    Q_UNUSED(column);
     chooeseIndex=row;
     confirm=true;
     this->close();

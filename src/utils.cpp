@@ -93,6 +93,772 @@ QString Utils::qStringTrimRight(const QString& str) {
     return "";
 }
 
+/**
+ * @brief Utils::load_OFDCodeInfo加载ofd的代码配置信息,包含销售商，TA信息-这个数据取自tools目录下的爬虫工具-数据来源为证券市场标准网
+ * @param loadedOfdCodeInfo
+ */
+void Utils::load_OFDCodeInfo(QHash<QString, OFDCodeInfo> &loadedOfdCodeInfo){
+    QString codeInipath=Utils::getConfigPath()+"OFD_CodeInfo.ini";
+    if(Utils::isFileExist(codeInipath)){
+        //加载ini文件
+        QSettings loadedCodeInfoIni(codeInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        loadedCodeInfoIni.setIniCodec("UTF-8");
+        QStringList agencyInfo=loadedCodeInfoIni.childGroups();
+        //获取所有代码和代码对应的机构名称
+        for(int i=0;i<agencyInfo.count();i++){
+            OFDCodeInfo infoItem;
+            infoItem.setCode(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString());
+            infoItem.setName(loadedCodeInfoIni.value(agencyInfo.at(i)+"/NAME").toString());
+            loadedOfdCodeInfo.insert(loadedCodeInfoIni.value(agencyInfo.at(i)+"/AGENCYNO").toString(),infoItem);
+        }
+    }
+}
+
+/**
+ * @brief Utils::load_OFDDictionary 加载OFD的字典信息
+ * @param ofdDictionary
+ */
+void Utils::load_OFDDictionary(Dictionary &ofdDictionary){
+    ofdDictionary.clearDictionary();
+    QString dictionaryInipath=Utils::getConfigPath()+"OFD_Dictionary.ini";
+    if(Utils::isFileExist(dictionaryInipath)){
+        //加载ini文件
+        QSettings loadedDictionary(dictionaryInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        loadedDictionary.setIniCodec("UTF-8");
+        //获取所有fixed文件的配置信息，循环存储
+        QStringList dictionaryGroup=loadedDictionary.childGroups();
+        //查不到任何段落
+        if(dictionaryGroup.count()<1){
+            return;
+        }
+        //循环各个字典组
+        for(int i=0;i<dictionaryGroup.count();i++){
+            loadedDictionary.beginGroup(dictionaryGroup.at(i));
+            QStringList allkey=loadedDictionary.allKeys();
+            if(allkey.count()>0){
+                for (int j=0;j<allkey.count();j++){
+                    //循环插入字典
+                    //字典分组_key=a:xxxb:xxx
+                    ofdDictionary.addDictionary(dictionaryGroup.at(i)+"_"+allkey.at(j)+"="+loadedDictionary.value(allkey.at(j)).toString());
+                }
+            }
+            loadedDictionary.endGroup();
+        }
+    }
+}
+
+void Utils::load_OFDTipDictionary(QMap<QString,QMap<QString,QString>> &fieldTips){
+    fieldTips.clear();
+    QString TipDictionaryInipath=Utils::getConfigPath()+"OFD_TipDictionary.ini";
+    if(Utils::isFileExist(TipDictionaryInipath)){
+        //加载ini文件
+        QSettings loadedDictionary(TipDictionaryInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        loadedDictionary.setIniCodec("UTF-8");
+        //获取所有fixed文件的配置信息，循环存储
+        QStringList dictionaryGroup=loadedDictionary.childGroups();
+        //查不到任何段落
+        if(dictionaryGroup.count()<1){
+            return;
+        }
+        //循环各个字典组
+        //tip字典和字段枚举字典一样分组
+        for(int i=0;i<dictionaryGroup.count();i++){
+            loadedDictionary.beginGroup(dictionaryGroup.at(i));
+            QStringList allkey=loadedDictionary.allKeys();
+            QMap<QString,QString> tips;
+            if(allkey.count()>0){
+                for (int j=0;j<allkey.count();j++){
+                    //如果值不空,则认为是一条有效的tips
+                    if(!loadedDictionary.value(allkey.at(j)).toString().isEmpty()){
+                        tips.insert(allkey.at(j),loadedDictionary.value(allkey.at(j)).toString());
+                    }
+                }
+                //OFD的tips存储结构为OFD001这样的OFD开头的文件类别
+                fieldTips.insert("OFD"+dictionaryGroup.at(i),tips);
+            }
+            loadedDictionary.endGroup();
+        }
+    }
+}
+void Utils::load_OFDLikeFileDefinition(QHash<QString, QString> &likeOFDIndexFilename,QHash<QString, QString>  &likeOFDDataFilename){
+    QString fileTypeInipath=Utils::getConfigPath()+"OFD_Like.ini";
+    if(Utils::isFileExist(fileTypeInipath)){
+        //加载ini文件
+        QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        fileTypeIni.setIniCodec("UTF-8");
+        QStringList infoList;
+        //读取INDEXFILEPREFIX
+        fileTypeIni.beginGroup("INDEXFILEPREFIX");
+        infoList =fileTypeIni.childKeys();
+        fileTypeIni.endGroup();
+        likeOFDIndexFilename.clear();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                likeOFDIndexFilename.insert(infoList.at(i),fileTypeIni.value("INDEXFILEPREFIX/"+infoList.at(i)).toString());
+            }
+        }
+        infoList.clear();
+        ////////////////////////////////////////////////////////
+        //读取DATAFILEPREFIX
+        fileTypeIni.beginGroup("DATAFILEPREFIX");
+        infoList =fileTypeIni.childKeys();
+        fileTypeIni.endGroup();
+        likeOFDDataFilename.clear();
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                likeOFDDataFilename.insert(infoList.at(i),fileTypeIni.value("DATAFILEPREFIX/"+infoList.at(i)).toString());
+            }
+        }
+        infoList.clear();
+    }
+}
+
+void Utils::load_OFDIndexFileDefinition(QHash<QString, QString> &loadedOfdIndexFileInfo){
+    loadedOfdIndexFileInfo.clear();
+    QString fileTypeInipath=Utils::getConfigPath()+"OFD_IndexFile.ini";
+    if(Utils::isFileExist(fileTypeInipath)){
+        //加载ini文件
+        QSettings fileTypeIni(fileTypeInipath,QSettings::IniFormat,nullptr);
+        //目前仅接收UTF-8编码的配置文件
+        fileTypeIni.setIniCodec("UTF-8");
+        //读取OFDINDEXFILE
+        fileTypeIni.beginGroup("OFDINDEXFILE");
+        QStringList infoList =fileTypeIni.childKeys();
+        fileTypeIni.endGroup();
+        //遍历组OFDINDEXFILE
+        if(infoList.count()>0){
+            for(int i=0;i<infoList.count();i++){
+                loadedOfdIndexFileInfo.insert(infoList.at(i),fileTypeIni.value("OFDINDEXFILE/"+infoList.at(i)).toString());
+            }
+        }
+        infoList.clear();
+    }
+}
+
+void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigList,QHash<QString,int> &ofdQuickMatchIndex){
+    QDir dirPath(Utils::getConfigPath());
+    QStringList filters;
+    filters << "OFD_*.ini";//设置过滤类型
+    dirPath.setNameFilters(filters);//设置文件名的过滤
+    QFileInfoList list = dirPath.entryInfoList();
+    if(list.length()!=0){
+        //循环检索config目录下可用的接口定义配置
+        //OFD开头ini结尾,形式类似于OFD_XXX.ini
+        /*-------------------------------开启第一重循环,遍历config下的OFD配置文件-----------------------------------*/
+        for (int f = 0; f < list.size(); f++)
+        {
+
+            QString fileName=list.at(f).fileName();
+            QString fixName=fileName;
+
+            //排除几个文件
+            if(fileName=="OFD_CodeInfo.ini"||fileName=="OFD_Dictionary.ini"||fileName=="OFD_IndexFile.ini"||fileName=="OFD_TipDictionary.ini"||fileName=="OFD_Like.ini"){
+                continue;
+            }
+            if(fileName.startsWith("OFD",Qt::CaseInsensitive)&&fileName.endsWith("ini",Qt::CaseInsensitive)){
+                //编辑加载文件
+                if(fixName.contains(".",Qt::CaseInsensitive)){
+                    fixName=fixName.mid(0,fixName.indexOf("."));
+                }
+                QStringList nameList=fixName.split("_");
+                if(nameList.count()==2){
+                    //本文件的定义
+                    ConfigFile<OFDFileDefinition> ofdconfigfile;
+                    ofdconfigfile.setFileName(fileName);
+                    QList<OFDFileDefinition> configSegmentList;
+
+                    //加载ini文件
+                    QString configFileVersion=nameList.at(1);
+                    QSettings ofdIni(Utils::getConfigPath()+fileName,QSettings::IniFormat,nullptr);
+                    //目前仅接收UTF-8编码的配置文件
+                    ofdIni.setIniCodec("UTF-8");
+                    QStringList interfaceList=ofdIni.childGroups();
+                    //获取所有文件类别定义
+                    if(interfaceList.count()>0){
+                        /*-----------------第二重循环，遍历OFD文件内的文件定义----------------------*/
+                        /* /////////////////////////开始解析本文件可用接口文件定义////////// */
+                        for(int i=0;i<interfaceList.count();i++){
+                            OFDFileDefinition ofd;
+                            ofd.setConfigSegment("["+interfaceList.at(i)+"]");
+                            //包含版本和文件类别的字符串比如21_07
+                            ofd.setUseForVersionAndType(configFileVersion+"_"+interfaceList.at(i).split("_").first());
+                            QList<OFDFieldDefinition> fieldList;
+                            QString message;
+                            bool okFlag=false;
+                            //记录每行的长度，自动总数
+                            int rowLength=0;
+                            int fieldCount=0;
+                            //文件说明
+                            QString describe=ofdIni.value(interfaceList.at(i)+"/DESCRIBE").toString();
+                            if (!describe.isEmpty()){
+                                ofd.setDescribe(describe);
+                            }
+                            else{
+                                ofd.setDescribe("未配置说明的文件");
+                            }
+                            //字典类型
+                            QString dictionary=ofdIni.value(interfaceList.at(i)+"/DICTIONARY").toString();
+                            //设置解析字典类型
+                            ofd.setDictionary(dictionary.isEmpty()?"":dictionary);
+                            //查找COUNT标记
+                            QString countStr=ofdIni.value(interfaceList.at(i)+"/COUNT").toString();
+                            if(countStr.isEmpty()){
+                                message="找不到"+interfaceList.at(i)+"文件的字段总数配置";
+                                okFlag=false;
+                            }else{
+                                bool ok;
+                                int countInt=countStr.toInt(&ok,10);
+                                if(ok&&countInt>0){
+                                    fieldCount=countInt;
+                                    /*------第三重循环--开始按行解析此接口文件的定义----------------*/
+                                    //解析规则-一旦解析到一个失败的记录，就不再往下解析了
+                                    for(int j=1;j<=countInt;j++){
+                                        OFDFieldDefinition ofdfield;
+                                        //获取这个文件定义的第i个字段的信息
+                                        QStringList iniStrList=ofdIni.value(interfaceList.at(i)+"/"+QString::number(j)).toStringList();
+                                        if (iniStrList.isEmpty()||iniStrList.length()!=5){
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段定义不正确或者缺失";
+                                            okFlag=false;
+                                            break;
+                                        }
+                                        //获取字符类型参数
+                                        QString fieldType=(QString(iniStrList.at(0)));
+                                        if(fieldType.length()<1){
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的类型定义缺失,请配置";
+                                            okFlag=false;
+                                            break;
+                                        }
+                                        //字段长度
+                                        bool lengthOk;
+                                        int length=(QString(iniStrList.at(1))).toInt(&lengthOk,10);
+                                        if(!lengthOk){
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的长度定义不是整数";
+                                            okFlag=false;
+                                            break;
+                                        }
+                                        //字段小数长度
+                                        bool declengthOk;
+                                        int declength=(QString(iniStrList.at(2))).toInt(&declengthOk,10);
+                                        if(!declengthOk){
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义不是整数";
+                                            okFlag=false;
+                                            break;
+                                        }
+                                        if(fieldType=="N"&&(declength>=length)){
+                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义应该小于字段总长度";
+                                            okFlag=false;
+                                            break;
+                                        }
+                                        //历经千辛万苦经理校验无误后存入字段信息
+                                        //每个字段开始的位置就是截至到上一个字段结束的长度
+                                        //比如第一个字段长度为2,则第二个字段在此行记录中的起始坐标就是2（0,1这两个字节是第一个字段的索引）
+                                        ofdfield.setRowBeginIndex(rowLength);
+                                        rowLength+=length;
+                                        ofdfield.setLength(length);
+                                        ofdfield.setDecLength(declength);
+                                        ofdfield.setFieldType(fieldType);
+                                        ofdfield.setFieldName(QString(iniStrList.at(4)));
+                                        ofdfield.setFieldDescribe(QString(iniStrList.at(3)));
+                                        fieldList.append(ofdfield);
+                                        //更新记录为成功
+                                        okFlag=true;
+                                    }
+                                    //字段配置解析正确的情况下，才考虑解析必填规则
+                                    if(okFlag){
+                                        ofdIni.beginGroup(interfaceList.at(i));
+                                        QStringList infoList =ofdIni.childKeys();
+                                        ofdIni.endGroup();
+                                        if(infoList.count()>0){
+                                            for (int checkindex=0;checkindex<infoList.count();checkindex++){
+                                                //字段必填配置
+                                                if(infoList.at(checkindex).startsWith("fieldcheck_")){
+                                                    bool okFlag=false;
+                                                    fieldcheckitem ckitem=Utils::parseStringtofieldcheckitem(ofdIni.value(interfaceList.at(i)+"/"+infoList.at(checkindex)).toString(),countInt,&okFlag);
+                                                    if(okFlag){
+                                                        ofd.addFieldcheckItem(ckitem);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else{
+                                    message=interfaceList.at(i)+"文件的字段总数配置COUNT标记不是有效的整数";
+                                    okFlag=false;
+                                }
+                            }
+                            //写入该文件的配置
+                            //如果记录完整没错误则写入
+                            if(okFlag){
+                                //记录数的长度/////////20190723///////////
+                                QString rowcountLengthStr=ofdIni.value(interfaceList.at(i)+"/ROWCOUNTLENGTH").toString();
+                                if(rowcountLengthStr.isEmpty()){
+                                    //找不到就默认设置为8
+                                    ofd.setRowCountLength(8);
+                                }else{
+                                    bool ok;
+                                    int rowcountLengthInt=rowcountLengthStr.toInt(&ok,10);
+                                    if(ok&&rowcountLengthInt>0){
+                                        ofd.setRowCountLength(rowcountLengthInt);
+                                    }
+                                    else{
+                                        //读取配置错误也设置为8
+                                        ofd.setRowCountLength(8);
+                                    }
+                                }
+                                ///////////////////////////
+                                ofd.setUseAble(okFlag);
+                                ofd.setMessage(message);
+                                ofd.setFieldCount(fieldCount);
+                                ofd.setRowLength(rowLength);
+                                ofd.setFieldList(fieldList);
+                                configSegmentList.append(ofd);
+                            }
+                            //如果记录有错误,则仅写于不可用和错误原因
+                            else{
+                                ofd.setUseAble(okFlag);
+                                ofd.setMessage(message);
+                                configSegmentList.append(ofd);
+                            }
+                        }
+                    }
+                 ofdconfigfile.setConfigSegmentList(configSegmentList);
+                 ofdConfigList.append(ofdconfigfile);
+                 //记录版本和config的映射关系,方便快速找到某个版本的配置是否存在
+                 ofdQuickMatchIndex.insert(configFileVersion,ofdConfigList.count()-1);
+                }
+            }
+        }
+    }
+}
+
+void Utils::load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigList,QHash<QString,Dictionary> &commonDictionary,QMap<QString,QMap<QString,QString>> &commonFieldTips){
+    QDir dirPath(Utils::getConfigPath());
+    QStringList filters;
+    filters << "CSV_*.ini";//设置过滤类型
+    dirPath.setNameFilters(filters);//设置文件名的过滤
+    QFileInfoList listFile = dirPath.entryInfoList();
+    if(listFile.length()!=0){
+        //循环检索config目录下可用的CSV接口定义配置
+        for (int f = 0; f < listFile.size(); f++)
+        {
+            QString fileName=listFile.at(f).fileName();
+            QString inipath=Utils::getConfigPath()+fileName;
+            if(Utils::isFileExist(inipath)){
+                //本文件的定义
+                ConfigFile<CsvFileDefinition> csvconfigfile;
+                csvconfigfile.setFileName(fileName);
+                QList<CsvFileDefinition> configSegmentList;
+                //加载ini文件
+                QSettings loadedCsvInfoIni(inipath,QSettings::IniFormat,nullptr);
+                //目前仅接收UTF-8编码的配置文件
+                loadedCsvInfoIni.setIniCodec("UTF-8");
+                QStringList csvInfo=loadedCsvInfoIni.childGroups();
+                if(csvInfo.count()>0){
+                    //获取所有csv文件的配置信息，循环存储
+                    for(int i=0;i<csvInfo.count();i++){
+                        QString csvType=QString(csvInfo.at(i));
+                        if(csvType.contains("|",Qt::CaseSensitive)){
+                            //建立一个定义变量
+                            CsvFileDefinition fileDef;
+                            //本配置来自的配置文件
+                            fileDef.setFileIni(fileName);
+                            //分割文件名和字段数
+                            QStringList list=csvType.split("|");
+                            //1解析器可接受的文件名
+                            fileDef.setFileName(QString (list.at(0)));
+                            //2解析器配置全名
+                            fileDef.setFileNameWithCount(csvType);
+                            //3文件描述信息
+                            QString fileDescribe=loadedCsvInfoIni.value(csvType+"/filedescribe").toString();
+                            if(fileDescribe.isEmpty()){
+                                fileDef.setFileDescribe("未说明的CSV文件");
+                            }else{
+                                fileDef.setFileDescribe(fileDescribe);
+                            }
+                            //5分隔符
+                            QString splitflag=loadedCsvInfoIni.value(csvType+"/splitflag").toString();
+                            //注意不要乱删除这几行代码，qt有个bug，ini配置里某个字段的值是,(英文逗号)获取时会获取到空值，坑！
+                            //如果列分割为配置符号为空，则分隔符配置设置为,
+                            if(splitflag.isEmpty()){
+                                splitflag=",";
+                            }
+                            fileDef.setSplit(splitflag);
+                            //5是否以分隔符做结尾
+                            QString endwithflag=loadedCsvInfoIni.value(csvType+"/endwithflag").toString();
+                            fileDef.setEndwithflag(endwithflag);
+                            //6数据起始行
+                            bool beginflagok;
+                            int  beginrowindex=loadedCsvInfoIni.value(csvType+"/datarowbeginindex").toInt(&beginflagok);
+                            if(!beginflagok){
+                                fileDef.setDatabeginrowindex(0);
+                            }
+                            //如果数据起始行小于1，则强制为1
+                            else if(beginrowindex<1){
+                                fileDef.setDatabeginrowindex(1);
+                            }else{
+                                fileDef.setDatabeginrowindex(beginrowindex);
+                            }
+                            //7标题行
+                            bool titleflagok;
+                            int  titlerowindex=loadedCsvInfoIni.value(csvType+"/titlerowindex").toInt(&titleflagok);
+                            if(!titleflagok){
+                                fileDef.setTitlerowindex(0);
+                            }
+                            //如果不存在标题栏目，则标题行强制设置为0
+                            else if(titlerowindex<1){
+                                fileDef.setTitlerowindex(0);
+                            }else{
+                                fileDef.setTitlerowindex(titlerowindex);
+                            }
+                            //8编码信息
+                            QString encoding=loadedCsvInfoIni.value(csvType+"/encoding").toString();
+                            if(encoding.isEmpty()){
+                                fileDef.setEcoding("UTF-8");
+                            }
+                            else{
+                                fileDef.setEcoding(encoding);
+                            }
+                            //9数据尾部忽略行
+                            bool flag=false;
+                            QString ignorerow=loadedCsvInfoIni.value(csvType+"/endignorerow").toString();
+                            int endignoreRow;
+                            if(ignorerow.isEmpty()){
+                                //不配置就不忽略任何行
+                                fileDef.setEndIgnoreRow(0);
+                            }
+                            else{
+                                endignoreRow=ignorerow.toInt(&flag);
+                                if(!flag){
+                                    fileDef.setUseAble(false);
+                                    fileDef.setMessage("文件结尾忽略行数不是一个可用的数值");
+                                    configSegmentList.append(fileDef);
+                                    continue;
+                                }
+                                else{
+                                    if(endignoreRow<0){
+                                        flag=false;
+                                        fileDef.setUseAble(false);
+                                        fileDef.setMessage("文件结尾忽略行数应当是一个大于等于0的整数");
+                                        configSegmentList.append(fileDef);
+                                        continue;
+                                    }else {
+                                        fileDef.setEndIgnoreRow(endignoreRow);
+                                    }
+                                }
+                            }
+                            //10是否清除双引号
+                            QString clearQuotesStr=loadedCsvInfoIni.value(csvType+"/clearquotes").toString();
+                            if(clearQuotesStr=="1") {
+                                fileDef.setClearQuotes(true);
+                            }
+                            else{
+                                fileDef.setClearQuotes(false);
+                            }
+                            //11是否进行trim
+                            QString TrimStr=loadedCsvInfoIni.value(csvType+"/trim").toString();
+                            if(TrimStr=="1") {
+                                fileDef.setTrim(true);
+                            }
+                            else{
+                                fileDef.setTrim(false);
+                            }
+                            //12-版本记录所在行
+                            QString versioncheckrow=loadedCsvInfoIni.value(csvType+"/versioncheckrow").toString();
+                            int versioncheckrowint;
+                            if(versioncheckrow.isEmpty()){
+                                //不配置就是不检验版本
+                                fileDef.setVersioncheckrow(0);
+                            }
+                            else{
+                                versioncheckrowint=versioncheckrow.toInt(&flag);
+                                if(!flag){
+                                    fileDef.setUseAble(false);
+                                    fileDef.setMessage("版本检查行配置versioncheckrow不是一个有效数据");
+                                    configSegmentList.append(fileDef);
+                                    continue;
+                                }
+                                else{
+                                    if(versioncheckrowint<0){
+                                        flag=false;
+                                        fileDef.setUseAble(false);
+                                        fileDef.setMessage("版本检查行配置versioncheckrow应当是一个大于等于0的整数,0为不进行版本检查,大于0则代表进行版本检查");
+                                        configSegmentList.append(fileDef);
+                                        continue;
+                                    }else {
+                                        fileDef.setVersioncheckrow(versioncheckrowint);
+                                    }
+                                }
+                            }
+                            //13版本标志行
+                            QString version=loadedCsvInfoIni.value(csvType+"/version").toString();
+                            if(version.isEmpty()){
+                                //不配置就不校验
+                                fileDef.setVersion("");
+                            }
+                            else{
+                                fileDef.setVersion(version);
+                            }
+                            //14-版本号检测模式
+                            QString versioncheckmode=loadedCsvInfoIni.value(csvType+"/versioncheckmode").toString();
+                            int versioncheckmodeint;
+                            if(versioncheckmode.isEmpty()){
+                                fileDef.setVersioncheckmode(0);
+                            }
+                            else{
+                                versioncheckmodeint=versioncheckmode.toInt(&flag);
+                                if(!flag){
+                                    fileDef.setUseAble(false);
+                                    fileDef.setMessage("版本号检查模式配置versioncheckmode不是一个有效数据");
+                                    configSegmentList.append(fileDef);
+                                    continue;
+                                }
+                                else{
+                                    if(versioncheckmodeint<0){
+                                        flag=false;
+                                        fileDef.setUseAble(false);
+                                        fileDef.setMessage("版本检查行配置versioncheckmode应当是一个大于等于0的整数,0为精确匹配,非0则代表模糊匹配");
+                                        configSegmentList.append(fileDef);
+                                        continue;
+                                    }else {
+                                        fileDef.setVersioncheckmode(versioncheckmodeint);
+                                    }
+                                }
+                            }
+                            //15首行检测
+                            QString firstrowcheck=loadedCsvInfoIni.value(csvType+"/firstrowcheck").toString();
+                            if(firstrowcheck.isEmpty()){
+                                //不配置就不校验
+                                fileDef.setFirstrowcheck("");
+                            }
+                            else{
+                                fileDef.setFirstrowcheck(firstrowcheck);
+                            }
+                            //16尾行检测
+                            QString lastrowcheck=loadedCsvInfoIni.value(csvType+"/lastrowcheck").toString();
+                            if(lastrowcheck.isEmpty()){
+                                //不配置就不校验
+                                fileDef.setLastrowcheck("");
+                            }
+                            else{
+                                fileDef.setLastrowcheck(lastrowcheck);
+                            }
+                            //////////////////////////////////////
+                            //最后字段总数和字段内容
+                            QString fieldCcountStr=loadedCsvInfoIni.value(csvType+"/fieldcount").toString();
+                            int fieldCount=fieldCcountStr.toInt(&flag,10);
+                            //字段描述值正确
+                            if(flag&&fieldCount>0){
+                                //4字段总数
+                                fileDef.setFieldCount(fieldCount);
+                                QList <CsvFieldDefinition> fieldList;
+                                //10开始循环加载本文件类型的字段信息///////////////
+                                bool fieldListIsOK=true;
+                                for(int r=0;r<fieldCount;r++){
+                                    CsvFieldDefinition fieldItem;
+                                    QStringList iniStrList=loadedCsvInfoIni.value(csvType+"/"+(QString::number(r+1,10))).toStringList();
+                                    if(iniStrList.isEmpty()){
+                                        fieldItem.setFieldDescribe("未定义的字段名");
+                                    }
+                                    else{
+                                        //中文字段名
+                                        QString desc=iniStrList.at(0);
+                                        if(desc.isEmpty()){
+                                            fieldItem.setFieldDescribe("未定义的字段名");
+                                        }
+                                        else{
+                                            fieldItem.setFieldDescribe(desc);
+                                        }
+                                        if(iniStrList.count()>=2){
+                                            QString name=iniStrList.at(1);
+                                            fieldItem.setFieldName(name);
+                                        }
+                                        if(iniStrList.count()>=3){
+                                            QString numbercheck=iniStrList.at(2);
+                                            if(numbercheck.isEmpty()){
+                                                fieldItem.setIsNumber(-1);
+                                            }
+                                            else if(numbercheck=="-1"){
+                                                fieldItem.setIsNumber(-1);
+                                            }
+                                            else if(numbercheck=="0"){
+                                                fieldItem.setIsNumber(0);
+                                            }
+                                            else if(numbercheck=="1"){
+                                                fieldItem.setIsNumber(1);
+                                            }
+                                            else{
+                                                fieldListIsOK=false;
+                                                fileDef.setMessage(QString("第%1个字段是否是数值的标志位存在非法值,-1和留空代表程序自动判断,0为非数值,1为数值").arg(QString::number(r+1,10)));
+                                                break;
+                                            }
+                                        }
+                                        if(iniStrList.count()>=4){
+                                            QString numberShift=iniStrList.at(3);
+                                            if(numberShift.isEmpty()){
+                                                fieldItem.setDecimalPointShift(0);
+                                            }
+                                            else{
+                                                bool flag=false;
+                                                int numberShiftint=numberShift.toInt(&flag,10);
+                                                if(flag){
+                                                    if(numberShiftint<0||numberShiftint>4){
+                                                        fieldListIsOK=false;
+                                                        fileDef.setMessage(QString("第%1个字段数值缩放位数存在非法值,留空和0代表数值不缩放,1-4代表缩放10倍-1万倍").arg(QString::number(r+1,10)));
+                                                        break;
+                                                    }
+                                                    else{
+                                                        fieldItem.setDecimalPointShift(numberShiftint);
+                                                    }
+                                                }
+                                                else{
+                                                    fieldListIsOK=false;
+                                                    fileDef.setMessage(QString("第%1个字段数值缩放位数存在非法值,留空和0代表数值不缩放,1-4代表缩放10倍-1万倍").arg(QString::number(r+1,10)));
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    //添加此字段信息到文件定义
+                                    fieldList.append(fieldItem);
+                                }
+                                if(fieldListIsOK){
+                                    //必填加工
+                                    loadedCsvInfoIni.beginGroup(csvType);
+                                    QStringList infoList =loadedCsvInfoIni.childKeys();
+                                    loadedCsvInfoIni.endGroup();
+                                    if(infoList.count()>0){
+                                        for (int checkindex=0;checkindex<infoList.count();checkindex++){
+                                            //字段必填配置
+                                            if(infoList.at(checkindex).startsWith("fieldcheck_")){
+                                                bool okFlag=false;
+                                                fieldcheckitem ckitem=Utils::parseStringtofieldcheckitem(loadedCsvInfoIni.value(csvType+"/"+infoList.at(checkindex)).toString(),fieldCount,&okFlag);
+                                                if(okFlag){
+                                                    fileDef.addFieldcheckItem(ckitem);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    fileDef.setFieldList(fieldList);
+                                    fileDef.setUseAble(true);
+                                    configSegmentList.append(fileDef);
+                                }
+                                else{
+                                    fileDef.setFieldList(fieldList);
+                                    fileDef.setUseAble(false);
+                                    configSegmentList.append(fileDef);
+                                }
+                            }
+                            //如果字段数是AUTO，则字段总和设置为-1，在进行文件解析是自动分析标题数量来进行解析
+                            //这种模式在带文件标题的情况下，自动解析标题，如果不带标题，则解析是标题全部描述为第XX列
+                            else if(fieldCcountStr.toUpper()=="AUTO"){
+                                //必填加工
+                                loadedCsvInfoIni.beginGroup(csvType);
+                                QStringList infoList =loadedCsvInfoIni.childKeys();
+                                loadedCsvInfoIni.endGroup();
+                                if(infoList.count()>0){
+                                    for (int checkindex=0;checkindex<infoList.count();checkindex++){
+                                        //字段必填配置
+                                        if(infoList.at(checkindex).startsWith("fieldcheck_")){
+                                            bool okFlag=false;
+                                            fieldcheckitem ckitem=Utils::parseStringtofieldcheckitem(loadedCsvInfoIni.value(csvType+"/"+infoList.at(checkindex)).toString(),-1,&okFlag);
+                                            if(okFlag){
+                                                fileDef.addFieldcheckItem(ckitem);
+                                            }
+                                        }
+                                    }
+                                }
+                                fileDef.setFieldCount(-1);
+                                fileDef.setUseAble(true);
+                                configSegmentList.append(fileDef);
+                            }
+                            else{
+                                fileDef.setUseAble(false);
+                                fileDef.setMessage("字段总数描述不是正确可用的数值(字段数需为大于0的整数)或者为AUTO(自动解析列数形式)");
+                                configSegmentList.append(fileDef);
+                            }
+                        }
+                        else
+                            //判断是否是字典配置，字典配置是csv配置文件里的一段特殊配置，使用Dictionary标注
+                        {
+                            if(csvType=="Dictionary"){
+                                Dictionary dic;
+                                //开始循环读取字典
+                                //不要尝试使用begingroup后直接读取组内参数，否则会读取不到包含逗号的键值
+                                loadedCsvInfoIni.beginGroup("Dictionary");
+                                QStringList infoList =loadedCsvInfoIni.childKeys();
+                                loadedCsvInfoIni.endGroup();
+                                if(infoList.count()>0){
+                                    for(int aaa=0;aaa<infoList.count();aaa++){
+                                        //ini配置中如果key存在中文会出现错误，所以我们使用1=key@value的方式去改造
+                                        QString line=loadedCsvInfoIni.value("Dictionary/"+infoList.at(aaa)).toString();
+                                        int index=line.indexOf('@');
+                                        if(index>0){
+                                            //只替换第一个出现的@，以免替换了字典里的其他@符号
+                                            dic.addDictionary(line.replace(index,1,'='));
+                                        }
+                                        //不包含@的跳过
+                                        else{
+                                            continue;
+                                        }
+                                    }
+                                    //将字典加入qhash/csv类的字典以csv开头
+                                    commonDictionary.insert("CSV"+fileName,dic);
+                                }
+                                infoList.clear();
+                            }
+                            //字段Tips加载
+                            else if(csvType=="TipDictionary"){
+                                //开始循环读取字典
+                                loadedCsvInfoIni.beginGroup("TipDictionary");
+                                QStringList infoList =loadedCsvInfoIni.childKeys();
+                                loadedCsvInfoIni.endGroup();
+                                if(infoList.count()>0){
+                                    QMap<QString,QString> tips;
+                                    for(int aaa=0;aaa<infoList.count();aaa++){
+                                        //ini配置中如果key存在中文会出现错误，所以我们使用1=key:value的方式去改造
+                                        QString line=loadedCsvInfoIni.value("TipDictionary/"+infoList.at(aaa)).toString();
+                                        //从第一个：拆分这样做到优雅的tips中可以存在：
+                                        int index=line.indexOf(':');
+                                        if(index>0){
+                                            tips.insert(line.mid(0,index),line.mid(index+1));
+                                        }
+                                        //不包含:的跳过
+                                        else{
+                                            continue;
+                                        }
+                                    }
+                                    //以文件类别，配置文件名存入
+                                    commonFieldTips.insert("CSV"+fileName,tips);
+                                }
+                                infoList.clear();
+                            }
+                            else{
+                                //无效配置段落，跳过
+                                continue;
+                            }
+                        }
+                    }
+                }
+                csvconfigfile.setConfigSegmentList(configSegmentList);
+                csvConfigList.append(csvconfigfile);
+            }
+        }
+    }
+}
+
+
+void Utils::load_FIXEDDefinition(){
+
+}
+void Utils::load_DBFDefinition(){
+
+}
+
 QString Utils::qStringTrimLeft(const QString& str) {
     int n = str.size() - 1;
     int i=0;
@@ -809,7 +1575,7 @@ void Utils::UpdateFileTime(QString file,QDateTime lastModifyTime){
     int aHour = lastModifyTime.time().hour();
     int aMinute = lastModifyTime.time().minute();
     int aSec = lastModifyTime.time().second();
-    struct tm tma = {0};
+    struct tm tma = {0,0,0,0,0,0,0,0,0};
     tma.tm_year = aYear;
     tma.tm_mon = aMonth;
     tma.tm_mday = aDay;
@@ -919,4 +1685,110 @@ void Utils::getFileListFromDirSkipOkfile(QString dirpath,QStringList *filelist){
         i++;
     } while(i < list.size());
     return;
+}
+
+fieldcheckitem Utils::parseStringtofieldcheckitem(QString text,int countInt,bool * okFlag){
+    QStringList line2=text.split("|");
+    fieldcheckitem ckitem;
+    bool flagcon=true;
+    if(line2.count()==2){
+        //分离条件和必填字段列表
+        QString condition=line2.at(0);
+        QString req=line2.at(1);
+        //使用分号分割多个条件分组
+        if(condition.toUpper()=="ALL"){
+            QList<CheckCondition> list;
+            CheckCondition ck;
+            //魔法数值-代表本行记录全部检查不分业务
+            ck.index=999999;
+            ck.value="";
+            list.append(ck);
+            ckitem.addCheckConditions(list);
+        }
+        else{
+            QStringList conditionListOverList=condition.split(";");
+            for (QString conditionliststr:conditionListOverList){
+                QStringList conditionlist=conditionliststr.split("&");
+                if(conditionlist.count()>0){
+                    QList<CheckCondition> list;
+                    for(int ccc=0;ccc<conditionlist.count();ccc++){
+                        QStringList conditionItemList=conditionlist.at(ccc).split("=");
+                        if(conditionItemList.count()==2){
+                            //index
+                            int fieldindex=conditionItemList.at(0).toInt(&flagcon,10);
+                            if(flagcon&&fieldindex>0&&countInt>0&&fieldindex<=countInt){
+                                CheckCondition ck;
+                                ck.index=fieldindex-1;
+                                ck.value=conditionItemList.at(1);
+                                list.append(ck);
+                            }
+                            //支持csv自动字段数
+                            else if (flagcon&&fieldindex>0&&countInt==-1){
+                                CheckCondition ck;
+                                ck.index=fieldindex-1;
+                                ck.value=conditionItemList.at(1);
+                                list.append(ck);
+                            }
+                            else{
+                                //检查条件不准有错，否则就放弃
+                                flagcon=false;
+                                break;
+                            }
+                        }
+                    }
+                    //添加本分组条件--分组内是和的关系，分组之间是或的关系
+                    if(flagcon){
+                        ckitem.addCheckConditions(list);
+                    }
+                }
+            }
+        }
+        //如果条件没问题,则开始判断字段列表
+        if (flagcon){
+            QStringList reqlist=req.split(",");
+            if(reqlist.count()<1){
+                flagcon=false;
+            }
+            else{
+                QList<int > fieldListforckitem;
+                for(int xxx=0;xxx<reqlist.count();xxx++){
+                    int fieldindex=reqlist.at(xxx).toInt(&flagcon,10);
+                    if(flagcon&&fieldindex>0&&fieldindex<=countInt){
+                        fieldListforckitem.append(fieldindex-1);
+                    }
+                    else{
+                        flagcon=false;
+                        break;
+                    }
+                }
+                //字段检查也符合预期--插入本必填
+                if(flagcon){
+                    ckitem.setRequiredFields(fieldListforckitem);
+                }
+            }
+        }
+        //条件异常
+        else{
+            flagcon=false;
+        }
+    }
+    if(flagcon){
+        * okFlag=true;
+    }
+    else{
+        * okFlag=false;
+    }
+    return ckitem;
+}
+
+double Utils::CVCcal (QList<QStringList > list){
+    int n = list.count ();
+    double sigma = 0, pSigma = 0;
+    for (int i = 0; i < n; ++i) {
+        double v = list.at (i).count();
+        sigma += v;        // sum
+        pSigma += v*v;     // 平方和
+    }
+    sigma /= n;
+    return qSqrt((pSigma/n - sigma*sigma))/sigma;
 }

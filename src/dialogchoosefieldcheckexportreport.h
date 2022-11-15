@@ -1,0 +1,31 @@
+#ifndef DIALOGCHOOSEFIELDCHECKEXPORTREPORT_H
+#define DIALOGCHOOSEFIELDCHECKEXPORTREPORT_H
+
+#include <QDialog>
+#include <QMap>
+#include <QDebug>
+
+namespace Ui {
+class DialogChooseFieldCheckExportReport;
+}
+
+class DialogChooseFieldCheckExportReport : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit DialogChooseFieldCheckExportReport(QWidget *parent = nullptr);
+    ~DialogChooseFieldCheckExportReport();
+
+private slots:
+
+    void on_pushButton3_clicked();
+
+signals:
+    void sendFieldExportConfig(QMap<QString,int> config);
+
+private:
+    Ui::DialogChooseFieldCheckExportReport *ui;
+};
+
+#endif // DIALOGCHOOSEFIELDCHECKEXPORTREPORT_H

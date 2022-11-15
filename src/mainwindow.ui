@@ -555,7 +555,7 @@ border-radius:3px;
            <x>0</x>
            <y>0</y>
            <width>557</width>
-           <height>31</height>
+           <height>33</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout">
@@ -706,7 +706,7 @@ border-radius:3px;
      <x>0</x>
      <y>0</y>
      <width>960</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -744,6 +744,7 @@ border-radius:3px;
     </property>
     <addaction name="viewMode"/>
     <addaction name="actionautcolwidth"/>
+    <addaction name="actiontableSelectionBehaviorMenu"/>
    </widget>
    <widget class="QMenu" name="menuSetting">
     <property name="title">
@@ -817,10 +818,20 @@ border-radius:3px;
     <addaction name="menu_5"/>
     <addaction name="actionTableStructure"/>
    </widget>
+   <widget class="QMenu" name="menufieldcheckmenu">
+    <property name="title">
+     <string>字段必填校验</string>
+    </property>
+    <addaction name="actioncurrentfilechekrule"/>
+    <addaction name="actionexpcheckresult"/>
+    <addaction name="actionprefieldcheck"/>
+    <addaction name="actionnextfieldcheck"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
+   <addaction name="menufieldcheckmenu"/>
    <addaction name="menudbftools"/>
    <addaction name="menuwindow"/>
    <addaction name="menu_3"/>
@@ -1084,10 +1095,10 @@ border-radius:3px;
   </action>
   <action name="actionautcolwidth">
    <property name="text">
-    <string>自适应列宽</string>
+    <string>对表格内容自适应列宽</string>
    </property>
    <property name="toolTip">
-    <string>自适应列宽</string>
+    <string>对表格内容自适应列宽</string>
    </property>
    <property name="shortcut">
     <string>Alt+W</string>
@@ -1130,6 +1141,43 @@ border-radius:3px;
    </property>
    <property name="toolTip">
     <string>从Excel导入数据(仅支持OFD文件)</string>
+   </property>
+  </action>
+  <action name="actioncurrentfilechekrule">
+   <property name="text">
+    <string>列出当前文件适用的必填校验规则</string>
+   </property>
+   <property name="toolTip">
+    <string>列出当前文件适用的必填校验规则</string>
+   </property>
+  </action>
+  <action name="actionexpcheckresult">
+   <property name="text">
+    <string>导出当前文件必填校验报告</string>
+   </property>
+   <property name="toolTip">
+    <string>导出当前文件必填校验报告</string>
+   </property>
+  </action>
+  <action name="actionnextfieldcheck">
+   <property name="text">
+    <string>定位到下一处必填缺失</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F3</string>
+   </property>
+  </action>
+  <action name="actionprefieldcheck">
+   <property name="text">
+    <string>定位到上一处必填缺失</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F2</string>
+   </property>
+  </action>
+  <action name="actiontableSelectionBehaviorMenu">
+   <property name="text">
+    <string>表格高亮按行选择</string>
    </property>
   </action>
  </widget>

@@ -136,6 +136,7 @@ void DialogOKTools::on_pushButton_clicked()
 
 void DialogOKTools::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
+    Q_UNUSED(pos);
     tablePopMenu->exec(QCursor::pos());
 }
 

@@ -97,7 +97,13 @@
 #include "src/dbffileconfig.h"
 #include "src/dialogoktools.h"
 #include "src/msgtoast.h"
-#include "dialogshowimportexcelerror.h"
+#include "src/dialogshowimportexcelerror.h"
+#include "src/dialogshowfieldchecklist.h"
+#include "src/fieldcheckitem.h"
+#include "src/dialogshowfieldchecklist.h"
+#include "src/dialogchoosefieldcheckexportreport.h"
+#include "src/configfile.h"
+
 #ifdef Q_OS_WIN32
 #include "src/formwebtools.h"
 #endif
@@ -322,8 +328,20 @@ private slots:
 
     void update_import_excel_status();
 
+    void on_actionexpcheckresult_triggered();
+
+    void on_actioncurrentfilechekrule_triggered();
+
+    void on_actionprefieldcheck_triggered();
+
+    void on_actionnextfieldcheck_triggered();
+
+    void on_actiontableSelectionBehaviorMenu_triggered();
+
 public slots:
     void getNewHeaderAndFooter(QStringList header,QStringList footer);
+    void getFieldExportConfig(QMap <QString,int> config);
+
 
 private:
 
@@ -348,14 +366,14 @@ private:
     QHash<QString, OFDCodeInfo> loadedOfdCodeInfo;
     //已经加载的OFD索引文件信息,记录各种索引文件的文件名开头三个字符
     QHash<QString, QString> loadedOfdIndexFileInfo;
-    //已经加载的CSV类的文件名的正则匹配器--CSV文件判断类别，使用简单的正则匹配方法
-    QHash<QString, QString> loadedCsvFileInfo;
     //已经加载的定长文件文件名的正则匹配器--FIXED文件判断类别，使用简单的正则匹配方法
     QHash<QString, QString> loadedFixedFileInfo;
-    //已经加载的各种OFD文件的定义,比如21_01,代表第21版本的01文件的定义，使用Hash记录<_21_01,21版本下的01文件的定义>
-    QHash<QString,OFDFileDefinition>loadedOfdDefinitionHash;
-    //已经加载的CSV文件类别信息,csv文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
-    QList<CsvFileDefinition> loadedCsvDefinitionList;
+    //OFD配置文件列表
+    QList<ConfigFile<OFDFileDefinition>> ofdConfigList;
+    //类似key=21这样的Hash存储，方便打开文件的时候快速定位是否存在该文件的解析配置
+    QHash<QString,int> ofdQuickMatchIndex;
+    //CSV配置文件列表
+    QList<ConfigFile<CsvFileDefinition>> csvConfigList;
     //已经加载的FIXED文件类别信息,定长文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
     QList<FIXEDFileDefinition> loadedFixedDefinitionList;
     //已经加载的dbf配置
@@ -364,9 +382,9 @@ private:
     QHash<QString,QString> ofdIndexFileHeaderMap;
     //用来记录文件标题和内容的list,解析索引类文件时使用
     QList<QString> indexFileDataList;
-    //当前正在使用的ofd定义,打开哪个文件,就切换到改文件的ofd定义
+    //当前正在使用的ofd定义,打开哪个文件,就切换到该文件的ofd定义
     OFDFileDefinition ofd;
-    //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到改文件的csv定义
+    //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到该文件的csv定义
     CsvFileDefinition csv;
     //当前打开的dbf文件使用的定义,和其他类型文件不同，这个变量的内容基于打开的dbf文件里的元信息生成而不是取自配置文件
     DbfFileDefinition dbf;
@@ -500,6 +518,9 @@ private:
     //数据更新状态,比如当前正在加载文件，正在重新刷新文件
     bool isUpdateData=false;
 
+    //表格选择模式
+    QAbstractItemView::SelectionBehavior tableSelectionBehavior=QAbstractItemView::SelectItems;
+
     //阻断的操作，比如当前正在导出文件，正在搜索，和isUpdatedata类似
     bool dataBlocked=false;
     //是否是在导出文件
@@ -516,23 +537,26 @@ private:
     QMap<int,QStringList> compareData;
 
     //字段Tips
-    QMap<QString,QMap<QString,QString>> fieldTips;
+    QMap<QString,QMap<QString,QString>> commonFieldTips;
 
     //文件变化标志，如果打开了一个文件并且编辑修改了，则此标志为真
     bool fileChanged=false;
 
-    //设置选项
+    //设置选项///////////////////////
+    //字段必填检查
+    bool checkFieldFlag=true;
     //数据内存压缩等级--默认禁用
     int dataCompressLevel=0;
     //设置选项
     //默认视图模式-0当拖进来文件时在当前窗口打开，1不同的文件在新窗口打开，2所有拖到窗口的文件在新窗口打开
-    QString defaultViewMode="0";
+    int defaultViewMode=0;
     //设置选项
     //新文件打开方式
-    QString defaultNewFileMode="0";
+    int defaultNewFileMode=0;
     //设置选项
     //每页行数类型 0-10万行,1-20万行,2-50万行,3-100万行
-    QString defaultPageSizeType="0";
+    int defaultPageSizeType=0;
+    //设置选项///////////////////////
 
     //程序所有的tips，用于程序启动后随机显示一条提示
     QList<QString> tips;
@@ -543,8 +567,6 @@ private:
     int pageCount=1;
     //目前在第几页
     int currentPage=1;
-    //sql模式
-    bool sqlMode=false;
     //支持导出excel文件的最大行数
     //导出超大excel将占用很大的内存，这里初步限制60万行，需要再高的需要定制该功能
     //1.8.6开始支持导出100万行
@@ -559,7 +581,7 @@ private:
     bool abortExit=false;
 
     //统计读取文件耗时
-    double time_Start = (double)clock();
+    QDateTime time_Start = QDateTime::currentDateTime();
 
     bool checkCSVVersion(CsvFileDefinition  csv,QString versionRowData);
     void copyToClipboard(bool withTitle=false);
@@ -577,40 +599,43 @@ private:
     void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
     void initStatusBar();
     void open_file_Dialog();
-    void load_OFDCodeInfo();
     void load_Setting();
     void load_PluginList();
-    void load_OFDIndexFile();
-    void load_OFDLikeFileDefinition();
-    void load_OFDDictionary();
-    void load_OFDTipDictionary();
-    void load_OFDDefinition();
-    void load_CSVDefinition();
+
     void load_FIXEDDefinition();
     void load_DBFDefinition();
-    void load_indexFile();
+
+    //数据load
+    void load_ofdIndexFile();
     void load_ofdFile(QString fileTypeFromFileName);
-    void load_csvFile(QStringList fileType);
+    void load_csvFile(QList<matchIndex> csvMatchList);
     void load_fixedFile(QStringList fileType);
     void load_fixedFileData();
     void load_csvFileData(QStringList title);
     void load_dbfFile();
+
+    //数据存储
     void save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8=false);
     void save2Html(QString filename,int pageNum, bool useUTF8=false);
     void save2Xlsx(QString filename,int pageNum);
     int save2XlxsFile();
+
+    //表格初始化
     void init_display_IndexTable();
     void init_OFDTable();
     void init_DBFTable();
     void init_CSVTable(QStringList title);
     void init_FIXEDTable();
-    void display_OFDTable();
+
+    //数据渲染
+    void display_OFDTable(bool clearDirtyData=false);
     void display_CSVTable();
     void display_FIXEDTable();
     void display_DBFTable();
     void display_CSVFaultCause(QList<FaultCause> faultList);
     void display_FIXEDFaultCause(QList<FaultCause> faultList);
     void display_OFDFaultCause(QString useini,QList<OFDFaultCause> faultList);
+
     void saveOFDFile(QString filepath);
     void randomTips();
     void addOFDRowData(int location);
@@ -624,6 +649,8 @@ private:
     static bool compareDBFData(const dbfMatchInfo &dbf1, const dbfMatchInfo &dbf2);
     bool dbfColIsNumber(int col);
     void reCalculateTableBeginAndEnd();
+    void checkRowFieldResult (QStringList & rowdata,QMap<int,QString> & checkresult,int splitFlag=0);
+    void checkRowFieldSearch (int direction);
 
 };
 

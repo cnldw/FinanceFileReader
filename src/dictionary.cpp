@@ -62,3 +62,7 @@ void Dictionary::addDictionary(QString line)
         }
     }
 }
+
+void Dictionary::clearDictionary(){
+    this->hash.clear();
+}
