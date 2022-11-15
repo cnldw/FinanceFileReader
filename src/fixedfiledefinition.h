@@ -19,6 +19,7 @@
 #include <QHash>
 #include <QString>
 #include "src/fixedfielddefinition.h"
+#include "src/fieldcheckitem.h"
 
 
 class FIXEDFileDefinition
@@ -40,6 +41,8 @@ private:
     int endIgnoreRow;
     //字段信息
     QList <FixedFieldDefinition> fieldList;
+    //本文件的必填检查规则列表
+    QList <fieldcheckitem> fieldcheckList;
     //所属配置文件
     QString fileIni;
     //使用的正则匹配文件名
@@ -110,6 +113,8 @@ public:
     void setRowcountcheckrow(int newRowcountcheckrow);
     int getVersioncheckmode() const;
     void setVersioncheckmode(int newVersioncheckmode);
+    QList<fieldcheckitem> getFieldcheckList() const;
+    void addFieldcheckItem(const fieldcheckitem &value);
 };
 
 #endif // FIXEDFILEDEFINITION_H

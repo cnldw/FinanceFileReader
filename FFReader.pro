@@ -37,7 +37,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.21
+VERSION = 1.9.22
 ############以下注意按版本修改###############
 
 # 语言
@@ -72,13 +72,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 #引入excel操作库-切换到新版本
 #include(src/xlsx/qtxlsx.pri)
-include(src/Qxlsx/QXlsx.pri)
+include(src/QXlsx/QXlsx.pri)
 #引入2048小游戏
 include(src/2048/2048.pri)
 #引入编码检测库
 include(src/libucd/libucd.pri)
 #引入qrcode
-include(src/qrcode/Qrcode.pri)
+include(src/qrcode/QrCode.pri)
 #引入qdbf
 include(src/qdbf/qdbf.pri)
 #引入minibink模块,引入浏览器窗口组件,仅支持windows
@@ -94,13 +94,16 @@ SOURCES += \
     src/dbffileconfig.cpp \
     src/dbffiledefinition.cpp \
     src/dialogchoosedbfconfig.cpp \
+    src/dialogchoosefieldcheckexportreport.cpp \
     src/dialogchooseofdconfig.cpp \
     src/dialogeditheaderfooter.cpp \
     src/dialogforcenumber.cpp \
     src/dialogmagnify.cpp \
     src/dialogoktools.cpp \
     src/dialogshareqrcode.cpp \
+    src/dialogshowfieldchecklist.cpp \
     src/dialogshowimportexcelerror.cpp \
+    src/fieldcheckitem.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/msgtoast.cpp \
@@ -133,17 +136,21 @@ SOURCES += \
     src/dialogmodifymtime.cpp
 
 HEADERS += \
+    src/configfile.h \
     src/dbffielddefinition.h \
     src/dbffileconfig.h \
     src/dbffiledefinition.h \
     src/dialogchoosedbfconfig.h \
+    src/dialogchoosefieldcheckexportreport.h \
     src/dialogchooseofdconfig.h \
     src/dialogeditheaderfooter.h \
     src/dialogforcenumber.h \
     src/dialogmagnify.h \
     src/dialogoktools.h \
     src/dialogshareqrcode.h \
+    src/dialogshowfieldchecklist.h \
     src/dialogshowimportexcelerror.h \
+    src/fieldcheckitem.h \
         src/mainwindow.h \
     src/msgtoast.h \
     src/ucdutils.h \
@@ -178,12 +185,14 @@ HEADERS += \
 
 FORMS += \
     src/dialogchoosedbfconfig.ui \
+    src/dialogchoosefieldcheckexportreport.ui \
     src/dialogchooseofdconfig.ui \
     src/dialogeditheaderfooter.ui \
     src/dialogforcenumber.ui \
     src/dialogmagnify.ui \
     src/dialogoktools.ui \
     src/dialogshareqrcode.ui \
+    src/dialogshowfieldchecklist.ui \
     src/dialogshowimportexcelerror.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \

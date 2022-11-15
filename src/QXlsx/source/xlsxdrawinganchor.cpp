@@ -106,14 +106,24 @@ void DrawingAnchor::setObjectGraphicFrame(QSharedPointer<Chart> chart)
     m_objectType = GraphicFrame;
 }
 
+int DrawingAnchor::row()
+{
+    return -1;
+}
+
+int DrawingAnchor::col()
+{
+    return -1;
+}
+
 QPoint DrawingAnchor::loadXmlPos(QXmlStreamReader &reader)
 {
     Q_ASSERT(reader.name() == QLatin1String("pos"));
 
     QPoint pos;
     QXmlStreamAttributes attrs = reader.attributes();
-    pos.setX(attrs.value(QLatin1String("x")).toString().toInt());
-    pos.setY(attrs.value(QLatin1String("y")).toString().toInt());
+    pos.setX(attrs.value(QLatin1String("x")).toInt());
+    pos.setY(attrs.value(QLatin1String("y")).toInt());
     return pos;
 }
 
@@ -123,8 +133,8 @@ QSize DrawingAnchor::loadXmlExt(QXmlStreamReader &reader)
 
     QSize size;
     QXmlStreamAttributes attrs = reader.attributes();
-    size.setWidth(attrs.value(QLatin1String("cx")).toString().toInt());
-    size.setHeight(attrs.value(QLatin1String("cy")).toString().toInt());
+    size.setWidth(attrs.value(QLatin1String("cx")).toInt());
+    size.setHeight(attrs.value(QLatin1String("cy")).toInt());
     return size;
 }
 
@@ -428,7 +438,6 @@ void DrawingAnchor::loadXmlObjectShape(QXmlStreamReader &reader)
 
     Q_ASSERT(reader.name() == QLatin1String("sp"));
 
-    bool hasoffext = false;
     while (!reader.atEnd())
     {
         reader.readNextStartElement();
@@ -1025,6 +1034,16 @@ DrawingOneCellAnchor::DrawingOneCellAnchor(Drawing *drawing, ObjectType objectTy
 
 }
 
+int DrawingOneCellAnchor::row()
+{
+    return from.row();
+}
+
+int DrawingOneCellAnchor::col()
+{
+    return from.col();
+}
+
 // check point
 bool DrawingOneCellAnchor::loadFromXml(QXmlStreamReader &reader)
 {
@@ -1081,6 +1100,16 @@ DrawingTwoCellAnchor::DrawingTwoCellAnchor(Drawing *drawing, ObjectType objectTy
     :DrawingAnchor(drawing, objectType)
 {
 
+}
+
+int DrawingTwoCellAnchor::row()
+{
+    return from.row();
+}
+
+int DrawingTwoCellAnchor::col()
+{
+    return from.col();
 }
 
 // check point

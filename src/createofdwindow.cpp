@@ -365,6 +365,7 @@ void CreateOFDWindow::on_calendarWidget_selectionChanged()
 
 void CreateOFDWindow::on_checkBox_stateChanged(int arg1)
 {
+    Q_UNUSED(arg1);
     if(ui->checkBox->isChecked()){
         needOK=true;
         ui->comboBox_3->setEnabled(true);

@@ -26,12 +26,19 @@
 #include <QApplication>
 #include <QTime>
 #include <QTextCodec>
+#include <QSettings>
+
+#include <QtCore/qmath.h>
 #include "src/ofdfiledefinition.h"
 #include "src/csvfiledefinition.h"
 #include "src/fixedfiledefinition.h"
 #include "src/qdbf/qdbftable.h"
 #include "src/qdbf/qdbfrecord.h"
 #include "src/dbffiledefinition.h"
+#include "src/ofdcodeinfo.h"
+#include "src/dictionary.h"
+#include "src/configfile.h"
+
 #include "time.h"
 #ifdef Q_OS_WIN32
 #include "sys/utime.h"
@@ -52,6 +59,16 @@ public:
      static QString qStringTrimLeft(const QString& str);
      static QString getConfigPath();
      static QString getCompileDate();
+     static void load_OFDCodeInfo(QHash<QString, OFDCodeInfo> &loadedOfdCodeInfo);
+     static void load_OFDDictionary(Dictionary &ofdDictionary);
+     static void load_OFDTipDictionary(QMap<QString,QMap<QString,QString>> &fieldTips);
+     static void load_OFDLikeFileDefinition(QHash<QString, QString>  &likeOFDIndexFilename,QHash<QString, QString>  &likeOFDDataFilename);
+     static void load_OFDIndexFileDefinition(QHash<QString, QString> &loadedOfdIndexFileInfo);
+     static void  load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigList,QHash<QString,int> &ofdQuickMatchIndex);
+     static void  load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigList,QHash<QString,Dictionary> &commonDictionary,QMap<QString,QMap<QString,QString>> &commonFieldTips);
+     static void  load_FIXEDDefinition();
+     static void  load_DBFDefinition();
+
      static QString getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row ,int col);
      static QStringList getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row);
      static QString getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row ,int col);
@@ -68,6 +85,9 @@ public:
      static void getFileListFromDir(QString dirpath,QStringList *filelist);
      static void  sleep(unsigned int msec);
      static void getFileListFromDirSkipOkfile(QString dirpath,QStringList *filelist);
+     static fieldcheckitem parseStringtofieldcheckitem(QString text,int countInt,bool * okFlag);
+     static double CVCcal (QList<QStringList > data);
+
 
 };
 

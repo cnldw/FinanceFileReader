@@ -236,6 +236,7 @@ void DialogModifyMtime::on_pushButton_clicked()
 
 void DialogModifyMtime::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
+    Q_UNUSED(pos);
     tablePopMenu->exec(QCursor::pos());
 }
 

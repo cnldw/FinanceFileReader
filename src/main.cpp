@@ -22,12 +22,16 @@
 //曲径通幽处，禅房花木深
 //从此处---开启新世界的大门
 //❤2021，愿爱与你相伴❤
+//❤2022，喜得男宝一枚❤
 int main(int argc, char *argv[])
 {
     //启用高分辨率支持
     //仅使用QT5.6.0以及以上版本支持
 #if (QT_VERSION >= QT_VERSION_CHECK(5,6,0))
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 #endif
     QApplication app(argc, argv);
     QTranslator translator;

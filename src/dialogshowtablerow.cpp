@@ -69,7 +69,7 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
 
     QString text2="对表格进行截图到剪切板(Ctrl+Shift+C)";
 #ifdef Q_OS_MAC
-    text2="对表格进行截图保存(Ctrl+Shift+C)";
+    text2="对表格进行截图到剪切板(Ctrl+Shift+C)";
 #endif
     action_ShowSaveScreen2ToClipboard= new QAction(text2,this);
 
@@ -159,6 +159,7 @@ void  DialogShowTableRow:: resizeHeight(){
 }
 
 void DialogShowTableRow:: resizeEvent (QResizeEvent * event ){
+    UNUSED(event);
     if(dataisOK){
         for (int row = 0; row < ptr_table->rowCount();row++)
         {

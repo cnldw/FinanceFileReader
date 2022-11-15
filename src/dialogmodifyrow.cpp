@@ -178,6 +178,9 @@ DialogModifyRow::~DialogModifyRow()
 
 void DialogModifyRow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
+    Q_UNUSED(currentColumn);
+    Q_UNUSED(previousRow);
+    Q_UNUSED(previousColumn);
     this->searchRow=currentRow+1;
 }
 

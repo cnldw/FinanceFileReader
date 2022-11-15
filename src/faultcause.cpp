@@ -39,3 +39,13 @@ void FaultCause::setCause(const QString &value)
 {
     cause = value;
 }
+
+const matchIndex &FaultCause::getConfigIndex2() const
+{
+    return configIndex2;
+}
+
+void FaultCause::setConfigIndex2(const matchIndex &newConfigIndex2)
+{
+    configIndex2 = newConfigIndex2;
+}

@@ -20,6 +20,7 @@ DialogEditHeaderFooter::DialogEditHeaderFooter(OFDFileDefinition *ofd,QList<QStr
     QDialog(parent),
     ui(new Ui::DialogEditHeaderFooter)
 {
+    Q_UNUSED(ofd);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
 #ifdef Q_OS_MAC
@@ -124,6 +125,6 @@ void DialogEditHeaderFooter::on_pushButton_clicked()
             footer.append(ptr_footer_table->item(i,1)->text());
         }
     }
-    emit sendNewHeaderAndFooter(header,footer);
     this->close();
+    emit sendNewHeaderAndFooter(header,footer);
 }

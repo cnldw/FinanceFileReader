@@ -16,85 +16,88 @@
 #include "dialogpreference.h"
 #include "ui_dialogpreference.h"
 
-DialogPreference::DialogPreference(QMap <QString,QString> par,QWidget *parent) :
+DialogPreference::DialogPreference(QMap <QString,int> * par,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogPreference)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
-    QList<QString> keys=par.keys();
+    this->par=par;
     //从主界面获取当前的参数值
-    if(keys.contains("compresslevel")){
-        if(par.value("compresslevel")=="0"){
-            this->dataCompressLevel=0;
+    if(par->contains("compresslevel")){
+        if(par->value("compresslevel")==0){
             ui->comboBox->setCurrentIndex(0);
         }
-        else if(par.value("compresslevel")=="-1"){
-            this->dataCompressLevel=-1;
+        else if(par->value("compresslevel")==-1){
             ui->comboBox->setCurrentIndex(1);
         }
-        else if(par.value("compresslevel")=="1"){
-            this->dataCompressLevel=1;
+        else if(par->value("compresslevel")==1){
             ui->comboBox->setCurrentIndex(2);
         }
-        else if(par.value("compresslevel")=="5"){
-            this->dataCompressLevel=5;
+        else if(par->value("compresslevel")==5){
             ui->comboBox->setCurrentIndex(3);
         }
-        else if(par.value("compresslevel")=="9"){
-            this->dataCompressLevel=9;
+        else if(par->value("compresslevel")==9){
             ui->comboBox->setCurrentIndex(4);
         }
     }
-    if(keys.contains("defaultviewmode")){
-        if(par.value("defaultviewmode")=="0"){
-            this->defaultViewMode="0";
+    if(par->contains("defaultviewmode")){
+        if(par->value("defaultviewmode")==0){
             ui->comboBox_2->setCurrentIndex(0);
         }
-        else if(par.value("defaultviewmode")=="1"){
-            this->defaultViewMode="1";
+        else if(par->value("defaultviewmode")==1){
             ui->comboBox_2->setCurrentIndex(1);
         }
     }
-    if(keys.contains("defaultnewfilemode")){
-        if(par.value("defaultnewfilemode")=="0"){
-            this->defaultNewFileMode="0";
+    if(par->contains("defaultnewfilemode")){
+        if(par->value("defaultnewfilemode")==0){
             ui->comboBox_3->setCurrentIndex(0);
         }
-        else if(par.value("defaultnewfilemode")=="1"){
-            this->defaultNewFileMode="1";
+        else if(par->value("defaultnewfilemode")==1){
             ui->comboBox_3->setCurrentIndex(1);
         }
-        else if(par.value("defaultnewfilemode")=="2"){
-            this->defaultNewFileMode="2";
+        else if(par->value("defaultnewfilemode")==2){
             ui->comboBox_3->setCurrentIndex(2);
         }
     }
-    if(keys.contains("defaultpagesizetype")){
-        if(par.value("defaultpagesizetype")=="0"){
-            this->defaultPageSizeType="0";
+    if(par->contains("defaultpagesizetype")){
+        if(par->value("defaultpagesizetype")==0){
             ui->comboBox_4->setCurrentIndex(0);
         }
-        else if(par.value("defaultpagesizetype")=="1"){
-            this->defaultPageSizeType="1";
+        else if(par->value("defaultpagesizetype")==1){
             ui->comboBox_4->setCurrentIndex(1);
         }
-        else if(par.value("defaultpagesizetype")=="2"){
-            this->defaultPageSizeType="2";
+        else if(par->value("defaultpagesizetype")==2){
             ui->comboBox_4->setCurrentIndex(2);
         }
-        else if(par.value("defaultpagesizetype")=="3"){
-            this->defaultPageSizeType="3";
+        else if(par->value("defaultpagesizetype")==3){
             ui->comboBox_4->setCurrentIndex(3);
         }
-        else if(par.value("defaultpagesizetype")=="4"){
-            this->defaultPageSizeType="4";
+        else if(par->value("defaultpagesizetype")==4){
             ui->comboBox_4->setCurrentIndex(4);
         }
         //找不到就按10w
         else{
-            this->defaultPageSizeType="0";
             ui->comboBox_4->setCurrentIndex(0);
+        }
+    }
+    if(par->contains("defaultnewfilemode")){
+        if(par->value("defaultnewfilemode")==0){
+            ui->comboBox_3->setCurrentIndex(0);
+        }
+        else if(par->value("defaultnewfilemode")==1){
+            ui->comboBox_3->setCurrentIndex(1);
+        }
+        else if(par->value("defaultnewfilemode")==2){
+            ui->comboBox_3->setCurrentIndex(2);
+        }
+    }
+    if(par->contains("enablefieldcheck")){
+        if(par->value("enablefieldcheck")==0){
+            ui->checkBox->setChecked(false);
+        }
+        else if(par->value("enablefieldcheck")==1){
+            ui->checkBox->setChecked(true);
         }
     }
 }
@@ -107,19 +110,22 @@ DialogPreference::~DialogPreference()
 void DialogPreference::on_comboBox_currentIndexChanged(int index)
 {
     if(index==0){
-        dataCompressLevel=0;
+        par->insert("compresslevel",0);
+
     }
     else if(index==1){
-        dataCompressLevel=-1;
+        par->insert("compresslevel",-1);
+
     }
     else if(index==2){
-        dataCompressLevel=1;
+        par->insert("compresslevel",1);
+
     }
     else if(index==3){
-        dataCompressLevel=5;
+        par->insert("compresslevel",5);
     }
     else if(index==4){
-        dataCompressLevel=9;
+        par->insert("compresslevel",9);
     }
 }
 
@@ -135,16 +141,6 @@ void DialogPreference::on_pushButton_2_clicked()
     this->close();
 }
 
-QString DialogPreference::getDefaultViewMode() const
-{
-    return defaultViewMode;
-}
-
-int DialogPreference::getDataCompressLevel() const
-{
-    return dataCompressLevel;
-}
-
 bool DialogPreference::getSaveFlag() const
 {
     return saveFlag;
@@ -153,51 +149,49 @@ bool DialogPreference::getSaveFlag() const
 void DialogPreference::on_comboBox_2_currentIndexChanged(int index)
 {
     if(index==0){
-        defaultViewMode="0";
+        par->insert("defaultviewmode",0);
     }
     else if(index==1){
-        defaultViewMode="1";
-    }
-}
+        par->insert("defaultviewmode",1);
 
-QString DialogPreference::getDefaultNewFileMode() const
-{
-    return defaultNewFileMode;
+    }
 }
 
 void DialogPreference::on_comboBox_3_currentIndexChanged(int index)
 {
     if(index==0){
-        defaultNewFileMode="0";
+        par->insert("defaultnewfilemode",0);
     }
     else if(index==1){
-        defaultNewFileMode="1";
+        par->insert("defaultnewfilemode",1);
     }
     else if(index==2){
-        defaultNewFileMode="2";
+        par->insert("defaultnewfilemode",2);
+
     }
 }
 
 void DialogPreference::on_comboBox_4_currentIndexChanged(int index)
 {
     if(index==0){
-        defaultPageSizeType="0";
+        par->insert("defaultpagesizetype",0);
     }
     else if(index==1){
-        defaultPageSizeType="1";
+        par->insert("defaultpagesizetype",1);
     }
     else if(index==2){
-        defaultPageSizeType="2";
+        par->insert("defaultpagesizetype",2);
     }
     else if(index==3){
-        defaultPageSizeType="3";
+        par->insert("defaultpagesizetype",3);
     }
     else if(index==4){
-        defaultPageSizeType="4";
+        par->insert("defaultpagesizetype",4);
     }
 }
 
-QString DialogPreference::getDefaultPageSizeType() const
+void DialogPreference::on_checkBox_stateChanged(int arg1)
 {
-    return defaultPageSizeType;
+    Q_UNUSED(arg1)
+    par->insert("enablefieldcheck",ui->checkBox->isChecked()?1:0);
 }

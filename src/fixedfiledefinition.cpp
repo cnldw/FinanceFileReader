@@ -235,6 +235,16 @@ void FIXEDFileDefinition::setVersioncheckmode(int newVersioncheckmode)
     versioncheckmode = newVersioncheckmode;
 }
 
+QList<fieldcheckitem> FIXEDFileDefinition::getFieldcheckList() const
+{
+    return fieldcheckList;
+}
+
+void FIXEDFileDefinition::addFieldcheckItem(const fieldcheckitem &value)
+{
+    fieldcheckList.append(value);
+}
+
 FIXEDFileDefinition::FIXEDFileDefinition()
 {
     

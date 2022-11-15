@@ -19,6 +19,7 @@
 #include <QList>
 #include <QString>
 #include "src/ofdfielddefinition.h"
+#include "src/fieldcheckitem.h"
 
 class OFDFileDefinition
 {
@@ -28,6 +29,7 @@ private:
     //配置是否可用
     bool useAble;
     QString  configSegment;
+    QString useForVersionAndType;
     //配置不可用原因
     QString message;
     //字段总和
@@ -42,6 +44,8 @@ private:
     QString describe;
     //字段信息
     QList <OFDFieldDefinition> fieldList;
+    //本文件的必填检查规则列表
+    QList <fieldcheckitem> fieldcheckList;
 
 public:
     OFDFileDefinition();
@@ -65,6 +69,10 @@ public:
     void setDictionary(const QString &value);
     QString getConfigSegment() const;
     void setConfigSegment(const QString &value);
+    QList<fieldcheckitem> getFieldcheckList() const;
+    void addFieldcheckItem(const fieldcheckitem &value);
+    const QString &getUseForVersionAndType() const;
+    void setUseForVersionAndType(const QString &newUseForVersionAndType);
 };
 
 #endif // OFDFILEDEFINITION_H
