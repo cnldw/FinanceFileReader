@@ -7,6 +7,16 @@ struct matchIndex{
   int configFileIndex=0;
   int configSegmentIndex=0;
 };
+
+//dbf专用的匹配信息
+struct dbfMatchInfo{
+    QString ini;
+    int configFileIndex;
+    QString matchFileType;
+    QString matchfileDescribe;
+    float matchDegree;
+};
+
 template <typename T>
 class ConfigFile {
 private:
