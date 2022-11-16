@@ -34,6 +34,7 @@
 #include "src/fixedfiledefinition.h"
 #include "src/qdbf/qdbftable.h"
 #include "src/qdbf/qdbfrecord.h"
+#include "src/dbffileconfig.h"
 #include "src/dbffiledefinition.h"
 #include "src/ofdcodeinfo.h"
 #include "src/dictionary.h"
@@ -66,8 +67,8 @@ public:
      static void load_OFDIndexFileDefinition(QHash<QString, QString> &loadedOfdIndexFileInfo);
      static void  load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigList,QHash<QString,int> &ofdQuickMatchIndex);
      static void  load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigList,QHash<QString,Dictionary> &commonDictionary,QMap<QString,QMap<QString,QString>> &commonFieldTips);
-     static void  load_FIXEDDefinition();
-     static void  load_DBFDefinition();
+     static void  load_FIXEDDefinition(QList<ConfigFile<FIXEDFileDefinition>> &fixedConfigList,QHash<QString,Dictionary> &commonDictionary,QMap<QString,QMap<QString,QString>> &commonFieldTips);
+     static void  load_DBFDefinition(QList<DbfFileConfig> &dbfConfigList,QHash<QString,Dictionary> &commonDictionary,QMap<QString,QMap<QString,QString>> &commonFieldTips);
 
      static QString getFormatValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row ,int col);
      static QStringList getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row);

@@ -251,9 +251,9 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     //加载各类CSV文件的定义
     Utils::load_CSVDefinition(csvConfigList,commonDictionary,commonFieldTips);
     //加载各类定长文件的定义
-    load_FIXEDDefinition();
+    Utils::load_FIXEDDefinition(fixedConfigList,commonDictionary,commonFieldTips);
     //加载DBF配置
-    load_DBFDefinition();
+    Utils::load_DBFDefinition(dbfConfigList,commonDictionary,commonFieldTips);
     //配置加载完毕
     configLoadCompleted=true;
     //随机提醒
@@ -794,650 +794,6 @@ void MainWindow::load_PluginList(){
 #endif
 }
 
-/**
- * @brief MainWindow::load_FIXEDDefinition加载定长文件的定义
- */
-void MainWindow::load_FIXEDDefinition(){
-    QDir dirPath(Utils::getConfigPath());
-    QStringList filters;
-    filters << "FIXED_*.ini";//设置过滤类型,以FIXED_开头的配置
-    dirPath.setNameFilters(filters);//设置文件名的过滤
-    QFileInfoList listFile = dirPath.entryInfoList();
-    if(listFile.length()!=0){
-        //循环检索config目录下可用的FIXED接口定义配置
-        for (int f = 0; f < listFile.size(); f++)
-        {
-            //获取文件名
-            QString fileName=listFile.at(f).fileName();
-            //获取文件路径
-            QString codeInipath=Utils::getConfigPath()+fileName;
-            if(Utils::isFileExist(codeInipath)){
-                //加载ini文件
-                QSettings loadedFixedInfoIni(codeInipath,QSettings::IniFormat,nullptr);
-                //目前仅接收UTF-8编码的配置文件
-                loadedFixedInfoIni.setIniCodec("UTF-8");
-                //获取所有fixed文件的配置信息，循环存储
-                QStringList fixedInfo=loadedFixedInfoIni.childGroups();
-                if(fixedInfo.count()<1){
-                    continue;
-                }
-                //遍历所有组
-                for(int i=0;i<fixedInfo.count();i++){
-                    //配置验证失败标志
-                    bool flag=false;
-                    //配置验证失败原因
-                    QString message;
-                    //每行最大列数
-                    int MaxCount=0;
-                    //文件类别
-                    QString fixedType=QString(fixedInfo.at(i));
-                    if(fixedType.contains("|",Qt::CaseSensitive)){
-                        //建立一个定义变量
-                        FIXEDFileDefinition fileDef;
-                        //本配置来自的配置文件
-                        fileDef.setFileIni(fileName);
-                        //分割文件名和版本号
-                        QStringList list=fixedType.split("|");
-                        //1解析器可接受的文件名
-                        fileDef.setFileName(QString (list.at(0)));
-                        //2解析器配置全名包含版本号
-                        fileDef.setFileNameWithVersion(fixedType);
-                        //3文件描述信息
-                        QString fileDescribe=loadedFixedInfoIni.value(fixedType+"/filedescribe").toString();
-                        if(fileDescribe.isEmpty()){
-                            fileDef.setFileDescribe("未说明的定长文件");
-                            loadedFixedFileInfo.insert(list.at(0),QString("未说明的定长文件"));
-                        }else{
-                            fileDef.setFileDescribe(fileDescribe);
-                            loadedFixedFileInfo.insert(list.at(0),fileDescribe);
-                        }
-                        //4编码信息,获取不到则默认为GB18030编码
-                        QString encoding=loadedFixedInfoIni.value(fixedType+"/encoding").toString();
-                        if(encoding.isEmpty()){
-                            fileDef.setEcoding("GB18030");
-                        }
-                        else{
-                            fileDef.setEcoding(encoding);
-                        }
-                        //5定长分类，字节定长还是字符定长/获取不到定长分配时，则默认为字节定长
-                        QString fieldLengthType=loadedFixedInfoIni.value(fixedType+"/fieldlengthtype").toString();
-                        if(fieldLengthType.isEmpty()){
-                            fileDef.setFieldlengthtype("0");
-                        }
-                        else{
-                            fileDef.setFieldlengthtype(fieldLengthType);
-                        }
-                        //////////////////////////////////////
-                        //6字段总数////存在多种长度的可能
-                        QString fieldcount=loadedFixedInfoIni.value(fixedType+"/fieldcount").toString();
-                        //找不到每行支持的列数，则无效配置
-                        if(fieldcount.isEmpty()){
-                            message="配置中找不到每行字段数的配置,无法界定每行的字段数!";
-                            fileDef.setUseAble(false);
-                            fileDef.setMessage(message);
-                            loadedFixedDefinitionList.append(fileDef);
-                            continue;
-                        }
-                        else{
-                            //获取字段总数，有可能有多个
-                            QStringList fieldCountListStr=fieldcount.split("|");
-                            QList<int> fieldCountList;
-                            //遍历支持的长度
-                            for(int ll=0;ll<fieldCountListStr.count();ll++){
-                                if(!QString(fieldCountListStr.at(ll)).isEmpty()){
-                                    int fieldCount=(fieldCountListStr.at(ll)).toInt(&flag,10);
-                                    //一旦遇到无法识别的字段和，则退出
-                                    if(!flag){
-                                        message="字段总数描述存在不可用的数值(字段数需为大于0的整数),如果有多种字段数则使用|分开维护";
-                                        break;
-                                    }
-                                    else{
-                                        if(fieldCount>MaxCount){
-                                            MaxCount=fieldCount;
-                                        }
-                                        fieldCountList.append(fieldCount);
-                                    }
-                                }
-                            }
-                            if(!flag){
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }
-                            else{
-                                fileDef.setFieldCountMax(MaxCount);
-                                fileDef.setFieldCountList(fieldCountList);
-                            }
-                        }
-                        //7数据起始行
-                        int dataRowBeginIndex=loadedFixedInfoIni.value(fixedType+"/datarowbeginindex").toInt(&flag);
-                        if(!flag){
-                            message="数据起始行标志不是一个可用的数值,数据起始行标志应当是一个大于等于1的整数,代表文件从此行开始就是数据记录了";
-                            fileDef.setUseAble(false);
-                            fileDef.setMessage(message);
-                            loadedFixedDefinitionList.append(fileDef);
-                            continue;
-                        }
-                        else{
-                            if(dataRowBeginIndex<1){
-                                message="数据起始行标志应当是一个大于等于1的整数,代表文件从此行开始就是数据记录了";
-                                flag=false;
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }else {
-                                fileDef.setDataRowBeginIndex(dataRowBeginIndex);
-                            }
-                        }
-                        //8数据尾部忽略行
-                        QString ignorerow=loadedFixedInfoIni.value(fixedType+"/endignorerow").toString();
-                        int endignoreRow;
-                        if(ignorerow.isEmpty()){
-                            //不配置就不忽略任何行
-                            fileDef.setEndIgnoreRow(0);
-                        }
-                        else{
-                            endignoreRow=ignorerow.toInt(&flag);
-                            if(!flag){
-                                message="文件结尾忽略行数不是一个可用的数值";
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }
-                            else{
-                                if(endignoreRow<0){
-                                    message="文件结尾忽略行数应当是一个大于等于0的整数";
-                                    flag=false;
-                                    fileDef.setUseAble(false);
-                                    fileDef.setMessage(message);
-                                    loadedFixedDefinitionList.append(fileDef);
-                                    continue;
-                                }else {
-                                    fileDef.setEndIgnoreRow(endignoreRow);
-                                }
-                            }
-                        }
-                        //9首行校验
-                        QString firstrowcheck=loadedFixedInfoIni.value(fixedType+"/firstrowcheck").toString();
-                        if(firstrowcheck.isEmpty()){
-                            //不配置就不校验
-                            fileDef.setFirstrowcheck("");
-                        }
-                        else{
-                            fileDef.setFirstrowcheck(firstrowcheck);
-                        }
-                        //10尾行校验
-                        QString lastrowcheck=loadedFixedInfoIni.value(fixedType+"/lastrowcheck").toString();
-                        if(lastrowcheck.isEmpty()){
-                            //不配置就不校验
-                            fileDef.setLastrowcheck("");
-                        }
-                        else{
-                            fileDef.setLastrowcheck(lastrowcheck);
-                        }
-                        //11-版本记录所在行
-                        QString versioncheckrow=loadedFixedInfoIni.value(fixedType+"/versioncheckrow").toString();
-                        int versioncheckrowint;
-                        if(versioncheckrow.isEmpty()){
-                            //不配置就是不检验版本
-                            fileDef.setVersioncheckrow(0);
-                        }
-                        else{
-                            versioncheckrowint=versioncheckrow.toInt(&flag);
-                            if(!flag){
-                                message="版本检查行配置versioncheckrow不是一个有效数据";
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }
-                            else{
-                                if(versioncheckrowint<0){
-                                    message="版本检查行配置versioncheckrow应当是一个大于等于0的整数,0为不进行版本检查,大于0则代表进行版本检查";
-                                    flag=false;
-                                    fileDef.setUseAble(false);
-                                    fileDef.setMessage(message);
-                                    loadedFixedDefinitionList.append(fileDef);
-                                    continue;
-                                }else {
-                                    fileDef.setVersioncheckrow(versioncheckrowint);
-                                }
-                            }
-                        }
-                        //12版本标志行
-                        QString version=loadedFixedInfoIni.value(fixedType+"/version").toString();
-                        if(version.isEmpty()){
-                            //不配置就不校验
-                            fileDef.setVersion("");
-                        }
-                        else{
-                            fileDef.setVersion(version);
-                        }
-                        //13-文件记录数所在行
-                        QString fieldcountcheckrow=loadedFixedInfoIni.value(fixedType+"/fieldcountcheckrow").toString();
-                        int fieldcountcheckrowint;
-                        if(fieldcountcheckrow.isEmpty()){
-                            //不配置就是不进行字段数检查
-                            fileDef.setFieldcountcheckrow(0);
-                        }
-                        else{
-                            fieldcountcheckrowint=fieldcountcheckrow.toInt(&flag);
-                            if(!flag){
-                                message="字段数检查配置fieldcountcheckrow不是一个有效数据";
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }
-                            else{
-                                if(fieldcountcheckrowint<0){
-                                    message="字段数检查配置fieldcountcheckrow应当是一个大于等于0的整数,0为不进行字段数检查,大于0则代表进行字段数检查";
-                                    flag=false;
-                                    fileDef.setUseAble(false);
-                                    fileDef.setMessage(message);
-                                    loadedFixedDefinitionList.append(fileDef);
-                                    continue;
-                                }else {
-                                    fileDef.setFieldcountcheckrow(fieldcountcheckrowint);
-                                }
-                            }
-                        }
-                        //14-文件内字段列表开始行
-                        QString fielddetailcheckbeginrow=loadedFixedInfoIni.value(fixedType+"/fielddetailcheckbeginrow").toString();
-                        int fielddetailcheckbeginrowint;
-                        if(fielddetailcheckbeginrow.isEmpty()){
-                            //不配置就是不检验
-                            fileDef.setFielddetailcheckbeginrow(0);
-                        }
-                        else{
-                            fielddetailcheckbeginrowint=fielddetailcheckbeginrow.toInt(&flag);
-                            if(!flag){
-                                message="文件内字段明细开始行检查配置fielddetailcheckbeginrow不是一个有效数据";
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }
-                            else{
-                                if(fielddetailcheckbeginrowint<0){
-                                    message="文件内字段明细开始行检查配置fielddetailcheckbeginrow应当是一个大于等于0的整数,0为不进行字段检查,大于0则代表进行字段检查";
-                                    flag=false;
-                                    fileDef.setUseAble(false);
-                                    fileDef.setMessage(message);
-                                    loadedFixedDefinitionList.append(fileDef);
-                                    continue;
-                                }else {
-                                    fileDef.setFielddetailcheckbeginrow(fielddetailcheckbeginrowint);
-                                }
-                            }
-                        }
-                        //15-文件内记录数
-                        QString rowcountcheckrow=loadedFixedInfoIni.value(fixedType+"/rowcountcheckrow").toString();
-                        int rowcountcheckrowint;
-                        if(rowcountcheckrow.isEmpty()){
-                            //不配置就是不检验
-                            fileDef.setRowcountcheckrow(0);
-                        }
-                        else{
-                            rowcountcheckrowint=rowcountcheckrow.toInt(&flag);
-                            if(!flag){
-                                message="文件内记录数检查配置rowcountcheckrow不是一个有效数据";
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }
-                            else{
-                                if(rowcountcheckrowint<0){
-                                    message="文件内记录数检查配置rowcountcheckrow应当是一个大于等于0的整数,0为不支持记录数,大于0则代表支持字段数检查";
-                                    flag=false;
-                                    fileDef.setUseAble(false);
-                                    fileDef.setMessage(message);
-                                    loadedFixedDefinitionList.append(fileDef);
-                                    continue;
-                                }else {
-                                    fileDef.setRowcountcheckrow(rowcountcheckrowint);
-                                }
-                            }
-                        }
-                        //16-版本号检测模式
-                        QString versioncheckmode=loadedFixedInfoIni.value(fixedType+"/versioncheckmode").toString();
-                        int versioncheckmodeint;
-                        if(versioncheckmode.isEmpty()){
-                            fileDef.setVersioncheckmode(0);
-                        }
-                        else{
-                            versioncheckmodeint=versioncheckmode.toInt(&flag);
-                            if(!flag){
-                                message="版本号检查模式配置versioncheckmode不是一个有效数据";
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                                continue;
-                            }
-                            else{
-                                if(versioncheckmodeint<0){
-                                    message="版本检查行配置versioncheckmode应当是一个大于等于0的整数,0为精确匹配,非0则代表模糊匹配";
-                                    flag=false;
-                                    fileDef.setUseAble(false);
-                                    fileDef.setMessage(message);
-                                    loadedFixedDefinitionList.append(fileDef);
-                                    continue;
-                                }else {
-                                    fileDef.setVersioncheckmode(versioncheckmodeint);
-                                }
-                            }
-                        }
-                        //字段描述值全部正确
-                        if(flag){
-                            int rowLength=0;
-                            bool okFlag=true;
-                            //循环遍历最长的字段数值
-                            QList <FixedFieldDefinition> fieldList;
-                            QHash<int,int> rowLengthHash;
-                            //8开始循环加载本文件类型的字段信息///////////////
-                            for(int r=0;r<MaxCount;r++){
-                                FixedFieldDefinition fixedfield;
-                                //获取这个文件定义的第i个字段的信息
-                                QStringList iniStrList=loadedFixedInfoIni.value(fixedType+"/"+(QString::number(r+1,10))).toStringList();
-                                //至少要四段配置
-                                if (iniStrList.isEmpty()||iniStrList.length()<4){
-                                    message="第"+QString::number(r+1,10)+"个字段定义不正确或者缺失";
-                                    okFlag=false;
-                                    break;
-                                }
-                                //获取字符类型参数
-                                QString fieldType=(QString(iniStrList.at(0)));
-                                if(fieldType.length()<1){
-                                    message="第"+QString::number(r+1,10)+"个字段的类型定义缺失,请配置";
-                                    okFlag=false;
-                                    break;
-                                }
-                                //字段长度
-                                bool lengthOk;
-                                int length=(QString(iniStrList.at(1))).toInt(&lengthOk,10);
-                                if(!lengthOk){
-                                    message="第"+QString::number(r+1,10)+"个字段的长度定义不是整数";
-                                    okFlag=false;
-                                    break;
-                                }
-                                //字段小数长度
-                                bool declengthOk;
-                                int declength=(QString(iniStrList.at(2))).toInt(&declengthOk,10);
-                                if(!declengthOk){
-                                    message="第"+QString::number(r+1,10)+"个字段的小数长度定义不是整数";
-                                    okFlag=false;
-                                    break;
-                                }
-                                if(fieldType=="N"&&(declength>=length)){
-                                    message="第"+QString::number(r+1,10)+"个字段的小数长度定义应该小于字段总长度";
-                                    okFlag=false;
-                                    break;
-                                }
-                                //历经千辛万苦经理校验无误后存入字段信息
-                                //每个字段开始的位置就是截至到上一个字段结束的长度
-                                //比如第一个字段长度为2,则第二个字段在此行记录中的起始坐标就是2（0,1这两个字节是第一个字段的索引）
-                                fixedfield.setRowBeginIndex(rowLength);
-                                rowLength+=length;
-                                fixedfield.setLength(length);
-                                fixedfield.setDecLength(declength);
-                                fixedfield.setFieldType(fieldType);
-                                fixedfield.setFieldDescribe(QString(iniStrList.at(3)));
-                                //如果存在英文名赋值
-                                if(iniStrList.count()>4){
-                                    fixedfield.setFieldName(QString(iniStrList.at(4)));
-                                }
-                                //否则赋值空字符串
-                                else{
-                                    fixedfield.setFieldName("");
-                                }
-                                fieldList.append(fixedfield);
-                                //如果存在此长度类型，则记录下行总长度,使用Qhash，行长度，字段数
-                                if(fileDef.getFieldCountList().contains(r+1)){
-                                    //记录长度和对应的字段数
-                                    rowLengthHash.insert(rowLength,r+1);
-                                }
-                            }
-                            //可用
-                            if(okFlag){
-                                //必填加工
-                                loadedFixedInfoIni.beginGroup(fixedType);
-                                QStringList infoList =loadedFixedInfoIni.childKeys();
-                                loadedFixedInfoIni.endGroup();
-                                if(infoList.count()>0){
-                                    for (int checkindex=0;checkindex<infoList.count();checkindex++){
-                                        //字段必填配置
-                                        if(infoList.at(checkindex).startsWith("fieldcheck_")){
-                                            bool okFlag=false;
-                                            fieldcheckitem ckitem=Utils::parseStringtofieldcheckitem(loadedFixedInfoIni.value(fixedType+"/"+infoList.at(checkindex)).toString(),-1,&okFlag);
-                                            if(okFlag){
-                                                fileDef.addFieldcheckItem(ckitem);
-                                            }
-                                        }
-                                    }
-                                }
-                                fileDef.setRowLengthHash(rowLengthHash);
-                                fileDef.setFieldList(fieldList);
-                                fileDef.setUseAble(true);
-                                loadedFixedDefinitionList.append(fileDef);
-                            }
-                            //不可用
-                            else{
-                                fileDef.setUseAble(false);
-                                fileDef.setMessage(message);
-                                loadedFixedDefinitionList.append(fileDef);
-                            }
-                        }
-                        //不可用
-                        else{
-                            fileDef.setUseAble(false);
-                            fileDef.setMessage(message);
-                            loadedFixedDefinitionList.append(fileDef);
-                        }
-                    }
-                    //判断是否是字典配置，字典配置是fixed配置文件里的一段特殊配置，使用Dictionary标注
-                    else
-                    {
-                        if(fixedType=="Dictionary"){
-                            Dictionary dic;
-                            //开始循环读取字典
-                            //不要尝试使用begingroup后直接读取组内参数，否则会读取不到包含逗号的键值
-                            loadedFixedInfoIni.beginGroup("Dictionary");
-                            QStringList infoList =loadedFixedInfoIni.childKeys();
-                            loadedFixedInfoIni.endGroup();
-                            if(infoList.count()>0){
-                                for(int aaa=0;aaa<infoList.count();aaa++){
-                                    //ini配置中如果key存在中文会出现错误，所以我们使用1=key@value的方式去改造
-                                    QString line=loadedFixedInfoIni.value("Dictionary/"+infoList.at(aaa)).toString();
-                                    int index=line.indexOf('@');
-                                    if(index>0){
-                                        //只替换第一个出现的@，以免替换了字典里的其他@符号
-                                        dic.addDictionary(line.replace(index,1,'='));
-                                    }
-                                    //不包含@的跳过
-                                    else{
-                                        continue;
-                                    }
-                                }
-                                //将字典加入qhash.FIXED文件的字典以FIXED开头
-                                commonDictionary.insert("FIXED"+fileName,dic);
-                            }
-                            infoList.clear();
-                        }
-                        //字段Tips加载
-                        else if(fixedType=="TipDictionary"){
-                            //开始循环读取字典
-                            loadedFixedInfoIni.beginGroup("TipDictionary");
-                            QStringList infoList =loadedFixedInfoIni.childKeys();
-                            loadedFixedInfoIni.endGroup();
-                            if(infoList.count()>0){
-                                QMap<QString,QString> tips;
-                                for(int aaa=0;aaa<infoList.count();aaa++){
-                                    //ini配置中如果key存在中文会出现错误，所以我们使用1=key@value的方式去改造
-                                    QString line=loadedFixedInfoIni.value("TipDictionary/"+infoList.at(aaa)).toString();
-                                    int index=line.indexOf(':');
-                                    if(index>0){
-                                        tips.insert(line.mid(0,index),line.mid(index+1));
-                                    }
-                                    //不包含:的跳过
-                                    else{
-                                        continue;
-                                    }
-                                }
-                                //以文件类别，配置文件名存入
-                                commonFieldTips.insert("FIXED"+fileName,tips);
-                            }
-                            infoList.clear();
-                        }
-                        else{
-                            //无效配置段落，跳过
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
-        //对加载到信息进行按通配符号的数量进行排序
-        //优先适配通配符少的更明确的文件
-        int listcount=loadedFixedDefinitionList.count();
-        if(listcount>1){
-            for(int nn=0;nn<listcount-1;nn++){
-                int lastsmallIndex=nn;
-                int small=nn;
-                for(int vv=nn;vv<listcount-1;vv++){
-                    if(loadedFixedDefinitionList.at(vv+1).getFileName().count("*")<loadedFixedDefinitionList.at(lastsmallIndex).getFileName().count("*")){
-                        lastsmallIndex=vv+1;
-                        small=vv+1;
-                    }
-                }
-                if(small!=nn){
-                    FIXEDFileDefinition exchange=loadedFixedDefinitionList.at(nn);
-                    loadedFixedDefinitionList.replace(nn,loadedFixedDefinitionList.at(small));
-                    loadedFixedDefinitionList.replace(small,exchange);
-                }
-            }
-        }
-    }
-}
-
-void MainWindow::load_DBFDefinition(){
-    QDir dirPath(Utils::getConfigPath());
-    QStringList filters;
-    filters << "DBF_*.ini";
-    dirPath.setNameFilters(filters);//设置文件名的过滤
-    QFileInfoList listFile = dirPath.entryInfoList();
-    if(listFile.length()!=0){
-        //循环检索config目录下可用的FIXED接口定义配置
-        for (int f = 0; f < listFile.size(); f++)
-        {
-            //获取文件名
-            QString fileName=listFile.at(f).fileName();
-            //获取文件路径
-            QString codeInipath=Utils::getConfigPath()+fileName;
-            if(Utils::isFileExist(codeInipath)){
-                //加载ini文件
-                QSettings loadedDBFInfoIni(codeInipath,QSettings::IniFormat,nullptr);
-                DbfFileConfig dbfconfig;
-                dbfconfig.setFileIniName(fileName);
-                //目前仅接收UTF-8编码的配置文件
-                loadedDBFInfoIni.setIniCodec("UTF-8");
-                QStringList configInfo=loadedDBFInfoIni.childGroups();
-                if(configInfo.count()<1){
-                    continue;
-                }
-                //不包含基础信息和字段信息的配置文件不要
-                if(!configInfo.contains("Global")||!configInfo.contains("Field")){
-                    continue;
-                }
-                //遍历global/////////////////////////////////////////////////////////////////
-                QList<FileNameAndDescribe> list;
-                loadedDBFInfoIni.beginGroup("Global");
-                QStringList infoList =loadedDBFInfoIni.childKeys();
-                loadedDBFInfoIni.endGroup();
-                if(infoList.contains("matchfilename",Qt::CaseInsensitive)){
-                    QString line=loadedDBFInfoIni.value("Global/matchfilename").toString();
-                    QStringList names=line.split("|");
-                    if(names.count()>0){
-                        for(int k=0;k<names.count();k++){
-                            QStringList nameanddescribe=names.at(k).split(":");
-                            if(nameanddescribe.count()==2){
-                                FileNameAndDescribe a;
-                                a.fileName=nameanddescribe.at(0);
-                                a.fileDescribe=nameanddescribe.at(1);
-                                list.append(a);
-                            }
-                            else{
-                                continue;
-                            }
-                        }
-                    }
-                    else{
-                        continue;
-                    }
-                }
-                else{
-                    continue;
-                }
-                infoList.clear();
-                //汇聚结果
-                if(list.count()>0){
-                    dbfconfig.setSupportFileList(list);
-                }
-                else{
-                    //没有识别到任何有效的文件名支持情况
-                    continue;
-                }
-                //遍历字段配置///////////////////////////////////////////////////////////////////
-                loadedDBFInfoIni.beginGroup("Field");
-                infoList =loadedDBFInfoIni.childKeys();
-                loadedDBFInfoIni.endGroup();
-                if(infoList.count()>0){
-                    QMap<QString,QString> fieldDescribe;
-                    for(int aaa=0;aaa<infoList.count();aaa++){
-                        QString line=loadedDBFInfoIni.value("Field/"+infoList.at(aaa)).toString();
-                        fieldDescribe.insert(infoList.at(aaa).toUpper(),line);
-                    }
-                    dbfconfig.setFieldDescribe(fieldDescribe);
-                }
-                infoList.clear();
-                //遍历字典////////////////////////////////////////////////////////////////////////
-                Dictionary dic;
-                //开始循环读取字典
-                loadedDBFInfoIni.beginGroup("Dictionary");
-                infoList =loadedDBFInfoIni.childKeys();
-                loadedDBFInfoIni.endGroup();
-                if(infoList.count()>0){
-                    for(int aaa=0;aaa<infoList.count();aaa++){
-                        QString line=loadedDBFInfoIni.value("Dictionary/"+infoList.at(aaa)).toString();
-                        dic.addDictionary(infoList.at(aaa).toUpper()+"="+line);
-                    }
-                    commonDictionary.insert("DBF"+fileName,dic);
-                }
-                infoList.clear();
-                //字段Tips加载/////////////////////////////////////////////////////////////////
-                loadedDBFInfoIni.beginGroup("TipDictionary");
-                infoList =loadedDBFInfoIni.childKeys();
-                loadedDBFInfoIni.endGroup();
-                if(infoList.count()>0){
-                    QMap<QString,QString> tips;
-                    for(int aaa=0;aaa<infoList.count();aaa++){
-                        QString line=loadedDBFInfoIni.value("TipDictionary/"+infoList.at(aaa)).toString();
-                        tips.insert(infoList.at(aaa).toUpper(),line);
-                    }
-                    //以文件类别，配置文件名存入
-                    commonFieldTips.insert("DBF"+fileName,tips);
-                }
-                infoList.clear();
-                //加入配置
-                loadedDbfDefinitionHash.insert(fileName,dbfconfig);
-            }
-        }
-    }
-}
-
 
 /**
  * @brief MainWindow::initFile 文件初始化方法 无论是拖拽进来的文件还是打开菜单打开的文件还是重新打开文件，最终都要从这个函数开始初始化加载文件，这个函数会对文件类型做个初步的判断，然后交付相对应的文件类别的加载方法
@@ -1598,7 +954,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             }
             //记录从文件里读取的文件发送信息
             //此处开始加载OFD数据文件
-            load_ofdFile(fileTypeCode);
+            load_ofdDataFile(fileTypeCode);
             return;
         }
     }
@@ -1702,7 +1058,7 @@ NOT_OF_FILE:
         //正常的OFD文件应该至少有5段信息组成,另外中登TA和管理人交互的文件还有批次号,如果不是，则跳转到非OF文件检查
         if(nameList.count()<5){
             //尝试直接去解析文件,对于类OFD只要配置了OFD_like.ini就当ofd去解析，哪怕文件名不是标准的
-            load_ofdFile("@@");
+            load_ofdDataFile("@@");
             return;
         }
         else{
@@ -1746,7 +1102,7 @@ NOT_OF_FILE:
             }
             //记录从文件里读取的文件发送信息
             //此处开始加载OFD数据文件
-            load_ofdFile(fileTypeCode);
+            load_ofdDataFile(fileTypeCode);
             return;
         }
     }
@@ -1816,29 +1172,37 @@ NOT_OF_FILE:
     }
     //定长文件
     ///////////////////////////////////////////
-    QStringList resultFixedType;
-    QHash<QString, QString>::iterator h2;
-    for(h2=loadedFixedFileInfo.begin(); h2!=loadedFixedFileInfo.end(); ++h2){
-        QString Name=h2.key().toUpper();
-        QString pattern(Name);
-        QRegExp rx(pattern);
-        rx.setPatternSyntax(QRegExp::Wildcard);
-        bool match = rx.exactMatch(currentFileName.toUpper());
-        if(match){
-            resultFixedType.append(h2.key());
+    QList<matchIndex> fixedMatchList;
+    if(fixedConfigList.count()>0){
+        for(int l1=0;l1<fixedConfigList.count();l1++){
+            if(fixedConfigList.at(l1).getConfigSegmentList().count()>0){
+                for(int l2=0;l2<fixedConfigList.at(l1).getConfigSegmentList().count();l2++){
+                    QString Name=fixedConfigList.at(l1).getConfigSegmentList().at(l2).getFileName().toUpper();
+                    QString pattern(Name);
+                    QRegExp rx(pattern);
+                    rx.setPatternSyntax(QRegExp::Wildcard);
+                    bool match = rx.exactMatch(currentFileName.toUpper());
+                    if(match){
+                        matchIndex a;
+                        a.configFileIndex=l1;
+                        a.configSegmentIndex=l2;
+                        fixedMatchList.append(a);
+                    }
+                }
+            }
         }
     }
     //判断是进入
-    if(csvMatchList.count()>0&&resultFixedType.count()==0){
+    if(csvMatchList.count()>0&&fixedMatchList.count()==0){
         load_csvFile(csvMatchList);
         return;
     }
-    else if(csvMatchList.count()==0&&resultFixedType.count()>0){
-        load_fixedFile(resultFixedType);
+    else if(csvMatchList.count()==0&&fixedMatchList.count()>0){
+        load_fixedFile(fixedMatchList);
         return;
     }
     //同时两种类型的文件名字都匹配到了
-    else if(csvMatchList.count()>0&&resultFixedType.count()>0){
+    else if(csvMatchList.count()>0&&fixedMatchList.count()>0){
         DialogChooseFileType  dialog2(this);
         dialog2.setWindowTitle("打开的文件文件名匹配到了两种文件大类型,请确认");
         dialog2.setModal(true);
@@ -1850,7 +1214,7 @@ NOT_OF_FILE:
             return;
         }
         else if(type==3){
-            load_fixedFile(resultFixedType);
+            load_fixedFile(fixedMatchList);
             return;
         }
         else{
@@ -2193,14 +1557,14 @@ void MainWindow::load_ofdIndexFile(){
         dataFile.close();
     }
     //读取完毕OFD文件的信息后，进行数据显示
-    init_display_IndexTable();
+    init_display_OFDIndexTable();
 }
 
 /**
  * @brief MainWindow::load_ofdFile OFD文件的加载方法
  * @param fileType
  */
-void MainWindow::load_ofdFile(QString fileTypeFromFileName){
+void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
     QString fileType=fileTypeFromFileName;
     qDebug()<<"开始加载的文件类别"<<fileType;
     //当前打开的文件类别为1，OFD文件
@@ -3287,34 +2651,36 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
 
 /**
  * @brief MainWindow::load_fixedFile加载定长文件的函数
- * @param fileType
+ * @param csvMatchList
  */
-void MainWindow::load_fixedFile(QStringList fileType){
-    //当前打开的文件类别3
-    currentOpenFileType=openFileType::FIXEDFile;
+void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
+    if(fixedMatchList.count()<1){
+        return;
+    }
     //由于fixed文件有可能同一个文件名，但是实际文件版本不同，所以需要做版本校验
     QFile dataFile(currentOpenFilePath);
     //关于定长文件类型可用的版本
-    if(loadedFixedDefinitionList.count()<1){
+    if(fixedConfigList.count()<1){
         statusBar_disPlayMessage("配置目录中，无任何关于定长文件的配置，请配置后再使用");
         return;
     }
     else{
+        currentOpenFileType=openFileType::FIXEDFile;
         //在这里记录下各个配置文件失败无法使用的原因，如果全部匹配失败无法解析，则给用户一个交代！
         QList<FaultCause> faultList;
         int dd=0;
-        for(;dd<loadedFixedDefinitionList.count();dd++){
+        for(;dd<fixedMatchList.count();dd++){
             //如果文件名可用且配置可用，则加入
-            if(fileType.contains(loadedFixedDefinitionList.at(dd).getFileName())){
-                if(loadedFixedDefinitionList.at(dd).getUseAble()){
+            FIXEDFileDefinition fixedDef=fixedConfigList.at(fixedMatchList.at(dd).configFileIndex).getConfigSegmentList().at(fixedMatchList.at(dd).configSegmentIndex);
+                if(fixedDef.getUseAble()){
                     //打开并开始探测文件内容
                     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
                     {
-                        int dataBeginRow=loadedFixedDefinitionList.at(dd).getDataRowBeginIndex();
-                        int endIgnore=loadedFixedDefinitionList.at(dd).getEndIgnoreRow();
+                        int dataBeginRow=fixedDef.getDataRowBeginIndex();
+                        int endIgnore=fixedDef.getEndIgnoreRow();
                         //查找可用配置结束，开始分析文件到底是哪个版本
                         //最大化获取文件内的样本数据
-                        QTextCodec *codec=QTextCodec::codecForName(loadedFixedDefinitionList.at(dd).getEcoding().toLocal8Bit());
+                        QTextCodec *codec=QTextCodec::codecForName(fixedDef.getEcoding().toLocal8Bit());
                         QList<QString>fixedData;
                         QString line;
                         //当前读取到的行数
@@ -3337,46 +2703,46 @@ void MainWindow::load_fixedFile(QStringList fileType){
                         else{
                             //首先进行一系列的文件头校验,这是1.9.20版本新增的功能
                             //首行数据是否满足的校验
-                            if((!loadedFixedDefinitionList.at(dd).getFirstrowcheck().isEmpty())&&fixedData.count()>0&&loadedFixedDefinitionList.at(dd).getFirstrowcheck()!=fixedData.at(0)){
+                            if((!fixedDef.getFirstrowcheck().isEmpty())&&fixedData.count()>0&&fixedDef.getFirstrowcheck()!=fixedData.at(0)){
                                 FaultCause item;
-                                item.setConfigIndex(dd);
-                                item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],无法确认该文件符合本解析规则").arg(loadedFixedDefinitionList.at(dd).getFirstrowcheck()).arg(fixedData.at(0)));
+                                item.setConfigIndex2(fixedMatchList.at(dd));
+                                item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],无法确认该文件符合本解析规则").arg(fixedDef.getFirstrowcheck()).arg(fixedData.at(0)));
                                 faultList.append(item);
                                 continue;
                             }
                             //文件的版本是否满足的校验--版本号trim
-                            if(loadedFixedDefinitionList.at(dd).getVersioncheckrow()>0&&fixedData.count()>=loadedFixedDefinitionList.at(dd).getVersioncheckrow()){
-                                if(loadedFixedDefinitionList.at(dd).getVersioncheckmode()==0){
-                                    if(loadedFixedDefinitionList.at(dd).getVersion()!=fixedData.at(loadedFixedDefinitionList.at(dd).getVersioncheckrow()-1).trimmed()){
+                            if(fixedDef.getVersioncheckrow()>0&&fixedData.count()>=fixedDef.getVersioncheckrow()){
+                                if(fixedDef.getVersioncheckmode()==0){
+                                    if(fixedDef.getVersion()!=fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed()){
                                         FaultCause item;
-                                        item.setConfigIndex(dd);
-                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(loadedFixedDefinitionList.at(dd).getVersioncheckrow()).arg(loadedFixedDefinitionList.at(dd).getVersion()).arg(fixedData.at(loadedFixedDefinitionList.at(dd).getVersioncheckrow()-1)));
+                                        item.setConfigIndex2(fixedMatchList.at(dd));
+                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
                                         faultList.append(item);
                                         continue;
                                     }
                                 }
                                 else{
-                                    if(!fixedData.at(loadedFixedDefinitionList.at(dd).getVersioncheckrow()-1).trimmed().contains(loadedFixedDefinitionList.at(dd).getVersion(),Qt::CaseSensitive)){
+                                    if(!fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed().contains(fixedDef.getVersion(),Qt::CaseSensitive)){
                                         FaultCause item;
-                                        item.setConfigIndex(dd);
-                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(loadedFixedDefinitionList.at(dd).getVersioncheckrow()).arg(loadedFixedDefinitionList.at(dd).getVersion()).arg(fixedData.at(loadedFixedDefinitionList.at(dd).getVersioncheckrow()-1)));
+                                        item.setConfigIndex2(fixedMatchList.at(dd));
+                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
                                         faultList.append(item);
                                         continue;
                                     }
                                 }
                             }
                             //字段总数校验
-                            if(loadedFixedDefinitionList.at(dd).getFieldcountcheckrow()>0&&fixedData.count()>=loadedFixedDefinitionList.at(dd).getFieldcountcheckrow()){
-                                QString fieldCountFromFile=fixedData.at(loadedFixedDefinitionList.at(dd).getFieldcountcheckrow()-1);
+                            if(fixedDef.getFieldcountcheckrow()>0&&fixedData.count()>=fixedDef.getFieldcountcheckrow()){
+                                QString fieldCountFromFile=fixedData.at(fixedDef.getFieldcountcheckrow()-1);
                                 bool flag=false;
                                 int fileCount =fieldCountFromFile.trimmed().toInt(&flag);
                                 //此行数据可以转换成数值
                                 if(flag){
                                     //不满足字段数check
-                                    if(fileCount!=loadedFixedDefinitionList.at(dd).getFieldCountMax()){
+                                    if(fileCount!=fixedDef.getFieldCountMax()){
                                         FaultCause item;
-                                        item.setConfigIndex(dd);
-                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数[%2]，但是打开的文件第%1行是[%3](数值已清除空格和前缀0),文件实际字段数和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(loadedFixedDefinitionList.at(dd).getFieldcountcheckrow()).arg(loadedFixedDefinitionList.at(dd).getFieldCountMax()).arg(fileCount));
+                                        item.setConfigIndex2(fixedMatchList.at(dd));
+                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数[%2]，但是打开的文件第%1行是[%3](数值已清除空格和前缀0),文件实际字段数和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedDef.getFieldCountMax()).arg(fileCount));
                                         faultList.append(item);
                                         continue;
                                     }
@@ -3384,36 +2750,36 @@ void MainWindow::load_fixedFile(QStringList fileType){
                                 //呵呵，无法转换
                                 else{
                                     FaultCause item;
-                                    item.setConfigIndex(dd);
-                                    item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数，但是打开的文件第%1行是[%2],该内容不是一个有效的数值,无法确认该文件符合本解析规则").arg(loadedFixedDefinitionList.at(dd).getFieldcountcheckrow()).arg(fixedData.at(loadedFixedDefinitionList.at(dd).getFieldcountcheckrow()-1)));
+                                    item.setConfigIndex2(fixedMatchList.at(dd));
+                                    item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数，但是打开的文件第%1行是[%2],该内容不是一个有效的数值,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedData.at(fixedDef.getFieldcountcheckrow()-1)));
                                     faultList.append(item);
                                     continue;
                                 }
                             }
                             //字段明细检查
-                            if(loadedFixedDefinitionList.at(dd).getFielddetailcheckbeginrow()>0){
+                            if(fixedDef.getFielddetailcheckbeginrow()>0){
                                 //最低要有这么多行数据,从字段明细第一行开始+字段数,不然没法比较啊
-                                int fileRowMinNeed=loadedFixedDefinitionList.at(dd).getFielddetailcheckbeginrow()+loadedFixedDefinitionList.at(dd).getFieldCountMax();
+                                int fileRowMinNeed=fixedDef.getFielddetailcheckbeginrow()+fixedDef.getFieldCountMax();
                                 if(fixedData.count()<fileRowMinNeed){
                                     FaultCause item;
-                                    item.setConfigIndex(dd);
-                                    item.setCause(QString("配置文件中标注文件从第%1行开始的共计%2行是文件内字段明细列表,但是打开的文件总行数小于字段明细结束行,无法进行字段明细检查,无法确认该文件符合本解析规则").arg(loadedFixedDefinitionList.at(dd).getFielddetailcheckbeginrow()).arg(loadedFixedDefinitionList.at(dd).getFieldCountMax()));
+                                    item.setConfigIndex2(fixedMatchList.at(dd));
+                                    item.setCause(QString("配置文件中标注文件从第%1行开始的共计%2行是文件内字段明细列表,但是打开的文件总行数小于字段明细结束行,无法进行字段明细检查,无法确认该文件符合本解析规则").arg(fixedDef.getFielddetailcheckbeginrow()).arg(fixedDef.getFieldCountMax()));
                                     faultList.append(item);
                                     continue;
                                 }
                                 else{
                                     //开始进行字段明细检查
-                                    int fiexdIndex=loadedFixedDefinitionList.at(dd).getFielddetailcheckbeginrow()-1;
-                                    int fiexdIndexEnd=loadedFixedDefinitionList.at(dd).getFielddetailcheckbeginrow()-1+loadedFixedDefinitionList.at(dd).getFieldCountMax();
+                                    int fiexdIndex=fixedDef.getFielddetailcheckbeginrow()-1;
+                                    int fiexdIndexEnd=fixedDef.getFielddetailcheckbeginrow()-1+fixedDef.getFieldCountMax();
                                     int fieldIndex=0;
                                     bool checkOK=true;
-                                    for(;fiexdIndex<=fiexdIndexEnd&&fieldIndex<loadedFixedDefinitionList.at(dd).getFieldList().count();){
+                                    for(;fiexdIndex<=fiexdIndexEnd&&fieldIndex<fixedDef.getFieldList().count();){
                                         //字段名容忍大小写不一致
-                                        if(loadedFixedDefinitionList.at(dd).getFieldList().at(fieldIndex).getFieldName().toUpper()!=fixedData.at(fiexdIndex).toUpper()){
+                                        if(fixedDef.getFieldList().at(fieldIndex).getFieldName().toUpper()!=fixedData.at(fiexdIndex).toUpper()){
                                             checkOK=false;
                                             FaultCause item;
-                                            item.setConfigIndex(dd);
-                                            item.setCause(QString("配置文件中标注文件第%1行内容应该是字段描述[%2]，但是打开的文件第%1行是[%3],实际文件的字段描述和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fiexdIndex+1).arg(loadedFixedDefinitionList.at(dd).getFieldList().at(fieldIndex).getFieldName()).arg(fixedData.at(fiexdIndex)));
+                                            item.setConfigIndex2(fixedMatchList.at(dd));
+                                            item.setCause(QString("配置文件中标注文件第%1行内容应该是字段描述[%2]，但是打开的文件第%1行是[%3],实际文件的字段描述和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fiexdIndex+1).arg(fixedDef.getFieldList().at(fieldIndex).getFieldName()).arg(fixedData.at(fiexdIndex)));
                                             faultList.append(item);
                                             break;
                                         }
@@ -3426,7 +2792,7 @@ void MainWindow::load_fixedFile(QStringList fileType){
                                         //标准的空文件是数据开始行-1+尾部忽略行,即一行数据也没有但是结构完整,这里不做强制要求,所以条件设置为<=
                                         if(fixedData.count()<=(dataBeginRow+endIgnore-1)){
                                             qDebug()<<"空文件解析";
-                                            fixed=loadedFixedDefinitionList.at(dd);
+                                            fixed=fixedDef;
                                             load_fixedFileData();
                                             return;
                                         }
@@ -3441,7 +2807,7 @@ void MainWindow::load_fixedFile(QStringList fileType){
                             //开启字段明细检查的文件,其实空文件已经在上面文件字段明细检查时拦截了
                             if(fixedData.count()<dataBeginRow){
                                 FaultCause item;
-                                item.setConfigIndex(dd);
+                                item.setConfigIndex2(fixedMatchList.at(dd));
                                 item.setCause("配置文件中标注文件第"+QString::number(dataBeginRow)+"行开始是数据行了，但是打开的文件只有["+QString::number(fixedData.count())+"]行哟，无有效数据,无法确认该文件符合本解析规则");
                                 faultList.append(item);
                                 continue;
@@ -3449,28 +2815,28 @@ void MainWindow::load_fixedFile(QStringList fileType){
                             //文件内的行数<文件头+文件尾部忽略行【既文件无实质性数据内容】
                             else if(fixedData.count()<=(dataBeginRow+endIgnore-1)){
                                 FaultCause item;
-                                item.setConfigIndex(dd);
+                                item.setConfigIndex2(fixedMatchList.at(dd));
                                 item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件,请确认是否1行数据记录都没有(定长文件解析不支持在未配置字段明细检查的情况下进行空文件解析,工具需要根据首行数据内容识别文件类别)....");
                                 faultList.append(item);
                                 continue;
                             }
-                            QString firstDataRowString=fixedData.at(loadedFixedDefinitionList.at(dd).getDataRowBeginIndex()-1);
+                            QString firstDataRowString=fixedData.at(fixedDef.getDataRowBeginIndex()-1);
                             //如果第一行数据的长度在可接受的长度内，则允许解析
                             //判断是字节定长还是字符定长
                             //字节定长
-                            if(loadedFixedDefinitionList.at(dd).getFieldlengthtype()=="0"){
+                            if(fixedDef.getFieldlengthtype()=="0"){
                                 int rowLength=codec->fromUnicode(firstDataRowString).length();
                                 //如果行长度包含这种长度
-                                if(loadedFixedDefinitionList.at(dd).getRowLengthHash().contains(rowLength)){
+                                if(fixedDef.getRowLengthHash().contains(rowLength)){
                                     //开始加载数据
-                                    fixed=loadedFixedDefinitionList.at(dd);
+                                    fixed=fixedDef;
                                     load_fixedFileData();
                                     return;
                                 }
                                 else{
                                     FaultCause item;
-                                    item.setConfigIndex(dd);
-                                    item.setCause("在文件第"+QString::number(loadedFixedDefinitionList.at(dd).getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字节,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                                    item.setConfigIndex2(fixedMatchList.at(dd));
+                                    item.setCause("在文件第"+QString::number(fixedDef.getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字节,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
                                     faultList.append(item);
                                     continue;
                                 }
@@ -3479,16 +2845,16 @@ void MainWindow::load_fixedFile(QStringList fileType){
                             else{
                                 int rowLength=firstDataRowString.length();
                                 //如果行长度包含这种长度
-                                if(loadedFixedDefinitionList.at(dd).getRowLengthHash().contains(rowLength)){
+                                if(fixedDef.getRowLengthHash().contains(rowLength)){
                                     //开始加载数据
-                                    fixed=loadedFixedDefinitionList.at(dd);
+                                    fixed=fixedDef;
                                     load_fixedFileData();
                                     return;
                                 }
                                 else{
                                     FaultCause item;
-                                    item.setConfigIndex(dd);
-                                    item.setCause("在文件第"+QString::number(loadedFixedDefinitionList.at(dd).getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字符,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                                    item.setConfigIndex2(fixedMatchList.at(dd));
+                                    item.setCause("在文件第"+QString::number(fixedDef.getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字符,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
                                     faultList.append(item);
                                     continue;
                                 }
@@ -3504,12 +2870,11 @@ void MainWindow::load_fixedFile(QStringList fileType){
                 }
                 else{
                     FaultCause item;
-                    item.setConfigIndex(dd);
+                    item.setConfigIndex2(fixedMatchList.at(dd));
                     item.setCause("配置文件不可用");
                     faultList.append(item);
                 }
             }
-        }
         display_FIXEDFaultCause(faultList);
         //如果遍历完还没找到合适的配置，则提示
         currentOpenFileType=openFileType::NotFileOrErr;
@@ -3830,45 +3195,45 @@ void MainWindow::display_FIXEDFaultCause(QList<FaultCause> faultList){
         //设置表格的内容
         for (int row = 0; row < rowCount; ++row)
         {
-            FIXEDFileDefinition csvfileDefinition=loadedFixedDefinitionList.at(faultList.at(row).getConfigIndex());
+            FIXEDFileDefinition fixedfileDefinition=fixedConfigList.at(faultList.at(row).getConfigIndex2().configFileIndex).getConfigSegmentList().at(faultList.at(row).getConfigIndex2().configSegmentIndex);
             //配置文件
-            if(!csvfileDefinition.getFileIni().isEmpty()){
-                QTableWidgetItem *item0= new QTableWidgetItem(csvfileDefinition.getFileIni());
+            if(!fixedfileDefinition.getFileIni().isEmpty()){
+                QTableWidgetItem *item0= new QTableWidgetItem(fixedfileDefinition.getFileIni());
                 ptr_table->setItem(row, 0, item0);
             }
             //解析器
-            if(!csvfileDefinition.getFileNameWithVersion().isEmpty()){
-                QTableWidgetItem *item1= new QTableWidgetItem("["+csvfileDefinition.getFileNameWithVersion()+"]");
+            if(!fixedfileDefinition.getFileNameWithVersion().isEmpty()){
+                QTableWidgetItem *item1= new QTableWidgetItem("["+fixedfileDefinition.getFileNameWithVersion()+"]");
                 ptr_table->setItem(row, 1, item1);
             }
             //文件解释
-            if(!csvfileDefinition.getFileDescribe().isEmpty()){
-                QTableWidgetItem *item2= new QTableWidgetItem(csvfileDefinition.getFileDescribe());
+            if(!fixedfileDefinition.getFileDescribe().isEmpty()){
+                QTableWidgetItem *item2= new QTableWidgetItem(fixedfileDefinition.getFileDescribe());
                 ptr_table->setItem(row, 2, item2);
             }
             //配置是否可用
             QString u="不可用";
-            if(csvfileDefinition.getUseAble()){
+            if(fixedfileDefinition.getUseAble()){
                 u="可用";
             }
             QTableWidgetItem *item3= new QTableWidgetItem(u);
             ptr_table->setItem(row, 3, item3);
             //不可用原因
-            if(!csvfileDefinition.getMessage().isEmpty()){
-                QTableWidgetItem *item4= new QTableWidgetItem(csvfileDefinition.getMessage());
+            if(!fixedfileDefinition.getMessage().isEmpty()){
+                QTableWidgetItem *item4= new QTableWidgetItem(fixedfileDefinition.getMessage());
                 ptr_table->setItem(row, 4, item4);
             }
-            if(csvfileDefinition.getUseAble()){
+            if(fixedfileDefinition.getUseAble()){
                 //数据起始行
-                QTableWidgetItem *item8= new QTableWidgetItem(QString::number(csvfileDefinition.getDataRowBeginIndex()));
+                QTableWidgetItem *item8= new QTableWidgetItem(QString::number(fixedfileDefinition.getDataRowBeginIndex()));
                 ptr_table->setItem(row, 5, item8);
                 //文件编码
-                if(!csvfileDefinition.getEcoding().isEmpty()){
-                    QTableWidgetItem *item9= new QTableWidgetItem(csvfileDefinition.getEcoding());
+                if(!fixedfileDefinition.getEcoding().isEmpty()){
+                    QTableWidgetItem *item9= new QTableWidgetItem(fixedfileDefinition.getEcoding());
                     ptr_table->setItem(row, 6, item9);
                 }
                 //字段长度类型
-                if(csvfileDefinition.getFieldlengthtype()=="0"){
+                if(fixedfileDefinition.getFieldlengthtype()=="0"){
                     QTableWidgetItem *item10= new QTableWidgetItem("字节定长");
                     ptr_table->setItem(row, 7, item10);
                 }
@@ -3878,7 +3243,7 @@ void MainWindow::display_FIXEDFaultCause(QList<FaultCause> faultList){
                 }
                 //每行允许的长度
                 QString lengths="";
-                QList <int> length=csvfileDefinition.getRowLengthHash().keys();
+                QList <int> length=fixedfileDefinition.getRowLengthHash().keys();
                 lengths.append(QString::number(length.at(0)));
                 if(length.count()>1){
                     for(int ff=1;ff<length.count();ff++){
@@ -4192,49 +3557,53 @@ void MainWindow::load_dbfFile(){
     dbf.setFileType(nullptr);
     //开始适配配置文件////////////////////////////////////////////////////////////////
     QList<dbfMatchInfo> matchListInfo;
-    QHash<QString, DbfFileConfig>::const_iterator ii;
     //遍历DBF配置
-    for (ii = loadedDbfDefinitionHash.constBegin(); ii != loadedDbfDefinitionHash.constEnd(); ++ii) {
-        QString dbfHashKey=ii.key();
-        DbfFileConfig dbfFileConfig=ii.value();
-        if(dbfFileConfig.getSupportFileList().count()>0){
-            for(int kk=0;kk<dbfFileConfig.getSupportFileList().count();kk++){
-                bool matchOk=false;
-                QString filename=dbfFileConfig.getSupportFileList().at(kk).fileName;
-                QString filedescribe=dbfFileConfig.getSupportFileList().at(kk).fileDescribe;
-                QString pattern(filename.toUpper());
-                QRegExp rx(pattern);
-                rx.setPatternSyntax(QRegExp::Wildcard);
-                matchOk = rx.exactMatch(QFileInfo(currentOpenFilePath).fileName().toUpper());
-                //qDebug()<<"配置文件:"<<filename.toUpper();
-                //qDebug()<<"读取的文件:"<<QFileInfo(currentOpenFilePath).fileName().toUpper();
-                //文件命匹配
-                if(matchOk){
-                    //记录匹配到的文件名
-                    qDebug()<<"匹配文件名:"<<filename.toUpper();
-                    qDebug()<<"配置文件:"<<dbfFileConfig.fileIniName;
-                    //测算匹配度
-                    float matchFieldCount=0;
-                    for(int ff=0;ff<fieldList.count();ff++){
-                        if(dbfFileConfig.getFieldDescribe().contains(fieldList.at(ff).getFieldName().toUpper())){
-                            matchFieldCount+=1;
+    if(dbfConfigList.count()>0){
+        for (int ll=0;ll< dbfConfigList.count();ll++) {
+            DbfFileConfig dbfFileConfig=dbfConfigList.at(ll);
+            if(dbfFileConfig.getSupportFileList().count()>0){
+                for(int kk=0;kk<dbfFileConfig.getSupportFileList().count();kk++){
+                    bool matchOk=false;
+                    QString filename=dbfFileConfig.getSupportFileList().at(kk).fileName;
+                    QString filedescribe=dbfFileConfig.getSupportFileList().at(kk).fileDescribe;
+                    QString pattern(filename.toUpper());
+                    QRegExp rx(pattern);
+                    rx.setPatternSyntax(QRegExp::Wildcard);
+                    matchOk = rx.exactMatch(QFileInfo(currentOpenFilePath).fileName().toUpper());
+                    //qDebug()<<"配置文件:"<<filename.toUpper();
+                    //qDebug()<<"读取的文件:"<<QFileInfo(currentOpenFilePath).fileName().toUpper();
+                    //文件命匹配
+                    if(matchOk){
+                        //记录匹配到的文件名
+                        qDebug()<<"匹配文件名:"<<filename.toUpper();
+                        qDebug()<<"配置文件:"<<dbfFileConfig.fileIniName;
+                        //测算匹配度
+                        float matchFieldCount=0;
+                        for(int ff=0;ff<fieldList.count();ff++){
+                            if(dbfFileConfig.getFieldDescribe().contains(fieldList.at(ff).getFieldName().toUpper())){
+                                matchFieldCount+=1;
+                            }
                         }
-                    }
-                    //存入匹配信息,字段匹配度大于30%的才存入
-                    if(matchFieldCount/fieldList.count()>0.3){
-                        dbfMatchInfo a;
-                        a.ini=dbfFileConfig.fileIniName;
-                        a.matchFileType=dbfFileConfig.getSupportFileList().at(kk).fileName;
-                        a.matchfileDescribe=dbfFileConfig.getSupportFileList().at(kk).fileDescribe;
-                        a.matchDegree=matchFieldCount/fieldList.count();
-                        matchListInfo.append(a);
+                        //存入匹配信息,字段匹配度大于30%的才存入
+                        if(matchFieldCount/fieldList.count()>0.3){
+                            dbfMatchInfo a;
+                            a.configFileIndex=ll;
+                            a.ini=dbfFileConfig.fileIniName;
+                            a.matchFileType=dbfFileConfig.getSupportFileList().at(kk).fileName;
+                            a.matchfileDescribe=dbfFileConfig.getSupportFileList().at(kk).fileDescribe;
+                            a.matchDegree=matchFieldCount/fieldList.count();
+                            matchListInfo.append(a);
+                        }
                     }
                 }
             }
         }
     }
+
     bool configisok=false;
+    int useconfigFileIndex=0;
     if(matchListInfo.count()==1){
+        useconfigFileIndex=matchListInfo.at(0).configFileIndex;
         dbf.setFileIni(matchListInfo.at(0).ini);
         dbf.setFileDescribe(matchListInfo.at(0).matchfileDescribe);
         dbf.setFileType(matchListInfo.at(0).matchFileType);
@@ -4261,12 +3630,14 @@ void MainWindow::load_dbfFile(){
         int index=dialog2.getChooeseIndex();
         //没有选择，默认使用第一个
         if(!dialog2.getConfirm()){
+            useconfigFileIndex=matchListInfo.at(0).configFileIndex;
             dbf.setFileIni(matchListInfo.at(0).ini);
             dbf.setFileDescribe(matchListInfo.at(0).matchfileDescribe);
             dbf.setFileType(matchListInfo.at(0).matchFileType);
             configisok=true;
         }
         else{
+            useconfigFileIndex=matchListInfo.at(index).configFileIndex;
             dbf.setFileIni(matchListInfo.at(index).ini);
             dbf.setFileDescribe(matchListInfo.at(index).matchfileDescribe);
             dbf.setFileType(matchListInfo.at(index).matchFileType);
@@ -4277,7 +3648,7 @@ void MainWindow::load_dbfFile(){
         QList<DbfFieldDefinition> fieldList2;
         for (int i=0;i<dbf.getFieldCount();i++){
             DbfFieldDefinition field=dbf.getFieldList().at(i);
-            field.setFieldDescribe(loadedDbfDefinitionHash.value(dbf.getFileIni()).getFieldDescribe().value(field.getFieldName().toUpper()));
+            field.setFieldDescribe(dbfConfigList.at(useconfigFileIndex).getFieldDescribe().value(field.getFieldName().toUpper()));
             fieldList2.append(field);
         }
         dbf.setFieldList(fieldList2);
@@ -4339,7 +3710,7 @@ void MainWindow::load_dbfFile(){
  * @brief MainWindow::init_display_IndexTable OFD索引数据的表格显示
  *
  */
-void MainWindow::init_display_IndexTable(){
+void MainWindow::init_display_OFDIndexTable(){
     if(!indexFileDataList.empty()){
         int colCount=1;
         int rowCount=indexFileDataList.count();

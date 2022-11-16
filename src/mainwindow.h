@@ -116,12 +116,6 @@
 /**
  * @brief The dbfMatchInfo struct 存储匹配到的DBF配置的结构体
  */
-struct dbfMatchInfo{
-    QString ini;
-    QString matchFileType;
-    QString matchfileDescribe;
-    float matchDegree;
-};
 
 namespace Ui {
 class MainWindow;
@@ -366,18 +360,16 @@ private:
     QHash<QString, OFDCodeInfo> loadedOfdCodeInfo;
     //已经加载的OFD索引文件信息,记录各种索引文件的文件名开头三个字符
     QHash<QString, QString> loadedOfdIndexFileInfo;
-    //已经加载的定长文件文件名的正则匹配器--FIXED文件判断类别，使用简单的正则匹配方法
-    QHash<QString, QString> loadedFixedFileInfo;
     //OFD配置文件列表
     QList<ConfigFile<OFDFileDefinition>> ofdConfigList;
     //类似key=21这样的Hash存储，方便打开文件的时候快速定位是否存在该文件的解析配置
     QHash<QString,int> ofdQuickMatchIndex;
     //CSV配置文件列表
     QList<ConfigFile<CsvFileDefinition>> csvConfigList;
-    //已经加载的FIXED文件类别信息,定长文件的文件名可能相同但是却是不同版本，所以使用List遍历匹配
-    QList<FIXEDFileDefinition> loadedFixedDefinitionList;
-    //已经加载的dbf配置
-    QHash<QString,DbfFileConfig>loadedDbfDefinitionHash;
+    //FIXED配置文件列表
+    QList<ConfigFile<FIXEDFileDefinition>> fixedConfigList;
+    //DBF配置文件列表--dbf配置一个文件内就一段,无需嵌套ConfigFile
+    QList<DbfFileConfig> dbfConfigList;
     //用来记录文件头部内容的map,此信息用于文件检查
     QHash<QString,QString> ofdIndexFileHeaderMap;
     //用来记录文件标题和内容的list,解析索引类文件时使用
@@ -599,17 +591,16 @@ private:
     void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
     void initStatusBar();
     void open_file_Dialog();
+
+    //设置和插件加载
     void load_Setting();
     void load_PluginList();
 
-    void load_FIXEDDefinition();
-    void load_DBFDefinition();
-
     //数据load
     void load_ofdIndexFile();
-    void load_ofdFile(QString fileTypeFromFileName);
+    void load_ofdDataFile(QString fileTypeFromFileName);
     void load_csvFile(QList<matchIndex> csvMatchList);
-    void load_fixedFile(QStringList fileType);
+    void load_fixedFile(QList<matchIndex> fixedMatchList);
     void load_fixedFileData();
     void load_csvFileData(QStringList title);
     void load_dbfFile();
@@ -621,7 +612,7 @@ private:
     int save2XlxsFile();
 
     //表格初始化
-    void init_display_IndexTable();
+    void init_display_OFDIndexTable();
     void init_OFDTable();
     void init_DBFTable();
     void init_CSVTable(QStringList title);
