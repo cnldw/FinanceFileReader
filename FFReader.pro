@@ -27,6 +27,9 @@ contains(QT_ARCH, i386) {
 contains(QT_ARCH, x86_64) {
     TARGET = FFReader-x64
 }
+macx{
+    TARGET = FFReader
+}
 
 RESOURCES += \
     res.qrc
@@ -54,7 +57,7 @@ macx{
 #macOS下应用图标
 ICON = res/icon.icns
 #macoOS下自动删除上次打包产生的配置文件和打包产生的镜像后，打包配置文件到Resources目录
-QMAKE_POST_LINK =cp -rf $$PWD/config/* $$OUT_PWD/FFReader-x64.app/Contents/Resources/
+QMAKE_POST_LINK =cp -rf $$PWD/config/* $$OUT_PWD/FFReader.app/Contents/Resources/
 }
 
 TEMPLATE = app
@@ -97,6 +100,7 @@ SOURCES += \
     src/dialogchoosefieldcheckexportreport.cpp \
     src/dialogchooseofdconfig.cpp \
     src/dialogeditheaderfooter.cpp \
+    src/dialogedittext.cpp \
     src/dialogforcenumber.cpp \
     src/dialogmagnify.cpp \
     src/dialogoktools.cpp \
@@ -104,6 +108,7 @@ SOURCES += \
     src/dialogshowfieldchecklist.cpp \
     src/dialogshowimportexcelerror.cpp \
     src/fieldcheckitem.cpp \
+    src/formfieldcheckedittools.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/msgtoast.cpp \
@@ -144,6 +149,7 @@ HEADERS += \
     src/dialogchoosefieldcheckexportreport.h \
     src/dialogchooseofdconfig.h \
     src/dialogeditheaderfooter.h \
+    src/dialogedittext.h \
     src/dialogforcenumber.h \
     src/dialogmagnify.h \
     src/dialogoktools.h \
@@ -151,6 +157,7 @@ HEADERS += \
     src/dialogshowfieldchecklist.h \
     src/dialogshowimportexcelerror.h \
     src/fieldcheckitem.h \
+    src/formfieldcheckedittools.h \
         src/mainwindow.h \
     src/msgtoast.h \
     src/ucdutils.h \
@@ -188,12 +195,14 @@ FORMS += \
     src/dialogchoosefieldcheckexportreport.ui \
     src/dialogchooseofdconfig.ui \
     src/dialogeditheaderfooter.ui \
+    src/dialogedittext.ui \
     src/dialogforcenumber.ui \
     src/dialogmagnify.ui \
     src/dialogoktools.ui \
     src/dialogshareqrcode.ui \
     src/dialogshowfieldchecklist.ui \
     src/dialogshowimportexcelerror.ui \
+    src/formfieldcheckedittools.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \
     src/dialogshowtablecompareview.ui \

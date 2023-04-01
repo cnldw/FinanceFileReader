@@ -71,6 +71,8 @@ public:
     void setConfigSegment(const QString &value);
     QList<fieldcheckitem> getFieldcheckList() const;
     void addFieldcheckItem(const fieldcheckitem &value);
+    void clearFieldcheckItemList();
+    void setFieldcheckItemList(const QList<fieldcheckitem> &value);
     const QString &getUseForVersionAndType() const;
     void setUseForVersionAndType(const QString &newUseForVersionAndType);
 };

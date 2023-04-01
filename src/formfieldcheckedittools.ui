@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FormFieldCheckEditTools</class>
+ <widget class="QMainWindow" name="FormFieldCheckEditTools">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1050</width>
+    <height>560</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>860</width>
+    <height>480</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>字段必填规则配置工具</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <property name="leftMargin">
+     <number>5</number>
+    </property>
+    <property name="topMargin">
+     <number>5</number>
+    </property>
+    <property name="rightMargin">
+     <number>5</number>
+    </property>
+    <property name="bottomMargin">
+     <number>5</number>
+    </property>
+    <property name="spacing">
+     <number>3</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="opaqueResize">
+       <bool>true</bool>
+      </property>
+      <property name="handleWidth">
+       <number>5</number>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>true</bool>
+      </property>
+      <widget class="QFrame" name="frameConfig">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>450</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">.QFrame{
+border-left: 1px solid rgb(198, 198, 198);
+border-right: 1px solid rgb(198, 198, 198);
+border-top: 1px solid rgb(198, 198, 198);
+border-bottom: 1px solid rgb(198, 198, 198);
+border-radius:3px;
+}</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QComboBox" name="comboBox_1">
+            <item>
+             <property name="text">
+              <string>OFD/类OFD文件</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CSV分隔符文件</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FIXED字段定长文件</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboBox_2"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBox_3"/>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLineEdit" name="searchLineEdit"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="searchPushButton">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>搜索字段</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tableWidgetFieldList">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QFrame" name="frameButton">
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">.QFrame{
+border-left: 1px solid rgb(198, 198, 198);
+border-right: 1px solid rgb(198, 198, 198);
+border-top: 1px solid rgb(198, 198, 198);
+border-bottom: 1px solid rgb(198, 198, 198);
+border-radius:3px;
+}</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="pushButton_ImportCon">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>导入形如“业务代码=01&amp;客户类别=1”的条件列表</string>
+          </property>
+          <property name="text">
+           <string>从外部导入条件</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_ImportField">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>导入形如“姓名,性别”使用英文逗号分割的字段列表</string>
+          </property>
+          <property name="text">
+           <string>从外部导入必填字段列表</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_summitCon">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;将编辑区已填写的条件生成条件规则并提交，如编辑区没填写任何条件，则将生成一个适用于所有记录的规则&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>从编辑区提交到条件分组列表</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_summitField">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;将编辑区勾选的必填字段提交到必填字段列表&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>从编辑区提交到必填字段列表</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_abandonSummit">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>放弃当前编辑</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_Summit">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>提交当前编辑</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_AbandonWrite">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>放弃写入到配置文件</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_WriteToFile">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>写入到配置文件</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QFrame" name="frameCheckList">
+       <property name="styleSheet">
+        <string notr="true">.QFrame{
+border-left: 1px solid rgb(198, 198, 198);
+border-right: 1px solid rgb(198, 198, 198);
+border-top: 1px solid rgb(198, 198, 198);
+border-bottom: 1px solid rgb(198, 198, 198);
+border-radius:3px;
+}</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="7,4,3">
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <widget class="QTableWidget" name="tableWidgetCheckList">
+          <property name="contextMenuPolicy">
+           <enum>Qt::ActionsContextMenu</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tableWidgeConditionList"/>
+        </item>
+        <item>
+         <widget class="QTextBrowser" name="textBrowserVisualizationConfig">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;这里是当前编辑的规则要求必填的字段清单...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1050</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

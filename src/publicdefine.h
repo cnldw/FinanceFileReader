@@ -17,7 +17,7 @@
 #define PUBLICDEFINE_H
 #include <QString>
 
-#define VERSION_V "V1.9.22Beta"
+#define VERSION_V "V1.9.22"
 #define AUTHOR_PHONE "MTUyMzg4NzIxMDE="
 #define AUTHOR_NAME "NzkzNTU0MjYyQHFxLmNvbSjliJjlvrfkvY0p"
 #define AUTHOR_EMAIL "NzkzNTU0MjYyQHFxLmNvbQ=="
@@ -26,5 +26,6 @@
 #define MANUAL_INFO "https://www.ffreader.cn/manual?from=ffreader"
 //二维码分享功能开关--严格的生产环境限制数据导出时,需要使用限制分享的版本
 #define ENABLE_QRCODE true
+#define ALL_CHECK_INDEX 999999
 
 #endif // PUBLICDEFINE_H

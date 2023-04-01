@@ -32,6 +32,9 @@ public:
     const matchIndex &getConfigIndex2() const;
     void setConfigIndex2(const matchIndex &newConfigIndex2);
 
+    const QString &getName() const;
+    void setName(const QString &newName);
+
 private:
     int configIndex;
     matchIndex configIndex2;

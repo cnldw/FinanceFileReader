@@ -245,6 +245,24 @@ void FIXEDFileDefinition::addFieldcheckItem(const fieldcheckitem &value)
     fieldcheckList.append(value);
 }
 
+void FIXEDFileDefinition::clearFieldcheckItemList(){
+    fieldcheckList.clear();
+}
+
+void FIXEDFileDefinition::setFieldcheckItemList(const QList<fieldcheckitem> &value){
+    fieldcheckList=value;
+}
+
+const QString &FIXEDFileDefinition::getConfigSegment() const
+{
+    return configSegment;
+}
+
+void FIXEDFileDefinition::setConfigSegment(const QString &newConfigSegment)
+{
+    configSegment = newConfigSegment;
+}
+
 FIXEDFileDefinition::FIXEDFileDefinition()
 {
     

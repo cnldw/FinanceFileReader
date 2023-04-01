@@ -826,6 +826,7 @@ border-radius:3px;
     <addaction name="actionexpcheckresult"/>
     <addaction name="actionprefieldcheck"/>
     <addaction name="actionnextfieldcheck"/>
+    <addaction name="action_fieldcheckconfigtools"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -1178,6 +1179,11 @@ border-radius:3px;
   <action name="actiontableSelectionBehaviorMenu">
    <property name="text">
     <string>表格高亮按行选择</string>
+   </property>
+  </action>
+  <action name="action_fieldcheckconfigtools">
+   <property name="text">
+    <string>字段必填规则配置工具</string>
    </property>
   </action>
  </widget>

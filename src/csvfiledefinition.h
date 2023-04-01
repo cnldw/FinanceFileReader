@@ -30,6 +30,7 @@ private:
     QString fileName;
     //文件名，带字段和，解析器名字
     QString fileNameWithCount;
+    QString  configSegment;
     //文件解释
     QString fileDescribe;
     //配置是否可用
@@ -121,6 +122,10 @@ public:
     void setLastrowcheck(const QString &newLastrowcheck);
     QList<fieldcheckitem> getFieldcheckList() const;
     void addFieldcheckItem(const fieldcheckitem &value);
+    const QString &getConfigSegment() const;
+    void setConfigSegment(const QString &newConfigSegment);
+    void clearFieldcheckItemList();
+    void setFieldcheckItemList(const QList<fieldcheckitem> &value);
 };
 
 #endif // CSVFILEDEFINITION_H

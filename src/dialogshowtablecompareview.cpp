@@ -100,13 +100,13 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QString
                         //插入不等标记
                         colNoEqual.append(col);
                         for(int i2=0;i2<=row;i2++){
-                            ptr_table->item(i2,col)->setBackgroundColor(backcolor);
+                            ptr_table->item(i2,col)->setBackground(backcolor);
                         }
                     }
                 }else if(row>1){
                     //先判断前几行是否不相等,如果不相等直接更新本行颜色即可
                     if(colNoEqual.contains(col)){
-                        ptr_table->item(row,col)->setBackgroundColor(backcolor);
+                        ptr_table->item(row,col)->setBackground(backcolor);
                     }
                     else{
                         //前N行相等,则拿本行和上一行对比,并且如果检测到不一致,需从第一行开始更新背景色
@@ -114,7 +114,7 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QString
                             //插入不等标记
                             colNoEqual.append(col);
                             for(int i2=0;i2<=row;i2++){
-                                ptr_table->item(i2,col)->setBackgroundColor(backcolor);
+                                ptr_table->item(i2,col)->setBackground(backcolor);
                             }
                         }
                     }

@@ -23,6 +23,7 @@
 #include <QPoint>
 #include <QMenu>
 #include <QPixmap>
+#include <QTimer>
 #include <QDesktopServices>
 #include <QDateTime>
 #include <QFileDialog>
@@ -44,9 +45,13 @@ public:
     explicit DialogShowTableFieldCheck(QList<QStringList> * data,QWidget *parent = nullptr);
     ~DialogShowTableFieldCheck();
 
+protected:
+    void resizeEvent (QResizeEvent * event );
+
 private slots:
     void on_tableWidget_customContextMenuRequested(const QPoint &pos);
 
+    void resizeHeight();
     void copyToClipboard();
 
     void saveScreen();
@@ -60,6 +65,9 @@ private:
     QAction *action_ShowSaveScreen;
     //
     QPoint posCurrentMenu;
+    QTimer *resizeFiletimer;
+
+    bool dataisOK=false;
 };
 
 #endif // DIALOGSHOWTABLEFIELDCHECK_H

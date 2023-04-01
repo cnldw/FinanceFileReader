@@ -66,6 +66,14 @@ void OFDFileDefinition::addFieldcheckItem(const fieldcheckitem &value)
     fieldcheckList.append(value);
 }
 
+void OFDFileDefinition::clearFieldcheckItemList(){
+    fieldcheckList.clear();
+}
+
+void OFDFileDefinition::setFieldcheckItemList(const QList<fieldcheckitem> &value){
+    fieldcheckList=value;
+}
+
 const QString &OFDFileDefinition::getUseForVersionAndType() const
 {
     return useForVersionAndType;

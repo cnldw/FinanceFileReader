@@ -245,6 +245,24 @@ void CsvFileDefinition::addFieldcheckItem(const fieldcheckitem &value)
     fieldcheckList.append(value);
 }
 
+void CsvFileDefinition::clearFieldcheckItemList(){
+    fieldcheckList.clear();
+}
+
+void CsvFileDefinition::setFieldcheckItemList(const QList<fieldcheckitem> &value){
+    fieldcheckList=value;
+}
+
+const QString &CsvFileDefinition::getConfigSegment() const
+{
+    return configSegment;
+}
+
+void CsvFileDefinition::setConfigSegment(const QString &newConfigSegment)
+{
+    configSegment = newConfigSegment;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     

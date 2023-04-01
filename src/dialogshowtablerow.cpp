@@ -43,7 +43,7 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
     //自动换行和默认高度
     ptr_table->setWordWrap(true);
     ptr_table->verticalHeader()->setDefaultSectionSize(22);
-    //默认情况下字符数多余此数值的行才进行换行自适应
+    //默认情况下字符数多于此数值的行才进行换行自适应
     maxSingleLineCharset=24;
 
     ptr_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
@@ -267,41 +267,71 @@ void DialogShowTableRow::on_pushButton_clicked()
         int rowcount=ptr_table->rowCount();
         int colcount=ptr_table->columnCount();
         //开始搜索
-        //行
-        for(int i=searchRow;i<rowcount;i++){
+        //逻辑--搜到了就允许继续往下搜，搜不到就搜一圈停止
+        int beginrow=searchRow;
+        int begincol=searchColumn;
+        //先从开始搜索的位置搜索到结尾
+        for(int i=beginrow;i<rowcount;i++){
+            int col=0;
             //搜索开始行时，列从searchCol开始
-            if(i==searchRow){
-                for(int j=searchColumn;j<colcount;j++){
-                    //搜索到了
-                    if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(i,j);
-                        ptr_table->setFocus();
-                        return;
-                    }
-                    //如果搜索到了最后一行最后一列都没搜到则将搜索起始点转移到第一行第一列
-                    if(i==(rowcount-1)&&j==(colcount-1)){
-                        this->searchRow=0;
-                        this->searchColumn=0;
-                    }
-                }
+            if(i==beginrow){
+                col=begincol;
             }
-            //非搜索起始行，则从第0列搜索
             else{
-                for(int j=0;j<colcount;j++){
-                    //搜索到了
-                    if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
-                        ptr_table->setCurrentCell(i,j);
-                        ptr_table->setFocus();
-                        return;
-                    }
-                    //如果搜索到了最后一行最后一列都没搜到则将搜索起始点转移到第一行第一列
-                    if(i==(rowcount-1)&&j==(colcount-1)){
-                        this->searchRow=0;
-                        this->searchColumn=0;
-                    }
+                col=0;
+            }
+            for(int j=col;j<colcount;j++){
+                if(j==2||j==3){
+                    continue;
+                }
+                //搜索到了
+                if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
+                    ptr_table->setCurrentCell(i,j);
+                    ptr_table->setFocus();
+                    return;
                 }
             }
         }
+        //定义从头搜索的结束单元格
+        int againendrow=0;
+        int againendcol=0;
+        //没搜到，从开头搜到开始搜索的列的上一个单元格
+        //从某一行的非第一列，重新搜索到上一个单元格
+        if(begincol>0){
+                againendrow=beginrow;
+                againendcol=begincol-1;
+        }
+        //非第一行的第一列-重新搜索到上一行的最后一列
+        else if(beginrow>0&&begincol==0){
+            againendrow=beginrow-1;
+            againendcol=colcount-1;
+        }
+        //如果是从首行首列开始搜索的，直接结束
+        else if(beginrow==0&&begincol==0){
+            Toast::showMsg("搜索了一圈,没找到你要搜索的内容...", ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
+            return;
+        }
+        for(int i=0;i<=againendrow;i++){
+            int colend=colcount-1;
+            if(i==againendrow){
+                colend=againendcol;
+            }
+            else{
+                colend=colcount-1;
+            }
+            for(int j=0;j<=colend;j++){
+                if(j==2||j==3){
+                    continue;
+                }
+                //搜索到了
+                if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
+                    ptr_table->setCurrentCell(i,j);
+                    ptr_table->setFocus();
+                    return;
+                }
+            }
+        }
+        Toast::showMsg("搜索了一圈,没找到你要搜索的内容...", ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
     }
 }
 

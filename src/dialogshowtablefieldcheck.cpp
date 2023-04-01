@@ -15,6 +15,7 @@
 ************************************************************************/
 #include "src/dialogshowtablefieldcheck.h"
 #include "ui_dialogshowtablefieldcheck.h"
+#define UNUSED(x) (void)x
 
 DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,QWidget *parent) :
     QDialog(parent),
@@ -40,7 +41,6 @@ DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,Q
     ptr_table->setRowCount(data->count());
     ptr_table->setAlternatingRowColors(true);
     ptr_table->verticalHeader()->setDefaultSectionSize(22);
-    ptr_table->horizontalHeader()->setStretchLastSection(true);//关键
 
     //表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
@@ -65,9 +65,12 @@ DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,Q
     //设置表格列标题
     QStringList title;
     title.append("列描述");
-    ptr_table->setColumnWidth(0,200);
     title.append("列内容");
+
     ptr_table->setHorizontalHeaderLabels(title);
+    ptr_table->setWordWrap(true);
+    ptr_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ptr_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
 
     //设置表格的内容
     if(data->count()>0){
@@ -90,6 +93,12 @@ DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,Q
             }
         }
     }
+    // 在这里设置行高的时候，会出现很诡异的事情，某些行的高度变得非常高，所以改用定时器在页面加载完毕后再设置
+    dataisOK=true;
+    //bug修正,基于定时器在界面初始化完整之后再设置行高
+    resizeFiletimer = new QTimer(this);
+    connect(resizeFiletimer,SIGNAL(timeout()),this,SLOT(resizeHeight()));
+    resizeFiletimer->start(1);
 }
 
 void DialogShowTableFieldCheck::on_tableWidget_customContextMenuRequested(const QPoint &pos)
@@ -142,5 +151,26 @@ void DialogShowTableFieldCheck::saveScreen(){
         }
         //开始进行截图
         p.save(filePathName,"png");
+    }
+}
+
+
+void  DialogShowTableFieldCheck:: resizeHeight(){
+    for (int row = 0; row < ptr_table->rowCount();row++)
+    {
+        ptr_table->resizeRowToContents(row);
+    }
+    //仅使用一次定时器,后续通过窗口resizeEvent调整
+    resizeFiletimer->stop();
+}
+
+void DialogShowTableFieldCheck:: resizeEvent (QResizeEvent * event ){
+
+    UNUSED(event);
+    if(dataisOK){
+        for (int row = 0; row < ptr_table->rowCount();row++)
+        {
+            ptr_table->resizeRowToContents(row);
+        }
     }
 }

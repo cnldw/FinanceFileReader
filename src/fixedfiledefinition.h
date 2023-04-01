@@ -48,6 +48,7 @@ private:
     //使用的正则匹配文件名
     QString fileName;
     QString fileNameWithVersion;
+    QString  configSegment;
     QString fileDescribe;
     QString fieldLengthType;
 
@@ -115,6 +116,10 @@ public:
     void setVersioncheckmode(int newVersioncheckmode);
     QList<fieldcheckitem> getFieldcheckList() const;
     void addFieldcheckItem(const fieldcheckitem &value);
+    void clearFieldcheckItemList();
+    void setFieldcheckItemList(const QList<fieldcheckitem> &value);
+    const QString &getConfigSegment() const;
+    void setConfigSegment(const QString &newConfigSegment);
 };
 
 #endif // FIXEDFILEDEFINITION_H

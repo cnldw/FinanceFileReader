@@ -39,6 +39,7 @@
 #include "src/ofdcodeinfo.h"
 #include "src/dictionary.h"
 #include "src/configfile.h"
+#include "src/publicdefine.h"
 
 #include "time.h"
 #ifdef Q_OS_WIN32
@@ -87,6 +88,9 @@ public:
      static void  sleep(unsigned int msec);
      static void getFileListFromDirSkipOkfile(QString dirpath,QStringList *filelist);
      static fieldcheckitem parseStringtofieldcheckitem(QString text,int countInt,bool * okFlag);
+     static QList<QStringList> parseCheckItemListtoChineseList(OFDFileDefinition &ofd);
+     static QList<QStringList> parseCheckItemListtoChineseList(CsvFileDefinition &csv);
+     static QList<QStringList> parseCheckItemListtoChineseList(FIXEDFileDefinition &fixed);
      static double CVCcal (QList<QStringList > data);
 
 

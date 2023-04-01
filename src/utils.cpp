@@ -321,14 +321,14 @@ void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigLi
                                         //获取这个文件定义的第i个字段的信息
                                         QStringList iniStrList=ofdIni.value(interfaceList.at(i)+"/"+QString::number(j)).toStringList();
                                         if (iniStrList.isEmpty()||iniStrList.length()!=5){
-                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段定义不正确或者缺失";
+                                            message=ofd.getConfigSegment()+"文件的第"+QString::number(j)+"个字段定义不正确或者缺失";
                                             okFlag=false;
                                             break;
                                         }
                                         //获取字符类型参数
                                         QString fieldType=(QString(iniStrList.at(0)));
                                         if(fieldType.length()<1){
-                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的类型定义缺失,请配置";
+                                            message=ofd.getConfigSegment()+"文件的第"+QString::number(j)+"个字段的类型定义缺失,请配置";
                                             okFlag=false;
                                             break;
                                         }
@@ -336,7 +336,7 @@ void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigLi
                                         bool lengthOk;
                                         int length=(QString(iniStrList.at(1))).toInt(&lengthOk,10);
                                         if(!lengthOk){
-                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的长度定义不是整数";
+                                            message=ofd.getConfigSegment()+"文件的第"+QString::number(j)+"个字段的长度定义不是整数";
                                             okFlag=false;
                                             break;
                                         }
@@ -344,12 +344,12 @@ void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigLi
                                         bool declengthOk;
                                         int declength=(QString(iniStrList.at(2))).toInt(&declengthOk,10);
                                         if(!declengthOk){
-                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义不是整数";
+                                            message=ofd.getConfigSegment()+"文件的第"+QString::number(j)+"个字段的小数长度定义不是整数";
                                             okFlag=false;
                                             break;
                                         }
                                         if(fieldType=="N"&&(declength>=length)){
-                                            message=interfaceList.at(i)+"文件的第"+QString::number(j)+"个字段的小数长度定义应该小于字段总长度";
+                                            message=ofd.getConfigSegment()+"文件的第"+QString::number(j)+"个字段的小数长度定义应该小于字段总长度";
                                             okFlag=false;
                                             break;
                                         }
@@ -387,7 +387,7 @@ void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigLi
                                     }
                                 }
                                 else{
-                                    message=interfaceList.at(i)+"文件的字段总数配置COUNT标记不是有效的整数";
+                                    message=ofd.getConfigSegment()+"文件的字段总数配置COUNT标记不是有效的整数";
                                     okFlag=false;
                                 }
                             }
@@ -426,10 +426,10 @@ void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigLi
                             }
                         }
                     }
-                 ofdconfigfile.setConfigSegmentList(configSegmentList);
-                 ofdConfigList.append(ofdconfigfile);
-                 //记录版本和config的映射关系,方便快速找到某个版本的配置是否存在
-                 ofdQuickMatchIndex.insert(configFileVersion,ofdConfigList.count()-1);
+                    ofdconfigfile.setConfigSegmentList(configSegmentList);
+                    ofdConfigList.append(ofdconfigfile);
+                    //记录版本和config的映射关系,方便快速找到某个版本的配置是否存在
+                    ofdQuickMatchIndex.insert(configFileVersion,ofdConfigList.count()-1);
                 }
             }
         }
@@ -473,6 +473,7 @@ void Utils::load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigLi
                             fileDef.setFileName(QString (list.at(0)));
                             //2解析器配置全名
                             fileDef.setFileNameWithCount(csvType);
+                            fileDef.setConfigSegment("["+csvType+"]");
                             //3文件描述信息
                             QString fileDescribe=loadedCsvInfoIni.value(csvType+"/filedescribe").toString();
                             if(fileDescribe.isEmpty()){
@@ -901,6 +902,7 @@ void Utils::load_FIXEDDefinition(QList<ConfigFile<FIXEDFileDefinition>> &fixedCo
                         fileDef.setFileName(QString (list.at(0)));
                         //2解析器配置全名包含版本号
                         fileDef.setFileNameWithVersion(fixedType);
+                        fileDef.setConfigSegment("["+fixedType+"]");
                         //3文件描述信息
                         QString fileDescribe=loadedFixedInfoIni.value(fixedType+"/filedescribe").toString();
                         if(fileDescribe.isEmpty()){
@@ -2316,7 +2318,7 @@ fieldcheckitem Utils::parseStringtofieldcheckitem(QString text,int countInt,bool
             QList<CheckCondition> list;
             CheckCondition ck;
             //魔法数值-代表本行记录全部检查不分业务
-            ck.index=999999;
+            ck.index=ALL_CHECK_INDEX;
             ck.value="";
             list.append(ck);
             ckitem.addCheckConditions(list);
@@ -2368,13 +2370,22 @@ fieldcheckitem Utils::parseStringtofieldcheckitem(QString text,int countInt,bool
             else{
                 QList<int > fieldListforckitem;
                 for(int xxx=0;xxx<reqlist.count();xxx++){
-                    int fieldindex=reqlist.at(xxx).toInt(&flagcon,10);
-                    if(flagcon&&fieldindex>0&&fieldindex<=countInt){
+                    bool flag=true;
+                    int fieldindex=reqlist.at(xxx).toInt(&flag,10);
+                    if(flag&&fieldindex>0&&fieldindex<=countInt){
                         fieldListforckitem.append(fieldindex-1);
                     }
                     else{
-                        flagcon=false;
-                        break;
+                        //如果存在多余字段,忽略不加载
+                        if(fieldindex>countInt){
+                            continue;
+                        }
+                        //其他错误的不加载
+                        else{
+                            flagcon=false;
+                            break;
+                        }
+
                     }
                 }
                 //字段检查也符合预期--插入本必填
@@ -2395,6 +2406,222 @@ fieldcheckitem Utils::parseStringtofieldcheckitem(QString text,int countInt,bool
         * okFlag=false;
     }
     return ckitem;
+}
+
+QList<QStringList> Utils::parseCheckItemListtoChineseList(OFDFileDefinition &ofd){
+    QList<QStringList> data;
+    for (fieldcheckitem item: ofd.getFieldcheckList()) {
+        QString condListQString;
+        QString fieldListQString;
+        bool thisconflag=true;
+        foreach (auto cclist,item.getCheckConditionsListOverList()){
+            //本分组内条件清单--和关系--必须全部满足
+            QString cond="";
+            thisconflag=true;
+            /////////////////////////////条件检查//////////////////
+            if(cclist.count()==1&&cclist.at(0).index==ALL_CHECK_INDEX){
+                cond="本文件中所有记录";
+            }
+            else{
+                foreach(auto cc,cclist){
+                    if(ofd.getFieldCount()>=cc.index+1){
+                        if(cond.isEmpty()){
+                            cond.append(ofd.getFieldList().at(cc.index).getFieldDescribe()).append("=").append(cc.value);
+                        }
+                        else{
+                            cond.append(",并且").append(ofd.getFieldList().at(cc.index).getFieldDescribe()).append("=").append(cc.value);
+                        }
+                        continue;
+                    }
+                    //一个条件不满足就不检查了
+                    else{
+                        thisconflag=false;
+                        break;
+                    }
+                }
+                //如果有一个条件异常，则也跳出本条件组-继续下一个
+                if(!thisconflag){
+                    continue;
+                }
+            }
+            ////////////////////条件构造结束开始拼接条件////////////////
+            if(thisconflag){
+                if(condListQString.isEmpty()){
+                    condListQString=cond;
+                }
+                else{
+                    condListQString.append(";").append(cond);
+                }
+            }
+        }
+        //构造条件和字段要求清单
+        if(thisconflag){
+            foreach(int i,item.getRequiredFields()){
+                if(i<ofd.getFieldCount()){
+                    if(fieldListQString.isEmpty()){
+                        fieldListQString=ofd.getFieldList().at(i).getFieldDescribe();
+                    }
+                    else{
+                        fieldListQString.append(",").append(ofd.getFieldList().at(i).getFieldDescribe());
+                    }
+                }
+                else{
+                    thisconflag=false;
+                }
+            }
+            if(thisconflag){
+                QStringList line;
+                line.append(condListQString);
+                line.append(fieldListQString);
+                data.append(line);
+            }
+        }
+    }
+    return data;
+}
+
+QList<QStringList> Utils::parseCheckItemListtoChineseList(CsvFileDefinition &csv){
+    QList<QStringList> data;
+    foreach(fieldcheckitem item,csv.getFieldcheckList()) {
+        QString condListQString;
+        QString fieldListQString;
+        bool thisconflag=true;
+        foreach (auto cclist,item.getCheckConditionsListOverList()){
+            //本分组内条件清单--和关系--必须全部满足
+            QString cond="";
+            thisconflag=true;
+            /////////////////////////////条件检查//////////////////
+            if(cclist.count()==1&&cclist.at(0).index==ALL_CHECK_INDEX){
+                cond="本文件中所有记录";
+            }
+            else{
+                foreach(auto cc,cclist){
+                    if(csv.getFieldCount()>=cc.index+1){
+                        if(cond.isEmpty()){
+                            cond.append(csv.getFieldList().at(cc.index).getFieldDescribe()).append("=").append(cc.value);
+                        }
+                        else{
+                            cond.append(",并且").append(csv.getFieldList().at(cc.index).getFieldDescribe()).append("=").append(cc.value);
+                        }
+                        continue;
+                    }
+                    //一个条件不满足就不检查了
+                    else{
+                        thisconflag=false;
+                        break;
+                    }
+                }
+                //如果有一个条件异常，则也跳出本条件组-继续下一个
+                if(!thisconflag){
+                    continue;
+                }
+            }
+            ////////////////////条件构造结束开始拼接条件////////////////
+            if(thisconflag){
+                if(condListQString.isEmpty()){
+                    condListQString=cond;
+                }
+                else{
+                    condListQString.append(";").append(cond);
+                }
+            }
+        }
+        //构造条件和字段要求清单
+        if(thisconflag){
+            foreach(int i,item.getRequiredFields()){
+                if(i<csv.getFieldCount()){
+                    if(fieldListQString.isEmpty()){
+                        fieldListQString=csv.getFieldList().at(i).getFieldDescribe();
+                    }
+                    else{
+                        fieldListQString.append(",").append(csv.getFieldList().at(i).getFieldDescribe());
+                    }
+                }
+                else{
+                    thisconflag=false;
+                }
+            }
+            if(thisconflag){
+                QStringList line;
+                line.append(condListQString);
+                line.append(fieldListQString);
+                data.append(line);
+            }
+        }
+    }
+    return data;
+}
+
+QList<QStringList> Utils::parseCheckItemListtoChineseList(FIXEDFileDefinition &fixed){
+    QList<QStringList> data;
+    for (fieldcheckitem item: fixed.getFieldcheckList()) {
+        QString condListQString;
+        QString fieldListQString;
+        bool thisconflag=true;
+        foreach (auto cclist,item.getCheckConditionsListOverList()){
+            //本分组内条件清单--和关系--必须全部满足
+            QString cond="";
+            thisconflag=true;
+            /////////////////////////////条件检查//////////////////
+            if(cclist.count()==1&&cclist.at(0).index==ALL_CHECK_INDEX){
+                cond="本文件中所有记录";
+            }
+            else{
+                foreach(auto cc,cclist){
+                    if(fixed.getFieldList().count()>=cc.index+1){
+                        if(cond.isEmpty()){
+                            cond.append(fixed.getFieldList().at(cc.index).getFieldDescribe()).append("=").append(cc.value);
+                        }
+                        else{
+                            cond.append(",并且").append(fixed.getFieldList().at(cc.index).getFieldDescribe()).append("=").append(cc.value);
+                        }
+                        continue;
+                    }
+                    //一个条件不满足就不检查了
+                    else{
+                        thisconflag=false;
+                        break;
+                    }
+                }
+                //如果有一个条件异常，则也跳出本条件组-继续下一个
+                if(!thisconflag){
+                    continue;
+                }
+            }
+            ////////////////////条件构造结束开始拼接条件////////////////
+            if(thisconflag){
+                if(condListQString.isEmpty()){
+                    condListQString=cond;
+                }
+                else{
+                    condListQString.append(";").append(cond);
+                }
+            }
+        }
+        //构造条件和字段要求清单
+        if(thisconflag){
+            foreach(int i,item.getRequiredFields()){
+                if(i<fixed.getFieldCountMax()){
+                    if(fieldListQString.isEmpty()){
+                        fieldListQString=fixed.getFieldList().at(i).getFieldDescribe();
+                    }
+                    else{
+                        fieldListQString.append(",").append(fixed.getFieldList().at(i).getFieldDescribe());
+                    }
+                }
+                else{
+                    thisconflag=false;
+                }
+            }
+            if(thisconflag){
+                QStringList line;
+                line.append(condListQString);
+                line.append(fieldListQString);
+                data.append(line);
+            }
+        }
+    }
+    return data;
 }
 
 double Utils::CVCcal (QList<QStringList > list){

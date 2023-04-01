@@ -103,6 +103,7 @@
 #include "src/dialogshowfieldchecklist.h"
 #include "src/dialogchoosefieldcheckexportreport.h"
 #include "src/configfile.h"
+#include "src/formfieldcheckedittools.h"
 
 #ifdef Q_OS_WIN32
 #include "src/formwebtools.h"
@@ -332,9 +333,13 @@ private slots:
 
     void on_actiontableSelectionBehaviorMenu_triggered();
 
+
+    void on_action_fieldcheckconfigtools_triggered();
+
 public slots:
     void getNewHeaderAndFooter(QStringList header,QStringList footer);
     void getFieldExportConfig(QMap <QString,int> config);
+    void getConfigFileChange(bool flag,QStringList modifyConfigList);
 
 
 private:
@@ -346,6 +351,15 @@ private:
     QLabel *statusLabel_ptr_showCount;
     QLabel *statusLabel_ptr_showRowAndCol;
     QLabel *statusLabel_ptr_showMessage;
+
+    //当前打开的文件类别,目前已支持的文件类型0:OFD索引,1:OFD数据,2:CSV文件,3:FIXED定长文件，4:DBF文件，-1未打开文件或者显示了错误信息
+    enum openFileType {NotFileOrErr=-1, OFDIndex=0, OFDFile=1, CSVFile=2, FIXEDFile=3, DBFFile=4};
+    int currentOpenFileType=openFileType::NotFileOrErr;
+
+    //哪些配置被更新了
+    QStringList modifyConfigQStringList;
+
+    bool configFileChange=false;
     //表格指针
     QTableWidget *ptr_table;
     //当前打开的文件的路径
@@ -356,6 +370,7 @@ private:
     QString startUpOrDragfile="";
     //程序启动时读取是否需要加载文件的定时器，以及定时扫描是否拖拽了文件进来
     QTimer *loadFiletimer;
+    /*****配置类****/
     //已经加载的OFDcode信息,记录销售商和TA的代码信息
     QHash<QString, OFDCodeInfo> loadedOfdCodeInfo;
     //已经加载的OFD索引文件信息,记录各种索引文件的文件名开头三个字符
@@ -370,39 +385,34 @@ private:
     QList<ConfigFile<FIXEDFileDefinition>> fixedConfigList;
     //DBF配置文件列表--dbf配置一个文件内就一段,无需嵌套ConfigFile
     QList<DbfFileConfig> dbfConfigList;
-    //用来记录文件头部内容的map,此信息用于文件检查
-    QHash<QString,QString> ofdIndexFileHeaderMap;
-    //用来记录文件标题和内容的list,解析索引类文件时使用
-    QList<QString> indexFileDataList;
+    /*****当前加载使用的配置****/
     //当前正在使用的ofd定义,打开哪个文件,就切换到该文件的ofd定义
     OFDFileDefinition ofd;
     //当前打开的csv文件使用的csv定义，打开哪个文件,就切换到该文件的csv定义
     CsvFileDefinition csv;
     //当前打开的dbf文件使用的定义,和其他类型文件不同，这个变量的内容基于打开的dbf文件里的元信息生成而不是取自配置文件
     DbfFileDefinition dbf;
+    //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
+    FIXEDFileDefinition fixed;
     //用于记录csv文件哪些列是数值的变量，注意，这个是否是数值是猜出来的，根据前几行的数据，仅猜取小数，不猜整数
     QHash<int,FieldIsNumber> CsvFieldIsNumberOrNot;
     //各个插件的地址
     QHash<int,QString> pluginpath;
-    //当前打开的fixed文件使用的fixed定义，打开哪个文件,就切换到改文件的fixed定义
-    FIXEDFileDefinition fixed;
-    //OFD文件头使用Qstring记录,作为原始记录,方便后续保存文件时直接提取文件头
-    QList<QString> ofdFileHeaderQStringList;
-    //OFD文件体,因为包含中英文,且要以GB18030方式记录文件内容,所以使用QByteArray
-    QList<QByteArray> ofdFileContentQByteArrayList;
+    /*****文件头文件体文件尾数据承载****/
+    //通用文件头记录
+    QList<QString> commonHeaderQStringList;
+    //通用文件体记录
+    QList<QByteArray> commonContentQByteArrayList;
+    //通用文件尾记录
+    QList<QString> commonFooterQStringList;
     //打开的ofd文件的文件尾
     QString ofdFooterQString;
+    //用来记录文件头部内容的map,此信息用于文件检查
+    QHash<QString,QString> ofdIndexFileHeaderMap;
+    //用来记录文件标题和内容的list,解析索引类文件时使用
+    QList<QString> ofdindexFileDataList;
     int ofdFooterRowNumber;
-    //打开的CSV文件的文件头
-    QList<QString> csvFileHeaderQStringList;
-    //打开的CSV文件的数据体
-    QList<QByteArray> csvFileContentQByteArrayList;
-    //打开的CSV文件的文件尾
-    QList<QString> csvFooterQStringList;
-    //打开的Fixed文件的文件头
-    QList<QString> fixedFileHeaderQStringList;
-    //打开的Fixed文件的数据体
-    QList<QByteArray> fixedContenQByteArrayList;
+
     //当前打开的dbf文件
     QDbf::QDbfTable dbftablefile;
     //0显示所有记录-1仅显示未删除的记录-2仅显示已删除的记录
@@ -413,11 +423,7 @@ private:
     QList<int> dbfIsNumberFieldType;
     //行映射关系-用于在全浏览和非删除数据和仅删除数据的浏览模式切换
     QHash<int,int> dbfRowMap;
-    //打开的Fixed文件的文件尾
-    QList<QString> fixedFooterQStringList;
-    //当前打开的文件类别,目前已支持的文件类型0:OFD索引,1:OFD数据,2:CSV文件,3:FIXED定长文件，4:DBF文件，-1未打开文件或者显示了错误信息
-    enum openFileType {NotFileOrErr=-1, OFDIndex=0, OFDFile=1, CSVFile=2, FIXEDFile=3, DBFFile=4};
-    int currentOpenFileType=openFileType::NotFileOrErr;
+
     //OFD字典参数，专用于OFD文件，打开文件类别为1时使用
     Dictionary ofdDictionary;
     //通用字典配置-用于csv和定长文件
@@ -591,6 +597,8 @@ private:
     void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
     void initStatusBar();
     void open_file_Dialog();
+
+    void loadConfig(bool isReload=false);
 
     //设置和插件加载
     void load_Setting();

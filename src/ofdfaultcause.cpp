@@ -20,6 +20,16 @@ OFDFaultCause::OFDFaultCause()
 
 }
 
+const QString &OFDFaultCause::getName() const
+{
+    return name;
+}
+
+void OFDFaultCause::setName(const QString &newName)
+{
+    name = newName;
+}
+
 QString OFDFaultCause::getCause() const
 {
     return cause;
