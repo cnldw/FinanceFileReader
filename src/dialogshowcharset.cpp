@@ -15,20 +15,22 @@
 ************************************************************************/
 #include "dialogshowcharset.h"
 #include "ui_dialogshowcharset.h"
+#include "src/publicdefine.h"
 
-DialogShowCharset::DialogShowCharset(QList<QStringList> * rowdata,QWidget *parent) :
+DialogShowCharset::DialogShowCharset(QList<QStringList> * rowdata,QString fileencoding,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogShowCharset)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
 #ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
-    ui->tableWidget->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
 #endif
 #ifdef Q_OS_LINUX
-    this->setStyleSheet("font-size:13px");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+#endif
+#ifdef Q_OS_WIN32
+    this->setStyleSheet(UIFontsWindows);
 #endif
     /**************************************************************/
     //初始化表格
@@ -66,9 +68,9 @@ DialogShowCharset::DialogShowCharset(QList<QStringList> * rowdata,QWidget *paren
     QStringList title;
     title.append("字符");
     title.append("占用字节");
-    title.append("十六进制");
-    title.append("二进制");
-    title.append("ASCII特殊不可见字符说明");
+    title.append(QString("十六进制%1").arg(fileencoding));
+    title.append(QString("十六进制Unicode"));
+    title.append("特殊字符说明");
     ptr_table->setHorizontalHeaderLabels(title);
     //设置表格的内容
     if(rowdata->count()>0){

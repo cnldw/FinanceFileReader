@@ -38,7 +38,7 @@ class DialogShowCharset : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogShowCharset(QList<QStringList> * rowdata,QWidget *parent = 0);
+    explicit DialogShowCharset(QList<QStringList> * rowdata,QString fileencoding,QWidget *parent = 0);
     ~DialogShowCharset();
 
 private slots:

@@ -452,7 +452,7 @@ private:
     //编码识别
     LibUcd m_libucd;
     //允许解析的编码白名单
-    QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-8","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
+    QStringList allowCharsetList={"GBK","GB2312","GB18030","ISO-8859-1","UTF-8","UTF-16","UTF-16BE","UTF-16LE","BIG5","EUC-JP","EUC-KR","X-EUC-TW","SHIFT_JIS"};
     //编码识别尝试识别的分隔符-如考虑新增分隔符则写到这里
     //QChar(1)=SOH=标题开始
     //QChar(31)=1FH=单元分隔符
@@ -528,6 +528,8 @@ private:
     QHash <int,bool> rowHasloaded;
     //
     QHash <QString,QString> specialCharacter;
+    //PUA码提示，或者一字双码提示
+    QHash <uint,QString> puaOrDeletedGBKCharacter;
     //优化器，记录每列表格最宽记录，当异步下次加载数据时，根据是否发生了变化来决定是否需要更新列宽度
     QHash <int,int> columnWidth;
 

@@ -49,6 +49,8 @@ private:
     int endIgnoreRow;
     //编码信息
     QString ecoding;
+    //自动编码标示
+    bool autoecoding=false;
     //字段总和
     int fieldCount;
     //所属配置文件
@@ -126,6 +128,8 @@ public:
     void setConfigSegment(const QString &newConfigSegment);
     void clearFieldcheckItemList();
     void setFieldcheckItemList(const QList<fieldcheckitem> &value);
+    bool getAutoecoding() const;
+    void setAutoecoding(bool newAutoecoding);
 };
 
 #endif // CSVFILEDEFINITION_H

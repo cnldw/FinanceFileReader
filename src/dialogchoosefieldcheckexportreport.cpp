@@ -15,6 +15,7 @@
 ************************************************************************/
 #include "dialogchoosefieldcheckexportreport.h"
 #include "ui_dialogchoosefieldcheckexportreport.h"
+#include "src/publicdefine.h"
 
 DialogChooseFieldCheckExportReport::DialogChooseFieldCheckExportReport(QWidget *parent) :
     QDialog(parent),
@@ -22,12 +23,14 @@ DialogChooseFieldCheckExportReport::DialogChooseFieldCheckExportReport(QWidget *
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
 #ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
 #endif
 #ifdef Q_OS_LINUX
-    this->setStyleSheet("font-size:13px");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+#endif
+#ifdef Q_OS_WIN32
+    this->setStyleSheet(UIFontsWindows);
 #endif
     ui->comboBox->addItem("HTML报告(*.html)");
     ui->comboBox->addItem("TXT报告(*.txt)");

@@ -263,6 +263,16 @@ void CsvFileDefinition::setConfigSegment(const QString &newConfigSegment)
     configSegment = newConfigSegment;
 }
 
+bool CsvFileDefinition::getAutoecoding() const
+{
+    return autoecoding;
+}
+
+void CsvFileDefinition::setAutoecoding(bool newAutoecoding)
+{
+    autoecoding = newAutoecoding;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     

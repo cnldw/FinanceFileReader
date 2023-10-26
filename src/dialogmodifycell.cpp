@@ -15,12 +15,22 @@
 ************************************************************************/
 #include "src/dialogmodifycell.h"
 #include "ui_dialogmodifycell.h"
+#include "src/publicdefine.h"
 
 DialogModifyCell::DialogModifyCell(QString fieldType,int fieldLength,int fieldDecLength,QString value,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogModifyCell)
 {
     ui->setupUi(this);
+#ifdef Q_OS_MAC
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
+#endif
+#ifdef Q_OS_LINUX
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+#endif
+#ifdef Q_OS_WIN32
+    this->setStyleSheet(UIFontsWindows);
+#endif
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint);
     ui->textEdit->setTextColor(QColor("#FF0000"));
     this->fieldType=fieldType;

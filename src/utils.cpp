@@ -518,6 +518,9 @@ void Utils::load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigLi
                             }
                             //8编码信息
                             QString encoding=loadedCsvInfoIni.value(csvType+"/encoding").toString();
+                            if(encoding.toUpper()=="AUTO"){
+                                fileDef.setAutoecoding(true);
+                            }
                             if(encoding.isEmpty()){
                                 fileDef.setEcoding("UTF-8");
                             }

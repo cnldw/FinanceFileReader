@@ -17,7 +17,6 @@
 #include <QApplication>
 #include <QTranslator>
 #include <QStringList>
-#include "src/utils.h"
 
 //曲径通幽处，禅房花木深
 //从此处---开启新世界的大门
@@ -39,6 +38,16 @@ int main(int argc, char *argv[])
     //翻译文件取自Qt的translations目录版本为5.10.0
     translator.load(":/qm/qt_zh_CN.qm");
     app.installTranslator(&translator);
+//--暂时还是由各个界面自行控制字体设置
+//#ifdef Q_OS_MAC
+//    app.setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
+//#endif
+//#ifdef Q_OS_LINUX
+//    app.setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+//#endif
+//#ifdef Q_OS_WIN32
+//    app.setStyleSheet(UIFontsWindows);
+//#endif
     MainWindow w(argc,argv);
     w.show();
     return app.exec();

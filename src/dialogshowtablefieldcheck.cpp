@@ -15,6 +15,7 @@
 ************************************************************************/
 #include "src/dialogshowtablefieldcheck.h"
 #include "ui_dialogshowtablefieldcheck.h"
+#include "src/publicdefine.h"
 #define UNUSED(x) (void)x
 
 DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,QWidget *parent) :
@@ -23,13 +24,14 @@ DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,Q
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
 #ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
-    ui->tableWidget->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
 #endif
 #ifdef Q_OS_LINUX
-    this->setStyleSheet("font-size:13px");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+#endif
+#ifdef Q_OS_WIN32
+    this->setStyleSheet(UIFontsWindows);
 #endif
     /**************************************************************/
     //初始化表格

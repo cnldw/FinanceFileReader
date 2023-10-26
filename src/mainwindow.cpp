@@ -32,11 +32,13 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     setWindowTitle(appName);
     /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
 #ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
-    ui->tableWidget->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
 #endif
 #ifdef Q_OS_LINUX
-    this->setStyleSheet("font-size:13px");
+    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+#endif
+#ifdef Q_OS_WIN32
+    this->setStyleSheet(UIFontsWindows);
 #endif
     /*临时隐藏未开发完毕的功能***************************************/
 
@@ -102,7 +104,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_addNewLineOFDData2End, SIGNAL(triggered()), this, SLOT(addOFDNewLineRowDataEndRow()));
     action_ModifyOFDRow= new QAction(tr("编辑光标所在的整行数据"),this);
     connect(action_ModifyOFDRow, SIGNAL(triggered()), this, SLOT(showMoaifyOFDRow()));
-    action_ShowCharacter = new QAction(tr("十六进制和二进制编码透视(乱码分析)"),this);
+    action_ShowCharacter = new QAction(tr("十六进制字符编码透视(乱码分析)"),this);
     connect(action_ShowCharacter, SIGNAL(triggered()), this, SLOT(showCharacter()));
     action_CsvForceNumber= new QAction(tr("对此列调整数据格式"),this);
     connect(action_CsvForceNumber, SIGNAL(triggered()), this, SLOT(forceNumber()));
@@ -189,6 +191,96 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     specialCharacter.insert("1F","US (unit separator):单元分隔符");
     specialCharacter.insert("20","SP (space):空格");
     specialCharacter.insert("7F","DEL (delete):删除");
+
+    /*52个PUA汉字*/
+    puaOrDeletedGBKCharacter.insert(0xE82F,"PUA码字符,建议使用正式码【㳠,Unicode码3CE0,GB18030码FE6A】");
+    puaOrDeletedGBKCharacter.insert(0xE81A,"PUA码字符,建议使用正式码【㑳,Unicode码3473,GB18030码FE55】");
+    puaOrDeletedGBKCharacter.insert(0xE81B,"PUA码字符,建议使用正式码【㑇,Unicode码3447,GB18030码FE56】");
+    puaOrDeletedGBKCharacter.insert(0xE81F,"PUA码字符,建议使用正式码【㖞,Unicode码359E,GB18030码FE5A】");
+    puaOrDeletedGBKCharacter.insert(0xE821,"PUA码字符,建议使用正式码【㘎,Unicode码360E,GB18030码FE5C】");
+    puaOrDeletedGBKCharacter.insert(0xE820,"PUA码字符,建议使用正式码【㘚,Unicode码361A,GB18030码FE5B】");
+    puaOrDeletedGBKCharacter.insert(0xE824,"PUA码字符,建议使用正式码【㥮,Unicode码396E,GB18030码FE5F】");
+    puaOrDeletedGBKCharacter.insert(0xE825,"PUA码字符,建议使用正式码【㤘,Unicode码3918,GB18030码FE60】");
+    puaOrDeletedGBKCharacter.insert(0xE827,"PUA码字符,建议使用正式码【㧏,Unicode码39CF,GB18030码FE62】");
+    puaOrDeletedGBKCharacter.insert(0xE828,"PUA码字符,建议使用正式码【㧟,Unicode码39DF,GB18030码FE63】");
+    puaOrDeletedGBKCharacter.insert(0xE829,"PUA码字符,建议使用正式码【㩳,Unicode码3A73,GB18030码FE64】");
+    puaOrDeletedGBKCharacter.insert(0xE82A,"PUA码字符,建议使用正式码【㧐,Unicode码39D0,GB18030码FE65】");
+    puaOrDeletedGBKCharacter.insert(0xE82D,"PUA码字符,建议使用正式码【㭎,Unicode码3B4E,GB18030码FE68】");
+    puaOrDeletedGBKCharacter.insert(0xE82E,"PUA码字符,建议使用正式码【㱮,Unicode码3C6E,GB18030码FE69】");
+    puaOrDeletedGBKCharacter.insert(0xE834,"PUA码字符,建议使用正式码【䁖,Unicode码4056,GB18030码FE6F】");
+    puaOrDeletedGBKCharacter.insert(0xE835,"PUA码字符,建议使用正式码【䅟,Unicode码415F,GB18030码FE70】");
+    puaOrDeletedGBKCharacter.insert(0xE837,"PUA码字符,建议使用正式码【䌷,Unicode码4337,GB18030码FE72】");
+    puaOrDeletedGBKCharacter.insert(0xE83C,"PUA码字符,建议使用正式码【䎱,Unicode码43B1,GB18030码FE77】");
+    puaOrDeletedGBKCharacter.insert(0xE83D,"PUA码字符,建议使用正式码【䎬,Unicode码43AC,GB18030码FE78】");
+    puaOrDeletedGBKCharacter.insert(0xE83F,"PUA码字符,建议使用正式码【䏝,Unicode码43DD,GB18030码FE7A】");
+    puaOrDeletedGBKCharacter.insert(0xE840,"PUA码字符,建议使用正式码【䓖,Unicode码44D6,GB18030码FE7B】");
+    puaOrDeletedGBKCharacter.insert(0xE841,"PUA码字符,建议使用正式码【䙡,Unicode码4661,GB18030码FE7C】");
+    puaOrDeletedGBKCharacter.insert(0xE842,"PUA码字符,建议使用正式码【䙌,Unicode码464C,GB18030码FE7D】");
+    puaOrDeletedGBKCharacter.insert(0xE844,"PUA码字符,建议使用正式码【䜣,Unicode码4723,GB18030码FE80】");
+    puaOrDeletedGBKCharacter.insert(0xE845,"PUA码字符,建议使用正式码【䜩,Unicode码4729,GB18030码FE81】");
+    puaOrDeletedGBKCharacter.insert(0xE846,"PUA码字符,建议使用正式码【䝼,Unicode码477C,GB18030码FE82】");
+    puaOrDeletedGBKCharacter.insert(0xE847,"PUA码字符,建议使用正式码【䞍,Unicode码478D,GB18030码FE83】");
+    puaOrDeletedGBKCharacter.insert(0xE849,"PUA码字符,建议使用正式码【䥇,Unicode码4947,GB18030码FE85】");
+    puaOrDeletedGBKCharacter.insert(0xE84C,"PUA码字符,建议使用正式码【䦂,Unicode码4982,GB18030码FE88】");
+    puaOrDeletedGBKCharacter.insert(0xE84A,"PUA码字符,建议使用正式码【䥺,Unicode码497A,GB18030码FE86】");
+    puaOrDeletedGBKCharacter.insert(0xE84B,"PUA码字符,建议使用正式码【䥽,Unicode码497D,GB18030码FE87】");
+    puaOrDeletedGBKCharacter.insert(0xE84D,"PUA码字符,建议使用正式码【䦃,Unicode码4983,GB18030码FE89】");
+    puaOrDeletedGBKCharacter.insert(0xE84E,"PUA码字符,建议使用正式码【䦅,Unicode码4985,GB18030码FE8A】");
+    puaOrDeletedGBKCharacter.insert(0xE84F,"PUA码字符,建议使用正式码【䦆,Unicode码4986,GB18030码FE8B】");
+    puaOrDeletedGBKCharacter.insert(0xE853,"PUA码字符,建议使用正式码【䦶,Unicode码49B3,GB18030码8234A038】");
+    puaOrDeletedGBKCharacter.insert(0xE850,"PUA码字符,建议使用正式码【䦟,Unicode码499F,GB18030码FE8C】");
+    puaOrDeletedGBKCharacter.insert(0xE852,"PUA码字符,建议使用正式码【䦷,Unicode码49B7,GB18030码FE8E】");
+    puaOrDeletedGBKCharacter.insert(0xE851,"PUA码字符,建议使用正式码【䦛,Unicode码499B,GB18030码FE8D】");
+    puaOrDeletedGBKCharacter.insert(0xE85A,"PUA码字符,建议使用正式码【䱷,Unicode码4C77,GB18030码FE96】");
+    puaOrDeletedGBKCharacter.insert(0xE857,"PUA码字符,建议使用正式码【䲟,Unicode码4C9F,GB18030码FE93】");
+    puaOrDeletedGBKCharacter.insert(0xE858,"PUA码字符,建议使用正式码【䲠,Unicode码4CA0,GB18030码FE94】");
+    puaOrDeletedGBKCharacter.insert(0xE859,"PUA码字符,建议使用正式码【䲡,Unicode码4CA1,GB18030码FE95】");
+    puaOrDeletedGBKCharacter.insert(0xE856,"PUA码字符,建议使用正式码【䲣,Unicode码4CA3,GB18030码FE92】");
+    puaOrDeletedGBKCharacter.insert(0xE85B,"PUA码字符,建议使用正式码【䲢,Unicode码4CA2,GB18030码FE97】");
+    puaOrDeletedGBKCharacter.insert(0xE85C,"PUA码字符,建议使用正式码【䴓,Unicode码4D13,GB18030码FE98】");
+    puaOrDeletedGBKCharacter.insert(0xE85D,"PUA码字符,建议使用正式码【䴔,Unicode码4D14,GB18030码FE99】");
+    puaOrDeletedGBKCharacter.insert(0xE85E,"PUA码字符,建议使用正式码【䴕,Unicode码4D15,GB18030码FE9A】");
+    puaOrDeletedGBKCharacter.insert(0xE85F,"PUA码字符,建议使用正式码【䴖,Unicode码4D16,GB18030码FE9B】");
+    puaOrDeletedGBKCharacter.insert(0xE860,"PUA码字符,建议使用正式码【䴗,Unicode码4D17,GB18030码FE9C】");
+    puaOrDeletedGBKCharacter.insert(0xE861,"PUA码字符,建议使用正式码【䴘,Unicode码4D18,GB18030码FE9D】");
+    puaOrDeletedGBKCharacter.insert(0xE862,"PUA码字符,建议使用正式码【䴙,Unicode码4D19,GB18030码FE9E】");
+    puaOrDeletedGBKCharacter.insert(0xE863,"PUA码字符,建议使用正式码【䶮,Unicode码4DAE,GB18030码FE9F】");
+    puaOrDeletedGBKCharacter.insert(0xE26E,"PUA码字符,建议使用正式码【𫢸,Unicode码2B8B8,GB18030码9839C534】");
+    puaOrDeletedGBKCharacter.insert(0xE278,"PUA码字符,建议使用正式码【𪟝,Unicode码2A7DD,GB18030码98368F39】");
+    puaOrDeletedGBKCharacter.insert(0xE284,"PUA码字符,建议使用正式码【𫭟,Unicode码2BB5F,GB18030码99308B33】");
+    puaOrDeletedGBKCharacter.insert(0xE295,"PUA码字符,建议使用正式码【鿍,Unicode码9FCD,GB18030码82359332】");
+    puaOrDeletedGBKCharacter.insert(0xE297,"PUA码字符,建议使用正式码【𫭼,Unicode码2BB7C,GB18030码99308E32】");
+    puaOrDeletedGBKCharacter.insert(0xE2A5,"PUA码字符,建议使用正式码【𫮃,Unicode码2BB83,GB18030码99308E39】");
+    puaOrDeletedGBKCharacter.insert(0xE2BA,"PUA码字符,建议使用正式码【𪤗,Unicode码2A917,GB18030码9836AF33】");
+    puaOrDeletedGBKCharacter.insert(0xE2C8,"PUA码字符,建议使用正式码【𫰛,Unicode码2BC1B,GB18030码99309E31】");
+    /*10个竖排标点和8个汉字构件*/
+    puaOrDeletedGBKCharacter.insert(0xE7C7,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE78D,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE78E,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE78F,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE790,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE791,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE792,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE793,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE794,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE795,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE796,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE81E,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE826,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE82B,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE82C,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE832,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE843,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE854,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE864,"PUA码字符");
+
+    /*6个汉字构件*/
+    puaOrDeletedGBKCharacter.insert(0xE816,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE817,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE818,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE831,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE83B,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE855,"PUA码字符");
 
     //哪些数据类型当作数字处理//////
     dbfIsNumberFieldType.append(QDbf::QDbfField::FloatingPoint);
@@ -295,7 +387,7 @@ void MainWindow::loadFileOnWindowisOpenOrDragEnter(){
 void MainWindow::initStatusBar(){
     //显示总记录数的标签
     statusLabel_ptr_showCount = new QLabel;
-    statusLabel_ptr_showCount->setMinimumSize(210, 20); // 设置标签最小大小
+    statusLabel_ptr_showCount->setMinimumSize(230, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showCount);
     statusLabel_ptr_showCount->setText(tr("记录数:0,共计0页"));
     //显示行列的标签
@@ -319,6 +411,15 @@ void MainWindow::initStatusBar(){
     //开启自定义菜单并进行信号绑定
     statusLabel_ptr_showMessage->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(statusLabel_ptr_showMessage, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showMessage_customContextMenuRequested(QPoint)));
+#ifdef Q_OS_MAC
+    statusLabel_ptr_showMessage->setStyleSheet(UIFontsMacOS);
+#endif
+#ifdef Q_OS_LINUX
+    statusLabel_ptr_showMessage->setStyleSheet(UIFontsLinux);
+#endif
+#ifdef Q_OS_WIN32
+    statusLabel_ptr_showMessage->setStyleSheet(UIFontsWindows);
+#endif
 }
 
 /**
@@ -1227,17 +1328,24 @@ NOT_OF_FILE:
         dataFile.close();
         //读取前50行结束后开始自动识别编码-感谢libucd项目，感谢mozilla
         if(line50ByteArray.count()>0&&line50Qlist.count()>0){
+            //自动识别编码开始
             filecharset=m_libucd.CharsetDetect(line50ByteArray);
             qDebug()<<"自动识别出来的原始编码格式"<<filecharset;
             //不在编码白名单的编码方式暂不支持，统一使用UTF-8解析
             if(!allowCharsetList.contains(filecharset.toUpper())){
+                //不在允许的编码范围的默认转义
                 if(filecharset.toUpper()=="WINDOWS-1252"||filecharset.toUpper()=="WINDOWS-1251"||filecharset.toUpper()=="KOI8-R"){
-                    filecharset="GBK";
+                    filecharset="GB18030";
                 }
                 else{
                     filecharset="UTF-8";
                 }
             }
+            //将gb18030大写
+            if(filecharset.toUpper()=="GB18030"){
+                filecharset="GB18030";
+            }
+            //自动识别编码结束
             QTextCodec *codec=QTextCodec::codecForName(filecharset.toLocal8Bit());
             if(autoFlagList.count()>0){
                 QString useflag="";
@@ -1268,6 +1376,9 @@ NOT_OF_FILE:
                         QStringList fieldList=line.split(rx);
                         //只有一行数据就看谁拆分出来的多
                         if(fieldList.count()>lastCount){
+                            contextBgein=0;
+                            lineQListQStringListUse.clear();
+                            lineQListQStringListUse.append(fieldList);
                             lastCount=fieldList.count();
                             useflag=thisflag;
                         }
@@ -1441,6 +1552,7 @@ NOT_OF_FILE:
                     //构建一个可用的解析配置
                     CsvFileDefinition fileDef;
                     fileDef.setFfAuto(true);
+                    fileDef.setAutoecoding(true);
                     fileDef.setSplit(useflag);
                     fileDef.setEcoding(filecharset);
                     fileDef.setFileIni(fileini);
@@ -1566,25 +1678,22 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
     {
+        QByteArray lineQByteArray;
         QString lineQString;
         int lineNumber=0;
         bool atLastRow=false;
         while (!dataFile.atEnd())
         {
+            lineQByteArray=dataFile.readLine();
             //根据OFD文件的编码解开成unicode字符串
-            lineQString = codecOFD->toUnicode(dataFile.readLine());
+            lineQString = codecOFD->toUnicode(lineQByteArray);
             atLastRow=dataFile.atEnd();
             //记录需要截取的换行符长度
-            if(lineNumber==0){
-                if(lineQString.endsWith("\r\n")){
-                    newLineCharsetLength=2;
-                }
-                else if(lineQString.endsWith("\r")){
-                    newLineCharsetLength=1;
-                }
-                else if(lineQString.endsWith("\n")){
-                    newLineCharsetLength=1;
-                }
+            if(lineQString.endsWith("\r\n")){
+                newLineCharsetLength=2;
+            }
+            else {
+                newLineCharsetLength=1;
             }
             //第一行数据不trim
             if(lineNumber==lineEnd&&lineNumber!=9&&!atLastRow){
@@ -1690,7 +1799,8 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
             if(lineNumber>9&&lineNumber==lineEnd){
                 //当记录数大于0的情况下，如果有极端情况，数据记录数大于0，但是却没任何记录，直接是结束符号，则特殊判断
                 if(lineQString!="OFDCFEND"){
-                    firstLineDateLenght=codecOFD->fromUnicode(lineQString).length();
+                    //这里直接使用lineByteArray长度-换行符
+                    firstLineDateLenght=lineQByteArray.length()-newLineCharsetLength;
                 }
                 else{
                     firstLineDateLenght=-1;
@@ -1829,7 +1939,6 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                     int lineNumber=0;
                     //数据行开始的位置,10行文件头,1行行记录标识+字段行数
                     int beginIndex=11+ofd.getFieldCount();
-                    QString line;
                     bool sucessFlag=true;
                     bool mergeSucessFlag=false;
                     bool mergeFlag=false;
@@ -1837,43 +1946,34 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                     QApplication::setOverrideCursor(Qt::WaitCursor);
                     bool lastRowIsOFDCFEND=false;
                     bool readToLastRow=true;
-                    bool atLastRow=false;
                     while (!dataFile.atEnd())
                     {
+                        lineQByteArray=dataFile.readLine();
+                        lineQString = codecOFD->toUnicode(lineQByteArray);
+                        if(lineQString.endsWith("\r\n")){
+                            newLineCharsetLength=2;
+                            lineQString=lineQString.left(lineQString.length()-newLineCharsetLength);
+                            lineQByteArray=lineQByteArray.left(lineQByteArray.length()-newLineCharsetLength);
+                        }
+                        else if(lineQString.endsWith("\r")||lineQString.endsWith("\n")){
+                            newLineCharsetLength=1;
+                            lineQString=lineQString.left(lineQString.length()-newLineCharsetLength);
+                            lineQByteArray=lineQByteArray.left(lineQByteArray.length()-newLineCharsetLength);
+                        }
+                        //最后一行且没有换行符--这种情况正常来说只发生在最后一行
+                        else{
+                            newLineCharsetLength=0;
+                        }
                         //如果此行记录小于数据开始行,则认为是文件头,存入文件头
                         if(lineNumber<beginIndex){
-                            line = codecOFD->toUnicode(dataFile.readLine());
-                            line=line.left(line.length()-newLineCharsetLength);
-                            commonHeaderQStringList.append(line);
+                            commonHeaderQStringList.append(lineQString);
                         }
                         //数据行,进行数据行分析
                         else{
                             /*******标准数据行*******/
-                            //gb18030编码的字节数组-不包含换行符
-                            QByteArray lineQByteArray=dataFile.readLine();
-                            atLastRow=dataFile.atEnd();
-                            //移除换行符
-                            if(!atLastRow){
-                                lineQByteArray=lineQByteArray.left(lineQByteArray.length()-newLineCharsetLength);
-                            }
-                            //最后一行，要判断最后一行数据结尾是否有换行符
-                            else{
-                                //最后一行可能没有换行符
-                                if(codecOFD->toUnicode(lineQByteArray).endsWith("\r\n")){
-                                    lineQByteArray=lineQByteArray.left(lineQByteArray.length()-2);
-                                }
-                                else if(codecOFD->toUnicode(lineQByteArray).endsWith("\r")){
-                                    lineQByteArray=lineQByteArray.left(lineQByteArray.length()-1);
-                                }
-                                else if(codecOFD->toUnicode(lineQByteArray).endsWith("\n")){
-                                    lineQByteArray=lineQByteArray.left(lineQByteArray.length()-1);
-                                }
-                            }
-                            //转换为unicode字符串
-                            line = codecOFD->toUnicode(lineQByteArray);
                             //分析是否读取到了OFDCFEND结束标记,是的话直接跳出循环
-                            if(line.length()==8){
-                                if(QString::compare(line,"OFDCFEND",Qt::CaseInsensitive)==0){
+                            if(lineQString.length()==8){
+                                if(QString::compare(lineQString,"OFDCFEND",Qt::CaseInsensitive)==0){
                                     lastRowIsOFDCFEND=true;
                                     ofdFooterQString="OFDCFEND";
                                     ofdFooterRowNumber=lineNumber+1;
@@ -1884,7 +1984,7 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                 }
                             }
                             //本行记录长度和接口约束的一致,存入--排除特殊情况，字段中存在换行符但是Qt读取数据时没换行
-                            if(lineQByteArray.length()==ofdrowLength&&!line.contains("\r")&&!line.contains("\n")){
+                            if(lineQByteArray.length()==ofdrowLength&&!lineQString.contains("\r")&&!lineQString.contains("\n")){
                                 if(dataCompressLevel==0){
                                     commonContentQByteArrayList.append(lineQByteArray);
                                 }
@@ -1898,25 +1998,35 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                 //如果已经是最后一行了,且内容不是结束标志--这个问题比较严肃,要提醒用户
                                 if(dataFile.atEnd()){
                                     lastRowIsOFDCFEND=false;
-                                    ofdFooterQString=line;
+                                    ofdFooterQString=lineQString;
                                     ofdFooterRowNumber=lineNumber+1;
                                     break;
                                 }
                                 QString nextLine = "";
                                 //情况1Qt没换行但是含换行符号
-                                if(line.contains("\r")){
-                                    int index=line.indexOf("\r");
-                                    nextLine=line.mid(index+1);
-                                    line=line.mid(0,index);
+                                if(lineQString.contains("\r")){
+                                    int index=lineQString.indexOf("\r");
+                                    nextLine=lineQString.mid(index+1);
+                                    lineQString=lineQString.mid(0,index);
                                 }
-                                else if(line.contains("\n")){
-                                    int index=line.indexOf("\r");
-                                    nextLine=line.mid(index+1);
-                                    line=line.mid(0,index);
+                                else if(lineQString.contains("\n")){
+                                    int index=lineQString.indexOf("\r");
+                                    nextLine=lineQString.mid(index+1);
+                                    lineQString=lineQString.mid(0,index);
                                 }
                                 else{
                                     //读取下一行--QT读取换行
                                     nextLine = codecOFD->toUnicode(dataFile.readLine());
+                                    if(nextLine.endsWith("\r\n")){
+                                        newLineCharsetLength=2;
+                                    }
+                                    else if(nextLine.endsWith("\r")||nextLine.endsWith("\n")){
+                                        newLineCharsetLength=1;
+                                    }
+                                    else{
+                                        newLineCharsetLength=0;
+                                    }
+                                    //去除下一行的换行符获取该行实际数据
                                     nextLine=nextLine.left(nextLine.length()-newLineCharsetLength);
                                 }
                                 //如果下一行是文件结束标志,则不再进行合并尝试,直接报错
@@ -1931,6 +2041,8 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                 else{
                                     //弹窗确认--只弹窗一次
                                     if(!mergeFlag){
+                                        qApp->processEvents();
+                                        QApplication::restoreOverrideCursor();
                                         DialogMergeTip  dialog2(this);
                                         dialog2.setWindowTitle("数据异常换行修复提示");
                                         dialog2.setModal(true);
@@ -1943,40 +2055,42 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                     //异常加入的换行符计入了长度,可能为\r \n \r\n三种情况，占用长度为1，2，以及多了换行符，两行的长度还是标准加一起的
                                     if (mergeFlag){
                                         //硬换行-两行的长度加起来刚好
-                                        if(codecOFD->fromUnicode(line+nextLine).length()==(ofdrowLength-0)){
+                                        if(codecOFD->fromUnicode(lineQString+nextLine).length()==(ofdrowLength-0)){
                                             if(dataCompressLevel==0){
-                                                commonContentQByteArrayList.append(codecOFD->fromUnicode(line+nextLine));
+                                                commonContentQByteArrayList.append(codecOFD->fromUnicode(lineQString+nextLine));
                                             }
                                             else{
-                                                commonContentQByteArrayList.append(qCompress(codecOFD->fromUnicode(line+nextLine),dataCompressLevel));
+                                                commonContentQByteArrayList.append(qCompress(codecOFD->fromUnicode(lineQString+nextLine),dataCompressLevel));
                                             }
                                             mergeSucessFlag=true;
                                             fileChanged=true;
+                                            QApplication::setOverrideCursor(Qt::WaitCursor);
                                         }
                                         //替换了一个字符
-                                        else if(codecOFD->fromUnicode(line+nextLine).length()==(ofdrowLength-1)){
+                                        else if(codecOFD->fromUnicode(lineQString+nextLine).length()==(ofdrowLength-1)){
                                             //20210405算法优化，补充空格补充到字段的末尾
                                             for(int i=0;i<ofd.getFieldCount();i++){
                                                 //这一行的长度正好是第i个字段的结束位置
                                                 //发生换行的位置是第i个字段和第i+1个字段之间--这种情况对下一个字段进行补长度
                                                 if(i<ofd.getFieldCount()-1){
-                                                    if(ofd.getFieldList().at(i+1).getRowBeginIndex()==codecOFD->fromUnicode(line).length()){
+                                                    if(ofd.getFieldList().at(i+1).getRowBeginIndex()==codecOFD->fromUnicode(lineQString).length()){
                                                         QByteArray nextLineByteArray=codecOFD->fromUnicode(nextLine);
                                                         //对下一个字段按缺失的长度位置进行插入空格修补
                                                         nextLineByteArray=nextLineByteArray.insert(ofd.getFieldList().at(i+1).getLength()-1," ");
                                                         if(dataCompressLevel==0){
-                                                            commonContentQByteArrayList.append(codecOFD->fromUnicode(line).append(nextLineByteArray));
+                                                            commonContentQByteArrayList.append(codecOFD->fromUnicode(lineQString).append(nextLineByteArray));
                                                         }
                                                         else{
-                                                            commonContentQByteArrayList.append(qCompress(codecOFD->fromUnicode(line).append(nextLineByteArray),dataCompressLevel));
+                                                            commonContentQByteArrayList.append(qCompress(codecOFD->fromUnicode(lineQString).append(nextLineByteArray),dataCompressLevel));
                                                         }
                                                         mergeSucessFlag=true;
                                                         fileChanged=true;
+                                                        QApplication::setOverrideCursor(Qt::WaitCursor);
                                                         break;
                                                     }
                                                     //发生换行的位置是第i个字段,对第i个字段最后面补空格
-                                                    else if(ofd.getFieldList().at(i+1).getRowBeginIndex()>codecOFD->fromUnicode(line).length()){
-                                                        QByteArray lineByteArray=codecOFD->fromUnicode(line);
+                                                    else if(ofd.getFieldList().at(i+1).getRowBeginIndex()>codecOFD->fromUnicode(lineQString).length()){
+                                                        QByteArray lineByteArray=codecOFD->fromUnicode(lineQString);
                                                         QByteArray nextLineByteArray=codecOFD->fromUnicode(nextLine);
                                                         if(dataCompressLevel==0){
                                                             commonContentQByteArrayList.append(lineByteArray.append(nextLineByteArray).insert(ofd.getFieldList().at(i+1).getRowBeginIndex()-1," "));
@@ -1986,12 +2100,13 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                                         }
                                                         mergeSucessFlag=true;
                                                         fileChanged=true;
+                                                        QApplication::setOverrideCursor(Qt::WaitCursor);
                                                         break;
                                                     }
                                                 }
                                                 //如果是最后一个字段中间有毛病
                                                 else{
-                                                    QByteArray lineByteArray=codecOFD->fromUnicode(line);
+                                                    QByteArray lineByteArray=codecOFD->fromUnicode(lineQString);
                                                     QByteArray nextLineByteArray=codecOFD->fromUnicode(nextLine);
                                                     if(dataCompressLevel==0){
                                                         commonContentQByteArrayList.append(lineByteArray.append(nextLineByteArray).append(" "));
@@ -2001,33 +2116,35 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                                     }
                                                     mergeSucessFlag=true;
                                                     fileChanged=true;
+                                                    QApplication::setOverrideCursor(Qt::WaitCursor);
                                                     break;
                                                 }
                                             }
                                         }
                                         //替换了两个字符
-                                        else if(codecOFD->fromUnicode(line+nextLine).length()==(ofdrowLength-2)){
+                                        else if(codecOFD->fromUnicode(lineQString+nextLine).length()==(ofdrowLength-2)){
                                             for(int i=0;i<ofd.getFieldCount();i++){
                                                 //这一行的长度正好是第i个字段的结束位置
                                                 //发生换行的位置是第i个字段和第i+1个字段之间--这种情况对下一个字段进行补长度
                                                 if(i<ofd.getFieldCount()-1){
-                                                    if(ofd.getFieldList().at(i+1).getRowBeginIndex()==codecOFD->fromUnicode(line).length()){
+                                                    if(ofd.getFieldList().at(i+1).getRowBeginIndex()==codecOFD->fromUnicode(lineQString).length()){
                                                         QByteArray nextLineByteArray=codecOFD->fromUnicode(nextLine);
                                                         //对下一个字段按缺失的长度位置进行插入空格修补
                                                         nextLineByteArray=nextLineByteArray.insert(ofd.getFieldList().at(i+1).getLength()-2,"  ");
                                                         if(dataCompressLevel==0){
-                                                            commonContentQByteArrayList.append(codecOFD->fromUnicode(line).append(nextLineByteArray));
+                                                            commonContentQByteArrayList.append(codecOFD->fromUnicode(lineQString).append(nextLineByteArray));
                                                         }
                                                         else{
-                                                            commonContentQByteArrayList.append(qCompress(codecOFD->fromUnicode(line).append(nextLineByteArray),dataCompressLevel));
+                                                            commonContentQByteArrayList.append(qCompress(codecOFD->fromUnicode(lineQString).append(nextLineByteArray),dataCompressLevel));
                                                         }
                                                         mergeSucessFlag=true;
                                                         fileChanged=true;
+                                                        QApplication::setOverrideCursor(Qt::WaitCursor);
                                                         break;
                                                     }
                                                     //发生换行的位置是第i个字段,对第i个字段最后面补空格
-                                                    else if(ofd.getFieldList().at(i+1).getRowBeginIndex()>codecOFD->fromUnicode(line).length()){
-                                                        QByteArray lineByteArray=codecOFD->fromUnicode(line);
+                                                    else if(ofd.getFieldList().at(i+1).getRowBeginIndex()>codecOFD->fromUnicode(lineQString).length()){
+                                                        QByteArray lineByteArray=codecOFD->fromUnicode(lineQString);
                                                         QByteArray nextLineByteArray=codecOFD->fromUnicode(nextLine);
                                                         if(dataCompressLevel==0){
                                                             commonContentQByteArrayList.append(lineByteArray.append(nextLineByteArray).insert(ofd.getFieldList().at(i+1).getRowBeginIndex()-2,"  "));
@@ -2037,11 +2154,12 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                                         }
                                                         mergeSucessFlag=true;
                                                         fileChanged=true;
+                                                        QApplication::setOverrideCursor(Qt::WaitCursor);
                                                         break;
                                                     }
                                                     //如果是最后一个字段中间有毛病
                                                     else{
-                                                        QByteArray lineByteArray=codecOFD->fromUnicode(line);
+                                                        QByteArray lineByteArray=codecOFD->fromUnicode(lineQString);
                                                         QByteArray nextLineByteArray=codecOFD->fromUnicode(nextLine);
                                                         if(dataCompressLevel==0){
                                                             commonContentQByteArrayList.append(lineByteArray.append(nextLineByteArray).append("  "));
@@ -2051,6 +2169,7 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                                                         }
                                                         mergeSucessFlag=true;
                                                         fileChanged=true;
+                                                        QApplication::setOverrideCursor(Qt::WaitCursor);
                                                         break;
                                                     }
                                                 }
@@ -2165,6 +2284,54 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
         return;
     }
     else{
+        //检索匹配到的所有配置获取最大探测行号
+        int aa=0;
+        int rowNeedLoad=50;
+        //识别最大化预加载行数，用于后续分析
+        for(;aa<csvMatchList.count();aa++){
+            //如果文件名可用且配置可用，则加入
+            CsvFileDefinition csvDef=csvConfigList.at(csvMatchList.at(aa).configFileIndex).getConfigSegmentList().at(csvMatchList.at(aa).configSegmentIndex);
+            //加载头部+尾部+10行buffer
+            int j=csvDef.getDatabeginrowindex()+csvDef.getDatabeginrowindex()+10;
+            if(j>rowNeedLoad){
+                rowNeedLoad=j;
+            }
+        }
+        QByteArray useForCharsetAnalyze;
+        QList<QByteArray> useForFileAnalyze;
+        if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+        {
+            int row=0;
+            while (!dataFile.atEnd()&&row<rowNeedLoad)
+            {
+                QByteArray rowdata=dataFile.readLine();
+                //单行大于20480字节--拒绝读取
+                if(rowdata.size()>163840){
+                    dataFile.close();
+                    statusBar_disPlayMessage("单行数据过长,无法正常解析...");
+                    currentOpenFileType=openFileType::NotFileOrErr;
+                    return;
+                }
+                useForCharsetAnalyze.append(rowdata);
+                useForFileAnalyze.append(rowdata);
+                row++;
+            }
+            dataFile.close();
+            //如果一行数据都没读到，则提示是空文件，结束探测--不再做任何解析尝试
+            if(row==0){
+                dataFile.close();
+                statusBar_disPlayMessage("空文件,没有任何数据记录可工解析");
+                currentOpenFileType=openFileType::NotFileOrErr;
+                return;
+            }
+        }
+        else{
+            int first = currentOpenFilePath.lastIndexOf ("/");
+            QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
+            statusBar_disPlayMessage("文件:"+fileName+"打开失败,请重试");
+            currentOpenFileType=openFileType::NotFileOrErr;
+            return;
+        }
         currentOpenFileType=openFileType::CSVFile;
         //在这里记录下各个配置文件失败无法使用的原因，如果全部匹配失败无法解析，则给用户一个交代！
         QList<FaultCause> faultList;
@@ -2173,208 +2340,359 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
             //如果文件名可用且配置可用，则加入
             CsvFileDefinition csvDef=csvConfigList.at(csvMatchList.at(dd).configFileIndex).getConfigSegmentList().at(csvMatchList.at(dd).configSegmentIndex);
             if(csvDef.getUseAble()){
-                //打开并开始探测文件内容
-                if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                int dataBeginRow=csvDef.getDatabeginrowindex();
+                int endIgnore=csvDef.getEndIgnoreRow();
+                QString filecharset=csvDef.getEcoding();
+                //支持自动分析编码方式
+                if(filecharset.toUpper()=="AUTO"){
+                    //自动识别编码开始
+                    filecharset=m_libucd.CharsetDetect(useForCharsetAnalyze);
+                    qDebug()<<"基于配置自动识别出来的原始编码格式"<<filecharset;
+                    //不在编码白名单的编码方式暂不支持，统一使用UTF-8解析
+                    if(!allowCharsetList.contains(filecharset.toUpper())){
+                        //不在允许的编码范围的默认转义
+                        if(filecharset.toUpper()=="WINDOWS-1252"||filecharset.toUpper()=="WINDOWS-1251"||filecharset.toUpper()=="KOI8-R"){
+                            filecharset="GB18030";
+                        }
+                        else{
+                            filecharset="UTF-8";
+                        }
+                    }
+                    //将gb18030大写
+                    if(filecharset.toUpper()=="GB18030"){
+                        filecharset="GB18030";
+                    }
+                }
+                csvDef.setEcoding(filecharset);
+                QTextCodec *codec=QTextCodec::codecForName(filecharset.toLocal8Bit());
+                QList<QString>csvData;
+                QString line;
+                //按本配置解析文件内容
+                int row=0;
+                qDebug()<<"开始预加载文件内容判断是否符合本规则"<<filecharset;
+                while (row<(dataBeginRow+endIgnore+10)&&row<useForFileAnalyze.count())
                 {
-                    int dataBeginRow=csvDef.getDatabeginrowindex();
-                    int endIgnore=csvDef.getEndIgnoreRow();
-                    //查找可用配置结束，开始分析文件到底是哪个版本
-                    //最大化获取文件内的样本数据
-                    QTextCodec *codec=QTextCodec::codecForName(csvDef.getEcoding().toLocal8Bit());
-                    QList<QString>csvData;
-                    QString line;
-                    //当前读取到的行数
-                    int row=0;
-                    while (!dataFile.atEnd()&&row<(dataBeginRow+endIgnore+10))
-                    {
-                        line = codec->toUnicode(dataFile.readLine());
-                        line=line.remove('\r').remove('\n').trimmed();
-                        csvData.append(line);
-                        row++;
+                    line = codec->toUnicode(useForFileAnalyze.at(row));
+                    line=line.remove('\r').remove('\n');
+                    csvData.append(line);
+                    row++;
+                }
+                //首行检查
+                if(!csvDef.getFirstrowcheck().isEmpty()){
+                    if(csvData.count()>0){
+                        if(csvDef.getFirstrowcheck()!=csvData.at(0)){
+                            FaultCause item;
+                            item.setConfigIndex2(csvMatchList.at(dd));
+                            item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],不满足首行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getFirstrowcheck()).arg(csvData.at(0)));
+                            faultList.append(item);
+                            continue;
+                        }
                     }
-                    dataFile.close();
-                    //如果一行数据都没读到，则提示是空文件，结束探测--不再做任何解析尝试
-                    if(row==0){
-                        dataFile.close();
-                        statusBar_disPlayMessage("空的CSV文件,没有任何数据记录可工解析");
-                        return;
+                }
+                //尾行检查--只有空文件的时候才检查,因为文件很大的话可能压根没加载最后一行
+                if(!csvDef.getLastrowcheck().isEmpty()){
+                    //行数恰好满足0行数据要求
+                    if(csvData.count()==(dataBeginRow+endIgnore-1)){
+                        if(csvDef.getLastrowcheck()!=csvData.last()){
+                            FaultCause item;
+                            item.setConfigIndex2(csvMatchList.at(dd));
+                            item.setCause(QString("配置文件中标注文件最后1行内容应该是[%1]，但是打开的文件最后1行是[%2],不满足尾行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getLastrowcheck()).arg(csvData.last()));
+                            faultList.append(item);
+                            continue;
+                        }
                     }
+                }
+                //存在标题行----需要从文件内提取标题行
+                if(csvDef.getTitlerowindex()>0){
+                    //存在标题行但是文件内的数据行数低于标题所在行，无内容，无法判断
+                    if(csvData.count()<csvDef.getTitlerowindex()){
+                        FaultCause item;
+                        item.setConfigIndex2(csvMatchList.at(dd));
+                        item.setCause("未在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行找到有效标题行,无法认定文件属于此类型");
+                        faultList.append(item);
+                        continue;
+                    }
+                    //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
                     else{
-                        //首行检查
-                        if(!csvDef.getFirstrowcheck().isEmpty()){
-                            if(csvData.count()>0){
-                                if(csvDef.getFirstrowcheck()!=csvData.at(0)){
-                                    FaultCause item;
-                                    item.setConfigIndex2(csvMatchList.at(dd));
-                                    item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],不满足首行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getFirstrowcheck()).arg(csvData.at(0)));
-                                    faultList.append(item);
-                                    continue;
-                                }
-                            }
+                        QString titleRowString=csvData.at(csvDef.getTitlerowindex()-1);
+                        if(titleRowString.isEmpty()){
+                            FaultCause item;
+                            item.setConfigIndex2(csvMatchList.at(dd));
+                            item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行找到的标题内容为空，无法提取接口文件列名信息");
+                            faultList.append(item);
+                            continue;
                         }
-                        //尾行检查--只有空文件的时候才检查,因为文件很大的话可能压根没加载最后一行
-                        if(!csvDef.getLastrowcheck().isEmpty()){
-                            //行数恰好满足0行数据要求
-                            if(csvData.count()==(dataBeginRow+endIgnore-1)){
-                                if(csvDef.getLastrowcheck()!=csvData.last()){
-                                    FaultCause item;
-                                    item.setConfigIndex2(csvMatchList.at(dd));
-                                    item.setCause(QString("配置文件中标注文件最后1行内容应该是[%1]，但是打开的文件最后1行是[%2],不满足尾行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getLastrowcheck()).arg(csvData.last()));
-                                    faultList.append(item);
-                                    continue;
-                                }
-                            }
+                        //如果需要忽略最后的分隔符
+                        //注意不能只是减去最后一位，也许分隔符长度不是1呢
+                        if(csvDef.getEndwithflag()=="1"){
+                            titleRowString= titleRowString.left(titleRowString.length()-csvDef.getSplit().length());
                         }
-                        //存在标题行----需要从文件内提取标题行
-                        if(csvDef.getTitlerowindex()>0){
-                            //存在标题行但是文件内的数据行数低于标题所在行，无内容，无法判断
-                            if(csvData.count()<csvDef.getTitlerowindex()){
+                        QStringList fieldTitle;
+                        //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+                        if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
+                            QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                            fieldTitle=titleRowString.split(rx);
+                        }
+                        else{
+                            fieldTitle=titleRowString.split(csvDef.getSplit());
+                        }
+                        //如果文件字段数是-1.则代表根据标题或者第一行数据自动分析列数和列标题，以标题行或者第一行数据自己造标题数据为准来更新列数
+                        if(csvDef.getFieldCount()==-1){
+                            int countFromtitle=fieldTitle.count();
+                            if(countFromtitle<2){
                                 FaultCause item;
                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                item.setCause("未在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行找到有效标题行,无法认定文件属于此类型");
+                                item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的标题列数为小于2，可能不是该类型的文件");
                                 faultList.append(item);
                                 continue;
                             }
-                            //存在标题行并且数据文件内也有标题行数据，比对标题有多少列，和定义的一致否
                             else{
-                                QString titleRowString=csvData.at(csvDef.getTitlerowindex()-1);
-                                if(titleRowString.isEmpty()){
-                                    FaultCause item;
-                                    item.setConfigIndex2(csvMatchList.at(dd));
-                                    item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行找到的标题内容为空，无法提取接口文件列名信息");
-                                    faultList.append(item);
-                                    continue;
-                                }
-                                //如果需要忽略最后的分隔符
-                                //注意不能只是减去最后一位，也许分隔符长度不是1呢
-                                if(csvDef.getEndwithflag()=="1"){
-                                    titleRowString= titleRowString.left(titleRowString.length()-csvDef.getSplit().length());
-                                }
-                                QStringList fieldTitle;
-                                //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
-                                if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
-                                    QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
-                                    fieldTitle=titleRowString.split(rx);
-                                }
-                                else{
-                                    fieldTitle=titleRowString.split(csvDef.getSplit());
-                                }
-                                //如果文件字段数是-1.则代表根据标题或者第一行数据自动分析列数和列标题，以标题行或者第一行数据自己造标题数据为准来更新列数
-                                if(csvDef.getFieldCount()==-1){
-                                    int countFromtitle=fieldTitle.count();
-                                    if(countFromtitle<2){
-                                        FaultCause item;
-                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                        item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的标题列数为小于2，可能不是该类型的文件");
-                                        faultList.append(item);
-                                        continue;
-                                    }
-                                    else{
-                                        //检查版本
-                                        if(csvDef.getVersioncheckrow()>0){
-                                            if(csvData.count()<csvDef.getVersioncheckrow()){
-                                                FaultCause item;
-                                                item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行，但是打开的文件无法获取到本行数据，可能不是该类型的文件");
-                                                faultList.append(item);
-                                                continue;
-                                            }
-                                            else{
-                                                if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
-                                                    if (csv.getVersioncheckmode()==0){
-                                                        FaultCause item;
-                                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                        faultList.append(item);
-                                                        continue;
-                                                    }
-                                                    else {
-                                                        FaultCause item;
-                                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                        faultList.append(item);
-                                                        continue;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        //开始加载配置文件
-                                        csv=csvDef;
-                                        //开始更新文件列数到临时csv配置变量
-                                        csv.setFieldCount(fieldTitle.count());
-                                        //开始更新列标题到临时csv配置变量
-                                        QList <CsvFieldDefinition> fieldList;
-                                        //10开始循环加载本文件类型的字段信息///////////////
-                                        for(int r=0;r<fieldTitle.count();r++){
-                                            CsvFieldDefinition fieldItem;
-                                            QString name=fieldTitle.at(r);
-                                            if(name.isEmpty()){
-                                                fieldItem.setFieldDescribe("未定义的字段名(第"+QString::number(r+1)+"列)");
-                                            }
-                                            else{
-                                                fieldItem.setFieldDescribe(name);
-                                            }
-                                            //添加此字段信息到文件定义
-                                            fieldList.append(fieldItem);
-                                        }
-                                        csv.setFieldList(fieldList);
-                                        load_csvFileData(fieldTitle);
-                                        return;
-                                    }
-                                }
-                                //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
-                                else if(fieldTitle.count()==csvDef.getFieldCount()){
-                                    if(csvDef.getVersioncheckrow()>0){
-                                        //版本检查
-                                        if(csvData.count()<csvDef.getVersioncheckrow()){
-                                            FaultCause item;
-                                            item.setConfigIndex2(csvMatchList.at(dd));
-                                            item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行，但是打开的文件无法获取到本行数据，可能不是该类型的文件");
-                                            faultList.append(item);
-                                            continue;
-                                        }
-                                        else{
-                                            if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
-                                                if (csv.getVersioncheckmode()==0){
-                                                    FaultCause item;
-                                                    item.setConfigIndex2(csvMatchList.at(dd));
-                                                    item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                    faultList.append(item);
-                                                    continue;
-                                                }
-                                                else {
-                                                    FaultCause item;
-                                                    item.setConfigIndex2(csvMatchList.at(dd));
-                                                    item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                    faultList.append(item);
-                                                    continue;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    //开始加载数据
-                                    csv=csvDef;
-                                    load_csvFileData(fieldTitle);
-                                    return;
-                                }
-                                else{
-                                    FaultCause item;
-                                    item.setConfigIndex2(csvMatchList.at(dd));
-                                    item.setCause("在文件第"+QString::number(csvDef.getTitlerowindex())+"行找到的标题列数["+QString::number(fieldTitle.count())+"]和配置文件中的["+QString::number(csvDef.getFieldCount())+"]不一致,可能不是本版本的文件,无法解析,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
-                                    faultList.append(item);
-                                    continue;
-                                }
-                            }
-                        }
-                        //如果不存在标题行---标题定义在配置文件
-                        else{
-                            //文件内的行数<=文件头+文件尾部忽略行【既文件无实质性数据内容】
-                            if (csvData.count()<=(dataBeginRow+endIgnore-1)){
+                                //检查版本
                                 if(csvDef.getVersioncheckrow()>0){
                                     if(csvData.count()<csvDef.getVersioncheckrow()){
                                         FaultCause item;
                                         item.setConfigIndex2(csvMatchList.at(dd));
-                                        item.setCause(QString("在本配置描述的文件第%1行为文件内版本检查行,但是打开的文件只有%2行,无法获取到本行数据,可能不是该类型的文件").arg(csvDef.getVersioncheckrow()).arg(csvData.count()));
+                                        item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行，但是打开的文件无法获取到本行数据，可能不是该类型的文件");
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                    else{
+                                        if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
+                                            if (csv.getVersioncheckmode()==0){
+                                                FaultCause item;
+                                                item.setConfigIndex2(csvMatchList.at(dd));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                faultList.append(item);
+                                                continue;
+                                            }
+                                            else {
+                                                FaultCause item;
+                                                item.setConfigIndex2(csvMatchList.at(dd));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                faultList.append(item);
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                }
+                                //开始加载配置文件
+                                csv=csvDef;
+                                //开始更新文件列数到临时csv配置变量
+                                csv.setFieldCount(fieldTitle.count());
+                                //开始更新列标题到临时csv配置变量
+                                QList <CsvFieldDefinition> fieldList;
+                                //10开始循环加载本文件类型的字段信息///////////////
+                                for(int r=0;r<fieldTitle.count();r++){
+                                    CsvFieldDefinition fieldItem;
+                                    QString name=fieldTitle.at(r);
+                                    if(name.isEmpty()){
+                                        fieldItem.setFieldDescribe("未定义的字段名(第"+QString::number(r+1)+"列)");
+                                    }
+                                    else{
+                                        fieldItem.setFieldDescribe(name);
+                                    }
+                                    //添加此字段信息到文件定义
+                                    fieldList.append(fieldItem);
+                                }
+                                csv.setFieldList(fieldList);
+                                load_csvFileData(fieldTitle);
+                                return;
+                            }
+                        }
+                        //如果定义的文件字段数和文件内的一致，则就是该版本的文件！
+                        else if(fieldTitle.count()==csvDef.getFieldCount()){
+                            if(csvDef.getVersioncheckrow()>0){
+                                //版本检查
+                                if(csvData.count()<csvDef.getVersioncheckrow()){
+                                    FaultCause item;
+                                    item.setConfigIndex2(csvMatchList.at(dd));
+                                    item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行，但是打开的文件无法获取到本行数据，可能不是该类型的文件");
+                                    faultList.append(item);
+                                    continue;
+                                }
+                                else{
+                                    if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
+                                        if (csv.getVersioncheckmode()==0){
+                                            FaultCause item;
+                                            item.setConfigIndex2(csvMatchList.at(dd));
+                                            item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                            faultList.append(item);
+                                            continue;
+                                        }
+                                        else {
+                                            FaultCause item;
+                                            item.setConfigIndex2(csvMatchList.at(dd));
+                                            item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                            faultList.append(item);
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                            //开始加载数据
+                            csv=csvDef;
+                            load_csvFileData(fieldTitle);
+                            return;
+                        }
+                        else{
+                            FaultCause item;
+                            item.setConfigIndex2(csvMatchList.at(dd));
+                            item.setCause("在文件第"+QString::number(csvDef.getTitlerowindex())+"行找到的标题列数["+QString::number(fieldTitle.count())+"]和配置文件中的["+QString::number(csvDef.getFieldCount())+"]不一致,可能不是本版本的文件,无法解析,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                            faultList.append(item);
+                            continue;
+                        }
+                    }
+                }
+                //如果不存在标题行---标题定义在配置文件
+                else{
+                    //文件内的行数<=文件头+文件尾部忽略行【既文件无实质性数据内容】
+                    if (csvData.count()<=(dataBeginRow+endIgnore-1)){
+                        if(csvDef.getVersioncheckrow()>0){
+                            if(csvData.count()<csvDef.getVersioncheckrow()){
+                                FaultCause item;
+                                item.setConfigIndex2(csvMatchList.at(dd));
+                                item.setCause(QString("在本配置描述的文件第%1行为文件内版本检查行,但是打开的文件只有%2行,无法获取到本行数据,可能不是该类型的文件").arg(csvDef.getVersioncheckrow()).arg(csvData.count()));
+                                faultList.append(item);
+                                continue;
+                            }
+                            else{
+                                if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
+                                    if (csv.getVersioncheckmode()==0){
+                                        FaultCause item;
+                                        item.setConfigIndex2(csvMatchList.at(dd));
+                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                    else {
+                                        FaultCause item;
+                                        item.setConfigIndex2(csvMatchList.at(dd));
+                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                }
+                                //空文件，版本号又对
+                                else{
+                                    //文件记录数正好等于空文件行数
+                                    if(csvData.count()==(dataBeginRow+endIgnore-1)){
+                                        //开始加载配置文件
+                                        csv=csvDef;
+                                        QStringList fieldTitle;
+                                        //开始循环设置本文件类型的字段信息///////////////
+                                        if(csv.getFieldCount()>0){
+                                            QStringList fieldTitle;
+                                            for(int tc=0;tc<csv.getFieldList().count();tc++){
+                                                fieldTitle.append(csv.getFieldList().at(tc).getFieldDescribe());
+                                            }
+                                            load_csvFileData(fieldTitle);
+                                            return;
+                                        }
+                                        //空文件,且自动获取列数--这个时候需要尝试去文件中获取列信息--基于第一行数据
+                                        else{
+                                            if(csvData.count()>=csvDef.getDatabeginrowindex()){
+                                                QString firstDataRowString=csvData.at(csvDef.getDatabeginrowindex()-1);
+                                                //如果需要忽略最后一个多余的分隔符
+                                                if(csvDef.getEndwithflag()=="1"){
+                                                    firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
+                                                }
+                                                int fieldCountFirstRow=0;
+                                                //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+                                                if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
+                                                    QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                                                    fieldCountFirstRow=firstDataRowString.split(rx).count();
+                                                }
+                                                else{
+                                                    fieldCountFirstRow=firstDataRowString.split(csvDef.getSplit()).count();
+                                                }
+                                                if(fieldCountFirstRow<2){
+                                                    FaultCause item;
+                                                    item.setConfigIndex2(csvMatchList.at(dd));
+                                                    item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的数据列数小于2,无法断定为该类型的文件");
+                                                    faultList.append(item);
+                                                    continue;
+                                                }
+                                                else{
+                                                    //开始加载配置文件
+                                                    csv=csvDef;
+                                                    //开始更新文件列数到临时csv配置变量
+                                                    csv.setFieldCount(fieldCountFirstRow);
+                                                    //开始更新列标题到临时csv配置变量
+                                                    QList <CsvFieldDefinition> fieldList;
+                                                    QStringList fieldTitle;
+                                                    //开始循环设置本文件类型的字段信息///////////////
+                                                    //对于不带标题的并且字段数是auto的，直接设置标题
+                                                    for(int r=0;r<fieldCountFirstRow;r++){
+                                                        CsvFieldDefinition fieldItem;
+                                                        QString name="未定义的字段名(第"+QString::number(r+1)+"列)";
+                                                        fieldTitle.append(name);
+                                                        fieldItem.setFieldDescribe(name);
+                                                        //添加此字段信息到文件定义
+                                                        fieldList.append(fieldItem);
+                                                    }
+                                                    csv.setFieldList(fieldList);
+                                                    load_csvFileData(fieldTitle);
+                                                    return;
+                                                }
+                                            }
+                                            else{
+                                                FaultCause item;
+                                                item.setConfigIndex2(csvMatchList.at(dd));
+                                                item.setCause("文件内无标题行且字段数配置配置为AUTO的情况下,至少需要一行数据内容才能分析文件是否满足此规则~~");
+                                                faultList.append(item);
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        FaultCause item;
+                                        item.setConfigIndex2(csvMatchList.at(dd));
+                                        item.setCause(QString("根据此解析规则,空文件至少也应该有%1行,%2行文件头,%3行文件尾~~,但是目前文件只有%4行,无法断定打开的文件满足此解析规则").arg(dataBeginRow+endIgnore-1).arg(dataBeginRow-1).arg(endIgnore).arg(csvData.count()));
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                        else{
+                            FaultCause item;
+                            item.setConfigIndex2(csvMatchList.at(dd));
+                            item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件并且未开启版本检查,程序无法确认本配置符合这个文件的解析规则,程序至少需要一行数据去评估是否满足本解析规则....");
+                            faultList.append(item);
+                            continue;
+                        }
+                    }
+                    else{
+                        //有数据的第一种情况
+                        //配置不带标题行，但是字段数又是auto的场景
+                        if(csvDef.getFieldCount()==-1){
+                            QString firstDataRowString=csvData.at(csvDef.getDatabeginrowindex()-1);
+                            //如果需要忽略最后一个多余的分隔符
+                            if(csvDef.getEndwithflag()=="1"){
+                                firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
+                            }
+                            int fieldCountFirstRow=0;
+                            //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+                            if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
+                                QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                                fieldCountFirstRow=firstDataRowString.split(rx).count();
+                            }
+                            else{
+                                fieldCountFirstRow=firstDataRowString.split(csvDef.getSplit()).count();
+                            }
+                            if(fieldCountFirstRow<2){
+                                FaultCause item;
+                                item.setConfigIndex2(csvMatchList.at(dd));
+                                item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的数据列数小于2,无法断定为该类型的文件");
+                                faultList.append(item);
+                                continue;
+                            }
+                            else{
+                                if(csvDef.getVersioncheckrow()>0){
+                                    if(csvData.count()<csvDef.getVersioncheckrow()){
+                                        FaultCause item;
+                                        item.setConfigIndex2(csvMatchList.at(dd));
+                                        item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行,但是打开的文件无法获取到本行数据,可能不是该类型的文件");
                                         faultList.append(item);
                                         continue;
                                     }
@@ -2395,244 +2713,95 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                                 continue;
                                             }
                                         }
-                                        //空文件，版本号又对
-                                        else{
-                                            //文件记录数正好等于空文件行数
-                                            if(csvData.count()==(dataBeginRow+endIgnore-1)){
-                                                //开始加载配置文件
-                                                csv=csvDef;
-                                                QStringList fieldTitle;
-                                                //开始循环设置本文件类型的字段信息///////////////
-                                                if(csv.getFieldCount()>0){
-                                                    QStringList fieldTitle;
-                                                    for(int tc=0;tc<csv.getFieldList().count();tc++){
-                                                        fieldTitle.append(csv.getFieldList().at(tc).getFieldDescribe());
-                                                    }
-                                                    load_csvFileData(fieldTitle);
-                                                    return;
-                                                }
-                                                //空文件,且自动获取列数--这个时候需要尝试去文件中获取列信息--基于第一行数据
-                                                else{
-                                                    if(csvData.count()>=csvDef.getDatabeginrowindex()){
-                                                        QString firstDataRowString=csvData.at(csvDef.getDatabeginrowindex()-1);
-                                                        //如果需要忽略最后一个多余的分隔符
-                                                        if(csvDef.getEndwithflag()=="1"){
-                                                            firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
-                                                        }
-                                                        int fieldCountFirstRow=0;
-                                                        //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
-                                                        if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
-                                                            QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
-                                                            fieldCountFirstRow=firstDataRowString.split(rx).count();
-                                                        }
-                                                        else{
-                                                            fieldCountFirstRow=firstDataRowString.split(csvDef.getSplit()).count();
-                                                        }
-                                                        if(fieldCountFirstRow<2){
-                                                            FaultCause item;
-                                                            item.setConfigIndex2(csvMatchList.at(dd));
-                                                            item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的数据列数小于2,无法断定为该类型的文件");
-                                                            faultList.append(item);
-                                                            continue;
-                                                        }
-                                                        else{
-                                                            //开始加载配置文件
-                                                            csv=csvDef;
-                                                            //开始更新文件列数到临时csv配置变量
-                                                            csv.setFieldCount(fieldCountFirstRow);
-                                                            //开始更新列标题到临时csv配置变量
-                                                            QList <CsvFieldDefinition> fieldList;
-                                                            QStringList fieldTitle;
-                                                            //开始循环设置本文件类型的字段信息///////////////
-                                                            //对于不带标题的并且字段数是auto的，直接设置标题
-                                                            for(int r=0;r<fieldCountFirstRow;r++){
-                                                                CsvFieldDefinition fieldItem;
-                                                                QString name="未定义的字段名(第"+QString::number(r+1)+"列)";
-                                                                fieldTitle.append(name);
-                                                                fieldItem.setFieldDescribe(name);
-                                                                //添加此字段信息到文件定义
-                                                                fieldList.append(fieldItem);
-                                                            }
-                                                            csv.setFieldList(fieldList);
-                                                            load_csvFileData(fieldTitle);
-                                                            return;
-                                                        }
-                                                    }
-                                                    else{
-                                                        FaultCause item;
-                                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                                        item.setCause("文件内无标题行且字段数配置配置为AUTO的情况下,至少需要一行数据内容才能分析文件是否满足此规则~~");
-                                                        faultList.append(item);
-                                                        continue;
-                                                    }
-                                                }
+                                    }
+                                }
+                                //开始加载配置文件
+                                csv=csvDef;
+                                //开始更新文件列数到临时csv配置变量
+                                csv.setFieldCount(fieldCountFirstRow);
+                                //开始更新列标题到临时csv配置变量
+                                QList <CsvFieldDefinition> fieldList;
+                                QStringList fieldTitle;
+                                //开始循环设置本文件类型的字段信息///////////////
+                                //对于不带标题的并且字段数是auto的，直接设置标题
+                                for(int r=0;r<fieldCountFirstRow;r++){
+                                    CsvFieldDefinition fieldItem;
+                                    QString name="未定义的字段名(第"+QString::number(r+1)+"列)";
+                                    fieldTitle.append(name);
+                                    fieldItem.setFieldDescribe(name);
+                                    //添加此字段信息到文件定义
+                                    fieldList.append(fieldItem);
+                                }
+                                csv.setFieldList(fieldList);
+                                load_csvFileData(fieldTitle);
+                                return;
+                            }
+                        }
+                        //有数据的第2种场景
+                        //存在明确的字段数定义在配置文件中时
+                        else{
+                            QString firstDataRowString=csvData.at(csvDef.getDatabeginrowindex()-1);
+                            //如果需要忽略最后一个多余的分隔符
+                            if(csvDef.getEndwithflag()=="1"){
+                                firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
+                            }
+                            int fieldCount=0;
+                            //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
+                            if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
+                                QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
+                                fieldCount=firstDataRowString.split(rx).count();
+                            }
+                            else{
+                                fieldCount=firstDataRowString.split(csvDef.getSplit()).count();
+                            }
+                            //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
+                            if(fieldCount==csvDef.getFieldCount()){
+                                if(csvDef.getVersioncheckrow()>0){
+                                    if(csvData.count()<csvDef.getVersioncheckrow()){
+                                        FaultCause item;
+                                        item.setConfigIndex2(csvMatchList.at(dd));
+                                        item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行，但是打开的文件无法获取到本行数据，可能不是该类型的文件");
+                                        faultList.append(item);
+                                        continue;
+                                    }
+                                    else{
+                                        if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
+                                            if (csv.getVersioncheckmode()==0){
+                                                FaultCause item;
+                                                item.setConfigIndex2(csvMatchList.at(dd));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                faultList.append(item);
+                                                continue;
                                             }
                                             else {
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause(QString("根据此解析规则,空文件至少也应该有%1行,%2行文件头,%3行文件尾~~,但是目前文件只有%4行,无法断定打开的文件满足此解析规则").arg(dataBeginRow+endIgnore-1).arg(dataBeginRow-1).arg(endIgnore).arg(csvData.count()));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
                                                 faultList.append(item);
                                                 continue;
                                             }
                                         }
                                     }
                                 }
-                                else{
-                                    FaultCause item;
-                                    item.setConfigIndex2(csvMatchList.at(dd));
-                                    item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件并且未开启版本检查,程序无法确认本配置符合这个文件的解析规则,程序至少需要一行数据去评估是否满足本解析规则....");
-                                    faultList.append(item);
-                                    continue;
+                                //开始加载数据
+                                csv=csvDef;
+                                //文件内没标题的从配置读取
+                                QStringList fieldTitle;
+                                for(int tc=0;tc<csv.getFieldList().count();tc++){
+                                    fieldTitle.append(csv.getFieldList().at(tc).getFieldDescribe());
                                 }
+                                load_csvFileData(fieldTitle);
+                                return;
                             }
                             else{
-                                //有数据的第一种情况
-                                //配置不带标题行，但是字段数又是auto的场景
-                                if(csvDef.getFieldCount()==-1){
-                                    QString firstDataRowString=csvData.at(csvDef.getDatabeginrowindex()-1);
-                                    //如果需要忽略最后一个多余的分隔符
-                                    if(csvDef.getEndwithflag()=="1"){
-                                        firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
-                                    }
-                                    int fieldCountFirstRow=0;
-                                    //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
-                                    if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
-                                        QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
-                                        fieldCountFirstRow=firstDataRowString.split(rx).count();
-                                    }
-                                    else{
-                                        fieldCountFirstRow=firstDataRowString.split(csvDef.getSplit()).count();
-                                    }
-                                    if(fieldCountFirstRow<2){
-                                        FaultCause item;
-                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                        item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的数据列数小于2,无法断定为该类型的文件");
-                                        faultList.append(item);
-                                        continue;
-                                    }
-                                    else{
-                                        if(csvDef.getVersioncheckrow()>0){
-                                            if(csvData.count()<csvDef.getVersioncheckrow()){
-                                                FaultCause item;
-                                                item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行,但是打开的文件无法获取到本行数据,可能不是该类型的文件");
-                                                faultList.append(item);
-                                                continue;
-                                            }
-                                            else{
-                                                if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
-                                                    if (csv.getVersioncheckmode()==0){
-                                                        FaultCause item;
-                                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                        faultList.append(item);
-                                                        continue;
-                                                    }
-                                                    else {
-                                                        FaultCause item;
-                                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                        faultList.append(item);
-                                                        continue;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        //开始加载配置文件
-                                        csv=csvDef;
-                                        //开始更新文件列数到临时csv配置变量
-                                        csv.setFieldCount(fieldCountFirstRow);
-                                        //开始更新列标题到临时csv配置变量
-                                        QList <CsvFieldDefinition> fieldList;
-                                        QStringList fieldTitle;
-                                        //开始循环设置本文件类型的字段信息///////////////
-                                        //对于不带标题的并且字段数是auto的，直接设置标题
-                                        for(int r=0;r<fieldCountFirstRow;r++){
-                                            CsvFieldDefinition fieldItem;
-                                            QString name="未定义的字段名(第"+QString::number(r+1)+"列)";
-                                            fieldTitle.append(name);
-                                            fieldItem.setFieldDescribe(name);
-                                            //添加此字段信息到文件定义
-                                            fieldList.append(fieldItem);
-                                        }
-                                        csv.setFieldList(fieldList);
-                                        load_csvFileData(fieldTitle);
-                                        return;
-                                    }
-                                }
-                                //有数据的第2种场景
-                                //存在明确的字段数定义在配置文件中时
-                                else{
-                                    QString firstDataRowString=csvData.at(csvDef.getDatabeginrowindex()-1);
-                                    //如果需要忽略最后一个多余的分隔符
-                                    if(csvDef.getEndwithflag()=="1"){
-                                        firstDataRowString= firstDataRowString.left(firstDataRowString.length()-1);
-                                    }
-                                    int fieldCount=0;
-                                    //带双引号的解析模式下，严格按照双引号内的分隔符不解析的原则,但是不支持长度大于1的分隔符
-                                    if(csvDef.getClearQuotes()&&csvDef.getSplit().length()==1){
-                                        QRegExp rx("\\"+csvDef.getSplit()+"(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
-                                        fieldCount=firstDataRowString.split(rx).count();
-                                    }
-                                    else{
-                                        fieldCount=firstDataRowString.split(csvDef.getSplit()).count();
-                                    }
-                                    //如果第一行数据的文件字段数和文件内的一致，则就是该版本的文件！
-                                    if(fieldCount==csvDef.getFieldCount()){
-                                        if(csvDef.getVersioncheckrow()>0){
-                                            if(csvData.count()<csvDef.getVersioncheckrow()){
-                                                FaultCause item;
-                                                item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause("在本配置描述的文件第"+QString::number(csvDef.getVersioncheckrow())+"行为文件内版本检查行，但是打开的文件无法获取到本行数据，可能不是该类型的文件");
-                                                faultList.append(item);
-                                                continue;
-                                            }
-                                            else{
-                                                if(!checkCSVVersion(csvDef,csvData.at(csvDef.getVersioncheckrow()-1))){
-                                                    if (csv.getVersioncheckmode()==0){
-                                                        FaultCause item;
-                                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                        faultList.append(item);
-                                                        continue;
-                                                    }
-                                                    else {
-                                                        FaultCause item;
-                                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
-                                                        faultList.append(item);
-                                                        continue;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        //开始加载数据
-                                        csv=csvDef;
-                                        //文件内没标题的从配置读取
-                                        QStringList fieldTitle;
-                                        for(int tc=0;tc<csv.getFieldList().count();tc++){
-                                            fieldTitle.append(csv.getFieldList().at(tc).getFieldDescribe());
-                                        }
-                                        load_csvFileData(fieldTitle);
-                                        return;
-                                    }
-                                    else{
-                                        FaultCause item;
-                                        item.setConfigIndex2(csvMatchList.at(dd));
-                                        item.setCause("在文件第"+QString::number(csvDef.getDatabeginrowindex())+"行(基于该配置的第一行有效数据)找到的数据有["+QString::number(fieldCount)+"]列数据,和配置文件中定义的列数["+QString::number(csvDef.getFieldCount())+"]不一致，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
-                                        faultList.append(item);
-                                        continue;
-                                    }
-                                }
+                                FaultCause item;
+                                item.setConfigIndex2(csvMatchList.at(dd));
+                                item.setCause("在文件第"+QString::number(csvDef.getDatabeginrowindex())+"行(基于该配置的第一行有效数据)找到的数据有["+QString::number(fieldCount)+"]列数据,和配置文件中定义的列数["+QString::number(csvDef.getFieldCount())+"]不一致，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                                faultList.append(item);
+                                continue;
                             }
                         }
                     }
-                }
-                else{
-                    int first = currentOpenFilePath.lastIndexOf ("/");
-                    QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
-                    statusBar_disPlayMessage("文件:"+fileName+"打开失败,请重试");
-                    return;
                 }
             }
             else{
@@ -2666,6 +2835,52 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
         return;
     }
     else{
+        //检索匹配到的所有配置获取最大探测行号
+        int aa=0;
+        int rowNeedLoad=50;
+        //识别最大化预加载行数，用于后续分析
+        for(;aa<fixedMatchList.count();aa++){
+            //如果文件名可用且配置可用，则加入
+            FIXEDFileDefinition fixedDef=fixedConfigList.at(fixedMatchList.at(aa).configFileIndex).getConfigSegmentList().at(fixedMatchList.at(aa).configSegmentIndex);
+            //加载头部+尾部+10行buffer
+            int j=fixedDef.getDataRowBeginIndex()+fixedDef.getEndIgnoreRow()+10;
+            if(j>rowNeedLoad){
+                rowNeedLoad=j;
+            }
+        }
+        QList<QByteArray> useForFileAnalyze;
+        if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+        {
+            int row=0;
+            while (!dataFile.atEnd()&&row<rowNeedLoad)
+            {
+                QByteArray rowdata=dataFile.readLine();
+                //单行大于20480字节--拒绝读取
+                if(rowdata.size()>163840){
+                    dataFile.close();
+                    statusBar_disPlayMessage("单行数据过长,无法正常解析...");
+                    currentOpenFileType=openFileType::NotFileOrErr;
+                    return;
+                }
+                useForFileAnalyze.append(rowdata);
+                row++;
+            }
+            dataFile.close();
+            //如果一行数据都没读到，则提示是空文件，结束探测--不再做任何解析尝试
+            if(row==0){
+                dataFile.close();
+                statusBar_disPlayMessage("空文件,没有任何数据记录可工解析");
+                currentOpenFileType=openFileType::NotFileOrErr;
+                return;
+            }
+        }
+        else{
+            int first = currentOpenFilePath.lastIndexOf ("/");
+            QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
+            statusBar_disPlayMessage("文件:"+fileName+"打开失败,请重试");
+            currentOpenFileType=openFileType::NotFileOrErr;
+            return;
+        }
         currentOpenFileType=openFileType::FIXEDFile;
         //在这里记录下各个配置文件失败无法使用的原因，如果全部匹配失败无法解析，则给用户一个交代！
         QList<FaultCause> faultList;
@@ -2674,199 +2889,180 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
             //如果文件名可用且配置可用，则加入
             FIXEDFileDefinition fixedDef=fixedConfigList.at(fixedMatchList.at(dd).configFileIndex).getConfigSegmentList().at(fixedMatchList.at(dd).configSegmentIndex);
             if(fixedDef.getUseAble()){
-                //打开并开始探测文件内容
-                if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                int dataBeginRow=fixedDef.getDataRowBeginIndex();
+                int endIgnore=fixedDef.getEndIgnoreRow();
+                //查找可用配置结束，开始分析文件到底是哪个版本
+                //最大化获取文件内的样本数据
+                QTextCodec *codec=QTextCodec::codecForName(fixedDef.getEcoding().toLocal8Bit());
+                QList<QString>fixedData;
+                QString line;
+                //当前读取到的行数
+                int row=0;
+                qDebug()<<"开始预加载文件内容判断是否符合本规则";
+                while (row<(dataBeginRow+endIgnore+10)&&row<useForFileAnalyze.count())
                 {
-                    int dataBeginRow=fixedDef.getDataRowBeginIndex();
-                    int endIgnore=fixedDef.getEndIgnoreRow();
-                    //查找可用配置结束，开始分析文件到底是哪个版本
-                    //最大化获取文件内的样本数据
-                    QTextCodec *codec=QTextCodec::codecForName(fixedDef.getEcoding().toLocal8Bit());
-                    QList<QString>fixedData;
-                    QString line;
-                    //当前读取到的行数
-                    int row=0;
-                    //读取到第一行数据为止(1.8.6开始多读尝试多读取几行)
-                    while (!dataFile.atEnd()&&row<(dataBeginRow+endIgnore+10))
-                    {
-                        line =codec->toUnicode(dataFile.readLine());
-                        line=line.remove('\r').remove('\n');
-                        fixedData.append(line);
-                        row++;
-                    }
-                    dataFile.close();
-                    //如果一行数据都没读到，则提示是空文件，结束探测--不再做任何解析尝试
-                    if(row==0){
-                        dataFile.close();
-                        statusBar_disPlayMessage("一个完全没内容的空文件,没有任何数据记录可供解析!");
-                        return;
+                    line = codec->toUnicode(useForFileAnalyze.at(row));
+                    line=line.remove('\r').remove('\n');
+                    fixedData.append(line);
+                    row++;
+                }
+                //首先进行一系列的文件头校验,这是1.9.20版本新增的功能
+                //首行数据是否满足的校验
+                if((!fixedDef.getFirstrowcheck().isEmpty())&&fixedData.count()>0&&fixedDef.getFirstrowcheck()!=fixedData.at(0)){
+                    FaultCause item;
+                    item.setConfigIndex2(fixedMatchList.at(dd));
+                    item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],无法确认该文件符合本解析规则").arg(fixedDef.getFirstrowcheck()).arg(fixedData.at(0)));
+                    faultList.append(item);
+                    continue;
+                }
+                //文件的版本是否满足的校验--版本号trim
+                if(fixedDef.getVersioncheckrow()>0&&fixedData.count()>=fixedDef.getVersioncheckrow()){
+                    if(fixedDef.getVersioncheckmode()==0){
+                        if(fixedDef.getVersion()!=fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed()){
+                            FaultCause item;
+                            item.setConfigIndex2(fixedMatchList.at(dd));
+                            item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
+                            faultList.append(item);
+                            continue;
+                        }
                     }
                     else{
-                        //首先进行一系列的文件头校验,这是1.9.20版本新增的功能
-                        //首行数据是否满足的校验
-                        if((!fixedDef.getFirstrowcheck().isEmpty())&&fixedData.count()>0&&fixedDef.getFirstrowcheck()!=fixedData.at(0)){
+                        if(!fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed().contains(fixedDef.getVersion(),Qt::CaseSensitive)){
                             FaultCause item;
                             item.setConfigIndex2(fixedMatchList.at(dd));
-                            item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],无法确认该文件符合本解析规则").arg(fixedDef.getFirstrowcheck()).arg(fixedData.at(0)));
+                            item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
                             faultList.append(item);
                             continue;
-                        }
-                        //文件的版本是否满足的校验--版本号trim
-                        if(fixedDef.getVersioncheckrow()>0&&fixedData.count()>=fixedDef.getVersioncheckrow()){
-                            if(fixedDef.getVersioncheckmode()==0){
-                                if(fixedDef.getVersion()!=fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed()){
-                                    FaultCause item;
-                                    item.setConfigIndex2(fixedMatchList.at(dd));
-                                    item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
-                                    faultList.append(item);
-                                    continue;
-                                }
-                            }
-                            else{
-                                if(!fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed().contains(fixedDef.getVersion(),Qt::CaseSensitive)){
-                                    FaultCause item;
-                                    item.setConfigIndex2(fixedMatchList.at(dd));
-                                    item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
-                                    faultList.append(item);
-                                    continue;
-                                }
-                            }
-                        }
-                        //字段总数校验
-                        if(fixedDef.getFieldcountcheckrow()>0&&fixedData.count()>=fixedDef.getFieldcountcheckrow()){
-                            QString fieldCountFromFile=fixedData.at(fixedDef.getFieldcountcheckrow()-1);
-                            bool flag=false;
-                            int fileCount =fieldCountFromFile.trimmed().toInt(&flag);
-                            //此行数据可以转换成数值
-                            if(flag){
-                                //不满足字段数check
-                                if(fileCount!=fixedDef.getFieldCountMax()){
-                                    FaultCause item;
-                                    item.setConfigIndex2(fixedMatchList.at(dd));
-                                    item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数[%2]，但是打开的文件第%1行是[%3](数值已清除空格和前缀0),文件实际字段数和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedDef.getFieldCountMax()).arg(fileCount));
-                                    faultList.append(item);
-                                    continue;
-                                }
-                            }
-                            //呵呵，无法转换
-                            else{
-                                FaultCause item;
-                                item.setConfigIndex2(fixedMatchList.at(dd));
-                                item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数，但是打开的文件第%1行是[%2],该内容不是一个有效的数值,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedData.at(fixedDef.getFieldcountcheckrow()-1)));
-                                faultList.append(item);
-                                continue;
-                            }
-                        }
-                        //字段明细检查
-                        if(fixedDef.getFielddetailcheckbeginrow()>0){
-                            //最低要有这么多行数据,从字段明细第一行开始+字段数,不然没法比较啊
-                            int fileRowMinNeed=fixedDef.getFielddetailcheckbeginrow()+fixedDef.getFieldCountMax();
-                            if(fixedData.count()<fileRowMinNeed){
-                                FaultCause item;
-                                item.setConfigIndex2(fixedMatchList.at(dd));
-                                item.setCause(QString("配置文件中标注文件从第%1行开始的共计%2行是文件内字段明细列表,但是打开的文件总行数小于字段明细结束行,无法进行字段明细检查,无法确认该文件符合本解析规则").arg(fixedDef.getFielddetailcheckbeginrow()).arg(fixedDef.getFieldCountMax()));
-                                faultList.append(item);
-                                continue;
-                            }
-                            else{
-                                //开始进行字段明细检查
-                                int fiexdIndex=fixedDef.getFielddetailcheckbeginrow()-1;
-                                int fiexdIndexEnd=fixedDef.getFielddetailcheckbeginrow()-1+fixedDef.getFieldCountMax();
-                                int fieldIndex=0;
-                                bool checkOK=true;
-                                for(;fiexdIndex<=fiexdIndexEnd&&fieldIndex<fixedDef.getFieldList().count();){
-                                    //字段名容忍大小写不一致
-                                    if(fixedDef.getFieldList().at(fieldIndex).getFieldName().toUpper()!=fixedData.at(fiexdIndex).toUpper()){
-                                        checkOK=false;
-                                        FaultCause item;
-                                        item.setConfigIndex2(fixedMatchList.at(dd));
-                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是字段描述[%2]，但是打开的文件第%1行是[%3],实际文件的字段描述和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fiexdIndex+1).arg(fixedDef.getFieldList().at(fieldIndex).getFieldName()).arg(fixedData.at(fiexdIndex)));
-                                        faultList.append(item);
-                                        break;
-                                    }
-                                    fiexdIndex++;
-                                    fieldIndex++;
-                                }
-                                //检查ok的情况下
-                                if(checkOK){
-                                    //再判断下是不是说根据这个解析规则来看,这是一个空文件,如果是，则直接解析
-                                    //标准的空文件是数据开始行-1+尾部忽略行,即一行数据也没有但是结构完整,这里不做强制要求,所以条件设置为<=
-                                    if(fixedData.count()<=(dataBeginRow+endIgnore-1)){
-                                        qDebug()<<"空文件解析";
-                                        fixed=fixedDef;
-                                        load_fixedFileData();
-                                        return;
-                                    }
-                                }
-                                //检查中遇到字段不吻合,直接跳到下一个配置
-                                else{
-                                    continue;
-                                }
-                            }
-                        }
-                        //文件内的数据行数低于第一行数据，无内容，无法判断
-                        //开启字段明细检查的文件,其实空文件已经在上面文件字段明细检查时拦截了
-                        if(fixedData.count()<dataBeginRow){
-                            FaultCause item;
-                            item.setConfigIndex2(fixedMatchList.at(dd));
-                            item.setCause("配置文件中标注文件第"+QString::number(dataBeginRow)+"行开始是数据行了，但是打开的文件只有["+QString::number(fixedData.count())+"]行哟，无有效数据,无法确认该文件符合本解析规则");
-                            faultList.append(item);
-                            continue;
-                        }
-                        //文件内的行数<文件头+文件尾部忽略行【既文件无实质性数据内容】
-                        else if(fixedData.count()<=(dataBeginRow+endIgnore-1)){
-                            FaultCause item;
-                            item.setConfigIndex2(fixedMatchList.at(dd));
-                            item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件,请确认是否1行数据记录都没有(定长文件解析不支持在未配置字段明细检查的情况下进行空文件解析,工具需要根据首行数据内容识别文件类别)....");
-                            faultList.append(item);
-                            continue;
-                        }
-                        QString firstDataRowString=fixedData.at(fixedDef.getDataRowBeginIndex()-1);
-                        //如果第一行数据的长度在可接受的长度内，则允许解析
-                        //判断是字节定长还是字符定长
-                        //字节定长
-                        if(fixedDef.getFieldlengthtype()=="0"){
-                            int rowLength=codec->fromUnicode(firstDataRowString).length();
-                            //如果行长度包含这种长度
-                            if(fixedDef.getRowLengthHash().contains(rowLength)){
-                                //开始加载数据
-                                fixed=fixedDef;
-                                load_fixedFileData();
-                                return;
-                            }
-                            else{
-                                FaultCause item;
-                                item.setConfigIndex2(fixedMatchList.at(dd));
-                                item.setCause("在文件第"+QString::number(fixedDef.getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字节,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
-                                faultList.append(item);
-                                continue;
-                            }
-                        }
-                        //字符定长
-                        else{
-                            int rowLength=firstDataRowString.length();
-                            //如果行长度包含这种长度
-                            if(fixedDef.getRowLengthHash().contains(rowLength)){
-                                //开始加载数据
-                                fixed=fixedDef;
-                                load_fixedFileData();
-                                return;
-                            }
-                            else{
-                                FaultCause item;
-                                item.setConfigIndex2(fixedMatchList.at(dd));
-                                item.setCause("在文件第"+QString::number(fixedDef.getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字符,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
-                                faultList.append(item);
-                                continue;
-                            }
                         }
                     }
                 }
+                //字段总数校验
+                if(fixedDef.getFieldcountcheckrow()>0&&fixedData.count()>=fixedDef.getFieldcountcheckrow()){
+                    QString fieldCountFromFile=fixedData.at(fixedDef.getFieldcountcheckrow()-1);
+                    bool flag=false;
+                    int fileCount =fieldCountFromFile.trimmed().toInt(&flag);
+                    //此行数据可以转换成数值
+                    if(flag){
+                        //不满足字段数check
+                        if(fileCount!=fixedDef.getFieldCountMax()){
+                            FaultCause item;
+                            item.setConfigIndex2(fixedMatchList.at(dd));
+                            item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数[%2]，但是打开的文件第%1行是[%3](数值已清除空格和前缀0),文件实际字段数和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedDef.getFieldCountMax()).arg(fileCount));
+                            faultList.append(item);
+                            continue;
+                        }
+                    }
+                    //呵呵，无法转换
+                    else{
+                        FaultCause item;
+                        item.setConfigIndex2(fixedMatchList.at(dd));
+                        item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数，但是打开的文件第%1行是[%2],该内容不是一个有效的数值,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedData.at(fixedDef.getFieldcountcheckrow()-1)));
+                        faultList.append(item);
+                        continue;
+                    }
+                }
+                //字段明细检查
+                if(fixedDef.getFielddetailcheckbeginrow()>0){
+                    //最低要有这么多行数据,从字段明细第一行开始+字段数,不然没法比较啊
+                    int fileRowMinNeed=fixedDef.getFielddetailcheckbeginrow()+fixedDef.getFieldCountMax();
+                    if(fixedData.count()<fileRowMinNeed){
+                        FaultCause item;
+                        item.setConfigIndex2(fixedMatchList.at(dd));
+                        item.setCause(QString("配置文件中标注文件从第%1行开始的共计%2行是文件内字段明细列表,但是打开的文件总行数小于字段明细结束行,无法进行字段明细检查,无法确认该文件符合本解析规则").arg(fixedDef.getFielddetailcheckbeginrow()).arg(fixedDef.getFieldCountMax()));
+                        faultList.append(item);
+                        continue;
+                    }
+                    else{
+                        //开始进行字段明细检查
+                        int fiexdIndex=fixedDef.getFielddetailcheckbeginrow()-1;
+                        int fiexdIndexEnd=fixedDef.getFielddetailcheckbeginrow()-1+fixedDef.getFieldCountMax();
+                        int fieldIndex=0;
+                        bool checkOK=true;
+                        for(;fiexdIndex<=fiexdIndexEnd&&fieldIndex<fixedDef.getFieldList().count();){
+                            //字段名容忍大小写不一致
+                            if(fixedDef.getFieldList().at(fieldIndex).getFieldName().toUpper()!=fixedData.at(fiexdIndex).toUpper()){
+                                checkOK=false;
+                                FaultCause item;
+                                item.setConfigIndex2(fixedMatchList.at(dd));
+                                item.setCause(QString("配置文件中标注文件第%1行内容应该是字段描述[%2]，但是打开的文件第%1行是[%3],实际文件的字段描述和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fiexdIndex+1).arg(fixedDef.getFieldList().at(fieldIndex).getFieldName()).arg(fixedData.at(fiexdIndex)));
+                                faultList.append(item);
+                                break;
+                            }
+                            fiexdIndex++;
+                            fieldIndex++;
+                        }
+                        //检查ok的情况下
+                        if(checkOK){
+                            //再判断下是不是说根据这个解析规则来看,这是一个空文件,如果是，则直接解析
+                            //标准的空文件是数据开始行-1+尾部忽略行,即一行数据也没有但是结构完整,这里不做强制要求,所以条件设置为<=
+                            if(fixedData.count()<=(dataBeginRow+endIgnore-1)){
+                                qDebug()<<"空文件解析";
+                                fixed=fixedDef;
+                                load_fixedFileData();
+                                return;
+                            }
+                        }
+                        //检查中遇到字段不吻合,直接跳到下一个配置
+                        else{
+                            continue;
+                        }
+                    }
+                }
+                //文件内的数据行数低于第一行数据，无内容，无法判断
+                //开启字段明细检查的文件,其实空文件已经在上面文件字段明细检查时拦截了
+                if(fixedData.count()<dataBeginRow){
+                    FaultCause item;
+                    item.setConfigIndex2(fixedMatchList.at(dd));
+                    item.setCause("配置文件中标注文件第"+QString::number(dataBeginRow)+"行开始是数据行了，但是打开的文件只有["+QString::number(fixedData.count())+"]行哟，无有效数据,无法确认该文件符合本解析规则");
+                    faultList.append(item);
+                    continue;
+                }
+                //文件内的行数<文件头+文件尾部忽略行【既文件无实质性数据内容】
+                else if(fixedData.count()<=(dataBeginRow+endIgnore-1)){
+                    FaultCause item;
+                    item.setConfigIndex2(fixedMatchList.at(dd));
+                    item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件,请确认是否1行数据记录都没有(定长文件解析不支持在未配置字段明细检查的情况下进行空文件解析,工具需要根据首行数据内容识别文件类别)....");
+                    faultList.append(item);
+                    continue;
+                }
+                QString firstDataRowString=fixedData.at(fixedDef.getDataRowBeginIndex()-1);
+                //如果第一行数据的长度在可接受的长度内，则允许解析
+                //判断是字节定长还是字符定长
+                //字节定长
+                if(fixedDef.getFieldlengthtype()=="0"){
+                    int rowLength=codec->fromUnicode(firstDataRowString).length();
+                    //如果行长度包含这种长度
+                    if(fixedDef.getRowLengthHash().contains(rowLength)){
+                        //开始加载数据
+                        fixed=fixedDef;
+                        load_fixedFileData();
+                        return;
+                    }
+                    else{
+                        FaultCause item;
+                        item.setConfigIndex2(fixedMatchList.at(dd));
+                        item.setCause("在文件第"+QString::number(fixedDef.getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字节,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                        faultList.append(item);
+                        continue;
+                    }
+                }
+                //字符定长
                 else{
-                    int first = currentOpenFilePath.lastIndexOf ("/");
-                    QString fileName = currentOpenFilePath.right (currentOpenFilePath.length ()-first-1);
-                    statusBar_disPlayMessage("文件:"+fileName+"打开失败,请重试");
-                    return;
+                    int rowLength=firstDataRowString.length();
+                    //如果行长度包含这种长度
+                    if(fixedDef.getRowLengthHash().contains(rowLength)){
+                        //开始加载数据
+                        fixed=fixedDef;
+                        load_fixedFileData();
+                        return;
+                    }
+                    else{
+                        FaultCause item;
+                        item.setConfigIndex2(fixedMatchList.at(dd));
+                        item.setCause("在文件第"+QString::number(fixedDef.getDataRowBeginIndex())+"行找到的数据行长度为["+QString::number(rowLength)+"]字符,配置文件无法识别，可能不是本版本的文件,无法解析,如果这是一个新增字段的新版本,请先配置后再解析");
+                        faultList.append(item);
+                        continue;
+                    }
                 }
             }
             else{
@@ -3484,7 +3680,7 @@ void MainWindow::load_dbfFile(){
         statusBar_disPlayMessage("无法打开此DBF文件,可能文件被占用/文件损坏/不支持的格式,请检查...");
         return;
     }
-    //设置默认GB18030编码--国情
+    //设置默认GB18030编码
     if(dbftablefile.codepage()==QDbf::QDbfTable::CodepageNotSet){
         qDebug()<<"未设置编码方式-设置默认GB18030解析";
         dbftablefile.setCodepage(QDbf::QDbfTable::GB18030);
@@ -4221,7 +4417,7 @@ void MainWindow::init_CSVTable(QStringList title){
             //如果没有数据,也执行下自动设置列宽,增加空数据的显示美感
             ptr_table->resizeColumnsToContents();
         }
-        statusBar_display_rowsCount(rowCount,csv.getEcoding());
+        statusBar_display_rowsCount(rowCount,csv.getEcoding()+(csv.getAutoecoding()?"[自动识别]":""));
         if(csv.getFfAuto()){
             statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-[使用自动解析引擎解析,建议配置解析规则获得更好体验]-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount)).arg(QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2)).arg(csv.getFieldcheckList().count()));
         }
@@ -5781,28 +5977,58 @@ void MainWindow::showCharacter(){
         //拆字符循环处理
         for(int i=0;i<data.count();i++){
             QStringList colitem;
-            QString hex=codec->fromUnicode(data.at(i)).toHex().toUpper();
-            //字符
-            colitem.append(data.at(i));
-            //字节数
-            colitem.append(QString::number(hex.length()/2));
-            //16进制
-            colitem.append(hex);
-            //2进制
-            colitem.append(HexStringToBinaryString(hex));
-            //特殊字符说明
-            if(specialCharacter.contains(hex)){
-                colitem.append(specialCharacter.value(hex));
+            //1.9.23版本，针对4字节Unicode字符做特殊兼容
+            //如果是高字节，则下一位是低字节，取两位
+            if(data.at(i).isHighSurrogate()&&i<data.count()-1&&data.at(i+1).isLowSurrogate()){
+                uint uintunicode = QChar::surrogateToUcs4(data[i].unicode(), data[i+1].unicode());
+                QString hex=codec->fromUnicode(data.mid(i,2)).toHex().toUpper();
+                //字符
+                colitem.append(data.mid(i,2));
+                //字节数
+                colitem.append(QString::number(hex.length()/2));
+                //16进制
+                colitem.append(hex);
+                //Unicode16进制
+                colitem.append(QString::number(uintunicode,16).toUpper());
+                //特殊字符说明
+                if(specialCharacter.contains(hex)){
+                    colitem.append(specialCharacter.value(hex));
+                }
+                else{
+                    colitem.append(nullptr);
+                }
+                //跳过下一个Qchar的处理
+                i++;
             }
             else{
-                colitem.append(nullptr);
+                QString hex=codec->fromUnicode(data.at(i)).toHex().toUpper();
+                uint uintunicode=data.at(i).unicode();
+                qDebug()<<uintunicode;
+                //字符
+                colitem.append(data.at(i));
+                //字节数
+                colitem.append(QString::number(hex.length()/2));
+                //16进制
+                colitem.append(hex);
+                //Unicode16进制
+                colitem.append(QString::number(uintunicode,16).toUpper());
+                //特殊字符说明
+                if(specialCharacter.contains(hex)&&!puaOrDeletedGBKCharacter.contains(uintunicode)){
+                    colitem.append(specialCharacter.value(hex));
+                }
+                else if(!specialCharacter.contains(hex)&&puaOrDeletedGBKCharacter.contains(uintunicode)){
+                    colitem.append(puaOrDeletedGBKCharacter.value(uintunicode));
+                }
+                else{
+                    colitem.append(nullptr);
+                }
             }
             rowdata.append(colitem);
         }
     }
     //打开窗口
-    DialogShowCharset * dialog = new DialogShowCharset(&rowdata,this);
-    dialog->setWindowTitle(QString("查看十六进制和二进制编码(%1)").arg(charset));
+    DialogShowCharset * dialog = new DialogShowCharset(&rowdata,charset,this);
+    dialog->setWindowTitle(QString("查看十六进制字符编码"));
     dialog->setModal(false);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
@@ -8614,11 +8840,12 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                         //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
                         bool okNb=false;
                         double number=value.toDouble(&okNb);
-                        if(okNb){
+                        //数字超长
+                        if(okNb&&value.length()<=16){
                             xlsx->write(excelRowNumber,col+1,number,numberFormatQhash.value(col));
                         }
                         else{
-                            xlsx->write(excelRowNumber,col+1,value,numberFormatQhash.value(col));
+                            xlsx->write(excelRowNumber,col+1,value,formatBody);
                         }
                     }else{
                         xlsx->write(excelRowNumber,col+1,value,formatBody);
@@ -8706,11 +8933,12 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                     if(CsvFieldIsNumberOrNot.contains(col)&&numberFormatQhash.contains(col)){
                         bool okNb=false;
                         double number=value.toDouble(&okNb);
-                        if(okNb){
+                        //数字超长
+                        if(okNb&&value.length()<=16){
                             xlsx->write(excelRowNumber,col+1,number,numberFormatQhash.value(col));
                         }
                         else{
-                            xlsx->write(excelRowNumber,col+1,value,numberFormatQhash.value(col));
+                            xlsx->write(excelRowNumber,col+1,value,formatBody);
                         }
                     }else{
                         xlsx->write(excelRowNumber,col+1,value,formatBody);
@@ -8792,11 +9020,12 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                         //对于数值型的数据如果接口文档里给的确实是数值型,则填充到excel时也用数值型
                         bool okNb=false;
                         double number=value.toDouble(&okNb);
-                        if(okNb){
+                        //数字超长
+                        if(okNb&&value.length()<=16){
                             xlsx->write(excelRowNumber,col+1,number,numberFormatQhash.value(col));
                         }
                         else{
-                            xlsx->write(excelRowNumber,col+1,value,numberFormatQhash.value(col));
+                            xlsx->write(excelRowNumber,col+1,value,formatBody);
                         }
                     }else{
                         xlsx->write(excelRowNumber,col+1,value,formatBody);
@@ -8876,11 +9105,12 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
                     if(dbfColIsNumber(col)&&numberFormatQhash.contains(col)){
                         bool okNb=false;
                         double number=value.toDouble(&okNb);
-                        if(okNb){
+                        //数字超长
+                        if(okNb&&value.length()<=16){
                             xlsx->write(excelRowNumber,col+1,number,numberFormatQhash.value(col));
                         }
                         else{
-                            xlsx->write(excelRowNumber,col+1,value,numberFormatQhash.value(col));
+                            xlsx->write(excelRowNumber,col+1,value,formatBody);
                         }
                     }else{
                         xlsx->write(excelRowNumber,col+1,value,formatBody);
@@ -11106,11 +11336,21 @@ void MainWindow::loadConfig(bool isReload){
 QString MainWindow::StringToHexStringWithEnCode(QString data,QTextCodec *codec,bool withSouceChar){
     QString sb;
     if(withSouceChar){
-
         for(int i=0;i<data.length();i++){
-            sb.append("[").append(data.at(i)).append(":").append(codec->fromUnicode(data.at(i)).toHex().toUpper()).append("]");
-            if(i<data.length()-1){
-                sb.append("-");
+            //兼容4字节Unicode字符
+            if(data.at(i).isHighSurrogate()&&i<data.count()-1&&data.at(i+1).isLowSurrogate())
+            {
+                sb.append("[").append(data.mid(i,2)).append(":").append(codec->fromUnicode(data.mid(i,2)).toHex().toUpper()).append("]");
+                i++;
+                if(i<data.length()-1){
+                    sb.append("-");
+                }
+            }
+            else{
+                sb.append("[").append(data.at(i)).append(":").append(codec->fromUnicode(data.at(i)).toHex().toUpper()).append("]");
+                if(i<data.length()-1){
+                    sb.append("-");
+                }
             }
         }
     }
@@ -11860,7 +12100,6 @@ int MainWindow::importFromExcel(){
                     //提取数据
                     QVariant colvalQVariant=xlsxread.read(row,col);
                     QString colval="";
-                    qDebug()<<colvalQVariant;
                     //数值///////////////
                     if(colvalQVariant.type() == QVariant::Double){
                         if(filedType=="N"){
