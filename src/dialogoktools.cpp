@@ -1,3 +1,8 @@
+/***********************************************************************
+*Copyright [2018] [Liudewei(793554262@qq.com)]
+*
+*Licensed under the LGPL-3.0;
+************************************************************************/
 #include "dialogoktools.h"
 #include "ui_dialogoktools.h"
 #include "src/publicdefine.h"

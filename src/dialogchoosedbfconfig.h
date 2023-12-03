@@ -1,3 +1,8 @@
+/***********************************************************************
+*Copyright [2018] [Liudewei(793554262@qq.com)]
+*
+*Licensed under the LGPL-3.0;
+************************************************************************/
 #ifndef DIALOGCHOOSEDBFCONFIG_H
 #define DIALOGCHOOSEDBFCONFIG_H
 

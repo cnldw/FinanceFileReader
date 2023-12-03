@@ -1,3 +1,8 @@
+/***********************************************************************
+*Copyright [2018] [Liudewei(793554262@qq.com)]
+*
+*Licensed under the LGPL-3.0;
+************************************************************************/
 #include "dialogshowimportexcelerror.h"
 #include "ui_dialogshowimportexcelerror.h"
 #include "src/publicdefine.h"
