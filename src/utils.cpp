@@ -4,6 +4,7 @@
 *Licensed under the LGPL-3.0;
 ************************************************************************/
 #include "src/utils.h"
+#include "qwidget.h"
 
 Utils::Utils()
 {
@@ -364,6 +365,25 @@ void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigLi
                                         ofdIni.endGroup();
                                         if(infoList.count()>0){
                                             for (int checkindex=0;checkindex<infoList.count();checkindex++){
+                                                //主键
+                                                if(infoList.at(checkindex)=="fieldprimarylist"){
+                                                    QList <uint> primaryKeyFieldList;
+                                                    QString str=ofdIni.value(interfaceList.at(i)+"/"+infoList.at(checkindex)).toString();
+                                                    if(!str.isEmpty()){
+                                                        QStringList strl=str.split(",");
+                                                        for(const auto &strNumber:strl){
+                                                            bool okFlag=false;
+                                                            int n=strNumber.toUInt(&okFlag);
+                                                            if(okFlag&&!primaryKeyFieldList.contains(n)){
+                                                                primaryKeyFieldList.append(n);
+                                                            }
+                                                        }
+                                                        if(primaryKeyFieldList.count()>0){
+                                                            std::sort(primaryKeyFieldList.begin(), primaryKeyFieldList.end());
+                                                            ofd.setPrimaryKeyFieldList(primaryKeyFieldList);
+                                                        }
+                                                    }
+                                                }
                                                 //字段必填配置
                                                 if(infoList.at(checkindex).startsWith("fieldcheck_")){
                                                     bool okFlag=false;
@@ -727,6 +747,44 @@ void Utils::load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigLi
                                     loadedCsvInfoIni.endGroup();
                                     if(infoList.count()>0){
                                         for (int checkindex=0;checkindex<infoList.count();checkindex++){
+                                            //主键
+                                            if(infoList.at(checkindex)=="fieldprimarylist"){
+                                                QList <uint> primaryKeyFieldList;
+                                                QString str=loadedCsvInfoIni.value(csvType+"/"+infoList.at(checkindex)).toString();
+                                                if(!str.isEmpty()){
+                                                    QStringList strl=str.split(",");
+                                                    for(const auto &strNumber:strl){
+                                                        bool okFlag=false;
+                                                        int n=strNumber.toUInt(&okFlag);
+                                                        if(okFlag&&!primaryKeyFieldList.contains(n)){
+                                                            primaryKeyFieldList.append(n);
+                                                        }
+                                                    }
+                                                    if(primaryKeyFieldList.count()>0){
+                                                        std::sort(primaryKeyFieldList.begin(), primaryKeyFieldList.end());
+                                                        fileDef.setPrimaryKeyFieldList(primaryKeyFieldList);
+                                                    }
+                                                }
+                                            }
+                                            //主键
+                                            if(infoList.at(checkindex)=="fieldprimarylist"){
+                                                QList <uint> primaryKeyFieldList;
+                                                QString str=loadedCsvInfoIni.value(csvType+"/"+infoList.at(checkindex)).toString();
+                                                if(!str.isEmpty()){
+                                                    QStringList strl=str.split(",");
+                                                    for(const auto &strNumber:strl){
+                                                        bool okFlag=false;
+                                                        int n=strNumber.toUInt(&okFlag);
+                                                        if(okFlag&&!primaryKeyFieldList.contains(n)){
+                                                            primaryKeyFieldList.append(n);
+                                                        }
+                                                    }
+                                                    if(primaryKeyFieldList.count()>0){
+                                                        std::sort(primaryKeyFieldList.begin(), primaryKeyFieldList.end());
+                                                        fileDef.setPrimaryKeyFieldList(primaryKeyFieldList);
+                                                    }
+                                                }
+                                            }
                                             //字段必填配置
                                             if(infoList.at(checkindex).startsWith("fieldcheck_")){
                                                 bool okFlag=false;
@@ -756,6 +814,25 @@ void Utils::load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigLi
                                 loadedCsvInfoIni.endGroup();
                                 if(infoList.count()>0){
                                     for (int checkindex=0;checkindex<infoList.count();checkindex++){
+                                        //主键
+                                        if(infoList.at(checkindex)=="fieldprimarylist"){
+                                            QList <uint> primaryKeyFieldList;
+                                            QString str=loadedCsvInfoIni.value(csvType+"/"+infoList.at(checkindex)).toString();
+                                            if(!str.isEmpty()){
+                                                QStringList strl=str.split(",");
+                                                for(const auto &strNumber:strl){
+                                                    bool okFlag=false;
+                                                    int n=strNumber.toUInt(&okFlag);
+                                                    if(okFlag&&!primaryKeyFieldList.contains(n)){
+                                                        primaryKeyFieldList.append(n);
+                                                    }
+                                                }
+                                                if(primaryKeyFieldList.count()>0){
+                                                    std::sort(primaryKeyFieldList.begin(), primaryKeyFieldList.end());
+                                                    fileDef.setPrimaryKeyFieldList(primaryKeyFieldList);
+                                                }
+                                            }
+                                        }
                                         //字段必填配置
                                         if(infoList.at(checkindex).startsWith("fieldcheck_")){
                                             bool okFlag=false;
@@ -1261,6 +1338,25 @@ void Utils::load_FIXEDDefinition(QList<ConfigFile<FIXEDFileDefinition>> &fixedCo
                                 loadedFixedInfoIni.endGroup();
                                 if(infoList.count()>0){
                                     for (int checkindex=0;checkindex<infoList.count();checkindex++){
+                                        //主键
+                                        if(infoList.at(checkindex)=="fieldprimarylist"){
+                                            QList <uint> primaryKeyFieldList;
+                                            QString str=loadedFixedInfoIni.value(fixedType+"/"+infoList.at(checkindex)).toString();
+                                            if(!str.isEmpty()){
+                                                QStringList strl=str.split(",");
+                                                for(const auto &strNumber:strl){
+                                                    bool okFlag=false;
+                                                    int n=strNumber.toUInt(&okFlag);
+                                                    if(okFlag&&!primaryKeyFieldList.contains(n)){
+                                                        primaryKeyFieldList.append(n);
+                                                    }
+                                                }
+                                                if(primaryKeyFieldList.count()>0){
+                                                    std::sort(primaryKeyFieldList.begin(), primaryKeyFieldList.end());
+                                                    fileDef.setPrimaryKeyFieldList(primaryKeyFieldList);
+                                                }
+                                            }
+                                        }
                                         //字段必填配置
                                         if(infoList.at(checkindex).startsWith("fieldcheck_")){
                                             bool okFlag=false;
@@ -2628,3 +2724,16 @@ double Utils::CVCcal (QList<QStringList > list){
     sigma /= n;
     return qSqrt((pSigma/n - sigma*sigma))/sigma;
 }
+
+void Utils::setDefaultWindowFonts(QWidget *w){
+#ifdef Q_OS_MAC
+    w->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
+#endif
+#ifdef Q_OS_LINUX
+    w->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+#endif
+#ifdef Q_OS_WIN32
+    w->setStyleSheet(UIFontsWindows);
+#endif
+};
+

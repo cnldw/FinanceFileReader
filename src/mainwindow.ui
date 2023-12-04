@@ -820,7 +820,7 @@ border-radius:3px;
    </widget>
    <widget class="QMenu" name="menufieldcheckmenu">
     <property name="title">
-     <string>字段必填校验</string>
+     <string>数据增强校验</string>
     </property>
     <addaction name="actioncurrentfilechekrule"/>
     <addaction name="actionexpcheckresult"/>
@@ -1183,7 +1183,7 @@ border-radius:3px;
   </action>
   <action name="action_fieldcheckconfigtools">
    <property name="text">
-    <string>字段必填规则配置工具</string>
+    <string>字段必填/主键规则配置工具</string>
    </property>
   </action>
  </widget>

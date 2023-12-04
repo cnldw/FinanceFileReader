@@ -17,6 +17,8 @@
 #include <QMenu>
 #include <QDebug>
 #include "src/ofdfiledefinition.h"
+#include "src/publicdefine.h"
+#include "src/utils.h"
 
 namespace Ui {
 class DialogEditHeaderFooter;

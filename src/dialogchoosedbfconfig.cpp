@@ -12,15 +12,7 @@ DialogChooseDBFConfig::DialogChooseDBFConfig(QList<QStringList> * matchDBF,QWidg
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
-#ifdef Q_OS_MAC
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
-#endif
-#ifdef Q_OS_WIN32
-    this->setStyleSheet(UIFontsWindows);
-#endif
+    Utils::setDefaultWindowFonts(this);
     /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;

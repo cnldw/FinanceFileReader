@@ -28,8 +28,8 @@ DialogEditText::DialogEditText(QString title,QStringList fieldList,int importTyp
     if(importType==0){
         ui->label->setText("你可以填写形如[字段1=条件值1&字段2=条件值2]的条件规则");
     }
-    else if (importType==1){
-        ui->label->setText("你可以填写形如[字段1,字段2]使用英文逗号分割的字段列表");
+    else if (importType==1||importType==2){
+        ui->label->setText("你可以填写形如[字段1,字段2]使用逗号分割的字段列表");
     }
 }
 
@@ -83,8 +83,8 @@ void DialogEditText::on_pushButton_clicked()
             emit sendImportString(ui->textBrowser->toPlainText(),importType,clearOldData);
             this->close();
         }
-        else if (importType==1){
-            QStringList checkFieldList=ui->textBrowser->toPlainText().split(",");
+        else if (importType==1||importType==2){
+            QStringList checkFieldList=ui->textBrowser->toPlainText().replace("，",",").split(",");
             for(int i=0;i<checkFieldList.count();i++){
                 QString item=checkFieldList.at(i);
                 if(item.isEmpty()){
@@ -97,7 +97,7 @@ void DialogEditText::on_pushButton_clicked()
                 }
             }
             //通过检查允许发送信号
-            emit sendImportString(ui->textBrowser->toPlainText(),importType,clearOldData);
+            emit sendImportString(ui->textBrowser->toPlainText().replace("，",","),importType,clearOldData);
             this->close();
         }
     }

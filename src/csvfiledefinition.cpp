@@ -263,6 +263,16 @@ void CsvFileDefinition::setAutoecoding(bool newAutoecoding)
     autoecoding = newAutoecoding;
 }
 
+const QList<uint> &CsvFileDefinition::getPrimaryKeyFieldList() const
+{
+    return primaryKeyFieldList;
+}
+
+void CsvFileDefinition::setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyFieldList)
+{
+    primaryKeyFieldList = newPrimaryKeyFieldList;
+}
+
 CsvFileDefinition::CsvFileDefinition()
 {
     

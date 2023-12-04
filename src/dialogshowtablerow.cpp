@@ -5,7 +5,6 @@
 ************************************************************************/
 #include "src/dialogshowtablerow.h"
 #include "ui_dialogshowtablerow.h"
-#include "src/publicdefine.h"
 #define UNUSED(x) (void)x
 
 DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *parent) :
@@ -14,15 +13,7 @@ DialogShowTableRow::DialogShowTableRow(QList<QStringList> * rowdata,QWidget *par
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
-#ifdef Q_OS_MAC
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
-#endif
-#ifdef Q_OS_WIN32
-    this->setStyleSheet(UIFontsWindows);
-#endif
+    Utils::setDefaultWindowFonts(this);
     /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;

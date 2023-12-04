@@ -64,6 +64,8 @@ private:
 
     //本文件的必填检查规则列表
     QList <fieldcheckitem> fieldcheckList;
+    //主键字段清单
+    QList <uint> primaryKeyFieldList;
 
 
 public:
@@ -120,6 +122,8 @@ public:
     void setFieldcheckItemList(const QList<fieldcheckitem> &value);
     bool getAutoecoding() const;
     void setAutoecoding(bool newAutoecoding);
+    const QList<uint> &getPrimaryKeyFieldList() const;
+    void setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyFieldList);
 };
 
 #endif // CSVFILEDEFINITION_H

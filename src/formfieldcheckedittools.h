@@ -38,6 +38,10 @@ public:
 private slots:
     void table_field_selectAll();
     void table_field_clearAllSelet();
+
+    void table_field_selectRange();
+    void table_field_clearRange();
+
     void table_field_clearCondition();
 
     void on_comboBox_1_currentIndexChanged(int index);
@@ -86,6 +90,9 @@ private slots:
 
     void on_pushButton_ImportField_clicked();
 
+
+    void on_pushButton_PrimaryKey_clicked();
+
 public slots:
     void getImportString(QString data,int type,bool clearOldData);
 
@@ -94,7 +101,7 @@ private:
     QList<ConfigFile<OFDFileDefinition>> ofdConfigList;
     QList<ConfigFile<CsvFileDefinition>> csvConfigList;
     QList<ConfigFile<FIXEDFileDefinition>> fixedConfigList;
-    QString windowName="字段必填规则配置工具";
+    QString windowName="字段必填/主键规则配置工具";
     //上级变动时下级不渲染
     bool comboBox_1OK=false;
     bool comboBox_2OK=false;
@@ -117,7 +124,9 @@ private:
 
     //当前正在编辑配置段的所有必填检查清单--只有提交到文件或者放弃时才可以清空
     QList<fieldcheckitem> currentEditConfigSegmentCheckItemList;
-    bool editMode=false;
+    QList <uint> currentEditConfigSegmentprimaryKeyFieldList;
+    bool editFieldCheckMode=false;
+    bool editPrimaryMode=false;
     //当前正在编辑的是第几个规则和该规则需要的字段清单
     int currentEditCheckIndex=-1;
     QList<int> currentEditRequiredFields;
@@ -138,7 +147,9 @@ private:
     //表格菜单
     QMenu *table_field_PopMenu;
     QAction *action_table_field_selectall;
-    QAction *action_table_field_clear_select;
+    QAction *action_table_field_clear_all;
+    QAction *action_table_field_select_range;
+    QAction *action_table_field_clear_range;
     QAction *action_table_field_clear_condition;
 
     QMenu *table_check_PopMenu;

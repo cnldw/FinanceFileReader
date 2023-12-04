@@ -11,6 +11,8 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include "src/ofdfiledefinition.h"
+#include "src/utils.h"
+#include "src/publicdefine.h"
 
 namespace Ui {
 class DialogChooseOFDConfig;

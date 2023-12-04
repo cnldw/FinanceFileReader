@@ -20,15 +20,24 @@ win32{
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-#根据位数设置target名称
+#根据目标平台设置target名称
 contains(QT_ARCH, i386) {
     TARGET = FFReader-x86
 }
 contains(QT_ARCH, x86_64) {
     TARGET = FFReader-x64
 }
+contains(QT_ARCH, arm64) {
+    TARGET = FFReader-ARM64
+}
 macx{
     TARGET = FFReader
+}
+
+#msvc下注明源码使用utf-8
+msvc{
+    QMAKE_CFLAGS += /utf-8
+    QMAKE_CXXFLAGS += /utf-8
 }
 
 RESOURCES += \
@@ -40,7 +49,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.27
+VERSION = 1.9.28
 ############以下注意按版本修改###############
 
 # 语言

@@ -74,6 +74,16 @@ void OFDFileDefinition::setUseForVersionAndType(const QString &newUseForVersionA
     useForVersionAndType = newUseForVersionAndType;
 }
 
+const QList<uint> &OFDFileDefinition::getPrimaryKeyFieldList() const
+{
+    return primaryKeyFieldList;
+}
+
+void OFDFileDefinition::setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyFieldList)
+{
+    primaryKeyFieldList = newPrimaryKeyFieldList;
+}
+
 OFDFileDefinition::OFDFileDefinition()
 {
     

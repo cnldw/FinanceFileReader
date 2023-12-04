@@ -82,7 +82,7 @@ public:
      static QList<QStringList> parseCheckItemListtoChineseList(CsvFileDefinition &csv);
      static QList<QStringList> parseCheckItemListtoChineseList(FIXEDFileDefinition &fixed);
      static double CVCcal (QList<QStringList > data);
-
+     static void setDefaultWindowFonts(QWidget *w);
 
 };
 

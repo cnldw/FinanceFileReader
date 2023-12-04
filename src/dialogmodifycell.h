@@ -8,6 +8,8 @@
 
 #include <QDialog>
 #include <QTextCodec>
+#include "src/publicdefine.h"
+#include "src/utils.h"
 
 namespace Ui {
 class DialogModifyCell;

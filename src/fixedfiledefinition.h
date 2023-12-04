@@ -33,6 +33,8 @@ private:
     QList <FixedFieldDefinition> fieldList;
     //本文件的必填检查规则列表
     QList <fieldcheckitem> fieldcheckList;
+    //主键字段清单
+    QList <uint> primaryKeyFieldList;
     //所属配置文件
     QString fileIni;
     //使用的正则匹配文件名
@@ -110,6 +112,8 @@ public:
     void setFieldcheckItemList(const QList<fieldcheckitem> &value);
     const QString &getConfigSegment() const;
     void setConfigSegment(const QString &newConfigSegment);
+    const QList<uint> &getPrimaryKeyFieldList() const;
+    void setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyFieldList);
 };
 
 #endif // FIXEDFILEDEFINITION_H

@@ -565,6 +565,10 @@ private:
     //换行符长度,正确的来说OFD的换行符都是\r\n两个字节
     int newLineCharsetLength=2;
 
+    enum newLineType {LF/*\n-Uninx*/=0, CRLF/*\r\n-Win*/=1, CR/*\r-macOS*/=2,None=3};
+    //当前打开的文件换行符类型
+    int currentFileNewLineType=newLineType::CRLF;
+
     //忽略正在进行的任务强制退出
     //如果程序正在进行诸如文件读取,文件导出,搜索任务时,程序强制退出时使用,主动告知进行中的任务进行退出函数，方式程序在后台驻留
     //只允许退出程序时使用此标志,遇到此标志一切进行中的耗时任务都会终止并退出

@@ -11,6 +11,7 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include "src/publicdefine.h"
+#include "src/utils.h"
 
 namespace Ui {
 class DialogChooseDBFConfig;

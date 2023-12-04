@@ -15,14 +15,7 @@ DialogModifyMtime::DialogModifyMtime(QWidget *parent) :
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
     ui->dateTimeEdit->setEnabled(false);
     ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
-#ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
-    ui->tableWidget->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet("font-size:13px");
-#endif
+    Utils::setDefaultWindowFonts(this);
 #ifdef Q_OS_MAC
     //修正macos下按钮怪异的表现形状
     ui->pushButton->setFixedHeight(30);

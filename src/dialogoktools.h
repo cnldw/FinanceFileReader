@@ -3,7 +3,6 @@
 *
 *Licensed under the LGPL-3.0;
 ************************************************************************/
-
 #ifndef DIALOGOKTOOLS_H
 #define DIALOGOKTOOLS_H
 
@@ -21,6 +20,8 @@
 #include <QTableWidgetSelectionRange>
 #include <src/utils.h>
 #include <QDesktopServices>
+#include "src/publicdefine.h"
+#include "src/utils.h"
 
 namespace Ui {
 class DialogOKTools;

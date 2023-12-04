@@ -14,15 +14,7 @@ DialogModifyRow::DialogModifyRow(OFDFileDefinition *ofd,QStringList rowdata,QWid
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
-#ifdef Q_OS_MAC
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
-#endif
-#ifdef Q_OS_WIN32
-    this->setStyleSheet(UIFontsWindows);
-#endif
+    Utils::setDefaultWindowFonts(this);
     /**************************************************************/
     this->rowDataOld=rowdata;
     this->rowDataNew=rowdata;

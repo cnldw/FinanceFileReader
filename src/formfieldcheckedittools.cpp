@@ -12,15 +12,7 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
 {
     ui->setupUi(this);
     this->setWindowTitle(windowName);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
-#ifdef Q_OS_MAC
-    this->setStyleSheet("font-size:13px;font-family:PingFangSC-Regular,sans-serif;");
-    ui->tableWidgetCheckList->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
-    ui->tableWidgetFieldList->setStyleSheet("font-size:13px;font-family:PingFangSC-Light,sans-serif;");
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet("font-size:13px");
-#endif
+    Utils::setDefaultWindowFonts(this);
 
     ofdConfigList=ofdConfigListPar;
     csvConfigList=csvConfigListPar;
@@ -30,12 +22,13 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
 
 
     //初始化字段列表表格标题
-    ui->tableWidgetFieldList->setColumnCount(4);
+    ui->tableWidgetFieldList->setColumnCount(5);
     QStringList title;
     title.append("字段中文名");
     title.append("字段英文名");
     title.append("条件值");
-    title.append("字段必填");
+    title.append("必填");
+    title.append("主键");
     ui->tableWidgetFieldList->setHorizontalHeaderLabels(title);
     //设置表格的选择方式
     ui->tableWidgetFieldList->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -44,9 +37,11 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
     ui->tableWidgetFieldList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->tableWidgetFieldList->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     ui->tableWidgetFieldList->setColumnWidth(2,80);
-    ui->tableWidgetFieldList->setColumnWidth(3,80);
+    ui->tableWidgetFieldList->setColumnWidth(3,60);
+    ui->tableWidgetFieldList->setColumnWidth(4,60);
     ui->tableWidgetFieldList->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
     ui->tableWidgetFieldList->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
+    ui->tableWidgetFieldList->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Fixed);
     ui->tableWidgetFieldList->setAlternatingRowColors(true);
 
 
@@ -100,11 +95,17 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
     table_field_PopMenu = new QMenu(ui->tableWidgetFieldList);
     action_table_field_selectall=new QAction(tr("勾选所有字段为必填"),this);
     connect(action_table_field_selectall, SIGNAL(triggered()), this, SLOT(table_field_selectAll()));
-    action_table_field_clear_select=new QAction(tr("清除所有字段必填勾选"),this);
-    connect(action_table_field_clear_select, SIGNAL(triggered()), this, SLOT(table_field_clearAllSelet()));
+    action_table_field_clear_all=new QAction(tr("清除所有字段必填勾选"),this);
+    connect(action_table_field_clear_all, SIGNAL(triggered()), this, SLOT(table_field_clearAllSelet()));
+
+    action_table_field_select_range=new QAction(tr("勾选选择的字段为必填"),this);
+    connect(action_table_field_select_range, SIGNAL(triggered()), this, SLOT(table_field_selectRange()));
+    action_table_field_clear_range=new QAction(tr("清除选择的字段必填勾选"),this);
+    connect(action_table_field_clear_range, SIGNAL(triggered()), this, SLOT(table_field_clearRange()));
+
+
     action_table_field_clear_condition=new QAction(tr("清除所有已填写条件"),this);
     connect(action_table_field_clear_condition, SIGNAL(triggered()),this, SLOT(table_field_clearCondition()));
-
 
     table_check_PopMenu = new QMenu(ui->tableWidgetCheckList);
     action_table_check_add=new QAction(tr("新建一个字段必填规则并编辑"),this);
@@ -134,6 +135,9 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
 
     ui->pushButton_AbandonWrite->setEnabled(false);
     ui->pushButton_WriteToFile->setEnabled(false);
+
+    ui->tableWidgeConditionList->setEnabled(false);
+    ui->textBrowserVisualizationConfig->setEnabled(false);
 }
 
 FormFieldCheckEditTools::~FormFieldCheckEditTools()
@@ -302,6 +306,7 @@ void FormFieldCheckEditTools::initCurrentItem(int index1,int index2,int index3){
         else{
             currentIni=ofdConfigList.at(index2).getFileName();
             currentConfigSegment=ofdConfigList.at(index2).getConfigSegmentList().at(index3).getConfigSegment();
+            currentEditConfigSegmentprimaryKeyFieldList=ofdConfigList.at(index2).getConfigSegmentList().at(index3).getPrimaryKeyFieldList();
             if(ofdConfigList.at(index2).getConfigSegmentList().at(index3).getFieldList().count()>0){
                 for(int i=0;i<ofdConfigList.at(index2).getConfigSegmentList().at(index3).getFieldList().count();i++){
                     QStringList line;
@@ -326,6 +331,7 @@ void FormFieldCheckEditTools::initCurrentItem(int index1,int index2,int index3){
         else {
             currentIni=csvConfigList.at(index2).getFileName();
             currentConfigSegment=csvConfigList.at(index2).getConfigSegmentList().at(index3).getConfigSegment();
+            currentEditConfigSegmentprimaryKeyFieldList=csvConfigList.at(index2).getConfigSegmentList().at(index3).getPrimaryKeyFieldList();
             if(csvConfigList.at(index2).getConfigSegmentList().at(index3).getFieldList().count()>0){
                 for(int i=0;i<csvConfigList.at(index2).getConfigSegmentList().at(index3).getFieldList().count();i++){
                     QStringList line;
@@ -350,6 +356,7 @@ void FormFieldCheckEditTools::initCurrentItem(int index1,int index2,int index3){
         else {
             currentIni=fixedConfigList.at(index2).getFileName();
             currentConfigSegment=fixedConfigList.at(index2).getConfigSegmentList().at(index3).getConfigSegment();
+            currentEditConfigSegmentprimaryKeyFieldList=fixedConfigList.at(index2).getConfigSegmentList().at(index3).getPrimaryKeyFieldList();
             if(fixedConfigList.at(index2).getConfigSegmentList().at(index3).getFieldList().count()>0){
                 for(int i=0;i<fixedConfigList.at(index2).getConfigSegmentList().at(index3).getFieldList().count();i++){
                     QStringList line;
@@ -378,11 +385,15 @@ void FormFieldCheckEditTools::initCurrentItem(int index1,int index2,int index3){
             item0->setFlags(item0->flags() & (~Qt::ItemIsEditable));
             QTableWidgetItem *item1= new QTableWidgetItem(ch);
             item1->setFlags(item1->flags() & (~Qt::ItemIsEditable));
-            QTableWidgetItem *item2= new QTableWidgetItem();
             ui->tableWidgetFieldList->setItem(i,0,item0);
             ui->tableWidgetFieldList->setItem(i,1,item1);
+            //字段值
+            QTableWidgetItem *item2= new QTableWidgetItem();
+            item2->setFlags(item2->flags() & (~Qt::ItemIsEditable));
             ui->tableWidgetFieldList->setItem(i,2,item2);
+
             QCheckBox * checkB = new QCheckBox(this); //创建checkbox
+            checkB->setEnabled(false);
             checkB->setCheckState(Qt::Unchecked); //设置状态
             QWidget *w = new QWidget(this); //创建一个widget
             QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
@@ -391,6 +402,23 @@ void FormFieldCheckEditTools::initCurrentItem(int index1,int index2,int index3){
             hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
             w->setLayout(hLayout); //设置widget的布局
             ui->tableWidgetFieldList->setCellWidget(i,3,w);
+
+            //主键标识
+            QCheckBox * checkC = new QCheckBox(this); //创建checkbox
+            if(currentEditConfigSegmentprimaryKeyFieldList.contains(i)){
+                checkC->setCheckState(Qt::Checked); //设置状态
+            }
+            else{
+                checkC->setCheckState(Qt::Unchecked); //设置状态
+            }
+            checkC->setEnabled(false);
+            QHBoxLayout *hLayout2 = new QHBoxLayout(); //创建布局
+            hLayout2->addWidget(checkC); //添加checkbox
+            hLayout2->setMargin(0); //设置边缘距离 否则会很难看
+            hLayout2->setAlignment(checkC, Qt::AlignCenter); //居中
+            QWidget *w2 = new QWidget(this); //创建一个widget
+            w2->setLayout(hLayout2); //设置widget的布局
+            ui->tableWidgetFieldList->setCellWidget(i,4,w2);
         }
     }
     //初始化当前的必填字段检查
@@ -538,6 +566,8 @@ void FormFieldCheckEditTools::fieldCheckEditSelect()
     QList<QTableWidgetSelectionRange> itemsRange=ui->tableWidgetCheckList->selectedRanges();
     if(itemsRange.count()==1&&itemsRange.at(0).bottomRow()==itemsRange.at(0).topRow()){
         //进入编辑模式,屏蔽无关按钮
+        editFieldCheckMode=true;
+        editPrimaryMode=false;
         inEditMode();
         currentEditCheckIndex=itemsRange.at(0).topRow();
         currentEditConListOverList=currentEditConfigSegmentCheckItemList.at(itemsRange.at(0).topRow()).getCheckConditionsListOverList();
@@ -549,15 +579,8 @@ void FormFieldCheckEditTools::fieldCheckEditSelect()
             if(ui->tableWidgetFieldList->rowCount()>0){
                 for (int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
                     ui->tableWidgetFieldList->item(i,2)->setText("");
-                    QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-                    checkB->setCheckState(Qt::Unchecked); //设置状态
-                    QWidget *w = new QWidget(this); //创建一个widget
-                    QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-                    hLayout->addWidget(checkB); //添加checkbox
-                    hLayout->setMargin(0); //设置边缘距离 否则会很难看
-                    hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-                    w->setLayout(hLayout); //设置widget的布局
-                    ui->tableWidgetFieldList->setCellWidget(i,3,w);
+                    QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+                    checkBox3->setCheckState(Qt::Unchecked);
                 }
             }
             fieldConAdd();
@@ -576,26 +599,12 @@ void FormFieldCheckEditTools::fieldCheckEditSelect()
                         else{
                             fieldListString.append(",").append(ui->tableWidgetFieldList->item(i,0)->text());
                         }
-                        QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-                        checkB->setCheckState(Qt::Checked); //设置状态
-                        QWidget *w = new QWidget(this); //创建一个widget
-                        QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-                        hLayout->addWidget(checkB); //添加checkbox
-                        hLayout->setMargin(0); //设置边缘距离 否则会很难看
-                        hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-                        w->setLayout(hLayout); //设置widget的布局
-                        ui->tableWidgetFieldList->setCellWidget(i,3,w);
+                        QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+                        checkBox3->setCheckState(Qt::Checked);
                     }
                     else{
-                        QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-                        checkB->setCheckState(Qt::Unchecked); //设置状态
-                        QWidget *w = new QWidget(this); //创建一个widget
-                        QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-                        hLayout->addWidget(checkB); //添加checkbox
-                        hLayout->setMargin(0); //设置边缘距离 否则会很难看
-                        hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-                        w->setLayout(hLayout); //设置widget的布局
-                        ui->tableWidgetFieldList->setCellWidget(i,3,w);
+                        QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+                        checkBox3->setCheckState(Qt::Unchecked);
                     }
                 }
             }
@@ -676,6 +685,9 @@ void FormFieldCheckEditTools::fieldCheckDeleteSelect()
             this->setWindowTitle(windowName);
             ui->pushButton_AbandonWrite->setEnabled(false);
             ui->pushButton_WriteToFile->setEnabled(false);
+            ui->comboBox_1->setEnabled(true);
+            ui->comboBox_2->setEnabled(true);
+            ui->comboBox_3->setEnabled(true);
             statusBarDisplayMessage("已删除新增待编辑的规则...");
         }
         else{
@@ -722,25 +734,43 @@ void FormFieldCheckEditTools::on_tableWidgetFieldList_customContextMenuRequested
     if( ui->tableWidgetFieldList->rowAt(pos.y()) <0){
         return;
     }
-    table_field_PopMenu->addAction(action_table_field_selectall);
-    table_field_PopMenu->addAction(action_table_field_clear_select);
-    table_field_PopMenu->addAction(action_table_field_clear_condition);
+    if(editFieldCheckMode&&!editPrimaryMode){
+        action_table_field_select_range->setText(tr("勾选选择的字段为必填"));
+        table_field_PopMenu->addAction(action_table_field_select_range);
+        action_table_field_clear_range->setText(tr("清除选择的字段必填勾选"));
+        table_field_PopMenu->addAction(action_table_field_clear_range);
 
+        action_table_field_selectall->setText(tr("勾选所有字段为必填"));
+        table_field_PopMenu->addAction(action_table_field_selectall);
+        action_table_field_clear_all->setText(tr("清除所有字段必填勾选"));
+        table_field_PopMenu->addAction(action_table_field_clear_all);
+
+        table_field_PopMenu->addAction(action_table_field_clear_condition);
+    }
+    if(!editFieldCheckMode&&editPrimaryMode){
+        action_table_field_select_range->setText(tr("勾选选择的字段为主键字段"));
+        table_field_PopMenu->addAction(action_table_field_select_range);
+        action_table_field_clear_range->setText(tr("清除选择的字段为主键字段"));
+        table_field_PopMenu->addAction(action_table_field_clear_range);
+
+        action_table_field_selectall->setText(tr("勾选所有字段为主键字段"));
+        table_field_PopMenu->addAction(action_table_field_selectall);
+        action_table_field_clear_all->setText(tr("清除所有字段为主键字段"));
+        table_field_PopMenu->addAction(action_table_field_clear_all);
+    }
     table_field_PopMenu->exec(QCursor::pos());
 }
 
 void FormFieldCheckEditTools::table_field_selectAll(){
     if(ui->tableWidgetFieldList->rowCount()>0){
         for (int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
-            QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-            checkB->setCheckState(Qt::Checked); //设置状态
-            QWidget *w = new QWidget(this); //创建一个widget
-            QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-            hLayout->addWidget(checkB); //添加checkbox
-            hLayout->setMargin(0); //设置边缘距离 否则会很难看
-            hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-            w->setLayout(hLayout); //设置widget的布局
-            ui->tableWidgetFieldList->setCellWidget(i,3,w);
+            if(editFieldCheckMode&!editPrimaryMode){
+                QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+                checkBox3->setCheckState(Qt::Checked);
+            }else if(!editFieldCheckMode&editPrimaryMode){
+                QCheckBox * checkBox4 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 4)->children().at(1));
+                checkBox4->setCheckState(Qt::Checked);
+            }
         }
     }
 }
@@ -748,15 +778,51 @@ void FormFieldCheckEditTools::table_field_selectAll(){
 void FormFieldCheckEditTools::table_field_clearAllSelet(){
     if(ui->tableWidgetFieldList->rowCount()>0){
         for (int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
-            QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-            checkB->setCheckState(Qt::Unchecked); //设置状态
-            QWidget *w = new QWidget(this); //创建一个widget
-            QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-            hLayout->addWidget(checkB); //添加checkbox
-            hLayout->setMargin(0); //设置边缘距离 否则会很难看
-            hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-            w->setLayout(hLayout); //设置widget的布局
-            ui->tableWidgetFieldList->setCellWidget(i,3,w);
+            if(editFieldCheckMode&!editPrimaryMode){
+                QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+                checkBox3->setCheckState(Qt::Unchecked);
+            }else if(!editFieldCheckMode&editPrimaryMode){
+                QCheckBox * checkBox4 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 4)->children().at(1));
+                checkBox4->setCheckState(Qt::Unchecked);
+            }
+        }
+    }
+}
+
+void FormFieldCheckEditTools::table_field_selectRange(){
+    QList<QTableWidgetSelectionRange> itemsRange=ui->tableWidgetFieldList->selectedRanges();
+    if(itemsRange.count()>0){
+        for(int aa=0;aa<itemsRange.count();aa++){
+            int first=itemsRange.at(aa).topRow();
+            int last=itemsRange.at(aa).bottomRow();
+            for(int bb=first;bb<=last;bb++){
+                if(editFieldCheckMode&!editPrimaryMode){
+                    QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 3)->children().at(1));
+                    checkBox3->setCheckState(Qt::Checked);
+                }else if(!editFieldCheckMode&editPrimaryMode){
+                    QCheckBox * checkBox4 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 4)->children().at(1));
+                    checkBox4->setCheckState(Qt::Checked);
+                }
+            }
+        }
+    }
+}
+
+void FormFieldCheckEditTools::table_field_clearRange(){
+    QList<QTableWidgetSelectionRange> itemsRange=ui->tableWidgetFieldList->selectedRanges();
+    if(itemsRange.count()>0){
+        for(int aa=0;aa<itemsRange.count();aa++){
+            int first=itemsRange.at(aa).topRow();
+            int last=itemsRange.at(aa).bottomRow();
+            for(int bb=first;bb<=last;bb++){
+                if(editFieldCheckMode&!editPrimaryMode){
+                    QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 3)->children().at(1));
+                    checkBox3->setCheckState(Qt::Unchecked);
+                }else if(!editFieldCheckMode&editPrimaryMode){
+                    QCheckBox * checkBox4 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 4)->children().at(1));
+                    checkBox4->setCheckState(Qt::Unchecked);
+                }
+            }
         }
     }
 }
@@ -774,7 +840,7 @@ void FormFieldCheckEditTools::on_tableWidgetCheckList_customContextMenuRequested
 {
     table_check_PopMenu->clear();
     //编辑中不准动
-    if(editMode){return;}
+    if(editFieldCheckMode){return;}
     //判断当前鼠标位置是不是在表格单元格位置内
     //空表--仅仅允许新增
     if(ui->tableWidgetCheckList->rowCount()<1||ui->tableWidgetCheckList->rowAt(pos.y()) <0){
@@ -791,10 +857,7 @@ void FormFieldCheckEditTools::on_tableWidgetCheckList_customContextMenuRequested
     table_check_PopMenu->exec(QCursor::pos());
 }
 
-
-
 void FormFieldCheckEditTools::inEditMode(){
-    editMode=true;
     ui->comboBox_1->setEnabled(false);
     ui->comboBox_2->setEnabled(false);
     ui->comboBox_3->setEnabled(false);
@@ -802,36 +865,66 @@ void FormFieldCheckEditTools::inEditMode(){
     ui->pushButton_AbandonWrite->setEnabled(false);
     ui->pushButton_WriteToFile->setEnabled(false);
 
-    //按钮状态调整////////////////////////////////
-    ui->pushButton_ImportField->setEnabled(true);
-    ui->pushButton_ImportCon->setEnabled(true);
+    //字段必填
+    if(editFieldCheckMode&&!editPrimaryMode){
+        ui->pushButton_PrimaryKey->setEnabled(false);
 
-    ui->pushButton_summitField->setEnabled(true);
-    ui->pushButton_summitCon->setEnabled(true);
+        ui->pushButton_ImportField->setEnabled(true);
+        ui->pushButton_ImportCon->setEnabled(true);
+
+        ui->pushButton_summitField->setEnabled(true);
+        ui->pushButton_summitCon->setEnabled(true);
+
+        ui->tableWidgeConditionList->setEnabled(true);
+        ui->textBrowserVisualizationConfig->setEnabled(true);
+
+        for (int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
+            ui->tableWidgetFieldList->item(i,2)->setText("");
+            QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+            checkBox3->setEnabled(true);
+        }
+    }
+    //主键
+    if(!editFieldCheckMode&&editPrimaryMode){
+        ui->pushButton_ImportField->setEnabled(true);
+
+        ui->pushButton_PrimaryKey->setEnabled(false);
+
+        ui->tableWidgeConditionList->setEnabled(false);
+        ui->textBrowserVisualizationConfig->setEnabled(false);
+
+        for(int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
+            QCheckBox * checkBox = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 4)->children().at(1));
+            checkBox->setEnabled(true);
+        }
+    }
 
     ui->pushButton_abandonSummit->setEnabled(true);
     ui->pushButton_Summit->setEnabled(true);
 
     ui->pushButton_AbandonWrite->setEnabled(false);
     ui->pushButton_WriteToFile->setEnabled(false);
-    //////////////////////////////////////////////
 }
+
 void FormFieldCheckEditTools::outEditMode(){
-    editMode=false;
+    editFieldCheckMode=false;
+    editPrimaryMode=false;
     currentEditCheckIndex=-1;
     currentEditRequiredFields.clear();
     currentEditConditionIndex=-1;
     currentEditConListOverList.clear();
-    if(changeNotSaveToFile||(!changeNotSaveToFile&&newAddCheckIndex!=-1)){
+    if(changeNotSaveToFile||newAddCheckIndex!=-1){
         if(changeNotSaveToFile){
             this->setWindowTitle(windowName+"-有修改待写入配置文件");
         }
-        else{
+        else if(newAddCheckIndex!=-1){
             this->setWindowTitle(windowName+"-有新增规则待编辑初始化");
         }
         ui->comboBox_1->setEnabled(false);
         ui->comboBox_2->setEnabled(false);
         ui->comboBox_3->setEnabled(false);
+
+        ui->pushButton_PrimaryKey->setEnabled(true);
 
         ui->tableWidgetCheckList->setEnabled(true);
         ui->pushButton_AbandonWrite->setEnabled(true);
@@ -852,12 +945,17 @@ void FormFieldCheckEditTools::outEditMode(){
 
         ui->pushButton_AbandonWrite->setEnabled(true);
         ui->pushButton_WriteToFile->setEnabled(true);
+
+        ui->tableWidgeConditionList->setEnabled(false);
+        ui->textBrowserVisualizationConfig->setEnabled(false);
     }
     else{
         this->setWindowTitle(windowName);
         ui->comboBox_1->setEnabled(true);
         ui->comboBox_2->setEnabled(true);
         ui->comboBox_3->setEnabled(true);
+
+        ui->pushButton_PrimaryKey->setEnabled(true);
 
         ui->tableWidgetCheckList->setEnabled(true);
         ui->pushButton_AbandonWrite->setEnabled(true);
@@ -878,13 +976,32 @@ void FormFieldCheckEditTools::outEditMode(){
 
         ui->pushButton_AbandonWrite->setEnabled(false);
         ui->pushButton_WriteToFile->setEnabled(false);
-    }
 
+        ui->tableWidgeConditionList->setEnabled(false);
+        ui->textBrowserVisualizationConfig->setEnabled(false);
+    }
+    //还原
+    for(int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
+        QTableWidgetItem *item2= ui->tableWidgetFieldList->item(i,2);
+        item2->setText("");
+        item2->setFlags(item2->flags() & (~Qt::ItemIsEditable));
+        QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+        checkBox3->setEnabled(false);
+        checkBox3->setCheckState(Qt::Unchecked);
+        QCheckBox * checkBox4 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 4)->children().at(1));
+        if(currentEditConfigSegmentprimaryKeyFieldList.contains(i)){
+            checkBox4->setCheckState(Qt::Checked);
+        }
+        else{
+            checkBox4->setCheckState(Qt::Unchecked);
+        }
+        checkBox4->setEnabled(false);
+    }
 }
 
 void FormFieldCheckEditTools::on_pushButton_abandonSummit_clicked()
 {
-    if(editMode){
+    if(editFieldCheckMode||editPrimaryMode){
         outEditMode();
         statusBarDisplayMessage("放弃并退出编辑...");
     }
@@ -896,7 +1013,7 @@ void FormFieldCheckEditTools::on_pushButton_summitCon_clicked()
     //macos下点提交时，最后一次编辑的表格取不到数据，先调用下禁用再开启就可以了
     ui->tableWidgetFieldList->setEnabled(false);
     ui->tableWidgetFieldList->setEnabled(true);
-    if(editMode&&currentEditConditionIndex>=0&&currentEditConListOverList.count()>currentEditConditionIndex){
+    if(editFieldCheckMode&&currentEditConditionIndex>=0&&currentEditConListOverList.count()>currentEditConditionIndex){
         //查找是否存在一个All规则
         int allCheckIndex=-1;
         if (currentEditConListOverList.count()>0){
@@ -1075,7 +1192,7 @@ void FormFieldCheckEditTools::on_pushButton_summitField_clicked()
 void FormFieldCheckEditTools::on_tableWidgeConditionList_customContextMenuRequested(const QPoint &pos)
 {
     table_condition_PopMenu->clear();
-    if(!editMode){return;}
+    if(!editFieldCheckMode){return;}
     //判断当前鼠标位置是不是在表格单元格位置内
     //空表
     if(ui->tableWidgeConditionList->rowCount()<1||ui->tableWidgeConditionList->rowAt(pos.y()) <0){
@@ -1147,7 +1264,7 @@ void FormFieldCheckEditTools::fieldConAdd(){
 }
 
 void FormFieldCheckEditTools::checkAdd(){
-    if(!editMode){
+    if(!editFieldCheckMode){
         if(newAddCheckIndex!=-1){
             statusBarDisplayMessage(QString("序号为%1新建的必填规则还没提交,请编辑提交后再新建新的必填规则...").arg(newAddCheckIndex+1));
         }
@@ -1162,7 +1279,14 @@ void FormFieldCheckEditTools::checkAdd(){
             QTableWidgetItem *item1=new QTableWidgetItem;
             item1->setText("新增规则编辑中...");
             ui->tableWidgetCheckList->setItem(currentEditConfigSegmentCheckItemList.count()-1,1,item1);
+            //选中新增的行
+            QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(currentEditConfigSegmentCheckItemList.count()-1,0,currentEditConfigSegmentCheckItemList.count()-1,ui->tableWidgetCheckList->columnCount()-1);
+            ui->tableWidgetCheckList->clearSelection();
+            ui->tableWidgetCheckList->scrollToBottom();
+            ui->tableWidgetCheckList->setRangeSelected(addRange,true);
             //进入编辑模式
+            editFieldCheckMode=true;
+            editPrimaryMode=false;
             inEditMode();
             this->setWindowTitle(windowName+"-规则编辑中");
             //设置正在编辑的坐标
@@ -1172,15 +1296,8 @@ void FormFieldCheckEditTools::checkAdd(){
             if(ui->tableWidgetFieldList->rowCount()>0){
                 for (int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
                     ui->tableWidgetFieldList->item(i,2)->setText("");
-                    QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-                    checkB->setCheckState(Qt::Unchecked); //设置状态
-                    QWidget *w = new QWidget(this); //创建一个widget
-                    QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-                    hLayout->addWidget(checkB); //添加checkbox
-                    hLayout->setMargin(0); //设置边缘距离 否则会很难看
-                    hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-                    w->setLayout(hLayout); //设置widget的布局
-                    ui->tableWidgetFieldList->setCellWidget(i,3,w);
+                    QCheckBox * checkBox3 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i, 3)->children().at(1));
+                    checkBox3->setCheckState(Qt::Unchecked);
                 }
             }
             //新建一个条件分组
@@ -1230,8 +1347,7 @@ void FormFieldCheckEditTools::fieldConDeleteSelect(){
 
 void FormFieldCheckEditTools::on_pushButton_Summit_clicked()
 {
-    qDebug()<<newAddConditionInited;
-    if(editMode){
+    if(editFieldCheckMode&&!editPrimaryMode){
         if(!newAddConditionInited){
             statusBarDisplayMessage(QString("条件分组列表中,编号为%1的新增的条件分组还未提交,请先编辑并提交该条件配置或删除该条件配置...").arg(currentEditConditionIndex+1));
             return;
@@ -1244,79 +1360,108 @@ void FormFieldCheckEditTools::on_pushButton_Summit_clicked()
             statusBarDisplayMessage("还没有任何有效的必填字段,请先配置并提交必填字段...");
             return;
         }
-    }
-    if(editMode&&currentEditConditionIndex!=-1){
-        bool fieldChange=false;
-        bool conChange=false;
-        //检查字段是发生了变化
-        QList<int> currentEditOldRequiredFields=currentEditConfigSegmentCheckItemList.at(currentEditCheckIndex).getRequiredFields();
-        if(currentEditRequiredFields.count()!=currentEditOldRequiredFields.count()){
-            fieldChange=true;
-        }
-        else if (currentEditRequiredFields.count()>0&&currentEditOldRequiredFields.count()>0){
-            for(int i=0;i<currentEditOldRequiredFields.count();i++){
-                if(currentEditRequiredFields.at(i)!=currentEditOldRequiredFields.at(i)){
-                    fieldChange=true;
-                    break;
+        if(editFieldCheckMode&&currentEditConditionIndex!=-1){
+            bool fieldChange=false;
+            bool conChange=false;
+            //检查字段是发生了变化
+            QList<int> currentEditOldRequiredFields=currentEditConfigSegmentCheckItemList.at(currentEditCheckIndex).getRequiredFields();
+            if(currentEditRequiredFields.count()!=currentEditOldRequiredFields.count()){
+                fieldChange=true;
+            }
+            else if (currentEditRequiredFields.count()>0&&currentEditOldRequiredFields.count()>0){
+                for(int i=0;i<currentEditOldRequiredFields.count();i++){
+                    if(currentEditRequiredFields.at(i)!=currentEditOldRequiredFields.at(i)){
+                        fieldChange=true;
+                        break;
+                    }
                 }
             }
-        }
-        QList<QList<CheckCondition>> conListOverListOld=currentEditConfigSegmentCheckItemList.at(currentEditCheckIndex).getCheckConditionsListOverList();
-        if(!fieldChange){
-            if(conListOverListOld.count()!=currentEditConListOverList.count()){
-                conChange=true;
-            }else if (conListOverListOld.count()>0&&currentEditConListOverList.count()>0){
-                for(int i=0;i<conListOverListOld.count();i++){
-                    if(conChange){
-                        break;
-                    }
-                    QList<CheckCondition> oldItemList=conListOverListOld.at(i);
-                    QList<CheckCondition> newItemList=currentEditConListOverList.at(i);
-                    if(oldItemList.count()!=newItemList.count()){
-                        conChange=true;
-                        break;
-                    }
-                    else if(oldItemList.count()>0&&newItemList.count()>0){
-                        for(int i=0;i<oldItemList.count();i++){
-                            if(oldItemList.at(i).index!=newItemList.at(i).index||oldItemList.at(i).value!=newItemList.at(i).value){
-                                conChange=true;
-                                break;
+            QList<QList<CheckCondition>> conListOverListOld=currentEditConfigSegmentCheckItemList.at(currentEditCheckIndex).getCheckConditionsListOverList();
+            if(!fieldChange){
+                if(conListOverListOld.count()!=currentEditConListOverList.count()){
+                    conChange=true;
+                }else if (conListOverListOld.count()>0&&currentEditConListOverList.count()>0){
+                    for(int i=0;i<conListOverListOld.count();i++){
+                        if(conChange){
+                            break;
+                        }
+                        QList<CheckCondition> oldItemList=conListOverListOld.at(i);
+                        QList<CheckCondition> newItemList=currentEditConListOverList.at(i);
+                        if(oldItemList.count()!=newItemList.count()){
+                            conChange=true;
+                            break;
+                        }
+                        else if(oldItemList.count()>0&&newItemList.count()>0){
+                            for(int i=0;i<oldItemList.count();i++){
+                                if(oldItemList.at(i).index!=newItemList.at(i).index||oldItemList.at(i).value!=newItemList.at(i).value){
+                                    conChange=true;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
             }
+            //检测字段列表是否发生了变化
+            if(!fieldChange&&!conChange){
+                outEditMode();
+                statusBarDisplayMessage("配置没有发生任何修改,忽略提交...");
+            }
+            else{
+                changeNotSaveToFile=true;
+                //将编辑的字段和条件写入待保存的必填清单
+                fieldcheckitem newCheck=currentEditConfigSegmentCheckItemList.at(currentEditCheckIndex);
+                newCheck.setRequiredFields(currentEditRequiredFields);
+                newCheck.setCheckConditions(currentEditConListOverList);
+                //写入新的
+                currentEditConfigSegmentCheckItemList.replace(currentEditCheckIndex,newCheck);
+                //将编辑的描述信息写入到列表
+                QString con;
+                for(int i=0;i<ui->tableWidgeConditionList->rowCount();i++){
+                    if(con.isEmpty()){
+                        con.append(ui->tableWidgeConditionList->item(i,0)->text());
+                    }else{
+                        con.append(";").append(ui->tableWidgeConditionList->item(i,0)->text());
+                    }
+                }
+                ui->tableWidgetCheckList->item(currentEditCheckIndex,0)->setText(con);
+                ui->tableWidgetCheckList->item(currentEditCheckIndex,1)->setText(ui->textBrowserVisualizationConfig->toPlainText());
+                if(currentEditCheckIndex==newAddCheckIndex){
+                    newAddCheckIndex=-1;
+                    newAddCheckInited=true;
+                }
+                outEditMode();
+                statusBarDisplayMessage("字段必填编辑已成功提交,待写入配置文件...");
+            }
         }
-        //检测字段列表是否发生了变化
-        if(!fieldChange&&!conChange){
-            statusBarDisplayMessage("配置没有发生任何修改,忽略提交...");
+    }
+    if(!editFieldCheckMode&&editPrimaryMode){
+        QList <uint> newPrimaryKeyFieldList;
+        bool flag=false;
+        for(int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
+            QCheckBox * checkBox4 = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(i,4)->children().at(1));
+            checkBox4->setEnabled(false);
+            if(checkBox4->checkState()==Qt::Checked){
+                if(!flag&&!currentEditConfigSegmentprimaryKeyFieldList.contains(i)){
+                    flag=true;
+                }
+                newPrimaryKeyFieldList.append(i);
+            }
+            else{
+                if(!flag&&currentEditConfigSegmentprimaryKeyFieldList.contains(i)){
+                    flag=true;
+                }
+            }
+        }
+        if(!flag){
             outEditMode();
+            statusBarDisplayMessage("配置没有发生任何修改,忽略提交...");
         }
         else{
             changeNotSaveToFile=true;
-            //将编辑的字段和条件写入待保存的必填清单
-            fieldcheckitem newCheck=currentEditConfigSegmentCheckItemList.at(currentEditCheckIndex);
-            newCheck.setRequiredFields(currentEditRequiredFields);
-            newCheck.setCheckConditions(currentEditConListOverList);
-            //写入新的
-            currentEditConfigSegmentCheckItemList.replace(currentEditCheckIndex,newCheck);
-            //将编辑的描述信息写入到列表
-            QString con;
-            for(int i=0;i<ui->tableWidgeConditionList->rowCount();i++){
-                if(con.isEmpty()){
-                    con.append(ui->tableWidgeConditionList->item(i,0)->text());
-                }else{
-                    con.append(";").append(ui->tableWidgeConditionList->item(i,0)->text());
-                }
-            }
-            ui->tableWidgetCheckList->item(currentEditCheckIndex,0)->setText(con);
-            ui->tableWidgetCheckList->item(currentEditCheckIndex,1)->setText(ui->textBrowserVisualizationConfig->toPlainText());
-            if(currentEditCheckIndex==newAddCheckIndex){
-                newAddCheckIndex=-1;
-                newAddCheckInited=true;
-            }
+            currentEditConfigSegmentprimaryKeyFieldList=newPrimaryKeyFieldList;
             outEditMode();
-            statusBarDisplayMessage("编辑已成功提交,待写入配置文件...");
+            statusBarDisplayMessage("主键字段编辑已成功提交,待写入配置文件...");
         }
     }
 }
@@ -1326,6 +1471,7 @@ void FormFieldCheckEditTools::on_pushButton_AbandonWrite_clicked()
 {
     //修改标记改为未修改
     changeNotSaveToFile=false;
+    newAddCheckIndex=-1;
     //模拟退出编辑,刷新各个按钮状态
     outEditMode();
     //重新加载数据
@@ -1333,7 +1479,6 @@ void FormFieldCheckEditTools::on_pushButton_AbandonWrite_clicked()
     int index2=ui->comboBox_2->currentIndex();
     int index3=ui->comboBox_3->currentIndex();
     initCurrentItem(index1,index2,index3);
-    this->setWindowTitle(windowName);
     statusBarDisplayMessage("放弃写入配置,已还原配置...");
 }
 
@@ -1356,7 +1501,18 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
             int insertIndex=-1;
             int oldStartIndex=-1;
             int oldEndIndex=-1;
-            if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+            QString parimaryKeyListStr="";
+            if(!currentEditConfigSegmentprimaryKeyFieldList.empty()){
+                for(int i=0;i<currentEditConfigSegmentprimaryKeyFieldList.count();i++){
+                    if(parimaryKeyListStr.isEmpty()){
+                        parimaryKeyListStr.append(QString::number(currentEditConfigSegmentprimaryKeyFieldList.at(i)));
+                    }
+                    else{
+                        parimaryKeyListStr.append(",").append(QString::number(currentEditConfigSegmentprimaryKeyFieldList.at(i)));
+                    }
+                }
+            }
+            if (dataFile.open(QFile::ReadOnly))
             {
                 QTextCodec *codec=QTextCodec::codecForName("UTF-8");
                 QString line;
@@ -1374,8 +1530,13 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                 }
                 dataFile.close();
                 if(findConfig){
+                    int priamyKeyIndex=-1;
                     if(iniData.count()>configbeginIndex+1){
                         for(int i=configbeginIndex+1;i<iniData.count();i++){
+                            //主键位置
+                            if(priamyKeyIndex<0&&iniData.at(i).startsWith("fieldprimarylist=")){
+                                priamyKeyIndex=i;
+                            }
                             //找到第一个必填字段检查或者空行或者下一个配置段的开始
                             if(insertIndex==-1&&((iniData.at(i).startsWith("[")&&iniData.at(i).endsWith("]"))||iniData.at(i).trimmed().isEmpty()||iniData.at(i).startsWith("fieldcheck_"))){
                                 insertIndex=i;
@@ -1384,10 +1545,12 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                             if(oldStartIndex==-1&&iniData.at(i).startsWith("fieldcheck_")){
                                 oldStartIndex=i;
                             }
-                            //老的必填字段配置结束位置
-                            if(oldStartIndex!=-1&&((iniData.at(i).startsWith("[")&&iniData.at(i).endsWith("]"))||iniData.at(i).trimmed().isEmpty())){
-                                oldEndIndex=i-1;
-                                break;
+                            //老的必填字段配置结束位置-找到最后一个必填
+                            if(oldStartIndex!=-1&&iniData.at(i).startsWith("fieldcheck_")){
+                                oldEndIndex=i;
+                                if(i==iniData.count()-1||(i<iniData.count()-1&&iniData.at(i+1).startsWith("[")&&iniData.at(i+1).endsWith("]"))||iniData.at(i+1).trimmed().isEmpty()){
+                                    break;
+                                }
                             }
                             //文件尾特殊处理
                             if(oldStartIndex>0&&oldEndIndex==-1&&i==iniData.count()-1){
@@ -1395,12 +1558,22 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                 break;
                             }
                         }
+                        //主键配置
+                        //新的为空，当前非空-替换
+                        if(parimaryKeyListStr.isEmpty()&&priamyKeyIndex>0){
+                            iniData.replace(priamyKeyIndex,"fieldprimarylist=\"\"");
+                        }
+                        //新的非空，当前非空，替换
+                        else if(!parimaryKeyListStr.isEmpty()&&priamyKeyIndex>0){
+                            iniData.replace(priamyKeyIndex,"fieldprimarylist=\""+parimaryKeyListStr+"\"");
+                        }
                         //先清除老的配置
                         if(oldEndIndex>=oldStartIndex&&oldEndIndex>=0&&oldStartIndex>=0){
                             for(int i=oldEndIndex;i>=oldStartIndex;i--){
                                 iniData.removeAt(i);
                             }
                         }
+                        //其余场景放到后面插入
                         //这里开始插入新的配置
                         if(insertIndex>0){
                             //生成规则并写入配置文件
@@ -1463,6 +1636,10 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                     iniData.insert(insertIndex,newcheckList.at(aaa));
                                 }
                             }
+                            //主键-新的非空,当前空，插入，在必填字段之前
+                            if(!parimaryKeyListStr.isEmpty()&&priamyKeyIndex<0){
+                                iniData.insert(insertIndex,"fieldprimarylist=\""+parimaryKeyListStr+"\"");
+                            }
                             //写入文件
                             if (dataFile.open(QFile::WriteOnly | QIODevice::Truncate)) {
                                 QString fileData;
@@ -1492,6 +1669,7 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                                 if(l2==index3){
                                                     qDebug()<<index1<<index2<<index3;
                                                     configSegment.setFieldcheckItemList(currentEditConfigSegmentCheckItemList);
+                                                    configSegment.setPrimaryKeyFieldList(currentEditConfigSegmentprimaryKeyFieldList);
                                                 }
                                                 newConfigSegmentList.append(configSegment);
                                                 l2++;
@@ -1512,6 +1690,7 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                                 if(l2==index3){
                                                     qDebug()<<index1<<index2<<index3;
                                                     configSegment.setFieldcheckItemList(currentEditConfigSegmentCheckItemList);
+                                                    configSegment.setPrimaryKeyFieldList(currentEditConfigSegmentprimaryKeyFieldList);
                                                 }
                                                 newConfigSegmentList.append(configSegment);
                                                 l2++;
@@ -1532,6 +1711,7 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                                 if(l2==index3){
                                                     qDebug()<<index1<<index2<<index3;
                                                     configSegment.setFieldcheckItemList(currentEditConfigSegmentCheckItemList);
+                                                    configSegment.setPrimaryKeyFieldList(currentEditConfigSegmentprimaryKeyFieldList);
                                                 }
                                                 newConfigSegmentList.append(configSegment);
                                                 l2++;
@@ -1625,7 +1805,17 @@ void FormFieldCheckEditTools::on_pushButton_ImportField_clicked()
         for(int i=0;i<ui->tableWidgetFieldList->rowCount();i++){
             fieldList.append(ui->tableWidgetFieldList->item(i,0)->text());
         }
-        DialogEditText *dialog=new DialogEditText(QString("导入必填字段列表覆盖或者合并当前编辑中的字段列表"),fieldList,1,this);
+        QString title="";
+        int type=0;
+        if(editFieldCheckMode&&!editPrimaryMode){
+            title="导入必填字段列表覆盖或者合并当前编辑中的字段列表";
+            type=1;
+        }
+        else if(!editFieldCheckMode&&editPrimaryMode){
+            title="导入主键字段列表覆盖或者合并当前编辑中的字段列表";
+            type=2;
+        }
+        DialogEditText *dialog=new DialogEditText(title,fieldList,type,this);
         connect(dialog,&DialogEditText::sendImportString,this,&FormFieldCheckEditTools::getImportString);
         dialog->setAttribute(Qt::WA_DeleteOnClose);
         dialog->setModal(true);
@@ -1679,29 +1869,44 @@ void FormFieldCheckEditTools::getImportString(QString data,int type,bool clearOl
             for(int bb=0;bb<ui->tableWidgetFieldList->rowCount();bb++){
                 if(fieldCheckList.contains(ui->tableWidgetFieldList->item(bb,0)->text())){
                     count++;
-                    QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-                    checkB->setCheckState(Qt::Checked); //设置状态
-                    QWidget *w = new QWidget(this); //创建一个widget
-                    QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-                    hLayout->addWidget(checkB); //添加checkbox
-                    hLayout->setMargin(0); //设置边缘距离 否则会很难看
-                    hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-                    w->setLayout(hLayout); //设置widget的布局
-                    ui->tableWidgetFieldList->setCellWidget(bb,3,w);
+                    QCheckBox * checkBox = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 3)->children().at(1));
+                    checkBox->setCheckState(Qt::Checked);
                 }
                 else if(clearOldData){
-                    QCheckBox * checkB = new QCheckBox(this); //创建checkbox
-                    checkB->setCheckState(Qt::Unchecked); //设置状态
-                    QWidget *w = new QWidget(this); //创建一个widget
-                    QHBoxLayout *hLayout = new QHBoxLayout(); //创建布局
-                    hLayout->addWidget(checkB); //添加checkbox
-                    hLayout->setMargin(0); //设置边缘距离 否则会很难看
-                    hLayout->setAlignment(checkB, Qt::AlignCenter); //居中
-                    w->setLayout(hLayout); //设置widget的布局
-                    ui->tableWidgetFieldList->setCellWidget(bb,3,w);
+                    QCheckBox * checkBox = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 3)->children().at(1));
+                    checkBox->setCheckState(Qt::Unchecked);
+                }
+            }
+            statusBarDisplayMessage(QString("成功导入%1个字段...").arg(count));
+        }
+    }
+    //导入主键字段列表
+    else if (type==2){
+        QStringList fieldCheckList=data.split(",");
+        int count=0;
+        if(fieldCheckList.count()>0){
+            for(int bb=0;bb<ui->tableWidgetFieldList->rowCount();bb++){
+                if(fieldCheckList.contains(ui->tableWidgetFieldList->item(bb,0)->text())){
+                    count++;
+                    QCheckBox * checkBox = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 4)->children().at(1));
+                    checkBox->setCheckState(Qt::Checked);
+                }
+                else if(clearOldData){
+                    QCheckBox * checkBox = qobject_cast<QCheckBox*>(ui->tableWidgetFieldList->cellWidget(bb, 4)->children().at(1));
+                    checkBox->setCheckState(Qt::Unchecked);
                 }
             }
             statusBarDisplayMessage(QString("成功导入%1个字段...").arg(count));
         }
     }
 }
+
+
+void FormFieldCheckEditTools::on_pushButton_PrimaryKey_clicked()
+{
+    editFieldCheckMode=false;
+    editPrimaryMode=true;
+    //进入编辑模式
+    inEditMode();
+}
+

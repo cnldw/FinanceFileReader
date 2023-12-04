@@ -253,6 +253,16 @@ void FIXEDFileDefinition::setConfigSegment(const QString &newConfigSegment)
     configSegment = newConfigSegment;
 }
 
+const QList<uint> &FIXEDFileDefinition::getPrimaryKeyFieldList() const
+{
+    return primaryKeyFieldList;
+}
+
+void FIXEDFileDefinition::setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyFieldList)
+{
+    primaryKeyFieldList = newPrimaryKeyFieldList;
+}
+
 FIXEDFileDefinition::FIXEDFileDefinition()
 {
     

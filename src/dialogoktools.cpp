@@ -5,8 +5,6 @@
 ************************************************************************/
 #include "dialogoktools.h"
 #include "ui_dialogoktools.h"
-#include "src/publicdefine.h"
-
 
 DialogOKTools::DialogOKTools(QWidget *parent) :
     QDialog(parent),
@@ -15,15 +13,7 @@ DialogOKTools::DialogOKTools(QWidget *parent) :
     ui->setupUi(this);
     this->setAcceptDrops(true);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
-#ifdef Q_OS_MAC
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
-#endif
-#ifdef Q_OS_WIN32
-    this->setStyleSheet(UIFontsWindows);
-#endif
+    Utils::setDefaultWindowFonts(this);
 #ifdef Q_OS_MAC
     //修正macos下按钮怪异的表现形状
     ui->pushButton->setFixedHeight(30);

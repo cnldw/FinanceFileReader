@@ -7,6 +7,8 @@
 #define DIALOGMAGNIFY_H
 
 #include <QDialog>
+#include "src/publicdefine.h"
+#include "src/utils.h"
 
 namespace Ui {
 class DialogMagnify;

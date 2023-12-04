@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>字段必填规则配置工具</string>
+   <string>字段必填/主键规则配置工具</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -196,6 +196,20 @@ border-radius:3px;
         <property name="bottomMargin">
          <number>5</number>
         </property>
+        <item>
+         <widget class="QPushButton" name="pushButton_PrimaryKey">
+          <property name="text">
+           <string>编辑主键字段列表</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QPushButton" name="pushButton_ImportCon">
           <property name="maximumSize">

@@ -13,15 +13,7 @@ DialogChooseFieldCheckExportReport::DialogChooseFieldCheckExportReport(QWidget *
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
-#ifdef Q_OS_MAC
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
-#endif
-#ifdef Q_OS_WIN32
-    this->setStyleSheet(UIFontsWindows);
-#endif
+    Utils::setDefaultWindowFonts(this);
     ui->comboBox->addItem("HTML报告(*.html)");
     ui->comboBox->addItem("TXT报告(*.txt)");
     ui->comboBox->setCurrentIndex(0);

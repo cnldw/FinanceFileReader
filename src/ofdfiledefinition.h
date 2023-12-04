@@ -36,6 +36,8 @@ private:
     QList <OFDFieldDefinition> fieldList;
     //本文件的必填检查规则列表
     QList <fieldcheckitem> fieldcheckList;
+    //主键字段清单
+    QList <uint> primaryKeyFieldList;
 
 public:
     OFDFileDefinition();
@@ -65,6 +67,8 @@ public:
     void setFieldcheckItemList(const QList<fieldcheckitem> &value);
     const QString &getUseForVersionAndType() const;
     void setUseForVersionAndType(const QString &newUseForVersionAndType);
+    const QList<uint> &getPrimaryKeyFieldList() const;
+    void setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyFieldList);
 };
 
 #endif // OFDFILEDEFINITION_H

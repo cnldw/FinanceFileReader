@@ -21,17 +21,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     setAcceptDrops(true);
     setWindowTitle(appName);
     /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
-#ifdef Q_OS_MAC
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
-#endif
-#ifdef Q_OS_LINUX
-    this->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
-#endif
-#ifdef Q_OS_WIN32
-    this->setStyleSheet(UIFontsWindows);
-#endif
+    Utils::setDefaultWindowFonts(this);
     /*临时隐藏未开发完毕的功能***************************************/
-
     /*插件功能*****************************************************/
     //仅Windows系统支持文件比对和在文本编辑器中打开
 #ifdef Q_OS_LINUX
@@ -235,6 +226,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     puaOrDeletedGBKCharacter.insert(0xE861,"PUA码字符,建议使用正式码【䴘,Unicode码4D18,GB18030码FE9D】");
     puaOrDeletedGBKCharacter.insert(0xE862,"PUA码字符,建议使用正式码【䴙,Unicode码4D19,GB18030码FE9E】");
     puaOrDeletedGBKCharacter.insert(0xE863,"PUA码字符,建议使用正式码【䶮,Unicode码4DAE,GB18030码FE9F】");
+    //另外一批PUA双码字,这一批不怎么常用
     puaOrDeletedGBKCharacter.insert(0xE26E,"PUA码字符,建议使用正式码【𫢸,Unicode码2B8B8,GB18030码9839C534】");
     puaOrDeletedGBKCharacter.insert(0xE278,"PUA码字符,建议使用正式码【𪟝,Unicode码2A7DD,GB18030码98368F39】");
     puaOrDeletedGBKCharacter.insert(0xE284,"PUA码字符,建议使用正式码【𫭟,Unicode码2BB5F,GB18030码99308B33】");
@@ -956,6 +948,26 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
         currentOpenFileType=openFileType::NotFileOrErr;
         return;
     }
+    /*读取一行识别一下文件换行符*/
+    QFile file(currentOpenFilePath);
+    if (file.open(QFile::ReadOnly))
+    {
+        QString qstr=file.readLine();
+        if(qstr.endsWith("\r\n")){
+            currentFileNewLineType=newLineType::CRLF;
+        }
+        else if(qstr.endsWith("\n")) {
+            currentFileNewLineType=newLineType::LF;
+        }
+        else if(qstr.endsWith("\r")) {
+            currentFileNewLineType=newLineType::CR;
+        }
+        else{
+            currentFileNewLineType=newLineType::None;
+        }
+        file.close();
+    }
+
     /*
         文件判断逻辑，先判断是不是OFD，再判断是不是索引，如果都校验失败，则进入非OF体系的判断
         在明确的确定下，则return完成判断，不明确的情况下，则goto到通用的csv和定长文件判断逻辑去
@@ -1301,7 +1313,7 @@ NOT_OF_FILE:
     QString filecharset="UTF-8";
     QFile dataFile(currentOpenFilePath);
     //判断如果文件打开成功,则开始读取
-    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    if (dataFile.open(QFile::ReadOnly))
     {
         int lineNumber=0;
         //存放前50行
@@ -1362,7 +1374,7 @@ NOT_OF_FILE:
                     //只有一行数据
                     //如果文件只有一行数据，则对该行数据进行使用不同的分隔符拆分，拆分出来的字段数最多的则获得解析权，拆分出来的列不得低于2
                     if(line50Qlist.count()==1){
-                        QString line = codec->toUnicode(line50Qlist.at(0)).replace("\r","").replace("\n","");
+                        QString line = codec->toUnicode(line50Qlist.at(0)).remove('\r').remove('\n');
                         QStringList fieldList=line.split(rx);
                         //只有一行数据就看谁拆分出来的多
                         if(fieldList.count()>lastCount){
@@ -1581,14 +1593,13 @@ void MainWindow::load_ofdIndexFile(){
     currentOpenFileType=openFileType::OFDIndex;
     ui->labelFileTransferDate->setText("文件传递日期");
     QFile dataFile(currentOpenFilePath);
-    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    if (dataFile.open(QFile::ReadOnly))
     {
         QString lineQString;
         int lineNumber=0;
         while (!dataFile.atEnd())
         {
-            lineQString = codecOFD->toUnicode(dataFile.readLine());
-            lineQString=lineQString.remove('\r').remove('\n');
+            lineQString = codecOFD->toUnicode(dataFile.readLine()).remove('\r').remove('\n');
             //文件体
             if(lineNumber>5){
                 ofdindexFileDataList.append(lineQString);
@@ -1666,7 +1677,7 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
     int firstLineDateLenght=-1;
     //开始准备打开文件
     QFile dataFile(currentOpenFilePath);
-    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    if (dataFile.open(QFile::ReadOnly))
     {
         QByteArray lineQByteArray;
         QString lineQString;
@@ -1924,7 +1935,7 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                 QFile dataFile(currentOpenFilePath);
                 //判断如果文件打开成功,则开始读取
                 //革命尚未成功,同志还需努力,要不惜一切办法,提高读取速度
-                if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+                if (dataFile.open(QFile::ReadOnly))
                 {
                     int lineNumber=0;
                     //数据行开始的位置,10行文件头,1行行记录标识+字段行数
@@ -2289,7 +2300,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
         }
         QByteArray useForCharsetAnalyze;
         QList<QByteArray> useForFileAnalyze;
-        if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+        if (dataFile.open(QFile::ReadOnly))
         {
             int row=0;
             while (!dataFile.atEnd()&&row<rowNeedLoad)
@@ -2839,7 +2850,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
             }
         }
         QList<QByteArray> useForFileAnalyze;
-        if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+        if (dataFile.open(QFile::ReadOnly))
         {
             int row=0;
             while (!dataFile.atEnd()&&row<rowNeedLoad)
@@ -3087,7 +3098,7 @@ void MainWindow::load_fixedFileData(){
     ui->lineEditFileTransferDate->setText(fixed.getConfigSegment());
     QList<int > rowLengthList;
     QFile dataFile(currentOpenFilePath);
-    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    if (dataFile.open(QFile::ReadOnly))
     {
         QTextCodec *codec=(QTextCodec::codecForName(fixed.getEcoding().toLocal8Bit()));
         QString line2;
@@ -3271,6 +3282,7 @@ void MainWindow::display_CSVFaultCause(QList<FaultCause> faultList){
         ptr_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::ResizeToContents);
         ptr_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::ResizeToContents);
         ptr_table->horizontalHeader()->setSectionResizeMode(10, QHeaderView::ResizeToContents);
+        ptr_table->setColumnWidth(11,300);
         ptr_table->horizontalHeader()->setSectionResizeMode(11, QHeaderView::Stretch);
         //设置表格的内容
         for (int row = 0; row < rowCount; ++row)
@@ -3404,6 +3416,7 @@ void MainWindow::display_FIXEDFaultCause(QList<FaultCause> faultList){
         ptr_table->horizontalHeader()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
         ptr_table->horizontalHeader()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
         ptr_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::ResizeToContents);
+        ptr_table->setColumnWidth(9,300);
         ptr_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::Stretch);
         //设置表格的内容
         for (int row = 0; row < rowCount; ++row)
@@ -3507,6 +3520,7 @@ void MainWindow::display_OFDFaultCause(QString useini,QList<OFDFaultCause> fault
         ptr_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
         ptr_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
         ptr_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+        ptr_table->setColumnWidth(3,300);
         ptr_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
         //设置表格的内容
         for (int row = 0; row < rowCount; ++row)
@@ -3547,7 +3561,7 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
     ui->labelFileTransferDate->setText("解析器配置");
     ui->lineEditFileTransferDate->setText(csv.getConfigSegment());
     QFile dataFile(currentOpenFilePath);
-    if (dataFile.open(QFile::ReadOnly|QIODevice::Text))
+    if (dataFile.open(QFile::ReadOnly))
     {
         QTextCodec *codec=QTextCodec::codecForName(csv.getEcoding().toLocal8Bit());
         QString line2;
@@ -4918,6 +4932,9 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             info.append("文件接收者代码:").append(ofdIndexFileHeaderMap.value("recivecode")).append("\r\n");
             info.append("文件传递日期:").append(ofdIndexFileHeaderMap.value("filedate")).append("\r\n");
             info.append("文件内标识的总记录数:").append(ofdIndexFileHeaderMap.value("count")).append("成功加载记录数:").append(QString::number(ofdindexFileDataList.count())).append("\r\n");
+            if(currentFileNewLineType!=newLineType::CRLF&&currentFileNewLineType!=newLineType::None){
+                info.append("一般情况下OFD类文件的换行符应该为\\r\\n(CRLF),但目前不是~\r\n");
+            }
             QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
         }else{
             QMessageBox::information(this,tr("提示"),tr("目前未打开任何有效的接口文件"),QMessageBox::Ok,QMessageBox::Ok);
@@ -4943,6 +4960,9 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
                 }
             }else{
                 info.append("读取文件字段数错误");
+            }
+            if(currentFileNewLineType!=newLineType::CRLF&&currentFileNewLineType!=newLineType::None){
+                info.append("一般情况下OFD类文件的换行符应该为\\r\\n(CRLF),但目前不是~\r\n");
             }
             QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
         }else{
@@ -8762,8 +8782,12 @@ void MainWindow::save2Xlsx(QString filename,int pageNum){
     formatTitle.setHorizontalAlignment(QXlsx::Format::AlignHCenter);
     formatTitle.setBorderStyle(QXlsx::Format::BorderThin);
     //用来记录列最宽的list
-    const int columnCount=ptr_table->columnCount();
-    int colWidthArray[columnCount];
+    int columnCount=ptr_table->columnCount();
+    QList<int> colWidthArray;
+    //初始化赋值
+    for(int i=0;i<columnCount;i++){
+        colWidthArray.append(0);
+    }
     //标题和是否是数值列,数值列需要设置列格式
     QHash<int,QXlsx::Format> numberFormatQhash;
     //标准文本样式
@@ -9161,8 +9185,7 @@ void MainWindow::save2XlsxFinished(){
     //如果需要打开文件
     if(openXlsx){
         statusBar_disPlayMessage(tr("使用系统默认程序打开文件:%1").arg(xlsxSaveName));
-        QString  m_szHelpDoc = QString("file:///") + xlsxSaveName;
-        bool is_open = QDesktopServices::openUrl(QUrl(m_szHelpDoc, QUrl::TolerantMode));
+        bool is_open = QDesktopServices::openUrl(QUrl::fromLocalFile(xlsxSaveName));
         if(!is_open)
         {
             statusBar_disPlayMessage("文件打开失败,请尝试手工打开~~~");
@@ -12841,11 +12864,12 @@ void MainWindow::checkRowFieldSearch (int direction){
     qApp->processEvents();
     dataBlockedMessage="正在搜索字段必填缺失,请稍后再操作...";
     int rowRealInContent=0;
-    //焦点行从焦点单元格上一个开始搜索,费焦点行从最后一个
+    //焦点行从焦点单元格上一个开始搜索,非焦点行从最后一个
     int beginCol=tableColCurrent;
+    int beginRow=tableRowCurrent;
     /////////////////////////////////////////////////
     if (direction==0){
-        if(currentPage==1&&tableRowCurrent==0&&tableColCurrent==0){
+        if(currentPage==1&&beginRow==0&&beginCol==0){
             statusBar_disPlayMessage("已经搜索到第一个单元格了,请向下搜索...");
             QApplication::restoreOverrideCursor();
             dataBlocked=false;
@@ -12854,10 +12878,16 @@ void MainWindow::checkRowFieldSearch (int direction){
         else {
             ui->actionprefieldcheck->setEnabled(false);
             ui->actionnextfieldcheck->setEnabled(false);
+            //初始起点
             beginCol=tableColCurrent-1;
+            //上一行
+            if(beginCol<0&&beginRow>0){
+                beginRow=beginRow-1;
+                beginCol=ptr_table->columnCount()-1;
+            }
             while(currentPage>0){
                 QStringList rowdata;
-                for(int row=tableRowCurrent;row>=0;row--){
+                for(int row=beginRow;row>=0;row--){
                     QMap<int,QString> checkresult;
                     rowRealInContent=(currentPage-1)*pageRowSize+row;
                     if(currentOpenFileType==openFileType::OFDFile){
@@ -12881,6 +12911,8 @@ void MainWindow::checkRowFieldSearch (int direction){
                     }
                     checkRowFieldResult (rowdata,checkresult);
                     if(checkresult.empty()){
+                        //本行没有，准备搜下一行
+                        beginCol=ptr_table->columnCount()-1;
                         continue;
                     }
                     else{
@@ -12897,10 +12929,6 @@ void MainWindow::checkRowFieldSearch (int direction){
                             }
                         }
                     }
-                    //仅在首行时重新校准下一行的开始列
-                    if(row==tableRowCurrent){
-                        beginCol=ptr_table->columnCount()-1;
-                    }
                 }
                 if(currentPage>1){
                     currentPage--;
@@ -12908,6 +12936,8 @@ void MainWindow::checkRowFieldSearch (int direction){
                     qApp->processEvents();
                     //重新设置从右下角开始继续搜索
                     beginCol=ptr_table->columnCount()-1;
+                    beginRow=ptr_table->rowCount()-1;
+                    tableColCurrent=ptr_table->columnCount()-1;
                     tableRowCurrent=ptr_table->rowCount()-1;
                 }
                 else{
@@ -12922,7 +12952,7 @@ void MainWindow::checkRowFieldSearch (int direction){
         }
     }
     else if (direction==1){
-        if(currentPage==pageCount&&tableRowCurrent==ptr_table->rowCount()-1&&tableColCurrent==ptr_table->columnCount()-1){
+        if(currentPage==pageCount&&beginRow==ptr_table->rowCount()-1&&beginCol==ptr_table->columnCount()-1){
             statusBar_disPlayMessage("已经搜索到最后一个单元格了,请向上搜索...");
             QApplication::restoreOverrideCursor();
             dataBlocked=false;
@@ -12931,10 +12961,16 @@ void MainWindow::checkRowFieldSearch (int direction){
         else{
             ui->actionprefieldcheck->setEnabled(false);
             ui->actionnextfieldcheck->setEnabled(false);
+            //初始起点
             beginCol=tableColCurrent+1;
+            //最后一列
+            if(beginCol>ptr_table->columnCount()-1&&beginRow<ptr_table->rowCount()-1){
+                beginRow=beginRow+1;
+                beginCol=0;
+            }
             while(currentPage<=pageCount){
                 QStringList rowdata;
-                for(int row=tableRowCurrent;row<ptr_table->rowCount();row++){
+                for(int row=beginRow;row<ptr_table->rowCount();row++){
                     QMap<int,QString> checkresult;
                     rowRealInContent=(currentPage-1)*pageRowSize+row;
                     if(currentOpenFileType==openFileType::OFDFile){
@@ -12958,6 +12994,7 @@ void MainWindow::checkRowFieldSearch (int direction){
                     }
                     checkRowFieldResult (rowdata,checkresult);
                     if(checkresult.empty()){
+                        beginCol=0;
                         continue;
                     }
                     else{
@@ -12974,17 +13011,14 @@ void MainWindow::checkRowFieldSearch (int direction){
                             }
                         }
                     }
-                    //仅在首行时重新校准下一行的开始列
-                    if(row==tableRowCurrent){
-                        beginCol=0;
-                    }
                 }
                 if(currentPage<pageCount){
                     currentPage++;
                     pageJump(currentPage,0);
                     qApp->processEvents();
-                    //重新设置从右下角开始继续搜索
                     beginCol=0;
+                    beginRow=0;
+                    tableColCurrent=0;
                     tableRowCurrent=0;
                 }
                 else{
@@ -13135,8 +13169,7 @@ void MainWindow::getFieldExportConfig(QMap <QString,int> config){
                 data.close();
                 statusBar_disPlayMessage(tr("报告成功导出到%1").arg(fileNameSave));
                 if(config.value("openatexported")==1){
-                    QString  m_szHelpDoc = QString("file:///") + fileNameSave;
-                    bool is_open = QDesktopServices::openUrl(QUrl(m_szHelpDoc, QUrl::TolerantMode));
+                    bool is_open = QDesktopServices::openUrl(QUrl::fromLocalFile(fileNameSave));
                     if(!is_open)
                     {
                         statusBar_disPlayMessage("文件打开失败,请尝试手工打开~~~");
