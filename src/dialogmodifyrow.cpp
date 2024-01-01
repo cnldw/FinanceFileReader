@@ -5,9 +5,8 @@
 ************************************************************************/
 #include "dialogmodifyrow.h"
 #include "ui_dialogmodifyrow.h"
-#include "src/publicdefine.h"
 
-DialogModifyRow::DialogModifyRow(OFDFileDefinition *ofd,QStringList rowdata,QWidget *parent) :
+DialogModifyRow::DialogModifyRow(QList<fieldType> fieldList,QTextCodec *codec,QStringList rowdata,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogModifyRow)
 {
@@ -21,14 +20,15 @@ DialogModifyRow::DialogModifyRow(OFDFileDefinition *ofd,QStringList rowdata,QWid
     QPalette pe;
     pe.setColor(QPalette::WindowText,Qt::red);
     ui->label->setPalette(pe);
-    this->ofd=*ofd;
+    this->fieldList=fieldList;
+    this->codec=codec;
     //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
     ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ptr_table->setSelectionBehavior(QAbstractItemView::SelectItems);
     ptr_table->setColumnCount(5);
-    ptr_table->setRowCount(ofd->getFieldCount());
+    ptr_table->setRowCount(fieldList.count());
     ptr_table->setAlternatingRowColors(true);
     ptr_table->verticalHeader()->setDefaultSectionSize(22);
     ptr_table->horizontalHeader()->setStretchLastSection(true);//关键
@@ -47,15 +47,15 @@ DialogModifyRow::DialogModifyRow(OFDFileDefinition *ofd,QStringList rowdata,QWid
     ptr_table->setHorizontalHeaderLabels(title);
     ptr_table->setEditTriggers(QAbstractItemView::AllEditTriggers);
     //设置表格的内容
-    if(ofd->getFieldCount()){
-        for (int row = 0; row < ofd->getFieldCount(); ++row)
+    if(fieldList.count()){
+        for (int row = 0; row < fieldList.count(); ++row)
         {
             //第一列--字段中文名
-            QTableWidgetItem *item= new QTableWidgetItem(ofd->getFieldList().at(row).getFieldDescribe());
+            QTableWidgetItem *item= new QTableWidgetItem(fieldList.at(row).fieldDescribe);
             item->setFlags(item->flags() & (~Qt::ItemIsEditable));
             ptr_table->setItem(row, 0, item);
             //第二列--字段类型
-            QString filedType=ofd->getFieldList().at(row).getFieldType();
+            QString filedType=fieldList.at(row).fieldType;
             QString type="";
             if(filedType=="C"){
                 type=filedType+"(字符型)";
@@ -73,11 +73,11 @@ DialogModifyRow::DialogModifyRow(OFDFileDefinition *ofd,QStringList rowdata,QWid
             item2->setFlags(item2->flags() & (~Qt::ItemIsEditable));
             ptr_table->setItem(row, 1, item2);
             //第三列-字段长度
-            QTableWidgetItem *item3= new QTableWidgetItem(QString::number(ofd->getFieldList().at(row).getLength()));
+            QTableWidgetItem *item3= new QTableWidgetItem(QString::number(fieldList.at(row).fieldLength));
             item3->setFlags(item3->flags() & (~Qt::ItemIsEditable));
             ptr_table->setItem(row, 2, item3);
             //第四列-字段小数长度
-            QTableWidgetItem *item4= new QTableWidgetItem(QString::number(ofd->getFieldList().at(row).getDecLength()));
+            QTableWidgetItem *item4= new QTableWidgetItem(QString::number(fieldList.at(row).fieldDecLength));
             item4->setFlags(item4->flags() & (~Qt::ItemIsEditable));
             ptr_table->setItem(row, 3, item4);
             //第五列-字段值
@@ -206,9 +206,9 @@ void DialogModifyRow::checkField(int row,int column,bool updateValue,bool displa
         QString text=ptr_table->item(row,column)->text();
         //获取字段类别等信息
         QString fieldDesc=ptr_table->item(row,0)->text();
-        QString filedType=this->ofd.getFieldList().at(row).getFieldType();
-        int filedLength=this->ofd.getFieldList().at(row).getLength();
-        int filedDecLength=this->ofd.getFieldList().at(row).getDecLength();
+        QString filedType=this->fieldList.at(row).fieldType;
+        int filedLength=this->fieldList.at(row).fieldLength;
+        int filedDecLength=this->fieldList.at(row).fieldDecLength;
         int textLength=codec->fromUnicode(text).length();
         //字符类和文本类的只需要判断长度
         if(filedType=="C"||filedType=="TEXT"){
@@ -336,6 +336,7 @@ void DialogModifyRow::on_pushButtonCancal_clicked()
 
 void DialogModifyRow::on_pushButtonSave_clicked()
 {
+    qDebug()<<rowDataNew;
     //保存前做前校验
     int count=ptr_table->rowCount();
     //不要删除这个代码，否则将会引发bug，比如你打开编辑功能后修改了一个单元格后没切换到其他单元格直接点击保存，这个修改的单元格还未提交数据，会有问题，我们强制在保存时切换到0，0单元格

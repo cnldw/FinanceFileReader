@@ -766,25 +766,6 @@ void Utils::load_CSVDefinition(QList<ConfigFile<CsvFileDefinition>> &csvConfigLi
                                                     }
                                                 }
                                             }
-                                            //主键
-                                            if(infoList.at(checkindex)=="fieldprimarylist"){
-                                                QList <uint> primaryKeyFieldList;
-                                                QString str=loadedCsvInfoIni.value(csvType+"/"+infoList.at(checkindex)).toString();
-                                                if(!str.isEmpty()){
-                                                    QStringList strl=str.split(",");
-                                                    for(const auto &strNumber:strl){
-                                                        bool okFlag=false;
-                                                        int n=strNumber.toUInt(&okFlag);
-                                                        if(okFlag&&!primaryKeyFieldList.contains(n)){
-                                                            primaryKeyFieldList.append(n);
-                                                        }
-                                                    }
-                                                    if(primaryKeyFieldList.count()>0){
-                                                        std::sort(primaryKeyFieldList.begin(), primaryKeyFieldList.end());
-                                                        fileDef.setPrimaryKeyFieldList(primaryKeyFieldList);
-                                                    }
-                                                }
-                                            }
                                             //字段必填配置
                                             if(infoList.at(checkindex).startsWith("fieldcheck_")){
                                                 bool okFlag=false;
@@ -990,11 +971,11 @@ void Utils::load_FIXEDDefinition(QList<ConfigFile<FIXEDFileDefinition>> &fixedCo
                         }
                         //5定长分类，字节定长还是字符定长/获取不到定长分配时，则默认为字节定长
                         QString fieldLengthType=loadedFixedInfoIni.value(fixedType+"/fieldlengthtype").toString();
-                        if(fieldLengthType.isEmpty()){
-                            fileDef.setFieldlengthtype("0");
+                        if(fieldLengthType.isEmpty()||fieldLengthType=="0"){
+                            fileDef.setFieldlengthtype(0);
                         }
                         else{
-                            fileDef.setFieldlengthtype(fieldLengthType);
+                            fileDef.setFieldlengthtype(1);
                         }
                         //////////////////////////////////////
                         //6字段总数////存在多种长度的可能
@@ -1360,7 +1341,7 @@ void Utils::load_FIXEDDefinition(QList<ConfigFile<FIXEDFileDefinition>> &fixedCo
                                         //字段必填配置
                                         if(infoList.at(checkindex).startsWith("fieldcheck_")){
                                             bool okFlag=false;
-                                            fieldcheckitem ckitem=Utils::parseStringtofieldcheckitem(loadedFixedInfoIni.value(fixedType+"/"+infoList.at(checkindex)).toString(),-1,&okFlag);
+                                            fieldcheckitem ckitem=Utils::parseStringtofieldcheckitem(loadedFixedInfoIni.value(fixedType+"/"+infoList.at(checkindex)).toString(),fileDef.getFieldCountMax(),&okFlag);
                                             if(okFlag){
                                                 fileDef.addFieldcheckItem(ckitem);
                                             }
@@ -1758,12 +1739,11 @@ QString Utils::getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArra
         return "";
     }
     else{
-        int fieldlength=ofd->getFieldList().at(col).getLength();
         if(dataCompressLevel==0){
-            return codecOFD->toUnicode(ofdFileContentQByteArrayList->at(row).mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
+            return codecOFD->toUnicode(ofdFileContentQByteArrayList->at(row).mid(ofd->getFieldList().at(col).getRowBeginIndex(),ofd->getFieldList().at(col).getLength()));
         }
         else{
-            return codecOFD->toUnicode(qUncompress(ofdFileContentQByteArrayList->at(row)).mid(ofd->getFieldList().at(col).getRowBeginIndex(),fieldlength));
+            return codecOFD->toUnicode(qUncompress(ofdFileContentQByteArrayList->at(row)).mid(ofd->getFieldList().at(col).getRowBeginIndex(),ofd->getFieldList().at(col).getLength()));
         }
     }
 }
@@ -1793,7 +1773,7 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     }
     //获取此字段的值
     //字符定长和字节定长判断
-    if(fixed->getFieldlengthtype()=="0"){
+    if(fixed->getFieldlengthtype()==0){
         //字节截取
         //定长文件兼容多种行长度，判断越界
         if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+fieldlength){
@@ -1871,6 +1851,25 @@ QString Utils::getFormatValuesFromfixedFileContentQStringList(QList<QByteArray> 
     return field;
 }
 
+QString Utils::getOriginalValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int dataCompressLevel,int row ,int col)
+{
+    QTextCodec *codec = QTextCodec::codecForName(fixed->getEcoding().toLocal8Bit());
+    QByteArray rowData;
+    if(dataCompressLevel==0){
+        rowData=fixedContentQByteArrayList->at(row);
+    }
+    else{
+        rowData=qUncompress(fixedContentQByteArrayList->at(row));
+    }
+    //判断越界
+    if(row>=fixedContentQByteArrayList->count()||col>=fixed->getFieldCountMax()||fixed->getFieldList().at(col).getRowBeginIndex()+fixed->getFieldList().at(col).getLength()>rowData.length()){
+        return "";
+    }
+    else{
+        return codec->toUnicode(fixedContentQByteArrayList->at(row).mid(fixed->getFieldList().at(col).getRowBeginIndex(),fixed->getFieldList().at(col).getLength()));
+    }
+}
+
 QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int dataCompressLevel,int row){
     QStringList rowList;
     //判断越界
@@ -1897,7 +1896,7 @@ QStringList Utils::getFormatRowValuesFromfixedFileContentQStringList(QList<QByte
             int fieldDeclength=fixed->getFieldList().at(col).getDecLength();
             //获取此字段的值
             //字符定长和字节定长判断
-            if(fixed->getFieldlengthtype()=="0"){
+            if(fixed->getFieldlengthtype()==0){
                 //字节截取
                 //定长文件兼容多种行长度，判断越界
                 if(rowdata.count()>=fixed->getFieldList().at(col).getRowBeginIndex()+fieldlength){
@@ -2737,3 +2736,144 @@ void Utils::setDefaultWindowFonts(QWidget *w){
 #endif
 };
 
+bool Utils::updateOFDOrFixedFieldValueFromRow(QString fieldType,int fieldLength,int fieldDecLength,int updateBegin,int lengthType,QTextCodec *codec,QString valueNew,QByteArray &rowByteArray){
+    if(lengthType==1){
+        return false;
+    }
+    else{
+        int updateEnd=updateBegin+fieldLength;
+        if(updateEnd>rowByteArray.length()){
+            return false;
+        }
+        else{
+            QByteArray valueNewArray;
+            bool flag=Utils::updateOFDOrFixedFieldValue(fieldType,fieldLength,fieldDecLength,lengthType,codec,valueNew,valueNewArray);
+            if(!flag){
+                return false;
+            }
+            else{
+                rowByteArray.replace(updateBegin,valueNewArray.length(),valueNewArray);
+                return true;
+            }
+        }
+    }
+}
+
+bool Utils::updateOFDOrFixedFieldValue(QString fieldType,int fieldLength,int fieldDecLength,int lengthType,QTextCodec *codec,QString valueNew,QByteArray &valueByteArray){
+    if(lengthType==1){
+        return false;
+    }
+    else{
+        valueByteArray.clear();
+        if(fieldType=="N"){
+            if(valueNew.isEmpty()){
+                for(int i=0;i<fieldLength;i++){
+                    valueByteArray.append(' ');
+                }
+            }
+            else{
+                bool okFlag=true;
+                valueNew.toDouble(&okFlag);
+                if(okFlag){
+                    if(!valueNew.contains("."))
+                    {
+                        int zLength=fieldLength-fieldDecLength;
+                        QString intS=valueNew;
+                        bool isPositiveNumber=false;
+                        if(intS.startsWith("-")){
+                            isPositiveNumber=true;
+                        }
+                        if(intS.length()<zLength){
+                            int zeroAdd=zLength-intS.length();
+                            for(int zz=0;zz<zeroAdd;zz++){
+                                if(isPositiveNumber){
+                                    intS.insert(1,'0');
+                                }
+                                else{
+                                    intS.insert(0,'0');
+                                }
+                            }
+                        }
+                        QString intD="";
+                        for(int zz=0;zz<fieldDecLength;zz++){
+                            intD.append('0');
+                        }
+                        QString number=intS.append(intD);
+                        valueByteArray=codec->fromUnicode(number);
+                    }
+                    else{
+                        int zLength=fieldLength-fieldDecLength;
+                        QString intS=valueNew.mid(0,valueNew.indexOf("."));
+                        bool isPositiveNumber=false;
+                        if(intS.startsWith("-")){
+                            isPositiveNumber=true;
+                        }
+                        if(intS.length()<zLength){
+                            int zeroAdd=zLength-intS.length();
+                            for(int zz=0;zz<zeroAdd;zz++){
+                                if(isPositiveNumber){
+                                    intS.insert(1,'0');
+                                }
+                                else{
+                                    intS.insert(0,'0');
+                                }
+                            }
+                        }
+                        QString intD=valueNew.mid(valueNew.indexOf(".")+1,-1);
+                        if(intD.length()>fieldDecLength){
+                            return false;
+                        }
+                        if(intD.length()<fieldDecLength){
+                            int zeroAdd=fieldDecLength-intD.length();
+                            for(int zz=0;zz<zeroAdd;zz++){
+                                intD.append('0');
+                            }
+                        }
+                        QString number=intS.append(intD);
+                        valueByteArray=codec->fromUnicode(number);
+                    }
+                }
+                else{
+                    QByteArray newQByteArray=codec->fromUnicode(valueNew);
+                    int addLength=fieldLength-newQByteArray.length();
+                    if(addLength>0){
+                        for(int i=0;i<addLength;i++){
+                            newQByteArray.append(' ');
+                        }
+                    }
+                    else if(newQByteArray.length()>fieldLength){
+                        return false;
+                    }
+                    valueByteArray=newQByteArray;
+                }
+            }
+        }
+        else if(fieldType=="C"||fieldType=="TEXT"||fieldType=="A"){
+            QByteArray newQByteArray=codec->fromUnicode(valueNew);
+            int addLength=fieldLength-newQByteArray.length();
+            if(addLength>0){
+                for(int i=0;i<addLength;i++){
+                    newQByteArray.append(' ');
+                }
+            }
+            else if(newQByteArray.length()>fieldLength){
+                return false;
+            }
+            valueByteArray=newQByteArray;
+        }
+        else{
+            QByteArray newQByteArray=codec->fromUnicode(valueNew);
+            int addLength=fieldLength-newQByteArray.length();
+            if(addLength>0){
+                for(int i=0;i<addLength;i++){
+                    newQByteArray.append(' ');
+                }
+            }
+            else if(newQByteArray.length()>fieldLength){
+                return false;
+            }
+            valueByteArray=newQByteArray;
+        }
+        return true;
+    }
+}

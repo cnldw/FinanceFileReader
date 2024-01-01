@@ -20,7 +20,10 @@ Toast::Toast(QWidget *parent)
 
 void Toast::makeText(QString text, ToastTime::Time time,ToastType::Type type,QWidget * parent)
 {
-    this->toast_msg_list.append(ToastMsg(text,time,type,parent));
+    //不准连续显示
+    if(toast_msg_list.count()<1){
+        this->toast_msg_list.append(ToastMsg(text,time,type,parent));
+    }
 }
 
 void Toast::showMsg(QString text, ToastTime::Time time,ToastType::Type type,QWidget * parent)
@@ -71,7 +74,6 @@ void Toast::adaptPage(QWidget * parent,int width, int height)
     }else {
         this->toast_info->setGeometry(0,0,width,height);
     }
-    //如传了父组件,则toast显示到父组件的中间位置,否则显示到屏幕下方,目前暂未实现父窗口移动跟随
     if(parent==nullptr){
         QScreen *scr=QApplication::primaryScreen();
         this->setGeometry((scr->availableSize().width()-toast_info->width())*0.5,scr->availableSize().height()*0.85,toast_info->width(),toast_info->height());
@@ -81,7 +83,6 @@ void Toast::adaptPage(QWidget * parent,int width, int height)
         int y=parent->frameGeometry().y();
         int pw=parent->frameGeometry().width();
         int ph=parent->frameGeometry().height();
-
         this->setGeometry(x+pw*0.5-toast_info->width()*0.5,y+ph*0.85,toast_info->width(),toast_info->height());
     }
 }
@@ -107,7 +108,12 @@ void Toast::timerEvent(QTimerEvent *event)
         if(this->toast_msg_list.length()>0){
             this->msg_timer_id=startTimer(this->toast_msg_list.first().time_toInt());
             killTimer(this->master_timer_id);//暂停监控
-            adaptPage(this->toast_msg_list.first().parent(),this->toast_msg_list.first().text().toLocal8Bit().length()*7.5+30);
+            if(this->toast_msg_list.first().parent()==nullptr){
+                adaptPage(nullptr,this->toast_msg_list.first().text().toLocal8Bit().length()*7.5+30);
+            }
+            else{
+                adaptPage(this->toast_msg_list.first().parent(),this->toast_msg_list.first().text().toLocal8Bit().length()*7.5+30);
+            }
             if(this->toast_msg_list.first().type()==ToastType::Type::ToastType_info){
                 this->toast_info->setStyleSheet("border-radius:17px;color:#FFFFFF;font-weight:bold;background-color:#1890FF");
             }

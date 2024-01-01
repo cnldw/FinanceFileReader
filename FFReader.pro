@@ -49,7 +49,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.9.28
+VERSION = 1.10.1
 ############以下注意按版本修改###############
 
 # 语言
@@ -116,6 +116,7 @@ SOURCES += \
     src/dialogshareqrcode.cpp \
     src/dialogshowfieldchecklist.cpp \
     src/dialogshowimportexcelerror.cpp \
+    src/dialogshowprimarycheck.cpp \
     src/fieldcheckitem.cpp \
     src/formfieldcheckedittools.cpp \
         src/main.cpp \
@@ -165,6 +166,7 @@ HEADERS += \
     src/dialogshareqrcode.h \
     src/dialogshowfieldchecklist.h \
     src/dialogshowimportexcelerror.h \
+    src/dialogshowprimarycheck.h \
     src/fieldcheckitem.h \
     src/formfieldcheckedittools.h \
         src/mainwindow.h \
@@ -211,6 +213,7 @@ FORMS += \
     src/dialogshareqrcode.ui \
     src/dialogshowfieldchecklist.ui \
     src/dialogshowimportexcelerror.ui \
+    src/dialogshowprimarycheck.ui \
     src/formfieldcheckedittools.ui \
         src/mainwindow.ui \
     src/dialogshowtablerow.ui \

@@ -85,12 +85,12 @@ void FIXEDFileDefinition::setFileDescribe(const QString &value)
     fileDescribe = value;
 }
 
-QString FIXEDFileDefinition::getFieldlengthtype() const
+int FIXEDFileDefinition::getFieldlengthtype() const
 {
     return fieldLengthType;
 }
 
-void FIXEDFileDefinition::setFieldlengthtype(const QString &value)
+void FIXEDFileDefinition::setFieldlengthtype(const int &value)
 {
     fieldLengthType = value;
 }

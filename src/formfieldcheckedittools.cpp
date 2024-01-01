@@ -473,7 +473,7 @@ void FormFieldCheckEditTools::on_searchPushButton_clicked()
                 col=0;
             }
             for(int j=col;j<colcount;j++){
-                if(j==2||j==3){
+                if(j==2||j==3||j==4){
                     continue;
                 }
                 //搜索到了
@@ -512,7 +512,7 @@ void FormFieldCheckEditTools::on_searchPushButton_clicked()
                 colend=colcount-1;
             }
             for(int j=0;j<=colend;j++){
-                if(j==2||j==3){
+                if(j==2||j==3||j==4){
                     continue;
                 }
                 //搜索到了
@@ -524,36 +524,6 @@ void FormFieldCheckEditTools::on_searchPushButton_clicked()
             }
         }
         statusBarDisplayMessage("搜索了一圈,没找到你要搜索的内容...");
-    }
-}
-
-
-void FormFieldCheckEditTools::on_tableWidgetFieldList_itemSelectionChanged()
-{
-    //选择的范围
-    QList<QTableWidgetSelectionRange> itemsRange=ui->tableWidgetFieldList->selectedRanges();
-    //范围和
-    int rangeCount=itemsRange.count();
-    if(rangeCount==1&&itemsRange.at(0).leftColumn()==itemsRange.at(0).rightColumn()&&itemsRange.at(0).topRow()==itemsRange.at(0).bottomRow()){
-        int rowcount=ui->tableWidgetFieldList->rowCount();
-        int colcount=ui->tableWidgetFieldList->columnCount();
-        //记录当前所在行
-        this->searchRow=itemsRange.at(itemsRange.count()-1).bottomRow();
-        //当前所在列
-        this->searchColumn=itemsRange.at(itemsRange.count()-1).rightColumn();
-        //焦点在最后一个单元格时，转移到第一行第一列
-        if(searchRow==(rowcount-1)&&searchColumn==(colcount-1)){
-            this->searchRow=0;
-            this->searchColumn=0;
-        }
-        //焦点在非最后一行的最后一个单元格,转移到下一行的第一个单元格
-        else if(searchRow<(rowcount-1)&&searchColumn==(colcount-1)){
-            this->searchRow+=1;
-            this->searchColumn=0;
-        }
-        else{
-            this->searchColumn+=1;
-        }
     }
 }
 
@@ -746,6 +716,9 @@ void FormFieldCheckEditTools::on_tableWidgetFieldList_customContextMenuRequested
         table_field_PopMenu->addAction(action_table_field_clear_all);
 
         table_field_PopMenu->addAction(action_table_field_clear_condition);
+
+        table_field_PopMenu->exec(QCursor::pos());
+
     }
     if(!editFieldCheckMode&&editPrimaryMode){
         action_table_field_select_range->setText(tr("勾选选择的字段为主键字段"));
@@ -757,8 +730,10 @@ void FormFieldCheckEditTools::on_tableWidgetFieldList_customContextMenuRequested
         table_field_PopMenu->addAction(action_table_field_selectall);
         action_table_field_clear_all->setText(tr("清除所有字段为主键字段"));
         table_field_PopMenu->addAction(action_table_field_clear_all);
+
+        table_field_PopMenu->exec(QCursor::pos());
+
     }
-    table_field_PopMenu->exec(QCursor::pos());
 }
 
 void FormFieldCheckEditTools::table_field_selectAll(){
@@ -1323,7 +1298,9 @@ void FormFieldCheckEditTools::fieldConDeleteSelect(){
                     //删除正在编辑的这行条件时清除编辑区
                     if(row==currentEditConditionIndex){
                         for(int aaa=0;aaa<ui->tableWidgetFieldList->rowCount();aaa++){
-                            ui->tableWidgetFieldList->item(aaa,2)->setText("");
+                            QTableWidgetItem *item2= ui->tableWidgetFieldList->item(i,2);
+                            item2->setText("");
+                            item2->setFlags(item2->flags() & (~Qt::ItemIsEditable));
                         }
                     }
                     if(row==newAddConditionIndex){
@@ -1533,13 +1510,15 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                     int priamyKeyIndex=-1;
                     if(iniData.count()>configbeginIndex+1){
                         for(int i=configbeginIndex+1;i<iniData.count();i++){
-                            //主键位置
-                            if(priamyKeyIndex<0&&iniData.at(i).startsWith("fieldprimarylist=")){
-                                priamyKeyIndex=i;
-                            }
                             //找到第一个必填字段检查或者空行或者下一个配置段的开始
+                            qDebug()<<insertIndex;
                             if(insertIndex==-1&&((iniData.at(i).startsWith("[")&&iniData.at(i).endsWith("]"))||iniData.at(i).trimmed().isEmpty()||iniData.at(i).startsWith("fieldcheck_"))){
                                 insertIndex=i;
+                            }
+                            //文件最后一行是数据
+                            if(insertIndex==-1&&i==iniData.count()-1){
+                                iniData.append("");
+                                insertIndex=i+1;
                             }
                             //老的必填字段配置开始位置
                             if(oldStartIndex==-1&&iniData.at(i).startsWith("fieldcheck_")){
@@ -1548,13 +1527,18 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                             //老的必填字段配置结束位置-找到最后一个必填
                             if(oldStartIndex!=-1&&iniData.at(i).startsWith("fieldcheck_")){
                                 oldEndIndex=i;
-                                if(i==iniData.count()-1||(i<iniData.count()-1&&iniData.at(i+1).startsWith("[")&&iniData.at(i+1).endsWith("]"))||iniData.at(i+1).trimmed().isEmpty()){
-                                    break;
-                                }
                             }
                             //文件尾特殊处理
                             if(oldStartIndex>0&&oldEndIndex==-1&&i==iniData.count()-1){
                                 oldEndIndex=i;
+                                break;
+                            }
+                            //主键位置
+                            if(priamyKeyIndex<0&&iniData.at(i).startsWith("fieldprimarylist=")){
+                                priamyKeyIndex=i;
+                            }
+                            //跳出条件--一直找到这一段结束或者下一段的开始
+                            if(insertIndex>0&&((iniData.at(i).startsWith("[")&&iniData.at(i).endsWith("]"))||iniData.at(i).trimmed().isEmpty())){
                                 break;
                             }
                         }
@@ -1583,7 +1567,7 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                 for(fieldcheckitem item:currentEditConfigSegmentCheckItemList){
                                     QString StringConfigLine;
                                     if(item.getCheckConditionsListOverList().count()>0){
-                                        //构造条件
+                                        //构造条件-1
                                         for(QList<CheckCondition> current:item.getCheckConditionsListOverList()){
                                             if(!StringConfigLine.isEmpty()){
                                                 StringConfigLine.append(";");
@@ -1636,6 +1620,10 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                     iniData.insert(insertIndex,newcheckList.at(aaa));
                                 }
                             }
+                            qDebug()<<currentConfigSegment;
+                            qDebug()<<currentEditConfigSegmentprimaryKeyFieldList;
+                            qDebug()<<configbeginIndex;
+                            qDebug()<<priamyKeyIndex;
                             //主键-新的非空,当前空，插入，在必填字段之前
                             if(!parimaryKeyListStr.isEmpty()&&priamyKeyIndex<0){
                                 iniData.insert(insertIndex,"fieldprimarylist=\""+parimaryKeyListStr+"\"");
@@ -1701,7 +1689,7 @@ void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
                                         l1++;
                                     }
                                 }
-                                else if (index1==3){
+                                else if (index1==2){
                                     int l1=0;
                                     for(ConfigFile<FIXEDFileDefinition> configFile:fixedConfigList){
                                         if(l1==index2){
@@ -1901,12 +1889,30 @@ void FormFieldCheckEditTools::getImportString(QString data,int type,bool clearOl
     }
 }
 
-
 void FormFieldCheckEditTools::on_pushButton_PrimaryKey_clicked()
 {
     editFieldCheckMode=false;
     editPrimaryMode=true;
     //进入编辑模式
     inEditMode();
+}
+
+void FormFieldCheckEditTools::on_tableWidgetFieldList_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
+{
+    this->searchRow=currentRow;
+    this->searchColumn=currentColumn;
+    if(currentColumn>0){
+        if(currentRow<ui->tableWidgetFieldList->rowCount()-1){
+            this->searchRow=currentRow+1;
+            this->searchColumn=0;
+        }
+        else{
+            this->searchRow=0;
+            this->searchColumn=0;
+        }
+    }
+    else{
+        this->searchColumn+=1;
+    }
 }
 

@@ -42,7 +42,7 @@ private:
     QString fileNameWithVersion;
     QString  configSegment;
     QString fileDescribe;
-    QString fieldLengthType;
+    int fieldLengthType;
 
     //编码信息
     QString ecoding;
@@ -78,8 +78,8 @@ public:
     void setFileNameWithVersion(const QString &value);
     QString getFileDescribe() const;
     void setFileDescribe(const QString &value);
-    QString getFieldlengthtype() const;
-    void setFieldlengthtype(const QString &value);
+    int getFieldlengthtype() const;
+    void setFieldlengthtype(const int &value);
     QString getEcoding() const;
     void setEcoding(const QString &value);
     int getDataRowBeginIndex() const;

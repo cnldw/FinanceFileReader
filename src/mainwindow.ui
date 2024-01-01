@@ -822,10 +822,16 @@ border-radius:3px;
     <property name="title">
      <string>数据增强校验</string>
     </property>
-    <addaction name="actioncurrentfilechekrule"/>
-    <addaction name="actionexpcheckresult"/>
     <addaction name="actionprefieldcheck"/>
     <addaction name="actionnextfieldcheck"/>
+    <addaction name="actioninvisibleCharactersCheck1"/>
+    <addaction name="actioninvisibleCharactersCheck2"/>
+    <addaction name="actionactionasciiCharactersCheck1"/>
+    <addaction name="actionactionasciiCharactersCheck2"/>
+    <addaction name="actionprimaryKeyCheck"/>
+    <addaction name="actionprimarkKeyCheckExport"/>
+    <addaction name="actionexpcheckresult"/>
+    <addaction name="actioncurrentfilechekrule"/>
     <addaction name="action_fieldcheckconfigtools"/>
    </widget>
    <addaction name="menuFile"/>
@@ -976,7 +982,10 @@ border-radius:3px;
   </action>
   <action name="actionedit">
    <property name="text">
-    <string>编辑选择的单元格(仅支持OFD/类OFD文件)</string>
+    <string>编辑选择的单元格(仅支持OFD/类OFD/字段定长文件)</string>
+   </property>
+   <property name="toolTip">
+    <string>编辑选择的单元格(仅支持OFD/类OFD/字段定长文件)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
@@ -984,7 +993,10 @@ border-radius:3px;
   </action>
   <action name="actionedit2">
    <property name="text">
-    <string>编辑选择的行(仅支持OFD/类OFD文件)</string>
+    <string>编辑选择的行(仅支持OFD/类OFD/字段定长文件)</string>
+   </property>
+   <property name="toolTip">
+    <string>编辑选择的行(仅支持OFD/类OFD/字段定长文件)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+E</string>
@@ -1018,6 +1030,9 @@ border-radius:3px;
   </action>
   <action name="actioneditheaderfooter">
    <property name="text">
+    <string>编辑/查看文件头文件尾(仅支持OFD/类OFD文件)</string>
+   </property>
+   <property name="toolTip">
     <string>编辑/查看文件头文件尾(仅支持OFD/类OFD文件)</string>
    </property>
   </action>
@@ -1138,26 +1153,29 @@ border-radius:3px;
   </action>
   <action name="actionimportfromexcel">
    <property name="text">
-    <string>从Excel导入数据(仅支持OFD/类OFD文件)</string>
+    <string>从Excel导入数据(仅支持OFD/类OFD/字段定长文件)</string>
    </property>
    <property name="toolTip">
-    <string>从Excel导入数据(仅支持OFD文件)</string>
+    <string>从Excel导入数据(仅支持OFD/类OFD/字节定长文件)</string>
    </property>
   </action>
   <action name="actioncurrentfilechekrule">
    <property name="text">
-    <string>列出当前文件适用的必填校验规则</string>
+    <string>列出当前文件适用的必填检查规则</string>
    </property>
    <property name="toolTip">
-    <string>列出当前文件适用的必填校验规则</string>
+    <string>列出当前文件适用的必填检查规则</string>
    </property>
   </action>
   <action name="actionexpcheckresult">
    <property name="text">
-    <string>导出当前文件必填校验报告</string>
+    <string>导出当前文件字段必填检查报告</string>
    </property>
    <property name="toolTip">
-    <string>导出当前文件必填校验报告</string>
+    <string>导出当前文件字段必填检查报告</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F11</string>
    </property>
   </action>
   <action name="actionnextfieldcheck">
@@ -1184,6 +1202,72 @@ border-radius:3px;
   <action name="action_fieldcheckconfigtools">
    <property name="text">
     <string>字段必填/主键规则配置工具</string>
+   </property>
+  </action>
+  <action name="actionprimaryKeyCheck">
+   <property name="text">
+    <string>执行当前文件主键冲突检查</string>
+   </property>
+   <property name="toolTip">
+    <string>执行当前文件主键冲突检查</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+9</string>
+   </property>
+  </action>
+  <action name="actionprimarkKeyCheckExport">
+   <property name="text">
+    <string>导出当前文件主键冲突检查报告</string>
+   </property>
+   <property name="toolTip">
+    <string>导出当前文件主键冲突检查报告</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F10</string>
+   </property>
+  </action>
+  <action name="actioninvisibleCharactersCheck1">
+   <property name="text">
+    <string>定位到上一处不可见字符(仅零宽空格类)</string>
+   </property>
+   <property name="toolTip">
+    <string>定位到上一处不可见字符(仅零宽空格类)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F5</string>
+   </property>
+  </action>
+  <action name="actioninvisibleCharactersCheck2">
+   <property name="text">
+    <string>定位到下一处不可见字符(仅零宽空格类)</string>
+   </property>
+   <property name="toolTip">
+    <string>定位到下一处不可见字符(仅零宽空格类)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F6</string>
+   </property>
+  </action>
+  <action name="actionactionasciiCharactersCheck1">
+   <property name="text">
+    <string>定位到上一处不可见字符(含空格和制表符等ASCII码)</string>
+   </property>
+   <property name="toolTip">
+    <string>定位到上一处不可见字符(含空格和制表符等ASCII码)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F7</string>
+   </property>
+  </action>
+  <action name="actionactionasciiCharactersCheck2">
+   <property name="text">
+    <string>定位到下一处不可见字符(含空格和制表符等ASCII码)</string>
+   </property>
+   <property name="toolTip">
+    <string>定位到下一处不可见字符(含空格和制表符等ASCII码)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F8</string>
    </property>
   </action>
  </widget>

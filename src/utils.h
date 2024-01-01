@@ -41,6 +41,23 @@ namespace Ui {
 class Utils;
 }
 
+struct primaryItem
+{
+    QString primaryKey;
+    uint row;
+    uint firstRow;
+};
+
+struct fieldType
+{
+    QString fieldType;
+    int fieldLength;
+    int fieldDecLength;
+    int fieldBeginIndex;
+    QString fieldName;
+    QString fieldDescribe;
+};
+
 class Utils
 {
 public:
@@ -65,6 +82,7 @@ public:
      static QStringList getFormatRowValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row);
      static QString getOriginalValuesFromofdFileContentQByteArrayList(QList<QByteArray> * ofdFileContentQByteArrayList,OFDFileDefinition * ofd,int dataCompressLevel,int row ,int col);
      static QString getFormatValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int dataCompressLevel,int row ,int col);
+     static QString getOriginalValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int dataCompressLevel,int row ,int col);
      static QStringList getFormatRowValuesFromfixedFileContentQStringList(QList<QByteArray>  * fixedContentQByteArrayList,FIXEDFileDefinition * fixed,int dataCompressLevel,int row);
      static QStringList getRowCsvValuesFromcsvFileContentQStringList(QList<QByteArray> * csvFileContentQByteArrayList,CsvFileDefinition * csv,int dataCompressLevel,int row);
      static QStringList getFormatRowValuesFromdbfTableFile(QDbf::QDbfTable * dbftablefile,DbfFileDefinition * dbf,int row,QHash<int,int> * rowMap,bool adddeletedFlag=false,int trimType=0);
@@ -83,7 +101,8 @@ public:
      static QList<QStringList> parseCheckItemListtoChineseList(FIXEDFileDefinition &fixed);
      static double CVCcal (QList<QStringList > data);
      static void setDefaultWindowFonts(QWidget *w);
-
+     static bool updateOFDOrFixedFieldValueFromRow(QString fieldType,int fieldLength,int fieldDecLength,int updateBegin,int lengthType,QTextCodec *codec,QString valueNew,QByteArray &rowByteArray);
+     static bool updateOFDOrFixedFieldValue(QString fieldType,int fieldLength,int fieldDecLength,int lengthType,QTextCodec *codec,QString valueNew,QByteArray &valueByteArray);
 };
 
 #endif // UTILS_H

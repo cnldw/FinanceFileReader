@@ -94,6 +94,7 @@
 #include "src/dialogchoosefieldcheckexportreport.h"
 #include "src/configfile.h"
 #include "src/formfieldcheckedittools.h"
+#include "src/dialogshowprimarycheck.h"
 
 #ifdef Q_OS_WIN32
 #include "src/formwebtools.h"
@@ -103,10 +104,6 @@
 #include <QJsonParseError>
 #include <QJsonObject>
 #include <QJsonArray>
-
-/**
- * @brief The dbfMatchInfo struct 存储匹配到的DBF配置的结构体
- */
 
 namespace Ui {
 class MainWindow;
@@ -126,7 +123,6 @@ protected:
     void dropEvent(QDropEvent *event);
     //窗口尺寸变化事件
     void resizeEvent (QResizeEvent * event );
-
     bool event(QEvent *event);
 
     //槽函数
@@ -157,17 +153,17 @@ private slots:
 
     void deleteRowDataFromFileAndTable();
 
-    void copyOFDRowData();
+    void copyRowData();
 
-    void addOFDRowDataPreviousRow();
+    void addRowDataPreviousRow();
 
-    void addOFDRowDataNextRow();
+    void addRowDataNextRow();
 
-    void addOFDRowDataEndRow();
+    void addRowDataEndRow();
 
-    void addOFDNewLineRowDataEndRow();
+    void addNewLineRowDataEndRow();
 
-    void showMoaifyOFDRow();
+    void showMoaifyRow();
 
     void copyToClipboardWithoutTitle();
 
@@ -185,9 +181,9 @@ private slots:
 
     void gotoFirstNotNumber();
 
-    void showOFDFiledAnalysis();
+    void showOFDOrFixedFiledAnalysis();
 
-    void showModifyOFDCell();
+    void showModifyCell();
 
     void save2XlsxFinished();
 
@@ -195,7 +191,7 @@ private slots:
 
     void loadFileOnWindowisOpenOrDragEnter();
 
-    void showModifyOFDCellBatch();
+    void showModifyCellBatch();
 
     void on_actionsOpenCompare_triggered();
 
@@ -326,11 +322,25 @@ private slots:
 
     void on_action_fieldcheckconfigtools_triggered();
 
+    void on_actionprimaryKeyCheck_triggered();
+
+    void on_actionprimarkKeyCheckExport_triggered();
+
+    void on_actioninvisibleCharactersCheck1_triggered();
+
+    void on_actioninvisibleCharactersCheck2_triggered();
+
+    void on_actionactionasciiCharactersCheck1_triggered();
+
+    void on_actionactionasciiCharactersCheck2_triggered();
+
 public slots:
     void getNewHeaderAndFooter(QStringList header,QStringList footer);
     void getFieldExportConfig(QMap <QString,int> config);
+    void getPrimaryExportConfig(QMap <QString,int> config);
     void getConfigFileChange(bool flag,QStringList modifyConfigList);
-
+    void getActionFromPrimaryCheckTools(int type,int row1,int row2);
+    void getSignalsClosePrimaryCheck();
 
 private:
 
@@ -428,7 +438,7 @@ private:
     //导入excel行数
     int importExcelRow=0;
     //从Exccel中导入的数据记录
-    QList<QByteArray> ofdFileContentQByteArrayListFromExcel;
+    QList<QByteArray> fileContentQByteArrayListFromExcel;
     //创建成员xlsx变量//xlsx文件数据存放到堆内存,注意使用完毕释放
     QXlsx::Document *xlsx=new QXlsx::Document();
     //xlsx文件保存文件名
@@ -460,6 +470,15 @@ private:
     QHash<QString, QString>  likeOFDDataFilename;
     QHash<QString, QString>  likeOFDIndexFilename;
     QString likeOFDFileType;
+
+    //hash-用于存储每个主键行首次出现在哪里
+    QHash<QString, uint> primaryFirstRow;
+    //用于存储冲突行信息
+    QList<primaryItem> primaryCheckResult;
+    //是否需要重新加载
+    bool needReCheckPrimary=false;
+    //查看主键冲突结果
+    DialogShowPrimaryCheck * dialogDialogShowPrimaryCheck=nullptr;
     //表格的右键菜单
     QMenu *tablePopMenu;
     QAction *action_ShowDetails;
@@ -470,15 +489,15 @@ private:
     QAction *action_ShowOFDAnalysis;
     QAction *action_EditCompareData;
     QAction *action_EditCompareDataBatch;
-    QAction *action_ModifyOFDCell;
-    QAction *action_ModifyOFDCellBatch;
-    QAction *action_DeleteOFDRowData;
-    QAction *action_CopyOFDRowData;
-    QAction *action_addCopyedOFDData2PreviousRow;
-    QAction *action_addCopyedOFDData2NextRow;
-    QAction *action_addCopyedOFDData2End;
-    QAction *action_addNewLineOFDData2End;
-    QAction *action_ModifyOFDRow;
+    QAction *action_ModifyCell;
+    QAction *action_ModifyCellBatch;
+    QAction *action_DeleteRowData;
+    QAction *action_CopyRowData;
+    QAction *action_addCopyedData2PreviousRow;
+    QAction *action_addCopyedData2NextRow;
+    QAction *action_addCopyedData2End;
+    QAction *action_addNewLineData2End;
+    QAction *action_ModifyRow;
     QAction *action_CsvForceNumber;
     QAction *action_ShareUseQrCode;
 
@@ -517,7 +536,7 @@ private:
     //优化，使用QHash提高大文件下多行数据加载后的查找效率
     QHash <int,bool> rowHasloaded;
     //
-    QHash <QString,QString> specialCharacter;
+    QHash <uint,QString> specialCharacter;
     //PUA码提示，或者一字双码提示
     QHash <uint,QString> puaOrDeletedGBKCharacter;
     //优化器，记录每列表格最宽记录，当异步下次加载数据时，根据是否发生了变化来决定是否需要更新列宽度
@@ -569,6 +588,8 @@ private:
     //当前打开的文件换行符类型
     int currentFileNewLineType=newLineType::CRLF;
 
+    bool lastRowHasNewLine=true;
+
     //忽略正在进行的任务强制退出
     //如果程序正在进行诸如文件读取,文件导出,搜索任务时,程序强制退出时使用,主动告知进行中的任务进行退出函数，方式程序在后台驻留
     //只允许退出程序时使用此标志,遇到此标志一切进行中的耗时任务都会终止并退出
@@ -580,7 +601,6 @@ private:
     bool checkCSVVersion(CsvFileDefinition  csv,QString versionRowData);
     void copyToClipboard(bool withTitle=false);
 
-    void tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
     void statusBar_clear_statusBar();
     void statusBar_display_rowsCount(int rowsCount);
     void statusBar_display_rowsCount(int rowsCount,QString charset);
@@ -593,8 +613,13 @@ private:
     void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
     void initStatusBar();
     void open_file_Dialog();
+    void primaryCheck(int type,QString fileName="",int exportType=0,int openatexported=0);
 
     void loadConfig(bool isReload=false);
+
+    void invisibleCharactersCheckUp(int rangeType=0);
+
+    void invisibleCharactersCheckDown(int rangeType=0);
 
     //设置和插件加载
     void load_Setting();
@@ -625,15 +650,15 @@ private:
     //数据渲染
     void display_OFDTable(bool clearDirtyData=false);
     void display_CSVTable();
-    void display_FIXEDTable();
+    void display_FIXEDTable(bool clearDirtyData=false);
     void display_DBFTable();
     void display_CSVFaultCause(QList<FaultCause> faultList);
     void display_FIXEDFaultCause(QList<FaultCause> faultList);
     void display_OFDFaultCause(QString useini,QList<OFDFaultCause> faultList);
-
-    void saveOFDFile(QString filepath);
+    
+    void saveOFDOrFixedFile(QString filepath);
     void randomTips();
-    void addOFDRowData(int location);
+    void addNewRowData(int location);
     bool ignoreFileChangeAndOpenNewFile();
     void closeEvent(QCloseEvent *event);
     void columnJump(int type);
@@ -644,9 +669,49 @@ private:
     static bool compareDBFData(const dbfMatchInfo &dbf1, const dbfMatchInfo &dbf2);
     bool dbfColIsNumber(int col);
     void reCalculateTableBeginAndEnd();
+    void reCalculateFileCountLine();
     void checkRowFieldResult (QStringList & rowdata,QMap<int,QString> & checkresult,int splitFlag=0);
     void checkRowFieldSearch (int direction);
-
+    bool invisibleCharactersCheck(QString str){
+        if (str.contains(QChar(0x0C))) {
+            return true;
+        }
+        if (str.contains(QChar(0x2011))) {
+            return true;
+        }
+        for (int i = 0x2000; i <= 0x200F; ++i) {
+            if (str.contains(QChar(i))) {
+                return true;
+            }
+        }
+        for (int i = 0x2028; i <= 0x202F; ++i) {
+            if (str.contains(QChar(i))) {
+                return true;
+            }
+        }
+        for (int i = 0x205F; i <= 0x2064; ++i) {
+            if (str.contains(QChar(i))) {
+                return true;
+            }
+        }
+        for (int i = 0x2066; i <= 0x206F; ++i) {
+            if (str.contains(QChar(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool invisibleASCIICharactersCheck(QString str){
+        if (str.contains(QChar(0x7F))) {
+            return true;
+        }
+        for (int i = 0x00; i <= 0x20; ++i) {
+            if (str.contains(QChar(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 #endif // MAINWINDOW_H

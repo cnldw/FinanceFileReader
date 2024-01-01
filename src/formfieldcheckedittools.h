@@ -52,8 +52,6 @@ private slots:
 
     void on_searchPushButton_clicked();
 
-    void on_tableWidgetFieldList_itemSelectionChanged();
-
     void on_tableWidgetFieldList_customContextMenuRequested(const QPoint &pos);
 
     void on_tableWidgetCheckList_customContextMenuRequested(const QPoint &pos);
@@ -92,6 +90,8 @@ private slots:
 
 
     void on_pushButton_PrimaryKey_clicked();
+
+    void on_tableWidgetFieldList_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
 
 public slots:
     void getImportString(QString data,int type,bool clearOldData);

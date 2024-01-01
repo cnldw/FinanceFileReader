@@ -34,7 +34,7 @@ class DialogModifyRow : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogModifyRow(OFDFileDefinition *ofd,QStringList rowdata,QWidget *parent = nullptr);
+    explicit DialogModifyRow(QList<fieldType> fieldList,QTextCodec *codec,QStringList rowdata,QWidget *parent = nullptr);
     ~DialogModifyRow();
 
     QStringList getRowDataNew() const;
@@ -74,13 +74,11 @@ private:
     QStringList rowDataOld;
     //新的数据
     QStringList rowDataNew;
-    //ofd
-    OFDFileDefinition ofd;
+    QList<fieldType> fieldList;
     //记录错误行的hash
     QHash<int,QString> errorHash;
 
-    QTextCodec *codec=QTextCodec::codecForName("GB18030");
-
+    QTextCodec *codec;
     void checkField(int row,int column,bool updateValue,bool displayErrorMessage);
 };
 
