@@ -5,6 +5,8 @@
 ************************************************************************/
 #include "dialogshareqrcode.h"
 #include "ui_dialogshareqrcode.h"
+#include "src/qrcode/QrCode.hpp"
+#include "src/utils.h"
 
 DialogShareQrCode::DialogShareQrCode(QString text,QWidget *parent) :
     QDialog(parent),
@@ -12,6 +14,7 @@ DialogShareQrCode::DialogShareQrCode(QString text,QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     updateQrCode(text);
 }
 

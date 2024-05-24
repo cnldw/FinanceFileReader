@@ -3,7 +3,8 @@
 # Project created by QtCreator 2018-03-24T10:23:52
 #
 #-------------------------------------------------
-QT       += core gui concurrent
+QT += core gui concurrent
+QT += gui-private
 #要求使用的最低c++版本
 CONFIG += c++11
 #静态编译声明-windows,unix like
@@ -49,7 +50,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.10.1
+VERSION = 1.10.4
 ############以下注意按版本修改###############
 
 # 语言
@@ -107,6 +108,7 @@ SOURCES += \
     src/dbffiledefinition.cpp \
     src/dialogchoosedbfconfig.cpp \
     src/dialogchoosefieldcheckexportreport.cpp \
+    src/dialogchoosefilefromzip.cpp \
     src/dialogchooseofdconfig.cpp \
     src/dialogeditheaderfooter.cpp \
     src/dialogedittext.cpp \
@@ -157,6 +159,7 @@ HEADERS += \
     src/dbffiledefinition.h \
     src/dialogchoosedbfconfig.h \
     src/dialogchoosefieldcheckexportreport.h \
+    src/dialogchoosefilefromzip.h \
     src/dialogchooseofdconfig.h \
     src/dialogeditheaderfooter.h \
     src/dialogedittext.h \
@@ -204,6 +207,7 @@ HEADERS += \
 FORMS += \
     src/dialogchoosedbfconfig.ui \
     src/dialogchoosefieldcheckexportreport.ui \
+    src/dialogchoosefilefromzip.ui \
     src/dialogchooseofdconfig.ui \
     src/dialogeditheaderfooter.ui \
     src/dialogedittext.ui \

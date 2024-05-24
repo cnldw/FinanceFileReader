@@ -7,7 +7,6 @@
 #define DBFFIELDDEFINITION_H
 
 #include <QString>
-#include "qdbffield.h"
 
 class DbfFieldDefinition
 {

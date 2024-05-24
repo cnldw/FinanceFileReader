@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "dialogchoosefiletype.h"
 #include "ui_dialogchoosefiletype.h"
+#include "src/utils.h"
 
 DialogChooseFileType::DialogChooseFileType(QWidget *parent) :
     QDialog(parent),
@@ -12,6 +13,7 @@ DialogChooseFileType::DialogChooseFileType(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
 }
 
 DialogChooseFileType::~DialogChooseFileType()

@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "dialogchoosedbfconfig.h"
 #include "ui_dialogchoosedbfconfig.h"
+#include "src/utils.h"
 
 DialogChooseDBFConfig::DialogChooseDBFConfig(QList<QStringList> * matchDBF,QWidget *parent) :
     QDialog(parent),

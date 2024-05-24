@@ -20,8 +20,6 @@
 #include <QTableWidgetSelectionRange>
 #include <src/utils.h>
 #include <QDesktopServices>
-#include "src/publicdefine.h"
-#include "src/utils.h"
 
 namespace Ui {
 class DialogOKTools;

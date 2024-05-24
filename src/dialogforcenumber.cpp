@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "dialogforcenumber.h"
 #include "ui_dialogforcenumber.h"
+#include "src/utils.h"
 
 DialogForceNumber::DialogForceNumber(int flag,QWidget *parent) :
     QDialog(parent),
@@ -12,6 +13,7 @@ DialogForceNumber::DialogForceNumber(int flag,QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     ui->comboBox->setCurrentIndex(flag+1);
 }
 

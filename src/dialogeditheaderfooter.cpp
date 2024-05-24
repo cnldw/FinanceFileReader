@@ -5,16 +5,16 @@
 ************************************************************************/
 #include "dialogeditheaderfooter.h"
 #include "ui_dialogeditheaderfooter.h"
+#include "src/utils.h"
 
 DialogEditHeaderFooter::DialogEditHeaderFooter(OFDFileDefinition *ofd,QList<QStringList> header,QList<QStringList> footer,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogEditHeaderFooter)
 {
     Q_UNUSED(ofd);
-    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
-    Utils::setDefaultWindowFonts(this);
     ui->setupUi(this);
+    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
+    Utils::setDefaultWindowFonts(this);
     QStringList title;
     title.append("文件中行号");
     title.append("数据内容");

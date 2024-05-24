@@ -7,9 +7,7 @@
 #define DIALOGABOUTTHIS_H
 
 #include <QDialog>
-#include "src/utils.h"
 #include <QByteArray>
-#include "src/publicdefine.h"
 
 namespace Ui {
 class DialogAboutThis;

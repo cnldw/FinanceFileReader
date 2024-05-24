@@ -12,10 +12,12 @@ FormWebTools::FormWebTools(QString title,QString path,QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowTitle(title);
+#ifdef Q_OS_WIN32
     webView = new miniblink;
     ui->gridLayout->addWidget(webView, 0, 0);
     //加载网页
     webView->load(path, true);
+#endif
 }
 
 FormWebTools::~FormWebTools()

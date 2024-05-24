@@ -18,10 +18,6 @@
 #include <QTimer>
 #include <QFileDialog>
 #include <QShortcut>
-#include "src/msgtoast.h"
-#include "src/publicdefine.h"
-#include "src/utils.h"
-
 
 namespace Ui {
 class DialogShowFieldCheckList;

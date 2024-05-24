@@ -19,10 +19,6 @@
 #include <QShortcut>
 #include <QDebug>
 #include <QTimer>
-#include "src/dialogmagnify.h"
-#include "src/msgtoast.h"
-#include "src/publicdefine.h"
-#include "src/utils.h"
 
 namespace Ui {
 class DialogShowTableRow;

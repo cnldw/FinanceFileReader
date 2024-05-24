@@ -5,14 +5,21 @@
 ************************************************************************/
 #include "dialogpreference.h"
 #include "ui_dialogpreference.h"
+#include "src/utils.h"
 
-DialogPreference::DialogPreference(QMap <QString,int> * par,QWidget *parent) :
+DialogPreference::DialogPreference(QMap <QString,int> * par,QMap <QString,QString> * parstr,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogPreference)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     this->par=par;
+    this->parstr=parstr;
+#ifdef Q_OS_MAC
+    ui->pushButton->setMinimumHeight(32);
+    ui->pushButton_2->setMinimumHeight(32);
+#endif
     //从主界面获取当前的参数值
     if(par->contains("compresslevel")){
         if(par->value("compresslevel")==0){
@@ -88,6 +95,39 @@ DialogPreference::DialogPreference(QMap <QString,int> * par,QWidget *parent) :
         }
         else if(par->value("enablefieldcheck")==1){
             ui->checkBox->setChecked(true);
+        }
+    }
+    if(par->contains("standfontsize")){
+        if(par->value("standfontsize")==0){
+            ui->comboBox_5->setCurrentIndex(0);
+        }
+        else if(par->value("standfontsize")==1){
+            ui->comboBox_5->setCurrentIndex(1);
+        }
+        else if(par->value("standfontsize")==2){
+            ui->comboBox_5->setCurrentIndex(2);
+        }
+    }
+    if(parstr->contains("firstuifont")&&!parstr->value("firstuifont").isEmpty()){
+        QFontDatabase fontDatabase;
+        if(fontDatabase.families().count()>0){
+            for(int i=0;i<fontDatabase.families().count();i++){
+                if(fontDatabase.families().at(i)==parstr->value("firstuifont")){
+                    ui->fontComboBox_2->setCurrentFont(QFont(parstr->value("firstuifont")));
+                    break;
+                }
+            }
+        }
+    }
+    if(parstr->contains("firstrarecharactersfont")&&!parstr->value("firstrarecharactersfont").isEmpty()){
+        QFontDatabase fontDatabase;
+        if(fontDatabase.families().count()>0){
+            for(int i=0;i<fontDatabase.families().count();i++){
+                if(fontDatabase.families().at(i)==parstr->value("firstrarecharactersfont")){
+                    ui->fontComboBox->setCurrentFont(QFont(parstr->value("firstrarecharactersfont")));
+                    break;
+                }
+            }
         }
     }
 }
@@ -185,3 +225,20 @@ void DialogPreference::on_checkBox_stateChanged(int arg1)
     Q_UNUSED(arg1)
     par->insert("enablefieldcheck",ui->checkBox->isChecked()?1:0);
 }
+
+void DialogPreference::on_fontComboBox_currentFontChanged(const QFont &f)
+{
+    parstr->insert("firstrarecharactersfont",f.family());
+}
+
+
+void DialogPreference::on_fontComboBox_2_currentFontChanged(const QFont &f)
+{
+    parstr->insert("firstuifont",f.family());
+}
+
+void DialogPreference::on_comboBox_5_currentIndexChanged(int index)
+{
+    par->insert("standfontsize",index);
+}
+

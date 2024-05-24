@@ -18,10 +18,6 @@
 #include "src/fixedfiledefinition.h"
 #include "src/csvfiledefinition.h"
 #include "src/configfile.h"
-#include "src/utils.h"
-#include "src/dialogmytip.h"
-#include "src/dialogedittext.h"
-
 
 namespace Ui {
 class FormFieldCheckEditTools;

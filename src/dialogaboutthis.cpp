@@ -5,6 +5,8 @@
 ************************************************************************/
 #include "src/dialogaboutthis.h"
 #include "ui_dialogaboutthis.h"
+#include "src/publicdefine.h"
+#include "src/utils.h"
 
 DialogAboutThis::DialogAboutThis(QWidget *parent) :
     QDialog(parent),
@@ -12,6 +14,7 @@ DialogAboutThis::DialogAboutThis(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     if(ENABLE_QRCODE){
         setWindowTitle("关于本程序");
     }

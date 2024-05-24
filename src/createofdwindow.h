@@ -20,7 +20,6 @@
 #include <QApplication>
 #include <QStandardPaths>
 #include "src/utils.h"
-#include "src/dialogmytip.h"
 
 namespace Ui {
 class CreateOFDWindow;

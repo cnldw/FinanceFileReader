@@ -5,6 +5,9 @@
 ************************************************************************/
 #include "src/dialogshowtablecompareview.h"
 #include "ui_dialogshowtablecompareview.h"
+#include "src/utils.h"
+#include "src/msgtoast.h"
+
 #define UNUSED(x) (void)x
 
 DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QStringList fieldType,QMap<int,QStringList> * compareData,QWidget *parent) :
@@ -14,7 +17,6 @@ DialogShowTableCompareView::DialogShowTableCompareView(QStringList title,QString
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
     //初始化背景色
     this->backcolor=QColor (241,226,173);
     //初始化表格

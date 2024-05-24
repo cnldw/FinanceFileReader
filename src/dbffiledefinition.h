@@ -9,7 +9,6 @@
 #include <QString>
 #include "src/dbffielddefinition.h"
 
-
 class DbfFileDefinition
 {
 private:

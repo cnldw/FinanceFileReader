@@ -8,7 +8,6 @@
 
 #include <QDialog>
 #include <QByteArray>
-#include "src/publicdefine.h"
 
 namespace Ui {
 class DialogAboutAuthor;

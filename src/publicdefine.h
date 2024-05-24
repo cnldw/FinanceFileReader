@@ -7,7 +7,7 @@
 #define PUBLICDEFINE_H
 #include <QString>
 
-#define VERSION_V "V1.10.1"
+#define VERSION_V "V1.10.4"
 #define AUTHOR_PHONE "MTUyMzg4NzIxMDE="
 #define AUTHOR_NAME "NzkzNTU0MjYyQHFxLmNvbSjliJjlvrfkvY0p"
 #define AUTHOR_EMAIL "NzkzNTU0MjYyQHFxLmNvbQ=="
@@ -18,17 +18,18 @@
 #define ENABLE_QRCODE true
 #define ALL_CHECK_INDEX 999999
 
-//适用于qss的字体大小设置
-//macOS和Linux强制设置13px
-#define FONTSIZE13 "font-size:13px;"
-//放大镜使用的64px
-#define FONTSIZE64 "font-size:64px;"
+//生僻字补充第一个字体
+extern QString firstRareCharactersFontGlobal;
+//全局UI默认字体
+extern QString firstUIFontGlobal;
+//全局字号信息
+extern QString  fontSizeStand;
 
 //适用于macOS的字体设置
-#define UIFontsMacOS "font-family:\"PingFang SC,Simsun,SimSun-ExtB,TH-Sung-TP2,Alibaba PuHuiTi 3.0,Alibaba PuHuiTi 3.0 55 Regular L3,Alibaba PuHuiTi 3 55 Regular L3,Alibaba PuHuiTi 3.0 55 Regular,Alibaba PuHuiTi 3 55 Regular,sans-serif\";"
+#define UIFontsMacOS "PingFang SC,Simsun,SimSun-ExtB,TH-Sung-TP0,TH-Sung-TP2,Alibaba PuHuiTi 3.0,Alibaba PuHuiTi 3.0 55 Regular L3,Alibaba PuHuiTi 3 55 Regular L3,Alibaba PuHuiTi 3.0 55 Regular,Alibaba PuHuiTi 3 55 Regular,sans-serif"
 //适用于Linux的字体设置
-#define UIFontsLinux "font-family:\"WenQuanYi Zen Hei,Simsun,SimSun-ExtB,TH-Sung-TP2,Alibaba PuHuiTi 3.0,Alibaba PuHuiTi 3.0 55 Regular L3,Alibaba PuHuiTi 3 55 Regular L3,Alibaba PuHuiTi 3.0 55 Regular,Alibaba PuHuiTi 3 55 Regular,sans-serif\";"
+#define UIFontsLinux "WenQuanYi Zen Hei,Simsun,SimSun-ExtB,TH-Sung-TP0,TH-Sung-TP2,Alibaba PuHuiTi 3.0,Alibaba PuHuiTi 3.0 55 Regular L3,Alibaba PuHuiTi 3 55 Regular L3,Alibaba PuHuiTi 3.0 55 Regular,Alibaba PuHuiTi 3 55 Regular,sans-serif"
 //适用于Windows的字体设置
-#define UIFontsWindows "font-family:\"Microsoft YaHei,Simsun,SimSun-ExtB,Alibaba PuHuiTi 3.0,Alibaba PuHuiTi 3.0 55 Regular L3,Alibaba PuHuiTi 3 55 Regular L3,Alibaba PuHuiTi 3.0 55 Regular,Alibaba PuHuiTi 3 55 Regular,TH-Sung-TP2,sans-serif\";"
+#define UIFontsWindows "Microsoft YaHei,Simsun,SimSun-ExtB,Alibaba PuHuiTi 3.0,Alibaba PuHuiTi 3.0 55 Regular L3,Alibaba PuHuiTi 3 55 Regular L3,Alibaba PuHuiTi 3.0 55 Regular,Alibaba PuHuiTi 3 55 Regular,TH-Sung-TP0,TH-Sung-TP2,sans-serif"
 
 #endif // PUBLICDEFINE_H

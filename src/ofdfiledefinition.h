@@ -19,6 +19,7 @@ private:
     //配置是否可用
     bool useAble;
     QString  configSegment;
+    QStringList  useForTA=QStringList();
     QString useForVersionAndType;
     //配置不可用原因
     QString message;
@@ -69,6 +70,8 @@ public:
     void setUseForVersionAndType(const QString &newUseForVersionAndType);
     const QList<uint> &getPrimaryKeyFieldList() const;
     void setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyFieldList);
+    const QStringList &getUseForTA() const;
+    void setUseForTA(const QStringList &newUseForTA);
 };
 
 #endif // OFDFILEDEFINITION_H

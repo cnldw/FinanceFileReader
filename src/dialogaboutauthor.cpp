@@ -7,6 +7,8 @@
 #include "src/dialogaboutauthor.h"
 #include "ui_dialogaboutauthor.h"
 #include "src/2048/gui/qgameboard.h"
+#include "src/publicdefine.h"
+#include "src/utils.h"
 
 DialogAboutAuthor::DialogAboutAuthor(QWidget *parent) :
     QDialog(parent),
@@ -14,6 +16,7 @@ DialogAboutAuthor::DialogAboutAuthor(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     ui->textEdit->setText(QByteArray::fromBase64(AUTHOR_INFO));
 }
 

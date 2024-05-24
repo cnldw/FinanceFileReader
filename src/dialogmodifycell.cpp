@@ -5,15 +5,15 @@
 ************************************************************************/
 #include "src/dialogmodifycell.h"
 #include "ui_dialogmodifycell.h"
-
+#include "src/utils.h"
 
 DialogModifyCell::DialogModifyCell(QString fieldType,int fieldLength,int fieldDecLength,QString value,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogModifyCell)
 {
     ui->setupUi(this);
-    Utils::setDefaultWindowFonts(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     ui->textEdit->setTextColor(QColor("#FF0000"));
     this->fieldType=fieldType;
     this->fieldLength=fieldLength;

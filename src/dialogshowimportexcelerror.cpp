@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "dialogshowimportexcelerror.h"
 #include "ui_dialogshowimportexcelerror.h"
+#include "src/utils.h"
 
 DialogShowImportExcelError::DialogShowImportExcelError(QStringList * errinfo,QWidget *parent) :
     QDialog(parent),
@@ -13,7 +14,6 @@ DialogShowImportExcelError::DialogShowImportExcelError(QStringList * errinfo,QWi
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);

@@ -5,6 +5,9 @@
 ************************************************************************/
 #include "src/dialogshowprimarycheck.h"
 #include "ui_dialogshowprimarycheck.h"
+#include "src/dialogmagnify.h"
+#include "src/msgtoast.h"
+
 #define UNUSED(x) (void)x
 
 DialogShowPrimaryCheck::DialogShowPrimaryCheck(QList<primaryItem>  * primaryCheckResult,QWidget *parent) :
@@ -14,7 +17,6 @@ DialogShowPrimaryCheck::DialogShowPrimaryCheck(QList<primaryItem>  * primaryChec
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);

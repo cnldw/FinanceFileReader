@@ -9,7 +9,6 @@
 #include <QDialog>
 #include <QMap>
 #include <QDebug>
-#include "src/utils.h"
 
 namespace Ui {
 class DialogChooseFieldCheckExportReport;

@@ -5,18 +5,47 @@
 ************************************************************************/
 #include "dialogmagnify.h"
 #include "ui_dialogmagnify.h"
+#include "src/publicdefine.h"
+#include "src/utils.h"
 
 DialogMagnify::DialogMagnify(QString text,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogMagnify)
 {
     ui->setupUi(this);
-    Utils::setDefaultWindowFonts(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
+    Utils::setDefaultWindowFonts(this);
+    str=text;
+#ifdef Q_OS_MAC
+    ui->pushButton_ZoomIn->setMinimumHeight(32);
+    ui->pushButton_ZoomOut->setMinimumHeight(32);
+    ui->pushButton_ZoomIn->setMaximumHeight(32);
+    ui->pushButton_ZoomOut->setMaximumHeight(32);
+#endif
+    initStr();
+}
+
+DialogMagnify::~DialogMagnify()
+{
+    delete ui;
+}
+
+void DialogMagnify::on_pushButton_ZoomIn_clicked()
+{
+    if(fontSize>200){
+        return;
+    }
+    else{
+       fontSize+=4;
+       initStr();
+    }
+}
+
+void DialogMagnify::initStr(){
     QString html;
-    html.append("<div style=\"");
-    html.append(FONTSIZE64);
-    html.append("\"");
+    html.append("<div style=\"font-size:");
+    html.append(QString::number(fontSize));
+    html.append("px;");
 #ifdef Q_OS_MAC
     html.append(UIFontsMacOS);
 #endif
@@ -27,12 +56,19 @@ DialogMagnify::DialogMagnify(QString text,QWidget *parent) :
     html.append(UIFontsWindows);
 #endif
     html.append("\">");
-    html.append(text);
+    html.append(str);
     html.append("</div>");
     ui->textEdit->setHtml(html);
 }
 
-DialogMagnify::~DialogMagnify()
+void DialogMagnify::on_pushButton_ZoomOut_clicked()
 {
-    delete ui;
+    if(fontSize<20){
+        return;
+    }
+    else{
+       fontSize-=4;
+       initStr();
+    }
 }
+

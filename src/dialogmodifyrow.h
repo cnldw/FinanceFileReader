@@ -18,8 +18,6 @@
 #include <QMenu>
 #include <QTextCodec>
 #include <QDebug>
-#include "src/ofdfiledefinition.h"
-#include "src/msgtoast.h"
 #include "src/utils.h"
 
 namespace Ui {

@@ -9,6 +9,7 @@
 #include <QString>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QList>
 #include <QLocale>
@@ -23,20 +24,12 @@
 #include "src/csvfiledefinition.h"
 #include "src/fixedfiledefinition.h"
 #include "src/qdbf/qdbftable.h"
-#include "src/qdbf/qdbfrecord.h"
 #include "src/dbffileconfig.h"
 #include "src/dbffiledefinition.h"
 #include "src/ofdcodeinfo.h"
 #include "src/dictionary.h"
 #include "src/configfile.h"
-#include "src/publicdefine.h"
 
-#include "time.h"
-#ifdef Q_OS_WIN32
-#include "sys/utime.h"
-#else
-#include "utime.h"
-#endif
 namespace Ui {
 class Utils;
 }
@@ -100,9 +93,10 @@ public:
      static QList<QStringList> parseCheckItemListtoChineseList(CsvFileDefinition &csv);
      static QList<QStringList> parseCheckItemListtoChineseList(FIXEDFileDefinition &fixed);
      static double CVCcal (QList<QStringList > data);
-     static void setDefaultWindowFonts(QWidget *w);
+     static void setDefaultWindowFonts(QWidget *w,bool allFlag=false);
      static bool updateOFDOrFixedFieldValueFromRow(QString fieldType,int fieldLength,int fieldDecLength,int updateBegin,int lengthType,QTextCodec *codec,QString valueNew,QByteArray &rowByteArray);
      static bool updateOFDOrFixedFieldValue(QString fieldType,int fieldLength,int fieldDecLength,int lengthType,QTextCodec *codec,QString valueNew,QByteArray &valueByteArray);
+     static QString formatFileSize(qint64 fileSize);
 };
 
 #endif // UTILS_H

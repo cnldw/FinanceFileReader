@@ -5,13 +5,15 @@
 ************************************************************************/
 #include "dialogmytip.h"
 #include "ui_dialogmytip.h"
+#include "src/utils.h"
 
 DialogMyTip::DialogMyTip(QString tip,QWidget *parent,bool information) :
     QDialog(parent),
     ui(new Ui::DialogMyTip)
 {
-    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
     ui->setupUi(this);
+    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     ui->label->setText(tip);
     ui->label->setWordWrap(true);
 #ifdef Q_OS_MAC

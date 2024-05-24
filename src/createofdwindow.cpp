@@ -5,7 +5,7 @@
 ************************************************************************/
 #include "src/createofdwindow.h"
 #include "ui_createofdwindow.h"
-
+#include "src/dialogmytip.h"
 
 CreateOFDWindow::CreateOFDWindow(QWidget *parent) :
     QDialog(parent),
@@ -13,6 +13,7 @@ CreateOFDWindow::CreateOFDWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
 #ifdef Q_OS_MAC
     //修正macos下按钮怪异的表现形状
     ui->pushButton->setFixedHeight(30);
@@ -309,6 +310,7 @@ bool CreateOFDWindow::copyFile(QString srcFile ,QString dstFile, bool coverFileI
             createfile->remove(dstFile);
         }
     }
+    createfile->close();
     if(!QFile::copy(srcFile, dstFile))
     {
         return false;

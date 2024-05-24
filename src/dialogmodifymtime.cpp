@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "dialogmodifymtime.h"
 #include "ui_dialogmodifymtime.h"
+#include "src/utils.h"
 
 DialogModifyMtime::DialogModifyMtime(QWidget *parent) :
     QDialog(parent),
@@ -13,9 +14,9 @@ DialogModifyMtime::DialogModifyMtime(QWidget *parent) :
     ui->setupUi(this);
     this->setAcceptDrops(true);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     ui->dateTimeEdit->setEnabled(false);
     ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
-    Utils::setDefaultWindowFonts(this);
 #ifdef Q_OS_MAC
     //修正macos下按钮怪异的表现形状
     ui->pushButton->setFixedHeight(30);

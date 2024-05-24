@@ -5,14 +5,44 @@
 ************************************************************************/
 #include "src/mainwindow.h"
 #include "ui_mainwindow.h"
-#define UNUSED(x) (void)x
+#include "src/fixedfielddefinition.h"
+#include "src/ofdfielddefinition.h"
+#include "src/dialogshowtablerow.h"
+#include "src/dialogchoosefiletype.h"
+#include "src/dialogshowtablefieldcheck.h"
+#include "src/dialogshowtablecompareview.h"
+#include "src/dialogmytip.h"
+#include "src/dialogmodifycell.h"
+#include "src/dialogaboutauthor.h"
+#include "src/dialogaboutthis.h"
+#include "src/dialogmergetip.h"
+#include "src/dialogpreference.h"
+#include "src/dialogmodifyrow.h"
+#include "src/createofdwindow.h"
+#include "src/dialogchooseexporttype.h"
+#include "src/dialogshowcharset.h"
+#include "src/dialogmodifymtime.h"
+#include "src/dialogmagnify.h"
+#include "src/dialogchooseofdconfig.h"
+#include "src/dialogchoosedbfconfig.h"
+#include "src/dialogeditheaderfooter.h"
+#include "src/dialogforcenumber.h"
+#include "src/dialogshareqrcode.h"
+#include "src/qdbf/qdbfrecord.h"
+#include "src/qdbf/qdbffield.h"
+#include "src/dbffielddefinition.h"
+#include "src/dialogoktools.h"
+#include "src/msgtoast.h"
+#include "src/dialogshowimportexcelerror.h"
+#include "src/dialogshowfieldchecklist.h"
+#include "src/fieldcheckitem.h"
+#include "src/dialogshowfieldchecklist.h"
+#include "src/dialogchoosefieldcheckexportreport.h"
+#include "src/formfieldcheckedittools.h"
+#include <private/qzipreader_p.h>
+#include "src/dialogchoosefilefromzip.h"
 
-/**
- * @brief MainWindow::MainWindow 构造函数，主窗口入口----注意，本程序的主窗口初始化就是靠这个函数完成的，里面初始化了表格参数，表格右键菜单，加载了配置文件等等
- * @param argc
- * @param argv
- * @param parent
- */
+#define UNUSED(x) (void)x
 
 MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -20,11 +50,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     ui->setupUi(this);
     setAcceptDrops(true);
     setWindowTitle(appName);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
-    Utils::setDefaultWindowFonts(this);
-    /*临时隐藏未开发完毕的功能***************************************/
-    /*插件功能*****************************************************/
-    //仅Windows系统支持文件比对和在文本编辑器中打开
+
 #ifdef Q_OS_LINUX
     ui->actiondifftools->setVisible(false);
     ui->actionfileedit->setVisible(false);
@@ -33,25 +59,16 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     ui->actiondifftools->setVisible(false);
     ui->actionfileedit->setVisible(false);
 #endif
-    /**************************************************************/
 
-    /*默认隐藏***************************************************/
-    //默认隐藏dbf工具箱
     ui->menudbftools->menuAction()->setVisible(false);
-    /**************************************************************/
-    //搜索框提示
     ui->lineTextText->setToolTip("输入你要搜索的内容,数值类搜索请不要输入千位分隔符~~");
-    //隐藏分页组件--只有当页数大于1的时候才显示
     ui->framePage->setVisible(false);
-    //指向表格控件的指针
     ptr_table=ui->tableWidget;
     ptr_table->setAlternatingRowColors(true);
     tableHeight=ptr_table->height();
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
-    //强制让表格获取焦点,避免在mac上打开工具时第一个输入框获取焦点显得很难看,强迫症系列
     ptr_table->setFocus();
 
-    //初始化表格右键菜单
     tablePopMenu = new QMenu(ptr_table);
     action_ShowDetails = new QAction(tr("查看此行记录"),this);
     connect(action_ShowDetails, SIGNAL(triggered()), this, SLOT(showRowDetails()));
@@ -89,229 +106,11 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_ShowCharacter, SIGNAL(triggered()), this, SLOT(showCharacter()));
     action_CsvForceNumber= new QAction(tr("对此列调整数据格式"),this);
     connect(action_CsvForceNumber, SIGNAL(triggered()), this, SLOT(forceNumber()));
-    //qrcode
     action_ShareUseQrCode = new QAction(tr("使用二维码分享此单元格"),this);
     connect(action_ShareUseQrCode, SIGNAL(triggered()), this, SLOT(showQrcode()));
 
-    tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
-    tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
-    tips.append("导出数据到Html,可以在浏览器中浏览数据,或者发送给其他人便捷浏览数据...");
-    tips.append("输入你要查找的字段中文名或者英文名,点击列跳转可以快速跳到你要查找的字段,避免横着拖动滚动条寻找...");
-    tips.append("输入你要直达的行号,点击行跳转,直接跳到你要查找的行...");
-    tips.append("双击任意单元格,可以将本行数据以列模式显示,自带字典翻译,任意搜索...");
-    tips.append("向上向下搜索,快速找到你要的数据...");
-    tips.append("外部编辑文件后,使用重新读取文件功能,或者按F5键,极速重新加载数据...");
-    tips.append("右键将任意行加入比对器,找到需要比对的行,再加入比对器,就能打开比对器以比对模式查看各行数据的差异了...");
-    tips.append("比对器支持任意多行同时比对哟...");
-    tips.append("右键菜单有不少小功能哟...");
-    tips.append("数据修改后点击保存,程序会自动创建备份,避免找不回原文件...");
-    tips.append("数据修改后点击另存保存,可以覆盖保存或者保存文件到其他位置...");
-    tips.append("你可以在"+Utils::getConfigPath()+"目录下进行配置文件修改,可以让工具支持新增的各种OFD/类OFD文件...");
-    tips.append("拖放文件到程序主窗口,即可打开文件,又快又省心...");
-    tips.append("程序里有一个彩蛋哟,快去找一下...");
-    tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
-    tips.append("源文件某行数据在解析器的第几行?,试试源文件行跳转功能,一键直达...");
-    tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
-    tips.append("按Ctrl+G切换视图模式,可以隐藏或者显示文件头信息...");
-    tips.append("尝试使用本工具解析各种固定分隔符文件吧，比excel更好的数据展示方式,且支持导出excel...");
-    tips.append("创建一个本软件的桌面图标,直接拖放文件到图标上即可打开文件,只需一步即可直达");
-    tips.append("选择一个区间的数据，右键复制,可以便捷粘贴到excel中");
-    tips.append("对于全是数值的列，选择同一列多行数据时，状态栏会自动对选择的数据进行求和，求平均数");
-    tips.append("尝试使用本工具解析各种固定字符/字节长度文件吧，高效解析,且支持导出excel...");
-    tips.append("尝试进行设置本程序,可以实现默认拖进文件时打开一个新窗口解析,默认使用精简模式打开程序,你的爱好你做主...");
-    tips.append("基金、银行理财领域的OFD/类OFD文件,本程序都支持解析哟...");
-    tips.append("需要打开超大文件?,建议在设置里设置开启压缩模式和分页支持,支持的文件大小立即提升到GB级别...");
-    tips.append("本程序是业余无偿开发的,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
-    tips.append("小额捐赠给予支持,FFReader将获得更好的发展,捐赠信息在菜单[帮助-关于程序下]...");
-    tips.append("FFReader是一个免费的工具软件,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
-    tips.append("可以使用本程序新建OFD/类OFD文件,以及初始化自己的新建模板...");
-    tips.append("导出功能可以分页导出或者导出全部数据,自由选择导出范围,是否使用UTF-8编码...");
-    tips.append("在程序主窗口或者查看行详细信息界面,使用Ctrl+Alt+R(command+option+R)可以进行快速截图保存...");
-    tips.append("固定分隔符文件可以在任意单元格右键对此列手工设置数据格式,调整为数值或者自定义小数长度哟,方便进行数值统计...");
-    tips.append("在设置-首选项里设置默认精简视图,即可默认获得最大化的数据展示空间...");
-    tips.append("本程序支持解析证券各类DBF文件,直接解析或者配置解析均可,使用配置获得更好的解析体验...");
-    tips.append("需要编辑手工创造OFD/类OFD数据文件？尝试新建文件后导出到Excel编辑，编辑后可以立即导入本程序生成OFD/类OFD数据文件...");
-    tips.append("字段必填检查工具可以方便的检查是否有异常的字段值缺失,尝试配置几个检测规则然后使用吧...");
-    tips.append("不可见字符检查工具可以方便的检索文件中是否有不可见的零宽字符...");
-    tips.append("担心文件存在重复冲突数据？尝试使用主键冲突检查工具检查你的文件吧...");
-    tips.append("如果你的文件包含生僻字且显示异常,留意检查是否已安装相关字体补充文件...");
-
-#ifdef Q_OS_WIN32
-    tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
-    tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
-    tips.append("想要比对同一个文件不同版本的差异?试试导出到csv固定分隔符文件后同时把两个文件拖向FFReader,它会问你是否要比对差异...");
-    tips.append("禁用压缩功能,可以极大的提高文件加载速度,如果你的电脑内存足够,建议禁用压缩功能(打开2GB的文件大概需要2.5GB内存)...");
-    tips.append("如果没有特殊情况,请使用64位FFReader,32位版本的FFReader难以打开超大的文件...");
-#endif
-    specialCharacter.insert(0X00,"NUL (null):空字符");
-    specialCharacter.insert(0X01,"SOH (start of headling):标题开始");
-    specialCharacter.insert(0X02,"STX (start of text):正文开始");
-    specialCharacter.insert(0X03,"ETX (end of text):正文结束");
-    specialCharacter.insert(0X04,"EOT (end of transmission):传输结束");
-    specialCharacter.insert(0X05,"ENQ (enquiry):请求");
-    specialCharacter.insert(0X06,"ACK (acknowledge):收到通知");
-    specialCharacter.insert(0X07,"BEL (bell):响铃");
-    specialCharacter.insert(0X08,"BS (backspace):退格");
-    specialCharacter.insert(0X09,"HT (horizontal tab):水平制表符");
-    specialCharacter.insert(0X0A,"LF (NL line feed new line):换行键");
-    specialCharacter.insert(0X0B,"VT (vertical tab):垂直制表符");
-    specialCharacter.insert(0X0C,"FF (NP form feed new page):换页键");
-    specialCharacter.insert(0X0D,"CR (carriage return):回车键");
-    specialCharacter.insert(0X0E,"SO (shift out):不用切换");
-    specialCharacter.insert(0X0F,"SI (shift in):启用切换");
-    specialCharacter.insert(0X10,"DLE (data link escape):数据链路转义");
-    specialCharacter.insert(0X11,"DC1 (device control 1):设备控制1");
-    specialCharacter.insert(0X12,"DC2 (device control 2):设备控制2");
-    specialCharacter.insert(0X13,"DC3 (device control 3):设备控制3");
-    specialCharacter.insert(0X14,"DC4 (device control 4):设备控制4");
-    specialCharacter.insert(0X15,"NAK (negative acknowledge):拒绝接收");
-    specialCharacter.insert(0X16,"SYN (synchronous idle):同步空闲");
-    specialCharacter.insert(0X17,"ETB (end of trans block):传输块结束");
-    specialCharacter.insert(0X18,"CAN (cancel):取消");
-    specialCharacter.insert(0X19,"EM (end of medium):介质中断");
-    specialCharacter.insert(0X1A,"SUB (substitute):替补");
-    specialCharacter.insert(0X1B,"ESC (escape):溢出");
-    specialCharacter.insert(0X1C,"FS (file separator):文件分割符");
-    specialCharacter.insert(0X1D,"GS (group separator):分组符");
-    specialCharacter.insert(0X1E,"RS (record separator):记录分离符");
-    specialCharacter.insert(0X1F,"US (unit separator):单元分隔符");
-    specialCharacter.insert(0X20,"SP (space):空格");
-    specialCharacter.insert(0X7F,"DEL (delete):删除");
-
-    //其他不可见或者神奇字符
-    specialCharacter.insert(0X2000,"EN QUAD:en四元");
-    specialCharacter.insert(0X2001,"EM QUAD");
-    specialCharacter.insert(0X2002,"EN SPACE");
-    specialCharacter.insert(0X2003,"EM SPACE:Em空间");
-    specialCharacter.insert(0X2004,"THREE-PER-EM SPACE:每em三个空格");
-    specialCharacter.insert(0X2025,"FOUR-PER-EM SPACE:每em四个空格");
-    specialCharacter.insert(0X2026,"SIX-PER-EM SPACE:六个/em空间");
-    specialCharacter.insert(0X2027,"FIGURE SPACE:数字空间");
-    specialCharacter.insert(0X2028,"PUNCTUATION SPACE:标点符号空间");
-    specialCharacter.insert(0X2029,"THIN SPACE:薄空间");
-    specialCharacter.insert(0X202A,"HAIR SPACE:发际空间");
-    specialCharacter.insert(0X200B,"ZERO WIDTH SPACE:零宽空格");
-    specialCharacter.insert(0X200C,"ZERO WIDTH NON-JOINER:零宽不连字");
-    specialCharacter.insert(0X200D,"ZERO WIDTH JOINER:零宽连字");
-    specialCharacter.insert(0X200E,"LEFT-TO-RIGHT MARK:左至右符号");
-    specialCharacter.insert(0X200F,"RIGHT-TO-LEFT MARK:右至左符号");
-    specialCharacter.insert(0X2011,"NON-BREAKING HYPHEN:不间断连字符");
-    specialCharacter.insert(0X2028,"LINE SEPARATOR:线路分离器");
-    specialCharacter.insert(0X2029,"PARAGRAPH SEPARATOR:段落分隔符");
-    specialCharacter.insert(0X202A,"LEFT-TO-RIGHT EMBEDDING:从左到右嵌入");
-    specialCharacter.insert(0X202B,"RIGHT-TO-LEFT EMBEDDING:从右到左嵌入");
-    specialCharacter.insert(0X202C,"POP DIRECTIONAL FORMATTING:弹出方向格式");
-    specialCharacter.insert(0X202D,"LEFT-TO-RIGHT OVERRIDE:左右超控");
-    specialCharacter.insert(0X202E,"RIGHT-TO-LEFT OVERRIDE:从右向左超控");
-    specialCharacter.insert(0X202F,"NARROW NO-BREAK SPACE:窄的不间断空间");
-    specialCharacter.insert(0X205F,"MEDIUM MATHEMATICAL SPACE:中等数学空间");
-    specialCharacter.insert(0X2060,"WORD JOINER:字连接符");
-    specialCharacter.insert(0X2061,"FUNCTION APPLICATION:功能应用");
-    specialCharacter.insert(0X2062,"INVISIBLE TIMES:不可见时间");
-    specialCharacter.insert(0X2063,"INVISIBLE SEPARATOR:不可见分隔符");
-    specialCharacter.insert(0X2064,"INVISIBLE PLUS:不可见加号");
-    specialCharacter.insert(0X2066,"LEFT-TO-RIGHT ISOLATE:从左到右隔离");
-    specialCharacter.insert(0X2067,"RIGHT-TO-LEFT ISOLATE:从右到左隔离");
-    specialCharacter.insert(0X2068,"FIRST STRONG ISOLATE:第一强分离物");
-    specialCharacter.insert(0X2069,"POP DIRECTIONAL ISOLATE:流行方向隔离");
-    specialCharacter.insert(0X206A,"INHIBIT SYMMETRIC SWAPPING:禁止对称交换");
-    specialCharacter.insert(0X206B,"ACTIVATE SYMMETRIC SWAPPING:激活对称交换");
-    specialCharacter.insert(0X206C,"INHIBIT ARABIC FORM SHAPING:抑制阿拉伯形式的形成");
-    specialCharacter.insert(0X206D,"ACTIVATE ARABIC FORM SHAPING:激活阿拉伯语形式变形");
-    specialCharacter.insert(0X206E,"NATIONAL DIGIT SHAPES:国家数字形状");
-    specialCharacter.insert(0X206F,"NOMINAL DIGIT SHAPES:名义数字形状");
-
-    /*52个PUA汉字*/
-    puaOrDeletedGBKCharacter.insert(0xE82F,"PUA码字符,建议使用正式码【㳠,Unicode码3CE0,GB18030码FE6A】");
-    puaOrDeletedGBKCharacter.insert(0xE81A,"PUA码字符,建议使用正式码【㑳,Unicode码3473,GB18030码FE55】");
-    puaOrDeletedGBKCharacter.insert(0xE81B,"PUA码字符,建议使用正式码【㑇,Unicode码3447,GB18030码FE56】");
-    puaOrDeletedGBKCharacter.insert(0xE81F,"PUA码字符,建议使用正式码【㖞,Unicode码359E,GB18030码FE5A】");
-    puaOrDeletedGBKCharacter.insert(0xE821,"PUA码字符,建议使用正式码【㘎,Unicode码360E,GB18030码FE5C】");
-    puaOrDeletedGBKCharacter.insert(0xE820,"PUA码字符,建议使用正式码【㘚,Unicode码361A,GB18030码FE5B】");
-    puaOrDeletedGBKCharacter.insert(0xE824,"PUA码字符,建议使用正式码【㥮,Unicode码396E,GB18030码FE5F】");
-    puaOrDeletedGBKCharacter.insert(0xE825,"PUA码字符,建议使用正式码【㤘,Unicode码3918,GB18030码FE60】");
-    puaOrDeletedGBKCharacter.insert(0xE827,"PUA码字符,建议使用正式码【㧏,Unicode码39CF,GB18030码FE62】");
-    puaOrDeletedGBKCharacter.insert(0xE828,"PUA码字符,建议使用正式码【㧟,Unicode码39DF,GB18030码FE63】");
-    puaOrDeletedGBKCharacter.insert(0xE829,"PUA码字符,建议使用正式码【㩳,Unicode码3A73,GB18030码FE64】");
-    puaOrDeletedGBKCharacter.insert(0xE82A,"PUA码字符,建议使用正式码【㧐,Unicode码39D0,GB18030码FE65】");
-    puaOrDeletedGBKCharacter.insert(0xE82D,"PUA码字符,建议使用正式码【㭎,Unicode码3B4E,GB18030码FE68】");
-    puaOrDeletedGBKCharacter.insert(0xE82E,"PUA码字符,建议使用正式码【㱮,Unicode码3C6E,GB18030码FE69】");
-    puaOrDeletedGBKCharacter.insert(0xE834,"PUA码字符,建议使用正式码【䁖,Unicode码4056,GB18030码FE6F】");
-    puaOrDeletedGBKCharacter.insert(0xE835,"PUA码字符,建议使用正式码【䅟,Unicode码415F,GB18030码FE70】");
-    puaOrDeletedGBKCharacter.insert(0xE837,"PUA码字符,建议使用正式码【䌷,Unicode码4337,GB18030码FE72】");
-    puaOrDeletedGBKCharacter.insert(0xE83C,"PUA码字符,建议使用正式码【䎱,Unicode码43B1,GB18030码FE77】");
-    puaOrDeletedGBKCharacter.insert(0xE83D,"PUA码字符,建议使用正式码【䎬,Unicode码43AC,GB18030码FE78】");
-    puaOrDeletedGBKCharacter.insert(0xE83F,"PUA码字符,建议使用正式码【䏝,Unicode码43DD,GB18030码FE7A】");
-    puaOrDeletedGBKCharacter.insert(0xE840,"PUA码字符,建议使用正式码【䓖,Unicode码44D6,GB18030码FE7B】");
-    puaOrDeletedGBKCharacter.insert(0xE841,"PUA码字符,建议使用正式码【䙡,Unicode码4661,GB18030码FE7C】");
-    puaOrDeletedGBKCharacter.insert(0xE842,"PUA码字符,建议使用正式码【䙌,Unicode码464C,GB18030码FE7D】");
-    puaOrDeletedGBKCharacter.insert(0xE844,"PUA码字符,建议使用正式码【䜣,Unicode码4723,GB18030码FE80】");
-    puaOrDeletedGBKCharacter.insert(0xE845,"PUA码字符,建议使用正式码【䜩,Unicode码4729,GB18030码FE81】");
-    puaOrDeletedGBKCharacter.insert(0xE846,"PUA码字符,建议使用正式码【䝼,Unicode码477C,GB18030码FE82】");
-    puaOrDeletedGBKCharacter.insert(0xE847,"PUA码字符,建议使用正式码【䞍,Unicode码478D,GB18030码FE83】");
-    puaOrDeletedGBKCharacter.insert(0xE849,"PUA码字符,建议使用正式码【䥇,Unicode码4947,GB18030码FE85】");
-    puaOrDeletedGBKCharacter.insert(0xE84C,"PUA码字符,建议使用正式码【䦂,Unicode码4982,GB18030码FE88】");
-    puaOrDeletedGBKCharacter.insert(0xE84A,"PUA码字符,建议使用正式码【䥺,Unicode码497A,GB18030码FE86】");
-    puaOrDeletedGBKCharacter.insert(0xE84B,"PUA码字符,建议使用正式码【䥽,Unicode码497D,GB18030码FE87】");
-    puaOrDeletedGBKCharacter.insert(0xE84D,"PUA码字符,建议使用正式码【䦃,Unicode码4983,GB18030码FE89】");
-    puaOrDeletedGBKCharacter.insert(0xE84E,"PUA码字符,建议使用正式码【䦅,Unicode码4985,GB18030码FE8A】");
-    puaOrDeletedGBKCharacter.insert(0xE84F,"PUA码字符,建议使用正式码【䦆,Unicode码4986,GB18030码FE8B】");
-    puaOrDeletedGBKCharacter.insert(0xE853,"PUA码字符,建议使用正式码【䦶,Unicode码49B3,GB18030码8234A038】");
-    puaOrDeletedGBKCharacter.insert(0xE850,"PUA码字符,建议使用正式码【䦟,Unicode码499F,GB18030码FE8C】");
-    puaOrDeletedGBKCharacter.insert(0xE852,"PUA码字符,建议使用正式码【䦷,Unicode码49B7,GB18030码FE8E】");
-    puaOrDeletedGBKCharacter.insert(0xE851,"PUA码字符,建议使用正式码【䦛,Unicode码499B,GB18030码FE8D】");
-    puaOrDeletedGBKCharacter.insert(0xE85A,"PUA码字符,建议使用正式码【䱷,Unicode码4C77,GB18030码FE96】");
-    puaOrDeletedGBKCharacter.insert(0xE857,"PUA码字符,建议使用正式码【䲟,Unicode码4C9F,GB18030码FE93】");
-    puaOrDeletedGBKCharacter.insert(0xE858,"PUA码字符,建议使用正式码【䲠,Unicode码4CA0,GB18030码FE94】");
-    puaOrDeletedGBKCharacter.insert(0xE859,"PUA码字符,建议使用正式码【䲡,Unicode码4CA1,GB18030码FE95】");
-    puaOrDeletedGBKCharacter.insert(0xE856,"PUA码字符,建议使用正式码【䲣,Unicode码4CA3,GB18030码FE92】");
-    puaOrDeletedGBKCharacter.insert(0xE85B,"PUA码字符,建议使用正式码【䲢,Unicode码4CA2,GB18030码FE97】");
-    puaOrDeletedGBKCharacter.insert(0xE85C,"PUA码字符,建议使用正式码【䴓,Unicode码4D13,GB18030码FE98】");
-    puaOrDeletedGBKCharacter.insert(0xE85D,"PUA码字符,建议使用正式码【䴔,Unicode码4D14,GB18030码FE99】");
-    puaOrDeletedGBKCharacter.insert(0xE85E,"PUA码字符,建议使用正式码【䴕,Unicode码4D15,GB18030码FE9A】");
-    puaOrDeletedGBKCharacter.insert(0xE85F,"PUA码字符,建议使用正式码【䴖,Unicode码4D16,GB18030码FE9B】");
-    puaOrDeletedGBKCharacter.insert(0xE860,"PUA码字符,建议使用正式码【䴗,Unicode码4D17,GB18030码FE9C】");
-    puaOrDeletedGBKCharacter.insert(0xE861,"PUA码字符,建议使用正式码【䴘,Unicode码4D18,GB18030码FE9D】");
-    puaOrDeletedGBKCharacter.insert(0xE862,"PUA码字符,建议使用正式码【䴙,Unicode码4D19,GB18030码FE9E】");
-    puaOrDeletedGBKCharacter.insert(0xE863,"PUA码字符,建议使用正式码【䶮,Unicode码4DAE,GB18030码FE9F】");
-    //另外一批PUA双码字,这一批不怎么常用
-    puaOrDeletedGBKCharacter.insert(0xE26E,"PUA码字符,建议使用正式码【𫢸,Unicode码2B8B8,GB18030码9839C534】");
-    puaOrDeletedGBKCharacter.insert(0xE278,"PUA码字符,建议使用正式码【𪟝,Unicode码2A7DD,GB18030码98368F39】");
-    puaOrDeletedGBKCharacter.insert(0xE284,"PUA码字符,建议使用正式码【𫭟,Unicode码2BB5F,GB18030码99308B33】");
-    puaOrDeletedGBKCharacter.insert(0xE295,"PUA码字符,建议使用正式码【鿍,Unicode码9FCD,GB18030码82359332】");
-    puaOrDeletedGBKCharacter.insert(0xE297,"PUA码字符,建议使用正式码【𫭼,Unicode码2BB7C,GB18030码99308E32】");
-    puaOrDeletedGBKCharacter.insert(0xE2A5,"PUA码字符,建议使用正式码【𫮃,Unicode码2BB83,GB18030码99308E39】");
-    puaOrDeletedGBKCharacter.insert(0xE2BA,"PUA码字符,建议使用正式码【𪤗,Unicode码2A917,GB18030码9836AF33】");
-    puaOrDeletedGBKCharacter.insert(0xE2C8,"PUA码字符,建议使用正式码【𫰛,Unicode码2BC1B,GB18030码99309E31】");
-    /*10个竖排标点和8个汉字构件*/
-    puaOrDeletedGBKCharacter.insert(0xE7C7,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE78D,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE78E,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE78F,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE790,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE791,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE792,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE793,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE794,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE795,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE796,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE81E,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE826,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE82B,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE82C,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE832,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE843,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE854,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE864,"PUA码字符");
-
-    /*6个汉字构件*/
-    puaOrDeletedGBKCharacter.insert(0xE816,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE817,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE818,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE831,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE83B,"PUA码字符");
-    puaOrDeletedGBKCharacter.insert(0xE855,"PUA码字符");
-
+    //初始化tips，pua字符清单等其他东西
+    init_Others();
     //哪些数据类型当作数字处理//////
     dbfIsNumberFieldType.append(QDbf::QDbfField::FloatingPoint);
     dbfIsNumberFieldType.append(QDbf::QDbfField::Number);
@@ -320,6 +119,9 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
 
     //监控表格进度条的变化
     connect (ptr_table->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(acceptVScrollValueChanged(int)));
+    //Excel导入处理进度
+    connect(this,&MainWindow::signals_update_import_excel_status,this,&MainWindow::update_import_excel_status);
+    connect(this,&MainWindow::signals_update_zip_extract_status,this,&MainWindow::update_zip_extract_status);
     //开始初始化状态栏
     initStatusBar();
     //开始进行配置加载
@@ -340,6 +142,11 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     loadConfig();
     //随机提醒
     randomTips();
+    //设置字体
+    Utils::setDefaultWindowFonts(this,true);
+    Utils::setDefaultWindowFonts(statusLabel_ptr_showMessage);
+    this->repaint();
+
     //判断是否启动时读取文件
     //获取启动参数--如果参数中有文件路径，则稍后在窗口初始化完毕后打开文件
     //需要注意的是，程序启动时，窗口还未初始化完毕的时候打开文件会出现问题，所以这里只加载文件的路径，不打开文件，打开文件的动作放到窗口的resizeEvent事件中去
@@ -364,6 +171,8 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(watcherXlsxSaveStatus_, &QFutureWatcher<int>::finished,this, &MainWindow::save2XlsxFinished);
     watcherXlsxImportStatus_ = new QFutureWatcher<int>;
     connect(watcherXlsxImportStatus_, &QFutureWatcher<int>::finished,this, &MainWindow::importFromXlsxFinished);
+    watcherZipExtractStatus_ = new QFutureWatcher<int>;
+    connect(watcherZipExtractStatus_, &QFutureWatcher<int>::finished,this, &MainWindow::extractZipFinished);
 }
 
 /**
@@ -395,7 +204,7 @@ void MainWindow::loadFileOnWindowisOpenOrDragEnter(){
 void MainWindow::initStatusBar(){
     //显示总记录数的标签
     statusLabel_ptr_showCount = new QLabel;
-    statusLabel_ptr_showCount->setMinimumSize(230, 20); // 设置标签最小大小
+    statusLabel_ptr_showCount->setMinimumSize(300, 20); // 设置标签最小大小
     ui->statusBar->addWidget(statusLabel_ptr_showCount);
     statusLabel_ptr_showCount->setText(tr("记录数:0,共计0页"));
     //显示行列的标签
@@ -419,15 +228,6 @@ void MainWindow::initStatusBar(){
     //开启自定义菜单并进行信号绑定
     statusLabel_ptr_showMessage->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(statusLabel_ptr_showMessage, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showMessage_customContextMenuRequested(QPoint)));
-#ifdef Q_OS_MAC
-    statusLabel_ptr_showMessage->setStyleSheet(UIFontsMacOS);
-#endif
-#ifdef Q_OS_LINUX
-    statusLabel_ptr_showMessage->setStyleSheet(UIFontsLinux);
-#endif
-#ifdef Q_OS_WIN32
-    statusLabel_ptr_showMessage->setStyleSheet(UIFontsWindows);
-#endif
 }
 
 /**
@@ -452,6 +252,8 @@ MainWindow::~MainWindow()
     watcherXlsxSaveStatus_=nullptr;
     delete watcherXlsxImportStatus_;
     watcherXlsxImportStatus_=nullptr;
+    delete watcherZipExtractStatus_;
+    watcherZipExtractStatus_=nullptr;
 }
 
 /**
@@ -593,9 +395,9 @@ void  MainWindow::reCalculateTableBeginAndEnd(){
         }
         //当前表格可见区域有多少行
         int tableDisplayRow=currentTableRowEnd-currentTableRowBegin+1;
-        //当已加载数据达到100页时,清理一次全部数据
-        if(rowHasloaded.count()>tableDisplayRow*100){
-            //qDebug()<<"对加载记录进行全清理";
+        //当已加载数据达到20页时,清理一次全部数据
+        if(rowHasloaded.count()>tableDisplayRow*20){
+            qDebug()<<"对加载记录进行全清理";
             ptr_table->clearContents();
             rowHasloaded.clear();
             //重设0,下面再计算要开始和结束的位置
@@ -727,7 +529,7 @@ void MainWindow::primaryCheck(int type,QString fileName,int exportType,int opena
             else if(currentOpenFileType==openFileType::FIXEDFile){primaryKeyFieldList=fixed.getPrimaryKeyFieldList();}
         }
         if(primaryKeyFieldList.count()>0){
-            ////开始获取数据
+            //开始获取数据
             uint rowCount=commonContentQByteArrayList.count();
             for (uint row=0;row<rowCount;row++){
                 QStringList rowdata;
@@ -741,12 +543,12 @@ void MainWindow::primaryCheck(int type,QString fileName,int exportType,int opena
                     rowdata=Utils::getRowCsvValuesFromcsvFileContentQStringList(&commonContentQByteArrayList,&csv,dataCompressLevel,row);
                 }
                 QString key;
-                for(uint i:primaryKeyFieldList){
+                for (auto it = primaryKeyFieldList.begin(); it != primaryKeyFieldList.end(); ++it) {
                     if (key.isEmpty()){
-                        key.append(rowdata.at(i).isEmpty()?"NULL":rowdata.at(i));
+                        key.append(rowdata.at(*it).isEmpty()?"NULL":rowdata.at(*it));
                     }
                     else{
-                        key.append("-").append(rowdata.at(i).isEmpty()?"NULL":rowdata.at(i));
+                        key.append("-").append(rowdata.at(*it).isEmpty()?"NULL":rowdata.at(*it));
                     }
                 }
                 if(!primaryFirstRow.contains(key)){
@@ -838,7 +640,7 @@ void MainWindow::primaryCheck(int type,QString fileName,int exportType,int opena
                                 data.write(codec->fromUnicode(sb));
                                 data.flush();
                                 sb.clear();
-                                statusBar_disPlayMessage(QString("主键冲突检查报告导出中,请勿进行其他操作,已写入%1行,共计%2行").arg(QString::number(row+1)).arg(QString::number(rowCount)));
+                                statusBar_disPlayMessage(QString("主键冲突检查报告导出中,请勿进行其他操作,已写入%1行,共计%2行").arg(QString::number(row+1),QString::number(rowCount)));
                                 qApp->processEvents();
                                 if(abortExit){
                                     QApplication::restoreOverrideCursor();
@@ -884,12 +686,12 @@ void MainWindow::primaryCheck(int type,QString fileName,int exportType,int opena
  */
 void MainWindow::statusBar_display_rowsCount(int rowsCount){
     int count=(rowsCount + pageRowSize - 1) / pageRowSize;
-    statusLabel_ptr_showCount->setText(tr("记录数:%1行,共计%2页").arg(QString::number(rowsCount, 10)).arg(count));
+    statusLabel_ptr_showCount->setText(QString("记录数:%1行,共计%2页").arg(QString::number(rowsCount),QString::number(count)));
 }
 
 void MainWindow::statusBar_display_rowsCount(int rowsCount, QString charset){
     int count=(rowsCount + pageRowSize - 1) / pageRowSize;
-    statusLabel_ptr_showCount->setText(tr("记录数:%1行,共计%2页-%3").arg(QString::number(rowsCount, 10)).arg(count).arg(charset));
+    statusLabel_ptr_showCount->setText(QString("记录数:%1行,共计%2页-%3").arg(QString::number(rowsCount),QString::number(count),charset));
 }
 
 /**
@@ -973,10 +775,35 @@ void MainWindow::load_Setting(){
                 }
                 //字段必填检查
                 if(key=="enablefieldcheck"){
-                    if(value=="0"){
-                        this->checkFieldFlag=false;
-                    }else{
+                    if(value=="1"){
                         this->checkFieldFlag=true;
+                    }else{
+                        this->checkFieldFlag=false;
+                    }
+                }
+                if(key=="standfontsize"){
+                    if(value=="1"){
+                        this->standFontSize=1;
+                    }else if(value=="2"){
+                        this->standFontSize=2;
+                    }
+                    else {
+                        this->standFontSize=0;
+                    }
+                }
+                //无论是否加载到了字体大小设置，都要初始化一次
+                setStandFontSize();
+                QFontDatabase fontDatabase;
+                //全局字体
+                if(key=="firstuifont"){
+                    if(!value.isEmpty()&&fontDatabase.families().contains(value)){
+                        firstUIFontGlobal=value;
+                    }
+                }
+                //生僻字补充字体
+                if(key=="firstrarecharactersfont"){
+                    if(!value.isEmpty()&&fontDatabase.families().contains(value)){
+                        firstRareCharactersFontGlobal=value;
                     }
                 }
             }
@@ -999,6 +826,9 @@ void MainWindow::load_Setting(){
         loadedSettingInfoIni.setValue("defaultnewfilemode",defaultNewFileMode);
         loadedSettingInfoIni.setValue("defaultpagesizetype",defaultPageSizeType);
         loadedSettingInfoIni.setValue("enablefieldcheck","1");
+        loadedSettingInfoIni.setValue("standfontsize","0");
+        loadedSettingInfoIni.setValue("firstuifont","");
+        loadedSettingInfoIni.setValue("firstrarecharactersfont","");
         loadedSettingInfoIni.endGroup();
         loadedSettingInfoIni.sync();
     }
@@ -1072,7 +902,7 @@ void MainWindow::load_PluginList(){
  * @brief MainWindow::initFile 文件初始化方法 无论是拖拽进来的文件还是打开菜单打开的文件还是重新打开文件，最终都要从这个函数开始初始化加载文件，这个函数会对文件类型做个初步的判断，然后交付相对应的文件类别的加载方法
  * @param filePath
  */
-void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdbfTrimType){
+void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdbfTrimType,bool fromZip){
     //重设开始时间
     time_Start = QDateTime::currentDateTime();
     currentOpenFileType=openFileType::NotFileOrErr;
@@ -1097,17 +927,41 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
 #ifdef Q_OS_WIN32
     currentOpenFilePath=currentOpenFilePath.replace("\\","/");
 #endif
-    currentFileName=QFileInfo(currentOpenFilePath).fileName();
+    QFileInfo info(currentOpenFilePath);
+    currentFileName=info.fileName();
+    QString currentFileDir=info.absoluteDir().path();
+    QString currentFileBaseName=info.baseName();
+    //文件中有多个.时,baseName只有第一个.之前的部分
+    if(currentFileName.contains(".")){
+        int last = currentFileName.lastIndexOf (".");
+        currentFileBaseName = currentFileName.left (last);
+    }
+    //去除baseName的开头的.
+    while (true){
+        if(currentFileBaseName.startsWith(".")){
+            currentFileBaseName=currentFileBaseName.right(currentFileBaseName.length()-1);
+        }
+        else{
+            break;
+        }
+        if (currentFileBaseName.length()==0){
+            currentFileBaseName="未知文件名";
+            break;
+        }
+    }
+    if(!fromZip){
+        fileFromZip=false;
+    }
     this->setWindowTitle(appName+"-"+currentFileName);
     //前置拦击-常用压缩包
-    if(currentFileName.endsWith(".zip",Qt::CaseInsensitive)||currentFileName.endsWith(".zipx",Qt::CaseInsensitive)
+    if(currentFileName.endsWith(".zipx",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".rar",Qt::CaseInsensitive)||currentFileName.endsWith(".7z",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".tar",Qt::CaseInsensitive)||currentFileName.endsWith(".gz",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".tar.gz",Qt::CaseInsensitive)||currentFileName.endsWith(".tgz",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".bz",Qt::CaseInsensitive)||currentFileName.endsWith(".bz2",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".tbz",Qt::CaseInsensitive)||currentFileName.endsWith(".tbz2",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".xz",Qt::CaseInsensitive)||currentFileName.endsWith(".txz",Qt::CaseInsensitive)){
-        statusBar_disPlayMessage("压缩文件请解压后解析!");
+        statusBar_disPlayMessage("非zip格式的压缩文件请解压后解析!");
         currentOpenFileType=openFileType::NotFileOrErr;
         return;
     }
@@ -1150,11 +1004,69 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
     if(currentFileName.endsWith(".exe",Qt::CaseInsensitive)||currentFileName.endsWith(".xls",Qt::CaseInsensitive)||currentFileName.endsWith(".xlsx",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".doc",Qt::CaseInsensitive)||currentFileName.endsWith(".docx",Qt::CaseInsensitive)
             ||currentFileName.endsWith(".ppt",Qt::CaseInsensitive)||currentFileName.endsWith(".pptx",Qt::CaseInsensitive)
-            ||currentFileName.endsWith(".html",Qt::CaseInsensitive)||currentFileName.endsWith(".zip",Qt::CaseInsensitive)
-            ||currentFileName.endsWith(".sql",Qt::CaseInsensitive)||currentFileName.endsWith(".pdf",Qt::CaseInsensitive)){
+            ||currentFileName.endsWith(".html",Qt::CaseInsensitive)||currentFileName.endsWith(".sql",Qt::CaseInsensitive)
+            ||currentFileName.endsWith(".pdf",Qt::CaseInsensitive)){
         statusBar_disPlayMessage("不支持解析此类文件!");
         currentOpenFileType=openFileType::NotFileOrErr;
         return;
+    }
+    //1.10.4版本开始支持直接读取zip文件
+    if(currentFileName.endsWith(".zip",Qt::CaseInsensitive)){
+        QFile file(currentOpenFilePath);
+        if (!file.open(QIODevice::ReadOnly)){
+            statusBar_disPlayMessage(QString("无法打开zip文件[%1],请重试...").arg(currentOpenFilePath));
+            return;
+        }
+        QZipReader reader(&file);
+        if (!reader.isReadable()){
+            statusBar_disPlayMessage(QString("无法读取zip文件[%1],请重试...").arg(currentOpenFilePath));
+            return;
+        }
+        const auto fileList = reader.fileInfoList();
+        int fileCount=0;
+        for (auto it = fileList.begin(); it != fileList.end(); ++it){
+            if (it->isFile || (!it->isDir && !it->isFile && !it->isSymLink)){\
+                fileCount++;
+            }
+        }
+        reader.close();
+        if(fileCount>0){
+            DialogChooseFileFromZip  dialog(currentOpenFilePath,this);
+            dialog.setWindowTitle(QString("从压缩包[%1]中选择需要解析的文件(不支持带密码或加密压缩包/超大压缩包)").arg(currentFileName));
+            dialog.setModal(true);
+            dialog.exec();
+            dialog.raise();
+            int index=dialog.getChooeseIndex();
+            zipFileInfoList=dialog.getZipFileInfoList();
+            zipFileListMdTime=dialog.getZipFileListMdTime();
+            zipExtractAll=dialog.getExtractAll();
+            zipFileCodec=dialog.getZipFileUseCodec();
+            zipFileNameSystemCodecList=dialog.getZipFileNameSystemCodecList();
+            if(!dialog.getConfirm()){
+                zipfilePath="";
+                zipTargetFileInZip="";
+                zipExtractAll=false;
+                zipExtractSucess=false;
+                zipOutPutFileDir="";
+                statusBar_disPlayMessage("没有从压缩包中选择需要解析的文件,放弃解析...");
+                return;
+            }
+            else{
+                zipfilePath=currentOpenFilePath;
+                zipFileName=currentFileName;
+                zipTargetFileInZip=zipFileInfoList.at(index).filePath;
+                zipOutPutFileDir=currentFileDir+"/FFReader自动解压/"+currentFileBaseName+"/";
+                dataBlockedMessage="正在解压缩文件,请耐心等待解压完成后再进行其他操作...";
+                statusBar_disPlayMessage(dataBlockedMessage);
+                dataBlocked=true;
+                auto future = QtConcurrent::run(this, &MainWindow::extractFileFromZipFile);
+                watcherZipExtractStatus_->setFuture(future);
+                return;
+            }
+        }
+        else{
+            return;
+        }
     }
     /*读取一行识别一下文件换行符*/
     QFile file(currentOpenFilePath);
@@ -1221,7 +1133,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             //刷新UI
             ui->lineEditSendCode->setText(sendCode);
             ui->lineEditRecCode->setText(recCode);
-            ui->labelFileTransferDate->setText("文件传递日期");
+            ui->labelFileTransferDate->setText("传递日期:");
             ui->lineEditFileTransferDate->setText(dateInfo);
             ui->lineEditFileType->setText(fileTypeCode);
             ui->lineEditSenfInfo->setText(sendName);
@@ -1248,7 +1160,7 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             }
             //记录从文件里读取的文件发送信息
             //此处开始加载OFD数据文件
-            load_ofdDataFile(fileTypeCode);
+            load_ofdDataFile(fileTypeCode,sendCode,recCode);
             return;
         }
     }
@@ -1351,8 +1263,14 @@ NOT_OF_FILE:
         QStringList nameList=fixName.split("_");
         //正常的OFD文件应该至少有5段信息组成,另外中登TA和管理人交互的文件还有批次号,如果不是，则跳转到非OF文件检查
         if(nameList.count()<5){
+            QString sendCode="";
+            QString recCode="";
+            if(nameList.count()>1){
+                sendCode=nameList.at(1);
+                recCode=nameList.at(2);
+            }
             //尝试直接去解析文件,对于类OFD只要配置了OFD_like.ini就当ofd去解析，哪怕文件名不是标准的
-            load_ofdDataFile("@@");
+            load_ofdDataFile("@@",sendCode,recCode);
             return;
         }
         else{
@@ -1369,7 +1287,7 @@ NOT_OF_FILE:
             //刷新UI
             ui->lineEditSendCode->setText(sendCode);
             ui->lineEditRecCode->setText(recCode);
-            ui->labelFileTransferDate->setText("文件传递日期");
+            ui->labelFileTransferDate->setText("传递日期:");
             ui->lineEditFileTransferDate->setText(dateInfo);
             ui->lineEditFileType->setText(fileTypeCode);
             ui->lineEditSenfInfo->setText(sendName);
@@ -1396,7 +1314,7 @@ NOT_OF_FILE:
             }
             //记录从文件里读取的文件发送信息
             //此处开始加载OFD数据文件
-            load_ofdDataFile(fileTypeCode);
+            load_ofdDataFile(fileTypeCode,sendCode,recCode);
             return;
         }
     }
@@ -1750,16 +1668,17 @@ NOT_OF_FILE:
                     if(useflag=="\t"){
                         flagd="制表符";
                     }
-                    else if(useflag==QChar(1)){
+                    else if(useflag.length()==1&&useflag.at(0)==QChar(1)){
                         flagd="SOH控制符";
                     }
-                    else if(useflag==QChar(31)){
+                    else if(useflag.length()==1&&useflag.at(0)==QChar(31)){
                         flagd="1FH(US)单元分割符";
                     }
                     else {
                         flagd=useflag;
                     }
-                    fileName="基于 "+flagd+" 分割列的文件";
+                    fileName="基于 "+flagd+" 的固定分隔符文件";
+                    fileDescribe=fileName;
                     //构建一个可用的解析配置
                     CsvFileDefinition fileDef;
                     fileDef.setFfAuto(true);
@@ -1800,7 +1719,7 @@ NOT_OF_FILE:
  */
 void MainWindow::load_ofdIndexFile(){
     currentOpenFileType=openFileType::OFDIndex;
-    ui->labelFileTransferDate->setText("文件传递日期");
+    ui->labelFileTransferDate->setText("传递日期:");
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly))
     {
@@ -1865,10 +1784,12 @@ void MainWindow::load_ofdIndexFile(){
 }
 
 /**
- * @brief MainWindow::load_ofdFile OFD文件的加载方法
- * @param fileType
+ * @brief MainWindow::load_ofdDataFile OFD文件的加载方法
+ * @param fileTypeFromFileName
+ * @param sendCode
+ * @param recvCode
  */
-void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
+void MainWindow::load_ofdDataFile(QString fileTypeFromFileName,QString sendCode,QString recvCode){
     QString fileType=fileTypeFromFileName;
     qDebug()<<"开始加载的文件类别"<<fileType;
     //当前打开的文件类别为1，OFD文件
@@ -2108,7 +2029,7 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
                         OFDFaultCause fault;
                         fault.setConfig(config);
                         fault.setName(name);
-                        fault.setCause(QString("打开的文件的字段数是[%1]和配置文件中的[%2]不一致,请检查文件是否满足该配置对应的接口标准,或者配置是否有误").arg(QString::number(countNumberFromFile)).arg(QString::number(ofdFileDefinition.getFieldCount())));
+                        fault.setCause(QString("打开的文件的字段数是[%1]和配置文件中的[%2]不一致,请检查文件是否满足该配置对应的接口标准,或者配置是否有误").arg(QString::number(countNumberFromFile),QString::number(ofdFileDefinition.getFieldCount())));
                         faultList.append(fault);
                     }
                 }
@@ -2116,25 +2037,86 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
             //如果至少一条满足，则准备进入解析步骤
             if(matchOFD.count()>0){
                 //只有一条满足的，直接干
-                if(matchOFD.count()<2){
-                    ofd=matchOFD.at(0);
+                if(matchOFD.count()==1){
+                    if(matchOFD.at(0).getUseForTA().count()>0&&!matchOFD.at(0).getUseForTA().at(0).isEmpty()&&!matchOFD.at(0).getUseForTA().contains(sendCode)&&!matchOFD.at(0).getUseForTA().contains(recvCode)){
+                        qDebug()<<matchOFD.at(0).getConfigSegment()<<matchOFD.at(0).getUseForTA()<<QString("不匹配TA配置,发送方%1,接收方%2").arg(sendCode,recvCode);
+                        OFDFaultCause fault;
+                        fault.setConfig(matchOFD.at(0).getConfigSegment());
+                        fault.setName(matchOFD.at(0).getDescribe());
+                        QString ta = matchOFD.at(0).getUseForTA().join(",");
+                        fault.setCause(QString("该配置文件仅适用于和(%1)TA交互的文件,如需要使用此配置解析,请编辑配置文件将新的TA加入").arg(ta));
+                        faultList.append(fault);
+                        goto display_OFDFaultCause;
+                    }
+                    else{
+                        ofd=matchOFD.at(0);
+                    }
                 }
                 else{
                     qDebug()<<"多个配置满足解析";
+                    //分命中TA与否
+                    QList<OFDFileDefinition> matchOFDNoTa;
+                    QList<OFDFileDefinition> matchOFDUseForTa;
                     //排序
                     std::sort(matchOFD.begin(), matchOFD.end(),compareOFDData);
-                    DialogChooseOFDConfig  dialog2(useini,&matchOFD,this);
-                    dialog2.setWindowTitle("打开的文件匹配到了多个解析配置,请选择使用哪一个配置解析文件");
-                    dialog2.setModal(true);
-                    dialog2.exec();
-                    //从弹窗中获取结果
-                    int index=dialog2.getChooeseIndex();
-                    if(!dialog2.getConfirm()){
-                        statusBar_disPlayMessage("没有选择解析方案,放弃解析...");
-                        return;
+                    for(int i=0;i<matchOFD.count();i++){
+                        OFDFileDefinition item=matchOFD.at(i);
+                        if(item.getUseForTA().count()>0&&!item.getUseForTA().at(0).isEmpty()&&(item.getUseForTA().contains(sendCode)||item.getUseForTA().contains(recvCode))){
+                            matchOFDUseForTa.append(item);
+                            qDebug()<<item.getConfigSegment()<<item.getUseForTA()<<QString("匹配TA配置,发送方%1,接收方%2").arg(sendCode,recvCode);
+                        }
+                        //如果有多个可用配置则针对TA的配置则不再列入可选配置
+                        else if(item.getUseForTA().count()>0&&!item.getUseForTA().at(0).isEmpty()&&!item.getUseForTA().contains(sendCode)&&!item.getUseForTA().contains(recvCode)){
+                            qDebug()<<item.getConfigSegment()<<item.getUseForTA()<<QString("不匹配TA配置,发送方%1,接收方%2").arg(sendCode,recvCode);
+                            OFDFaultCause fault;
+                            fault.setConfig(item.getConfigSegment());
+                            fault.setName(item.getDescribe());
+                            QString ta = item.getUseForTA().join(",");
+                            fault.setCause(QString("该配置文件仅适用于和(%1)TA交互的文件,如需要使用此配置解析,请编辑配置文件将新的TA加入").arg(ta));
+                            faultList.append(fault);
+                            continue;
+                        }
+                        else{
+                            matchOFDNoTa.append(item);
+                            qDebug()<<item.getConfigSegment()<<item.getUseForTA()<<QString("匹配非TA配置,发送方%1,接收方%2").arg(sendCode,recvCode);
+                        }
+                    }
+                    //既然匹配TA的都有多个，那么不妨让用户TA不匹配的也选择下
+                    if(matchOFDUseForTa.count()>1&&matchOFDNoTa.count()>0){
+                        matchOFD=matchOFDUseForTa;
+                        matchOFD.append(matchOFDNoTa);
+                    }
+                    //只匹配到1个适用于TA的，直接使用
+                    else if(matchOFDUseForTa.count()==1&&matchOFDNoTa.count()>=0){
+                        matchOFD=matchOFDUseForTa;
+                    }
+                    else if(matchOFDUseForTa.count()==0&&matchOFDNoTa.count()==0){
+                        goto display_OFDFaultCause;
                     }
                     else{
-                        ofd=matchOFD.at(index);
+                        matchOFD=matchOFDNoTa;
+                    }
+                    if(matchOFD.count()>1){
+                        DialogChooseOFDConfig  dialog2(useini,&matchOFD,this);
+                        dialog2.setWindowTitle("请选择用于解析此文件的解析器配置");
+                        dialog2.setModal(true);
+                        dialog2.exec();
+                        //从弹窗中获取结果
+                        int index=dialog2.getChooeseIndex();
+                        if(!dialog2.getConfirm()){
+                            statusBar_disPlayMessage("没有选择解析方案,放弃解析...");
+                            return;
+                        }
+                        else{
+                            ofd=matchOFD.at(index);
+                        }
+                    }
+                    else if(matchOFD.count()==1){
+                        ofd=matchOFD.at(0);
+                    }
+                    else{
+                        statusBar_disPlayMessage("没有可用的解析方案,无法解析...");
+                        return;
                     }
                 }
                 ui->lineEditFileDescribe->setText(ofd.getDescribe());
@@ -2455,6 +2437,7 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName){
             }
             //如果没找到满足的解析配置
             else{
+display_OFDFaultCause:
                 currentOpenFileType=openFileType::NotFileOrErr;
                 //显示失败原因
                 if(faultList.count()>0){
@@ -2595,7 +2578,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                         if(csvDef.getFirstrowcheck()!=csvData.at(0)){
                             FaultCause item;
                             item.setConfigIndex2(csvMatchList.at(dd));
-                            item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],不满足首行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getFirstrowcheck()).arg(csvData.at(0)));
+                            item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],不满足首行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getFirstrowcheck(),csvData.at(0)));
                             faultList.append(item);
                             continue;
                         }
@@ -2608,7 +2591,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                         if(csvDef.getLastrowcheck()!=csvData.last()){
                             FaultCause item;
                             item.setConfigIndex2(csvMatchList.at(dd));
-                            item.setCause(QString("配置文件中标注文件最后1行内容应该是[%1]，但是打开的文件最后1行是[%2],不满足尾行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getLastrowcheck()).arg(csvData.last()));
+                            item.setCause(QString("配置文件中标注文件最后1行内容应该是[%1]，但是打开的文件最后1行是[%2],不满足尾行检查要求,无法确认该文件符合本解析规则").arg(csvDef.getLastrowcheck(),csvData.last()));
                             faultList.append(item);
                             continue;
                         }
@@ -2673,14 +2656,14 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                             if (csv.getVersioncheckmode()==0){
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                                 faultList.append(item);
                                                 continue;
                                             }
                                             else {
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                                 faultList.append(item);
                                                 continue;
                                             }
@@ -2727,14 +2710,14 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                         if (csv.getVersioncheckmode()==0){
                                             FaultCause item;
                                             item.setConfigIndex2(csvMatchList.at(dd));
-                                            item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                            item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                             faultList.append(item);
                                             continue;
                                         }
                                         else {
                                             FaultCause item;
                                             item.setConfigIndex2(csvMatchList.at(dd));
-                                            item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                            item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                             faultList.append(item);
                                             continue;
                                         }
@@ -2763,7 +2746,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                             if(csvData.count()<csvDef.getVersioncheckrow()){
                                 FaultCause item;
                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                item.setCause(QString("在本配置描述的文件第%1行为文件内版本检查行,但是打开的文件只有%2行,无法获取到本行数据,可能不是该类型的文件").arg(csvDef.getVersioncheckrow()).arg(csvData.count()));
+                                item.setCause(QString("在本配置描述的文件第%1行为文件内版本检查行,但是打开的文件只有%2行,无法获取到本行数据,可能不是该类型的文件").arg(QString::number(csvDef.getVersioncheckrow()),QString::number(csvData.count())));
                                 faultList.append(item);
                                 continue;
                             }
@@ -2772,14 +2755,14 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                     if (csv.getVersioncheckmode()==0){
                                         FaultCause item;
                                         item.setConfigIndex2(csvMatchList.at(dd));
-                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                        item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                         faultList.append(item);
                                         continue;
                                     }
                                     else {
                                         FaultCause item;
                                         item.setConfigIndex2(csvMatchList.at(dd));
-                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                        item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                         faultList.append(item);
                                         continue;
                                     }
@@ -2820,7 +2803,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                                 if(fieldCountFirstRow<2){
                                                     FaultCause item;
                                                     item.setConfigIndex2(csvMatchList.at(dd));
-                                                    item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的数据列数小于2,无法断定为该类型的文件");
+                                                    item.setCause("在本配置描述的文件第"+QString::number(csvDef.getTitlerowindex())+"行使用分隔符["+csvDef.getSplit()+"]找到的数据列数小于2,无法断定为该类型的文件...");
                                                     faultList.append(item);
                                                     continue;
                                                 }
@@ -2850,7 +2833,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                             else{
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause("文件内无标题行且字段数配置配置为AUTO的情况下,至少需要一行数据内容才能分析文件是否满足此规则~~");
+                                                item.setCause("文件内无标题行且字段数配置配置为AUTO的情况下,至少需要一行数据内容才能分析文件是否满足此规则...");
                                                 faultList.append(item);
                                                 continue;
                                             }
@@ -2859,7 +2842,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                     else {
                                         FaultCause item;
                                         item.setConfigIndex2(csvMatchList.at(dd));
-                                        item.setCause(QString("根据此解析规则,空文件至少也应该有%1行,%2行文件头,%3行文件尾~~,但是目前文件只有%4行,无法断定打开的文件满足此解析规则").arg(dataBeginRow+endIgnore-1).arg(dataBeginRow-1).arg(endIgnore).arg(csvData.count()));
+                                        item.setCause(QString("根据此解析规则,空文件至少也应该有%1行,%2行文件头,%3行文件尾~~,但是目前文件只有%4行,无法断定打开的文件满足此解析规则...").arg(QString::number(dataBeginRow+endIgnore-1),QString::number(dataBeginRow-1),QString::number(endIgnore),QString::number(csvData.count())));
                                         faultList.append(item);
                                         continue;
                                     }
@@ -2869,7 +2852,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                         else{
                             FaultCause item;
                             item.setConfigIndex2(csvMatchList.at(dd));
-                            item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件并且未开启版本检查,程序无法确认本配置符合这个文件的解析规则,程序至少需要一行数据去评估是否满足本解析规则....");
+                            item.setCause("基于该配置文件解析当前文件得出的结论是:当前文件应该是一个不含数据记录的空文件并且未开启版本检查,程序无法确认本配置符合这个文件的解析规则,程序至少需要一行数据去评估是否满足本解析规则...");
                             faultList.append(item);
                             continue;
                         }
@@ -2913,14 +2896,14 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                             if (csv.getVersioncheckmode()==0){
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                                 faultList.append(item);
                                                 continue;
                                             }
                                             else {
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                                 faultList.append(item);
                                                 continue;
                                             }
@@ -2981,14 +2964,14 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                                             if (csv.getVersioncheckmode()==0){
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2],但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                                 faultList.append(item);
                                                 continue;
                                             }
                                             else {
                                                 FaultCause item;
                                                 item.setConfigIndex2(csvMatchList.at(dd));
-                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(csvDef.getVersioncheckrow()).arg(csvDef.getVersion()).arg(csvData.at(csvDef.getVersioncheckrow()-1)));
+                                                item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2],但是打开的文件第%1行是[%3],无法模糊匹配到版本号,无法确认该文件符合本解析规则").arg(QString::number(csvDef.getVersioncheckrow()),csvDef.getVersion(),csvData.at(csvDef.getVersioncheckrow()-1)));
                                                 faultList.append(item);
                                                 continue;
                                             }
@@ -3123,7 +3106,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                 if((!fixedDef.getFirstrowcheck().isEmpty())&&fixedData.count()>0&&fixedDef.getFirstrowcheck()!=fixedData.at(0)){
                     FaultCause item;
                     item.setConfigIndex2(fixedMatchList.at(dd));
-                    item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],无法确认该文件符合本解析规则").arg(fixedDef.getFirstrowcheck()).arg(fixedData.at(0)));
+                    item.setCause(QString("配置文件中标注文件第1行内容应该是[%1]，但是打开的文件第1行是[%2],无法确认该文件符合本解析规则").arg(fixedDef.getFirstrowcheck(),fixedData.at(0)));
                     faultList.append(item);
                     continue;
                 }
@@ -3133,7 +3116,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                         if(fixedDef.getVersion()!=fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed()){
                             FaultCause item;
                             item.setConfigIndex2(fixedMatchList.at(dd));
-                            item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
+                            item.setCause(QString("配置文件中标注文件第%1行内容应该是版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(QString::number(fixedDef.getVersioncheckrow()),fixedDef.getVersion(),fixedData.at(fixedDef.getVersioncheckrow()-1)));
                             faultList.append(item);
                             continue;
                         }
@@ -3142,7 +3125,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                         if(!fixedData.at(fixedDef.getVersioncheckrow()-1).trimmed().contains(fixedDef.getVersion(),Qt::CaseSensitive)){
                             FaultCause item;
                             item.setConfigIndex2(fixedMatchList.at(dd));
-                            item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(fixedDef.getVersioncheckrow()).arg(fixedDef.getVersion()).arg(fixedData.at(fixedDef.getVersioncheckrow()-1)));
+                            item.setCause(QString("配置文件中标注文件第%1行内容应该包含版本号[%2]，但是打开的文件第%1行是[%3],无法确认该文件符合本解析规则").arg(QString::number(fixedDef.getVersioncheckrow()),fixedDef.getVersion(),fixedData.at(fixedDef.getVersioncheckrow()-1)));
                             faultList.append(item);
                             continue;
                         }
@@ -3159,7 +3142,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                         if(fileCount!=fixedDef.getFieldCountMax()){
                             FaultCause item;
                             item.setConfigIndex2(fixedMatchList.at(dd));
-                            item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数[%2]，但是打开的文件第%1行是[%3](数值已清除空格和前缀0),文件实际字段数和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedDef.getFieldCountMax()).arg(fileCount));
+                            item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数[%2]，但是打开的文件第%1行是[%3](数值已清除空格和前缀0),文件实际字段数和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(QString::number(fixedDef.getFieldcountcheckrow()),QString::number(fixedDef.getFieldCountMax()),QString::number(fileCount)));
                             faultList.append(item);
                             continue;
                         }
@@ -3168,7 +3151,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                     else{
                         FaultCause item;
                         item.setConfigIndex2(fixedMatchList.at(dd));
-                        item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数，但是打开的文件第%1行是[%2],该内容不是一个有效的数值,无法确认该文件符合本解析规则").arg(fixedDef.getFieldcountcheckrow()).arg(fixedData.at(fixedDef.getFieldcountcheckrow()-1)));
+                        item.setCause(QString("配置文件中标注文件第%1行内容应该是字段数，但是打开的文件第%1行是[%2],该内容不是一个有效的数值,无法确认该文件符合本解析规则").arg(QString::number(fixedDef.getFieldcountcheckrow()),fixedData.at(fixedDef.getFieldcountcheckrow()-1)));
                         faultList.append(item);
                         continue;
                     }
@@ -3180,7 +3163,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                     if(fixedData.count()<fileRowMinNeed){
                         FaultCause item;
                         item.setConfigIndex2(fixedMatchList.at(dd));
-                        item.setCause(QString("配置文件中标注文件从第%1行开始的共计%2行是文件内字段明细列表,但是打开的文件总行数小于字段明细结束行,无法进行字段明细检查,无法确认该文件符合本解析规则").arg(fixedDef.getFielddetailcheckbeginrow()).arg(fixedDef.getFieldCountMax()));
+                        item.setCause(QString("配置文件中标注文件从第%1行开始的共计%2行是文件内字段明细列表,但是打开的文件总行数小于字段明细结束行,无法进行字段明细检查,无法确认该文件符合本解析规则").arg(QString::number(fixedDef.getFielddetailcheckbeginrow()),fixedDef.getFieldCountMax()));
                         faultList.append(item);
                         continue;
                     }
@@ -3196,7 +3179,7 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                                 checkOK=false;
                                 FaultCause item;
                                 item.setConfigIndex2(fixedMatchList.at(dd));
-                                item.setCause(QString("配置文件中标注文件第%1行内容应该是字段描述[%2]，但是打开的文件第%1行是[%3],实际文件的字段描述和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(fiexdIndex+1).arg(fixedDef.getFieldList().at(fieldIndex).getFieldName()).arg(fixedData.at(fiexdIndex)));
+                                item.setCause(QString("配置文件中标注文件第%1行内容应该是字段描述[%2]，但是打开的文件第%1行是[%3],实际文件的字段描述和该解析规则定义的不一致,无法确认该文件符合本解析规则").arg(QString::number(fiexdIndex+1),fixedDef.getFieldList().at(fieldIndex).getFieldName(),fixedData.at(fiexdIndex)));
                                 faultList.append(item);
                                 break;
                             }
@@ -3306,7 +3289,7 @@ void MainWindow::load_fixedFileData(){
     ui->lineEditFileType->setText("字段定长");
 
     //当加载的文件类别是fixed时，传递日期栏目改为文件正则匹配到的配置;
-    ui->labelFileTransferDate->setText("解析器配置");
+    ui->labelFileTransferDate->setText("解析配置:");
     ui->lineEditFileTransferDate->setText(fixed.getConfigSegment());
     QList<int > rowLengthList;
     QFile dataFile(currentOpenFilePath);
@@ -3443,8 +3426,11 @@ void MainWindow::load_fixedFileData(){
         QString warn="";
         if(!fixed.getLastrowcheck().isEmpty()&&commonFooterQStringList.count()>0){
             if(commonFooterQStringList.last()!=fixed.getLastrowcheck()){
-                warn=warn+QString("\r\n\r\n当前打开的文件最后一行内容是\"%1\"不是\"%2\",根据配置的解析规则,正常来说此文件应该以\"%2\"为结束行!!!\r\n\r\n").arg(commonFooterQStringList.last()).arg(fixed.getLastrowcheck());
+                warn=warn+QString("\r\n\r\n当前打开的文件最后一行内容是\"%1\"不是\"%2\",根据配置的解析规则,正常来说此文件应该以\"%2\"为结束行!!!\r\n\r\n").arg(commonFooterQStringList.last(),fixed.getLastrowcheck());
             }
+        }
+        else if(!fixed.getLastrowcheck().isEmpty()&&commonFooterQStringList.count()==0){
+            warn=warn+QString("\r\n\r\n根据配置的解析规则,正常来说此文件应该以\"%1\"为结束行,当前打开的文件疑似缺少此结束标志!!!\r\n\r\n").arg(fixed.getLastrowcheck());
         }
         //需要添加什么新的后置校验提示，可以添加到这里
         if(!warn.isEmpty()){
@@ -3773,7 +3759,7 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
     //文件类型描述
     ui->lineEditFileType->setText("CSV文件");
     //当加载的文件类别是csv时，传递日期栏目改为文件正则匹配到的配置;
-    ui->labelFileTransferDate->setText("解析器配置");
+    ui->labelFileTransferDate->setText("解析配置:");
     ui->lineEditFileTransferDate->setText(csv.getConfigSegment());
     QFile dataFile(currentOpenFilePath);
     if (dataFile.open(QFile::ReadOnly))
@@ -3889,7 +3875,7 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
     QString warn="";
     if(!csv.getLastrowcheck().isEmpty()&&commonFooterQStringList.count()>0){
         if(commonFooterQStringList.last()!=csv.getLastrowcheck()){
-            warn=warn+QString("\r\n\r\n当前打开的文件最后一行内容是\"%1\"不是\"%2\",根据配置的解析规则,正常来说此文件应该以\"%2\"为结束行!!!\r\n\r\n").arg(commonFooterQStringList.last()).arg(csv.getLastrowcheck());
+            warn=warn+QString("\r\n\r\n当前打开的文件最后一行内容是\"%1\"不是\"%2\",根据配置的解析规则,正常来说此文件应该以\"%2\"为结束行!!!\r\n\r\n").arg(commonFooterQStringList.last(),csv.getLastrowcheck());
         }
     }
     //需要添加什么新的后置校验提示，可以添加到这里
@@ -4274,10 +4260,10 @@ void MainWindow::init_OFDTable(){
         }
         statusBar_display_rowsCount(rowCount);
         if(!likeOFDFileType.isEmpty()){
-            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3-%4个必填较验规则").arg(QString::number(rowCount),QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2),likeOFDFileType).arg(ofd.getFieldcheckList().count()));
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3-%4个必填较验规则").arg(QString::number(rowCount),QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2),likeOFDFileType,QString::number(ofd.getFieldcheckList().count())));
         }
         else {
-            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount),QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2)).arg(ofd.getFieldcheckList().count()));
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount),QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2),QString::number(ofd.getFieldcheckList().count())));
         }
     }
     else
@@ -4361,7 +4347,7 @@ void MainWindow::init_DBFTable(){
     else if(dbfDisplayType==2){
         add="仅显示已删除的记录";
     }
-    statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-%2-耗时%3秒").arg(QString::number(rowCount)).arg(add).arg(QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2)));
+    statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-%2-耗时%3秒").arg(QString::number(rowCount),add,QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2)));
 }
 
 /**
@@ -4429,7 +4415,7 @@ void MainWindow::init_FIXEDTable(){
         ptr_table->resizeColumnsToContents();
     }
     statusBar_display_rowsCount(rowCount);
-    statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount)).arg(QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2)).arg(fixed.getFieldcheckList().count()));
+    statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount),QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2),QString::number(fixed.getFieldcheckList().count())));
 }
 
 /**
@@ -4646,10 +4632,10 @@ void MainWindow::init_CSVTable(QStringList title){
         }
         statusBar_display_rowsCount(rowCount,csv.getEcoding()+(csv.getAutoecoding()?"[自动识别]":""));
         if(csv.getFfAuto()){
-            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-[使用自动解析引擎解析,建议配置解析规则获得更好体验]-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount)).arg(QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2)).arg(csv.getFieldcheckList().count()));
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-[使用自动解析引擎解析,建议配置解析规则获得更好体验]-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount),QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2),QString::number(csv.getFieldcheckList().count())));
         }
         else{
-            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount)).arg(QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2)).arg(csv.getFieldcheckList().count()));
+            statusBar_disPlayMessage(QString("文件解析完毕!成功读取记录%1行-耗时%2秒-%3个必填较验规则").arg(QString::number(rowCount),QString::number(static_cast<double>(time_Start.msecsTo(QDateTime::currentDateTime()))/1000.00,'f',2),QString::number(csv.getFieldcheckList().count())));
         }
     }
     else{
@@ -4729,7 +4715,7 @@ void MainWindow::display_OFDTable(bool clearDirtyData){
                         QTableWidgetItem *item= new QTableWidgetItem();
                         ptr_table->setItem(rowInTable, col, item);
                         item->setToolTip(checkresult.value(col));
-                        item->setBackground(QColor("#ED5B56"));
+                        item->setBackground(QColor(0XED5B56));
                     }
                     //仅在修改数据时使用,防止修改数据为空值时残留脏数据显示
                     else if(clearDirtyData){
@@ -4816,7 +4802,7 @@ void MainWindow::display_FIXEDTable(bool clearDirtyData){
                         QTableWidgetItem *item= new QTableWidgetItem();
                         ptr_table->setItem(rowInTable, col, item);
                         item->setToolTip(checkresult.value(col));
-                        item->setBackground(QColor("#ED5B56"));
+                        item->setBackground(QColor(0XED5B56));
                     }
                     //仅在修改数据时使用,防止修改数据为空值时残留脏数据显示
                     else if(clearDirtyData){
@@ -4911,7 +4897,7 @@ void MainWindow::display_CSVTable(){
                         QTableWidgetItem *item= new QTableWidgetItem();
                         ptr_table->setItem(rowInTable, col, item);
                         item->setToolTip(checkresult.value(col));
-                        item->setBackground(QColor("#ED5B56"));
+                        item->setBackground(QColor(0XED5B56));
                     }
                 }
             }
@@ -5479,14 +5465,14 @@ void MainWindow::editCompareData(){
                 else if(currentOpenFileType==openFileType::DBFFile){
                     compareData.insert(rowRealInContent+1,Utils::getFormatRowValuesFromdbfTableFile(&dbftablefile,&dbf,rowRealInContent,&dbfRowMap,false,dbfTrimType));
                 }
-                statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(compareData.count()));
+                statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(QString::number(compareData.count())));
             }
         }
         else{
             //移除数据行
             compareData.remove(rowRealInContent+1);
             if(compareData.count()>0){
-                statusBar_disPlayMessage(QString("比对器内还有%1行数据").arg(compareData.count()));
+                statusBar_disPlayMessage(QString("比对器内还有%1行数据").arg(QString::number(compareData.count())));
             }
             else{
                 statusBar_disPlayMessage(QString("比对器已清空"));
@@ -5565,7 +5551,7 @@ void MainWindow::editCompareData(){
                     }
                 }
             }
-            statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(compareData.count()));
+            statusBar_disPlayMessage(QString("比对器内已加入%1行数据").arg(QString::number(compareData.count())));
         }
     }
 }
@@ -5601,7 +5587,7 @@ void MainWindow::deleteRowDataFromFileAndTable(){
                 deleteRowSet.insert(j);
                 if((j%5000==0)){
                     qApp->processEvents();
-                    statusBar_disPlayMessage(QString("正在评估数据中,本页%1行,已评估需删除%2行").arg(ptr_table->rowCount()).arg(deleteRowSet.count()));
+                    statusBar_disPlayMessage(QString("正在评估数据中,本页%1行,已评估需删除%2行").arg(QString::number(ptr_table->rowCount()),QString::number(deleteRowSet.count())));
                     if(deleteRowSet.count()>200000){
                         statusBar_disPlayMessage("请不要一次选择删除超过20万行数据...");
                         dataBlocked=false;
@@ -5637,7 +5623,7 @@ void MainWindow::deleteRowDataFromFileAndTable(){
             //清空比对器内容
             compareData.clear();
             //更新提示-更新主窗口标题
-            statusBar_disPlayMessage(QString("选择的%1行数据已删除,请记得保存文件哟...").arg(count));
+            statusBar_disPlayMessage(QString("选择的%1行数据已删除,请记得保存文件哟...").arg(QString::number(count)));
             this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
             //更新文件修改标记
             fileChanged=true;
@@ -5647,10 +5633,10 @@ void MainWindow::deleteRowDataFromFileAndTable(){
             ui->framePage->setVisible(false);
             if(dialogDialogShowPrimaryCheck!=nullptr){
                 needReCheckPrimary=true;
-                statusBar_disPlayMessage(QString("选择的%1数据行已删除,检测到数据行更新,请重新进行主键冲突检查...").arg(count));
+                statusBar_disPlayMessage(QString("选择的%1数据行已删除,检测到数据行更新,请重新进行主键冲突检查...").arg(QString::number(count)));
             }
             else{
-                statusBar_disPlayMessage(QString("选择的%1数据行已删除...").arg(count));
+                statusBar_disPlayMessage(QString("选择的%1数据行已删除...").arg(QString::number(count)));
             }
         }
         else{
@@ -5663,7 +5649,7 @@ void MainWindow::deleteRowDataFromFileAndTable(){
                 rowRealInContent=(currentPage-1)*pageRowSize+row;
                 commonContentQByteArrayList.removeAt(rowRealInContent);
                 if((w%5000==0)){
-                    statusBar_disPlayMessage(QString("正在删除数据中,选择%1行,已删除%2行...").arg(count).arg(count-w));
+                    statusBar_disPlayMessage(QString("正在删除数据中,选择%1行,已删除%2行...").arg(QString::number(count),QString::number(count-w)));
                     qApp->processEvents();
                     if(abortExit){
                         QApplication::restoreOverrideCursor();
@@ -5709,16 +5695,16 @@ void MainWindow::deleteRowDataFromFileAndTable(){
                 }
             }
             //更新提示
-            statusBar_disPlayMessage(QString("选择的%1行数据已删除,请记得保存文件哟...").arg(count));
+            statusBar_disPlayMessage(QString("选择的%1行数据已删除,请记得保存文件哟...").arg(QString::number(count)));
             this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
             //更新文件修改标记//////////////////////////////////////////////////////////
             fileChanged=true;
             if(dialogDialogShowPrimaryCheck!=nullptr){
                 needReCheckPrimary=true;
-                statusBar_disPlayMessage(QString("选择的%1数据行已删除,检测到数据行更新,请重新进行主键冲突检查...").arg(count));
+                statusBar_disPlayMessage(QString("选择的%1数据行已删除,检测到数据行更新,请重新进行主键冲突检查...").arg(QString::number(count)));
             }
             else{
-                statusBar_disPlayMessage(QString("选择的%1数据行已删除...").arg(count));
+                statusBar_disPlayMessage(QString("选择的%1数据行已删除...").arg(QString::number(count)));
             }
         }
         dataBlocked=false;
@@ -5787,7 +5773,7 @@ void MainWindow::copyRowData(){
         QClipboard *board = QApplication::clipboard();
         board->setText(needCopyData);
         dataBlocked=false;
-        statusBar_disPlayMessage(QString("已复制%1行文件原始记录数据到剪切板").arg(count));
+        statusBar_disPlayMessage(QString("已复制%1行文件原始记录数据到剪切板").arg(QString::number(count)));
     }
 }
 
@@ -5926,7 +5912,7 @@ void MainWindow::addNewRowData(int location){
             QString fileType=data.at(1);
             if(currentOpenFileType==openFileType::OFDFile){
                 if(fileType!=ofd.getConfigSegment()){
-                    statusBar_disPlayMessage(QString("不能将[%1]文件的数据插入到[%2]文件,不匹配的文件类型!").arg(fileType).arg(ofd.getConfigSegment()));
+                    statusBar_disPlayMessage(QString("不能将[%1]文件的数据插入到[%2]文件,不匹配的文件类型!").arg(fileType,ofd.getConfigSegment()));
                     return;
                 }
                 else if(version!=ui->lineEditUseIni->text()+"|Author:"+QByteArray::fromBase64(AUTHOR_EMAIL)){
@@ -5936,7 +5922,7 @@ void MainWindow::addNewRowData(int location){
             }
             else if (currentOpenFileType==openFileType::FIXEDFile){
                 if(fileType!=fixed.getConfigSegment()){
-                    statusBar_disPlayMessage(QString("不能将[%1]文件的数据插入到[%2]文件,不匹配的文件类型!").arg(fileType).arg(fixed.getConfigSegment()));
+                    statusBar_disPlayMessage(QString("不能将[%1]文件的数据插入到[%2]文件,不匹配的文件类型!").arg(fileType,fixed.getConfigSegment()));
                     return;
                 }
                 else if(version!=ui->lineEditUseIni->text()+"|Author:"+QByteArray::fromBase64(AUTHOR_EMAIL)){
@@ -5964,7 +5950,7 @@ void MainWindow::addNewRowData(int location){
                     }
                     else{
                         dataok=false;
-                        statusBar_disPlayMessage(QString("剪切板上第%1行数据的长度不满足接口规范,放弃插入剪切板数据!").arg(i));
+                        statusBar_disPlayMessage(QString("剪切板上第%1行数据的长度不满足接口规范,放弃插入剪切板数据!").arg(QString::number(i)));
                         break;
                     }
                 }
@@ -5985,7 +5971,7 @@ void MainWindow::addNewRowData(int location){
                     }
                     else{
                         dataok=false;
-                        statusBar_disPlayMessage(QString("剪切板上第%1行数据的长度不满足接口规范,放弃插入剪切板数据!").arg(i));
+                        statusBar_disPlayMessage(QString("剪切板上第%1行数据的长度不满足接口规范,放弃插入剪切板数据!").arg(QString::number(i)));
                         break;
                     }
                 }
@@ -6028,7 +6014,7 @@ void MainWindow::addNewRowData(int location){
                     acceptVScrollValueChanged(0);
                     //更新总记录数
                     statusBar_display_rowsCount(rowCount);
-                    statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(dataCount));
+                    statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(QString::number(dataCount)));
                     this->setWindowTitle(appName+"-"+currentFileName+"-修改待保存");
                     if(dialogDialogShowPrimaryCheck!=nullptr){
                         needReCheckPrimary=true;
@@ -6065,10 +6051,10 @@ void MainWindow::addNewRowData(int location){
                     ptr_table->clearSelection();
                     ptr_table->setRangeSelected(addRange,true);
                     if(dataCount==1){
-                        statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(dataCount));
+                        statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,记得保存文件哟...").arg(QString::number(dataCount)));
                     }
                     else{
-                        statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,已选中插入的第一行数据,记得保存文件哟...").arg(dataCount));
+                        statusBar_disPlayMessage(QString("剪切板上的%1行数据插入到本文件完毕,已选中插入的第一行数据,记得保存文件哟...").arg(QString::number(dataCount)));
                     }
                     //强制触发下刷新，避免显示数据不完整
                     acceptVScrollValueChanged(0);
@@ -6090,7 +6076,7 @@ void MainWindow::showRowDetails(){
     //行
     int dataRowCurrent=(currentPage-1)*pageRowSize+tableRowCurrent;
     int colCount=ptr_table->columnCount();
-    statusBar_disPlayMessage(QString("查看第%1行数据").arg(dataRowCurrent+1));
+    statusBar_disPlayMessage(QString("查看第%1行数据").arg(QString::number(dataRowCurrent+1)));
     //定义一个Qlist存储此行的数据,将表格的列转换为行，共计四列
     //数据内容从表格取，从原始数据取还需要转换
     QList<QStringList> rowdata;
@@ -6209,7 +6195,7 @@ void MainWindow::showRowDetails(){
     }
     //打开窗口
     DialogShowTableRow * dialog = new DialogShowTableRow(&rowdata,this);
-    dialog->setWindowTitle(QString("查看表格行记录-第%1行").arg(dataRowCurrent+1));
+    dialog->setWindowTitle(QString("查看表格行记录-第%1行").arg(QString::number(dataRowCurrent+1)));
     dialog->setModal(false);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
@@ -6230,7 +6216,7 @@ void MainWindow::showMagnify(){
         //打开窗口
         int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
         DialogMagnify * dialog = new DialogMagnify(data,this);
-        dialog->setWindowTitle(QString("数据放大镜-第%1行第%2列").arg(rowRealInContent+1).arg(tableColCurrent+1));
+        dialog->setWindowTitle(QString("数据放大镜-第%1行第%2列").arg(QString::number(rowRealInContent+1),QString::number(tableColCurrent+1)));
         dialog->setModal(false);
         dialog->setAttribute(Qt::WA_DeleteOnClose);
         dialog->show();
@@ -6393,7 +6379,7 @@ void MainWindow:: gotoFirstNotNumber(){
 void MainWindow:: showOFDOrFixedFiledAnalysis(){
     if(currentOpenFileType==openFileType::OFDFile||(currentOpenFileType==openFileType::FIXEDFile&&fixed.getFieldlengthtype()==0)){
         int rowRealInContent=(currentPage-1)*pageRowSize+tableRowCurrent;
-        statusBar_disPlayMessage(QString("分析第%1行第%2列数据数据").arg(rowRealInContent+1).arg(tableColCurrent+1));
+        statusBar_disPlayMessage(QString("分析第%1行第%2列数据数据").arg(QString::number(rowRealInContent+1),QString::number(tableColCurrent+1)));
         //字段中文名
         QString fieldDes="";
         //字段英文名
@@ -6562,7 +6548,7 @@ void MainWindow:: showOFDOrFixedFiledAnalysis(){
         }
         data.append(rowfieldCheck);
         DialogShowTableFieldCheck * dialog = new DialogShowTableFieldCheck(&data,this);
-        dialog->setWindowTitle(QString("分析第%1行第%2列数据数据").arg(rowRealInContent+1).arg(tableColCurrent+1));
+        dialog->setWindowTitle(QString("分析第%1行第%2列数据数据").arg(QString::number(rowRealInContent+1),QString::number(tableColCurrent+1)));
         dialog->setModal(false);
         dialog->setAttribute(Qt::WA_DeleteOnClose);
         dialog->show();
@@ -6583,7 +6569,7 @@ void MainWindow::showModifyCell(){
         bool modifyFlag=false;
         QString valueNew="";
         DialogModifyCell  dialog(fieldType,fieldLength,fieldDecLength,fieldValues,this);
-        dialog.setWindowTitle(QString("编辑第%1行第%2列-"+ofd.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(rowRealInContent+1).arg(tableColCurrent+1));
+        dialog.setWindowTitle(QString("编辑第%1行第%2列-%3").arg(QString::number(rowRealInContent+1),QString::number(tableColCurrent+1),ofd.getFieldList().at(tableColCurrent).getFieldDescribe()));
         dialog.setModal(true);
         dialog.exec();
         modifyFlag=dialog.getModifyFlag();
@@ -6636,7 +6622,7 @@ void MainWindow::showModifyCell(){
         bool modifyFlag=false;
         QString valueNew="";
         DialogModifyCell  dialog(fieldType,fieldLength,fieldDecLength,fieldValues,this);
-        dialog.setWindowTitle(QString("编辑第%1行第%2列-"+fixed.getFieldList().at(tableColCurrent).getFieldDescribe()).arg(rowRealInContent+1).arg(tableColCurrent+1));
+        dialog.setWindowTitle(QString("编辑第%1行第%2列-%3").arg(QString::number(rowRealInContent+1),QString::number(tableColCurrent+1),fixed.getFieldList().at(tableColCurrent).getFieldDescribe()));
         dialog.setModal(true);
         dialog.exec();
         modifyFlag=dialog.getModifyFlag();
@@ -6689,7 +6675,7 @@ void MainWindow::showModifyCellBatch(){
         int fieldDecLength=ofd.getFieldList().at(editCol).getDecLength();
         bool modifyFlag=false;
         DialogModifyCell dialog(fieldType,fieldLength,fieldDecLength,"",this);
-        dialog.setWindowTitle(QString("批量编辑第%1列多个单元格-"+ofd.getFieldList().at(editCol).getFieldDescribe()).arg(editCol+1));
+        dialog.setWindowTitle(QString("批量编辑第%1列多个单元格-%2").arg(QString::number(editCol+1),ofd.getFieldList().at(editCol).getFieldDescribe()));
         dialog.setModal(true);
         dialog.exec();
         modifyFlag=dialog.getModifyFlag();
@@ -6758,7 +6744,7 @@ void MainWindow::showModifyCellBatch(){
         int fieldDecLength=fixed.getFieldList().at(editCol).getDecLength();
         bool modifyFlag=false;
         DialogModifyCell dialog(fieldType,fieldLength,fieldDecLength,"",this);
-        dialog.setWindowTitle(QString("批量编辑第%1列多个单元格-"+fixed.getFieldList().at(editCol).getFieldDescribe()).arg(editCol+1));
+        dialog.setWindowTitle(QString("批量编辑第%1列多个单元格-%2").arg(QString::number(editCol+1),fixed.getFieldList().at(editCol).getFieldDescribe()));
         dialog.setModal(true);
         dialog.exec();
         modifyFlag=dialog.getModifyFlag();
@@ -6867,7 +6853,7 @@ void MainWindow::showMoaifyRow(){
             }
         }
         DialogModifyRow * dialog = new DialogModifyRow(fieldTypeList,codec,rowDataOld,this);
-        dialog->setWindowTitle(QString("编辑第%1行数据").arg(rowRealInContent+1));
+        dialog->setWindowTitle(QString("编辑第%1行数据").arg(QString::number(rowRealInContent+1)));
         dialog->setModal(true);
         dialog->exec();
         ///////////////////////////////开始进行数据编辑更新//////////////////////////////////
@@ -7512,7 +7498,6 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                             tablePopMenu->addAction(action_ShareUseQrCode);
                         }
                         tablePopMenu->addAction(action_EditCompareDataBatch);
-
                     }
                     //多个选择器
                     else{
@@ -8136,9 +8121,6 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
         if(!useUTF8){
             codec=codecOFD;
         }
-        else{
-            codec=QTextCodec::codecForName("UTF-8");
-        }
         if (data.open(QFile::WriteOnly | QIODevice::Truncate)) {
             //开始准备待写入的数据
             QString sb;
@@ -8193,10 +8175,7 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
         }
     }
     if(currentOpenFileType==openFileType::FIXEDFile){
-        if(useUTF8){
-            codec=QTextCodec::codecForName("UTF-8");
-        }
-        else{
+        if(!useUTF8){
             codec=QTextCodec::codecForName(fixed.getEcoding().toLocal8Bit());
         }
         if (data.open(QFile::WriteOnly | QIODevice::Truncate)) {
@@ -8253,10 +8232,7 @@ void MainWindow::save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8
         }
     }
     if(currentOpenFileType==openFileType::DBFFile){
-        if(useUTF8){
-            codec=QTextCodec::codecForName("UTF-8");
-        }
-        else{
+        if(!useUTF8){
             codec=QTextCodec::codecForName(dbf.getEcoding().toLocal8Bit());
         }
         if (data.open(QFile::WriteOnly | QIODevice::Truncate)) {
@@ -9086,6 +9062,126 @@ int MainWindow::save2XlxsFile(){
     return 1;
 }
 
+int MainWindow::extractFileFromZipFile(){
+    QFile file(zipfilePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        zipExtractMessage=QString("无法打开zip文件[%1],请重试...").arg(zipfilePath);
+        zipExtractSucess=false;
+        return 0;
+    }
+    QZipReader reader(&file);
+    if (!reader.isReadable()) {
+        zipExtractMessage=QString("无法打开zip文件[%1],请重试...").arg(zipfilePath);
+        zipExtractSucess=false;
+        return 0;
+    }
+    if(Utils::isFileExist(zipOutPutFileDir)){
+        QFile file(zipOutPutFileDir);
+        if (file.exists()) {
+            if (!file.remove()) {
+                zipExtractMessage=QString("临时目录[%1]创建失败,请重试...").arg(zipOutPutFileDir);
+                zipExtractSucess=false;
+                return 0;
+            }
+        }
+    }
+    if(!Utils::isDirExist(zipOutPutFileDir)){
+        QDir dir;
+        if (!dir.mkpath(zipOutPutFileDir)) {
+            zipExtractMessage=QString("临时目录[%1]创建失败,请重试...").arg(zipOutPutFileDir);
+            zipExtractSucess=false;
+            return 0;
+        }
+    }
+    zipFileCurrentUnzipIndex=0;
+    const auto fileList = reader.fileInfoList();
+    bool extractOk=true;
+    QSet<QString> zipFileNameFromZip;
+    for (auto it = fileList.begin(); it != fileList.end(); ++it){
+        zipFileNameFromZip.insert(it->filePath);
+    }
+    QTextCodec *systemCodec=QTextCodec::codecForName("System");
+    QTextCodec *zipCodec=QTextCodec::codecForName("UTF-8");
+    for (int i=0;i<zipFileInfoList.count();i++){
+        //这个是用户在弹窗界面选择的编码获取的
+        QString currenctFilePath=zipFileInfoList.at(i).filePath;
+        //这个有可能是乱码的-使用系统默认编码获取的
+        QString currenctFilePathSystemCodec=zipFileNameSystemCodecList.at(i);
+        uint currentFileSize=zipFileInfoList.at(i).size;
+        if ((currenctFilePath==zipTargetFileInZip||zipExtractAll)&&(zipFileNameFromZip.contains(currenctFilePathSystemCodec)||zipFileNameFromZip.contains(currenctFilePath))){
+            //有可能因为各种原因导致获取不到数据，这里做各种尝试
+            //走系统默认编码方式路径尝试读取
+            QByteArray fileData = reader.fileData(currenctFilePathSystemCodec);
+            if(currentFileSize>0&&fileData.size()==0){
+                //走选择得编码方式路径尝试读取
+                fileData = reader.fileData(currenctFilePath);
+                if (fileData.size()==0){
+                    //走固定的UTF-8编码方式路径尝试读取
+                    QTextCodec::setCodecForLocale(zipCodec);
+                    fileData = reader.fileData(currenctFilePath);
+                    QTextCodec::setCodecForLocale(systemCodec);
+                    if(fileData.size()==0){
+                        zipExtractMessage=QString("从压缩包中提取[%1]失败,可能是不支持的压缩算法(非Deflate算法)/文件不完整/加密压缩,请重试或者使用系统解压缩工具解压...").arg(currenctFilePath);
+                        extractOk=false;
+                        break;
+                    }
+                }
+            }
+            QString targetFilePath=zipOutPutFileDir+currenctFilePath;
+            QString targetFileDir=targetFilePath.left(targetFilePath.lastIndexOf("/")+1);
+            if(Utils::isFileExist(targetFileDir)){
+                QFile file(targetFileDir);
+                if (file.exists()) {
+                    if (!file.remove()) {
+                        zipExtractMessage=QString("临时目录[%1]创建失败,请重试或检查是否有对该路径的读写权限...").arg(targetFileDir);
+                        extractOk=false;
+                        break;
+                    }
+                }
+            }
+            if(!Utils::isDirExist(targetFileDir)){
+                QDir dir;
+                if (!dir.mkpath(targetFileDir)) {
+                    zipExtractMessage=QString("临时目录[%1]创建失败,请重试或检查是否有对该路径的读写权限...").arg(targetFileDir);
+                    extractOk=false;
+                    break;
+                }
+            }
+            QFile outFile(targetFilePath);
+            if (!outFile.open(QIODevice::WriteOnly)) {
+                zipExtractMessage=QString("从压缩包中提取文件[%1]后写入失败,请重试或者检查是否有对路径[%2]的读写权限...").arg(currenctFilePath,targetFileDir);
+                extractOk=false;
+                break;
+            }
+            int returnCode=outFile.write(fileData);
+            outFile.close();
+            if(returnCode==-1){
+                zipExtractMessage=QString("从压缩包中提取文件[%1]后写入失败,请重试或者检查是否有对路径[%2]的读写权限...").arg(currenctFilePath,targetFileDir);
+                extractOk=false;
+                break;
+            }
+            zipFileCurrentUnzipIndex++;
+            emit signals_update_zip_extract_status();
+            //恢复文件的修改时间-该时间从压缩包中提取
+            Utils::UpdateFileTime(targetFilePath,zipFileListMdTime.value(currenctFilePath));
+        }
+        else{
+            continue;
+        }
+    }
+    reader.close();
+    file.close();
+    if(extractOk){
+        zipExtractSucess=true;
+        zipExtractMessage="";
+        return 1;
+    }
+    else{
+        zipExtractSucess=false;
+        return 0;
+    }
+}
+
 /**
  * @brief MainWindow::save2XlsxFinished 写入xlsx文件完毕的通知
  */
@@ -9238,7 +9334,12 @@ void MainWindow::on_actionsss_triggered()
     }
     if(!currentOpenFilePath.isEmpty()){
         isUpdateData=true;
-        initFile(currentOpenFilePath);
+        if(fileFromZip){
+            initFile(currentOpenFilePath,false,false,true);
+        }
+        else{
+            initFile(currentOpenFilePath);
+        }
         isUpdateData=false;
     }
 }
@@ -9278,6 +9379,15 @@ void MainWindow::on_actionSave_triggered()
             }
             //原文件备份完毕后开始保存新的文件,文件名和之前保持一致
             saveOFDOrFixedFile(currentOpenFilePath);
+            if(fileFromZip){
+                qDebug()<<"保存的文件来自zip";
+                qDebug()<<zipfilePath;
+                qDebug()<<zipTargetFileInZip;
+                DialogMyTip  dialog2(QString("当前保存的文件来自压缩包,如果你需要将修改后的文件更新到压缩包,请自行使用压缩软件更新\r\n压缩包路径:%1\r\n文件在压缩包中的路径:%2\r\n当前文件保存路径:%3").arg(zipfilePath,zipTargetFileInZip,currentOpenFilePath),this,true);
+                dialog2.setWindowTitle("温馨提示");
+                dialog2.setModal(true);
+                dialog2.exec();
+            }
         }
         else{
             statusBar_disPlayMessage("文件没有被修改,无需保存");
@@ -9484,7 +9594,12 @@ void MainWindow::on_tableWidget_cellDoubleClicked(int row, int column)
  */
 void MainWindow::randomTips(){
     srand((unsigned)time(nullptr));
-    int index =rand()%tips.count();
+    int index =0;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 99)
+    index = QRandomGenerator::global()->bounded(tips.count());
+#else
+    index =rand()%tips.count();
+#endif
     QTime current_time =QTime::currentTime();
     int hour = current_time.hour();
     //深夜11点后，到凌晨5点前的特殊提醒
@@ -9636,31 +9751,12 @@ void MainWindow::on_pushButtonRowJump2_clicked()
  */
 void MainWindow::on_viewMode_triggered()
 {
-    int addHight=ui->frameInfo->height();
     bool isHidden=ui->frameInfo->isHidden();
     if(!isHidden){
         ui->frameInfo->setHidden(true);
         ui->viewMode->setText("标准视图");
-        //切换到精简模式后，界面可视区域变大，要重新显示范围
-        if(tableHeight!=ptr_table->height()&&!isUpdateData){
-            //获取当前table的高度
-            int higth=ptr_table->size().height()+addHight;
-            //窗口变大不会影响起始行
-            tableRowEnd=tableRowBegin+(higth/rowHight);
-            //OFD文件
-            if(currentOpenFileType==openFileType::OFDFile){
-                display_OFDTable();
-            }
-            //CSV文件
-            else if(currentOpenFileType==openFileType::CSVFile){
-                display_CSVTable();
-            }
-            else if(currentOpenFileType==openFileType::FIXEDFile){
-                display_FIXEDTable();
-            }
-            else if(currentOpenFileType==openFileType::DBFFile){
-                display_DBFTable();
-            }
+        if(!isUpdateData){
+            reCalculateTableBeginAndEnd();
         }
     }
     else{
@@ -10154,18 +10250,31 @@ void MainWindow::on_actionpreference_triggered()
     //如果新增了配置项-记得修改配置读取--配置修改弹窗发起--弹窗类内修改--配置修改结果回写四处代码
     //获取当前的配置值，用于传递给设置界面
     QMap <QString,int>par;
+    QMap <QString,QString> parstr;
     par.insert("compresslevel",dataCompressLevel);
     par.insert("defaultviewmode",defaultViewMode);
     par.insert("defaultnewfilemode",defaultNewFileMode);
     par.insert("defaultpagesizetype",defaultPageSizeType);
     par.insert("enablefieldcheck",checkFieldFlag?1:0);
-    DialogPreference  dialog(&par,this);
+    par.insert("standfontsize",standFontSize);
+    parstr.insert("firstrarecharactersfont",firstRareCharactersFontGlobal);
+    parstr.insert("firstuifont",firstUIFontGlobal);
+    DialogPreference  dialog(&par,&parstr,this);
     dialog.setModal(true);
     dialog.exec();
     //获取结果
     if(dialog.getSaveFlag()){
         bool changeFlag=false;
         qDebug()<<par;
+        qDebug()<<parstr;
+        if(parstr.value("firstuifont")!=firstUIFontGlobal){
+            firstUIFontGlobal=parstr.value("firstuifont");
+            changeFlag=true;
+        }
+        if(parstr.value("firstrarecharactersfont")!=firstRareCharactersFontGlobal){
+            firstRareCharactersFontGlobal=parstr.value("firstrarecharactersfont");
+            changeFlag=true;
+        }
         if(par.value("compresslevel")!=dataCompressLevel){
             if(dataCompressLevel==0&&par.value("compresslevel")!=0){
                 enableOrDisableCompress=true;
@@ -10203,6 +10312,12 @@ void MainWindow::on_actionpreference_triggered()
                     //DBF暂时不支持必填较验--无需进行任何操作
                 }
             }
+        }
+        //字体大小
+        if(par.value("standfontsize")!=standFontSize){
+            standFontSize=par.value("standfontsize");
+            changeFlag=true;
+            setStandFontSize();
         }
         if(par.value("defaultviewmode")!=defaultViewMode){
             changeFlag=true;
@@ -10276,6 +10391,17 @@ void MainWindow::on_actionpreference_triggered()
         }
         //如果配置发生了改变,则写入配置
         if(changeFlag){
+            Utils::setDefaultWindowFonts(this,true);
+            Utils::setDefaultWindowFonts(statusLabel_ptr_showMessage);
+            QList<QWidget *> topLevelWidgets = QApplication::topLevelWidgets();
+            for (auto widget = topLevelWidgets.begin(); widget != topLevelWidgets.end(); ++widget) {
+                Utils::setDefaultWindowFonts(*widget,false);
+            }
+            QList<QWidget *> childWidgets = this->findChildren<QWidget *>();
+            for (auto widget = childWidgets.begin(); widget != childWidgets.end(); ++widget) {
+                Utils::setDefaultWindowFonts(*widget,false);
+            }
+            ptr_table->resizeColumnsToContents();
             QString Settingini=Utils::getConfigPath()+"Setting.ini";
             QSettings loadedSettingInfoIni(Settingini,QSettings::IniFormat,nullptr);
             loadedSettingInfoIni.setIniCodec("UTF-8");
@@ -10284,7 +10410,10 @@ void MainWindow::on_actionpreference_triggered()
             loadedSettingInfoIni.setValue("defaultviewmode",defaultViewMode);
             loadedSettingInfoIni.setValue("defaultnewfilemode",defaultNewFileMode);
             loadedSettingInfoIni.setValue("defaultpagesizetype",defaultPageSizeType);
+            loadedSettingInfoIni.setValue("firstuifont",firstUIFontGlobal);
+            loadedSettingInfoIni.setValue("firstrarecharactersfont",firstRareCharactersFontGlobal);
             loadedSettingInfoIni.setValue("enablefieldcheck",checkFieldFlag?"1":"0");
+            loadedSettingInfoIni.setValue("standfontsize",standFontSize);
             loadedSettingInfoIni.endGroup();
             loadedSettingInfoIni.sync();
         }
@@ -10691,6 +10820,13 @@ void MainWindow::on_currentOpenFilePathLineText_returnPressed()
         statusBar_disPlayMessage("你可以复制文件路径到路径框后回车读取文件...");
         return;
     }
+    //如果路径被引号包裹，处理一下
+    if(file.startsWith("\"")&&file.endsWith("\"")){
+        file=file.mid(1,file.length()-2);
+    }
+    if(file.startsWith("'")&&file.endsWith("'")){
+        file=file.mid(1,file.length()-2);
+    }
     //判断是否是有效的文件
     if(!Utils::isFileExist(file)){
         statusBar_disPlayMessage("["+file+"}不是一个有效的文件路径,你可以复制文件路径到路径框后回车读取文件...");
@@ -10808,7 +10944,7 @@ void MainWindow::on_pushButtonGo_clicked()
             statusBar_disPlayMessage("页码不能小于0...");
         }
         else if(pageNum>pageCount){
-            statusBar_disPlayMessage(QString("当前打开的文件一共有%1页,输入的页码超过了最大值...").arg(pageCount));
+            statusBar_disPlayMessage(QString("当前打开的文件一共有%1页,输入的页码超过了最大值...").arg(QString::number(pageCount)));
         }
         else{
             currentPage=pageNum;
@@ -10876,7 +11012,7 @@ pageJump(int page,int scrollIndex){
     //显示行号
     ui->pageText->setText(QString::number(page));
     //显示描述
-    statusBar_disPlayMessage(QString("第%1页,本页记录数%2行").arg(page).arg(currentPageRowSize));
+    statusBar_disPlayMessage(QString("第%1页,本页记录数%2行").arg(QString::number(page),QString::number(currentPageRowSize)));
     //加载本页数据
     //数据类型插入点
     if(currentOpenFileType==openFileType::OFDFile){
@@ -11310,7 +11446,11 @@ QString MainWindow::StringToHexStringWithEnCode(QString data,QTextCodec *codec,b
             //兼容4字节Unicode字符
             if(data.at(i).isHighSurrogate()&&i<data.count()-1&&data.at(i+1).isLowSurrogate())
             {
-                sb.append("[").append(data.mid(i,2)).append(":").append(codec->fromUnicode(data.mid(i,2)).toHex().toUpper()).append("]");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 99)
+                sb.append("[").append(data.midRef(i,2)).append(":").append(codec->fromUnicode(data.midRef(i,2)).toHex().toUpper()).append("]");
+#else
+                sb.append("[").append(data.midRef(i,2)).append(":").append(codec->fromUnicode(data.mid(i,2)).toHex().toUpper()).append("]");
+#endif
                 i++;
                 if(i<data.length()-1){
                     sb.append("-");
@@ -11706,7 +11846,7 @@ void MainWindow::showQrcode(){
     QString trimd=QString(text).replace("\r\n","").replace(" ","");
     if(!trimd.isEmpty()){
         if(text.toUtf8().count()>2300){
-            statusBar_disPlayMessage(QString("数据太多了,生成二维码的数据限制最多120个单元格且不大于2300字节,当前%1字节").arg(text.toUtf8().count()));
+            statusBar_disPlayMessage(QString("数据太多了,生成二维码的数据限制最多120个单元格且不大于2300字节,当前%1字节").arg(QString::number(text.toUtf8().count())));
         }
         else{
             //打开窗口
@@ -12138,12 +12278,12 @@ int MainWindow::importFromExcel(){
                     int textLength=codec->fromUnicode(colval).length();
                     if(fieldTypeList.at(col-1).fieldType=="C"||fieldTypeList.at(col-1).fieldType=="TEXT"){
                         if(textLength>fieldTypeList.at(col-1).fieldLength){
-                            importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]长度不应当大于[%3]").arg(row).arg(fieldTypeList.at(col-1).fieldDescribe).arg(fieldTypeList.at(col-1).fieldLength));
+                            importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]长度不应当大于[%3]").arg(QString::number(row),fieldTypeList.at(col-1).fieldDescribe,QString::number(fieldTypeList.at(col-1).fieldLength)));
                         }
                     }
                     else if(fieldTypeList.at(col-1).fieldType=="A"){
                         if(textLength>fieldTypeList.at(col-1).fieldLength){
-                            importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]长度不应当大于[%3]").arg(row).arg(fieldTypeList.at(col-1).fieldDescribe).arg(fieldTypeList.at(col-1).fieldLength));
+                            importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]长度不应当大于[%3]").arg(QString::number(row),fieldTypeList.at(col-1).fieldDescribe,QString::number(fieldTypeList.at(col-1).fieldLength)));
                         }
                     }
                     else if(fieldTypeList.at(col-1).fieldType=="N"){
@@ -12151,20 +12291,20 @@ int MainWindow::importFromExcel(){
                             bool ok=false;
                             colval.toDouble(&ok);
                             if(!ok){
-                                importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]应当是一个数值或者为空,但是现在看起来并不是").arg(row).arg(fieldTypeList.at(col-1).fieldDescribe));
+                                importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]应当是一个数值或者为空,但是现在看起来并不是").arg(QString::number(row),fieldTypeList.at(col-1).fieldDescribe));
                             }
                             else{
                                 if(!colval.contains("."))
                                 {
                                     if(textLength>(fieldTypeList.at(col-1).fieldLength-fieldTypeList.at(col-1).fieldDecLength)){
-                                        importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]整数部分长度不能超过[%3]").arg(row).arg(fieldTypeList.at(col-1).fieldDescribe).arg(fieldTypeList.at(col-1).fieldLength-fieldTypeList.at(col-1).fieldDecLength));
+                                        importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]整数部分长度不能超过[%3]").arg(QString::number(row),fieldTypeList.at(col-1).fieldDescribe,QString::number(fieldTypeList.at(col-1).fieldLength-fieldTypeList.at(col-1).fieldDecLength)));
                                     }
                                 }
                                 else{
                                     int index=colval.indexOf(".");
                                     QString intS=colval.mid(0,index);
                                     if(intS.length()>(fieldTypeList.at(col-1).fieldLength-fieldTypeList.at(col-1).fieldDecLength)){
-                                        importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]的整数部分长度不能超过[%3]").arg(row).arg(fieldTypeList.at(col-1).fieldDescribe).arg(fieldTypeList.at(col-1).fieldLength-fieldTypeList.at(col-1).fieldDecLength));
+                                        importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]的整数部分长度不能超过[%3]").arg(QString::number(row),fieldTypeList.at(col-1).fieldDescribe,QString::number(fieldTypeList.at(col-1).fieldLength-fieldTypeList.at(col-1).fieldDecLength)));
                                     }
                                     else {
                                         QString intD=colval.mid(index+1,-1);
@@ -12178,7 +12318,7 @@ int MainWindow::importFromExcel(){
                     }
                     else{
                         if(textLength>fieldTypeList.at(col-1).fieldLength){
-                            importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]的长度不应当大于[%3]").arg(row).arg(fieldTypeList.at(col-1).fieldDescribe).arg(fieldTypeList.at(col-1).fieldLength));
+                            importExcelErrorDetail.append(QString("Excel第[%1]行,字段[%2]的长度不应当大于[%3]").arg(QString::number(row),fieldTypeList.at(col-1).fieldDescribe,QString::number(fieldTypeList.at(col-1).fieldLength)));
                         }
                     }
                     rowdata.append(colval);
@@ -12200,7 +12340,7 @@ int MainWindow::importFromExcel(){
                             QString valueNew=rowdata.at(editCol);
                             bool flag=Utils::updateOFDOrFixedFieldValueFromRow(fieldTypeList.at(editCol).fieldType,fieldTypeList.at(editCol).fieldLength,fieldTypeList.at(editCol).fieldDecLength,fieldTypeList.at(editCol).fieldBeginIndex,0,codec,valueNew,byteArrayRow);
                             if(!flag){
-                                importExcelErrorDetail.append(QString("Excel第[%1]行数据导入时生成行数据异常,请重试...").arg(row));
+                                importExcelErrorDetail.append(QString("Excel第[%1]行数据导入时生成行数据异常,请重试...").arg(QString::number(row)));
                                 break;
                             }
                         }
@@ -12212,7 +12352,7 @@ int MainWindow::importFromExcel(){
                         fileContentQByteArrayListFromExcel.append(qCompress(byteArrayRow,dataCompressLevel));
                     }
                     if (importExcelRow>0&&importExcelRow%100==0){
-                        emit update_import_excel_status();
+                        emit signals_update_import_excel_status();
                     }
                 }
                 row++;
@@ -12312,22 +12452,40 @@ void MainWindow::importFromXlsxFinished(){
             this->setWindowTitle(appName+"-"+currentFileName+"-导入数据待保存");
             if(dialogDialogShowPrimaryCheck!=nullptr){
                 needReCheckPrimary=true;
-                statusBar_disPlayMessage(QString("导入完毕,从Excel导入数据%1行,请重新进行主键冲突检查...").arg(rowCount));
+                statusBar_disPlayMessage(QString("导入完毕,从Excel导入数据%1行,请重新进行主键冲突检查...").arg(QString::number(rowCount)));
             }
             else{
-                statusBar_disPlayMessage(QString("导入完毕,从Excel导入数据%1行").arg(rowCount));
+                statusBar_disPlayMessage(QString("导入完毕,从Excel导入数据%1行").arg(QString::number(rowCount)));
             }
         }
     }
 }
 
+void MainWindow::extractZipFinished(){
+    dataBlocked=false;
+    if(zipExtractSucess){
+        fileFromZip=true;
+        initFile(zipOutPutFileDir+zipTargetFileInZip,false,false,true);
+    }
+    else{
+        zipfilePath="";
+        zipTargetFileInZip="";
+        zipExtractAll=false;
+        zipExtractSucess=false;
+        zipOutPutFileDir="";
+        statusBar_disPlayMessage(zipExtractMessage);
+    }
+}
 /**
  * @brief MainWindow::update_import_excel_status 刷新UI
  */
 void MainWindow::update_import_excel_status(){
-    statusBar_disPlayMessage(QString("已分析数据%1行,请耐心等待...").arg(importExcelRow+1));
+    statusBar_disPlayMessage(QString("已分析数据%1行,请耐心等待...").arg(QString::number(importExcelRow+1)));
 }
 
+void MainWindow::update_zip_extract_status(){
+    statusBar_disPlayMessage(QString("正在解压文件,共计%1个,已完成解压%2个,请耐心等待...").arg(QString::number(zipFileInfoList.count()),QString::number(zipFileCurrentUnzipIndex)));
+}
 
 void MainWindow::openPlugin(){
 #ifdef Q_OS_WIN32
@@ -12473,7 +12631,7 @@ void MainWindow::on_actioncurrentfilechekrule_triggered()
     if(data.count()==0){
         statusBar_disPlayMessage("当前使用的解析规则下没有必填较验规则...");
     }else{
-        statusBar_disPlayMessage(QString("加载%1个必填检查规则").arg(data.count()));
+        statusBar_disPlayMessage(QString("加载%1个必填检查规则").arg(QString::number(data.count())));
         DialogShowFieldCheckList * dialog = new DialogShowFieldCheckList(&data,this);
         dialog->setModal(false);
         dialog->setAttribute(Qt::WA_DeleteOnClose);
@@ -12548,7 +12706,9 @@ void MainWindow::checkRowFieldResult (QStringList & rowdata,QMap<int,QString> & 
         break;
     case openFileType::FIXEDFile:
     {
-        for (fieldcheckitem item: fixed.getFieldcheckList()) {
+        QList<fieldcheckitem> fixedFileDefinition=fixed.getFieldcheckList();
+        for (auto it = fixedFileDefinition.begin(); it != fixedFileDefinition.end(); ++it) {
+            fieldcheckitem item=*it;
             //条件分组--或者关系
             foreach (auto cclist,item.getCheckConditionsListOverList()){
                 //本分组内条件清单--和关系--必须全部满足
@@ -12607,7 +12767,9 @@ void MainWindow::checkRowFieldResult (QStringList & rowdata,QMap<int,QString> & 
         break;
     case openFileType::CSVFile:
     {
-        for (fieldcheckitem item: csv.getFieldcheckList()) {
+        QList<fieldcheckitem> csvFileDefinition=csv.getFieldcheckList();
+        for (auto it = csvFileDefinition.begin(); it != csvFileDefinition.end(); ++it) {
+            fieldcheckitem item=*it;
             //条件分组--或者关系
             foreach (auto cclist,item.getCheckConditionsListOverList()){
                 //本分组内条件清单--和关系--必须全部满足
@@ -12806,7 +12968,7 @@ void MainWindow::checkRowFieldSearch (int direction){
                                 dataBlocked=false;
                                 reCalculateTableBeginAndEnd();
                                 on_tableWidget_itemSelectionChanged();
-                                QString message=QString("在第%1行\"%2\"查找到必填字段缺失...").arg(QString::number(rowRealInContent+1)).arg(ptr_table->horizontalHeaderItem(colindex)->text());
+                                QString message=QString("在第%1行\"%2\"查找到必填字段缺失...").arg(QString::number(rowRealInContent+1),ptr_table->horizontalHeaderItem(colindex)->text());
                                 statusBar_disPlayMessage(message);
                                 return;
                             }
@@ -12891,7 +13053,7 @@ void MainWindow::checkRowFieldSearch (int direction){
                                 dataBlocked=false;
                                 reCalculateTableBeginAndEnd();
                                 on_tableWidget_itemSelectionChanged();
-                                QString message=QString("在第%1行\"%2\"查找到必填字段缺失...").arg(QString::number(rowRealInContent+1)).arg(ptr_table->horizontalHeaderItem(colindex)->text());
+                                QString message=QString("在第%1行\"%2\"查找到必填字段缺失...").arg(QString::number(rowRealInContent+1),ptr_table->horizontalHeaderItem(colindex)->text());
                                 statusBar_disPlayMessage(message);
                                 return;
                             }
@@ -13416,7 +13578,7 @@ void MainWindow::invisibleCharactersCheckUp(int rangeType){
                         dataBlocked=false;
                         reCalculateTableBeginAndEnd();
                         on_tableWidget_itemSelectionChanged();
-                        QString message=QString("第%1行\"%2\"有不可见字符,右键使用\"十六进制字符编码透视(乱码分析)\"查看详情...").arg(QString::number(rowRealInContent+1)).arg(ptr_table->horizontalHeaderItem(col)->text());
+                        QString message=QString("第%1行\"%2\"有不可见字符,右键使用\"十六进制字符编码透视(乱码分析)\"查看详情...").arg(QString::number(rowRealInContent+1),ptr_table->horizontalHeaderItem(col)->text());
                         statusBar_disPlayMessage(message);
                         return;
                     }
@@ -13430,7 +13592,7 @@ void MainWindow::invisibleCharactersCheckUp(int rangeType){
                         dataBlocked=false;
                         reCalculateTableBeginAndEnd();
                         on_tableWidget_itemSelectionChanged();
-                        QString message=QString("第%1行\"%2\"有不可见字符(含空格和制表符等ASCII码),右键使用\"十六进制字符编码透视(乱码分析)\"查看详情...").arg(QString::number(rowRealInContent+1)).arg(ptr_table->horizontalHeaderItem(col)->text());
+                        QString message=QString("第%1行\"%2\"有不可见字符(含空格和制表符等ASCII码),右键使用\"十六进制字符编码透视(乱码分析)\"查看详情...").arg(QString::number(rowRealInContent+1),ptr_table->horizontalHeaderItem(col)->text());
                         statusBar_disPlayMessage(message);
                         return;
                     }
@@ -13548,7 +13710,7 @@ void MainWindow::invisibleCharactersCheckDown(int rangeType){
                         dataBlocked=false;
                         reCalculateTableBeginAndEnd();
                         on_tableWidget_itemSelectionChanged();
-                        QString message=QString("在第%1行\"%2\"搜索到不可见字符,在单元格右键使用\"十六进制字符编码透视(乱码分析)\"进行详细分析...").arg(QString::number(rowRealInContent+1)).arg(ptr_table->horizontalHeaderItem(col)->text());
+                        QString message=QString("在第%1行\"%2\"搜索到不可见字符,在单元格右键使用\"十六进制字符编码透视(乱码分析)\"进行详细分析...").arg(QString::number(rowRealInContent+1),ptr_table->horizontalHeaderItem(col)->text());
                         statusBar_disPlayMessage(message);
                         return;
                     }
@@ -13562,7 +13724,7 @@ void MainWindow::invisibleCharactersCheckDown(int rangeType){
                         dataBlocked=false;
                         reCalculateTableBeginAndEnd();
                         on_tableWidget_itemSelectionChanged();
-                        QString message=QString("在第%1行\"%2\"搜索到不可见字符(含空格和制表符等ASCII码),在单元格右键使用\"十六进制字符编码透视(乱码分析)\"进行详细分析...").arg(QString::number(rowRealInContent+1)).arg(ptr_table->horizontalHeaderItem(col)->text());
+                        QString message=QString("在第%1行\"%2\"搜索到不可见字符(含空格和制表符等ASCII码),在单元格右键使用\"十六进制字符编码透视(乱码分析)\"进行详细分析...").arg(QString::number(rowRealInContent+1),ptr_table->horizontalHeaderItem(col)->text());
                         statusBar_disPlayMessage(message);
                         return;
                     }
@@ -13631,4 +13793,269 @@ void MainWindow::reCalculateFileCountLine(){
             }
         }
     }
+}
+
+void MainWindow::setStandFontSize(){
+    if(standFontSize==1){
+#ifdef Q_OS_MAC
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(14));
+#endif
+
+#ifdef Q_OS_LINUX
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(14));
+#endif
+
+#ifdef Q_OS_WIN32
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(13));
+#endif
+    }
+    else if(standFontSize==2){
+#ifdef Q_OS_MAC
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(15));
+#endif
+
+#ifdef Q_OS_LINUX
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(15));
+#endif
+
+#ifdef Q_OS_WIN32
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(14));
+#endif
+    }
+    else{
+#ifdef Q_OS_MAC
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(13));
+#endif
+
+#ifdef Q_OS_LINUX
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(13));
+#endif
+
+#ifdef Q_OS_WIN32
+        fontSizeStand=QString("font-size:%1px;").arg(QString::number(12));
+#endif
+    }
+}
+
+void MainWindow::init_Others(){
+    tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
+    tips.append("导出数据到Csv,可以方便的进行数据交换,导入到别的系统...");
+    tips.append("导出数据到Html,可以在浏览器中浏览数据,或者发送给其他人便捷浏览数据...");
+    tips.append("输入你要查找的字段中文名或者英文名,点击列跳转可以快速跳到你要查找的字段,避免横着拖动滚动条寻找...");
+    tips.append("输入你要直达的行号,点击行跳转,直接跳到你要查找的行...");
+    tips.append("双击任意单元格,可以将本行数据以列模式显示,自带字典翻译,任意搜索...");
+    tips.append("向上向下搜索,快速找到你要的数据...");
+    tips.append("外部编辑文件后,使用重新读取文件功能,或者按F5键,极速重新加载数据...");
+    tips.append("右键将任意行加入比对器,找到需要比对的行,再加入比对器,就能打开比对器以比对模式查看各行数据的差异了...");
+    tips.append("比对器支持任意多行同时比对哟...");
+    tips.append("右键菜单有不少小功能哟...");
+    tips.append("数据修改后点击保存,程序会自动创建备份,避免找不回原文件...");
+    tips.append("数据修改后点击另存保存,可以覆盖保存或者保存文件到其他位置...");
+    tips.append("你可以在"+Utils::getConfigPath()+"目录下进行配置文件修改,可以让工具支持新增的各种OFD/类OFD文件...");
+    tips.append("拖放文件到程序主窗口,即可打开文件,又快又省心...");
+    tips.append("程序里有一个彩蛋哟,快去找一下...");
+    tips.append("小心使用编辑功能,避免造成不可挽回的事故...");
+    tips.append("源文件某行数据在解析器的第几行?,试试源文件行跳转功能,一键直达...");
+    tips.append("选中某一列的多行数据(按住Crtl后单击需要选择的单元格),或者单击列标题选择本列单元格数据后,可以使用批量编辑功能...");
+    tips.append("按Ctrl+G切换视图模式,可以隐藏或者显示文件头信息...");
+    tips.append("尝试使用本工具解析各种固定分隔符文件吧，比excel更好的数据展示方式,且支持导出excel...");
+    tips.append("创建一个本软件的桌面图标,直接拖放文件到图标上即可打开文件,只需一步即可直达");
+    tips.append("选择一个区间的数据，右键复制,可以便捷粘贴到excel中");
+    tips.append("对于全是数值的列，选择同一列多行数据时，状态栏会自动对选择的数据进行求和，求平均数");
+    tips.append("尝试使用本工具解析各种固定字符/字节长度文件吧，高效解析,且支持导出excel...");
+    tips.append("尝试进行设置本程序,可以实现默认拖进文件时打开一个新窗口解析,默认使用精简模式打开程序,你的爱好你做主...");
+    tips.append("基金、银行理财领域的OFD/类OFD文件,本程序都支持解析哟...");
+    tips.append("需要打开超大文件?,建议在设置里设置开启压缩模式和分页支持,支持的文件大小立即提升到GB级别...");
+    tips.append("本程序是业余无偿开发的,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
+    tips.append("小额捐赠给予支持,FFReader将获得更好的发展,捐赠信息在菜单[帮助-关于程序下]...");
+    tips.append("FFReader是一个免费的工具软件,如果程序帮助到了你,你可以选择小额捐赠给予支持,捐赠信息在菜单[帮助-关于程序下]...");
+    tips.append("可以使用本程序新建OFD/类OFD文件,以及初始化自己的新建模板...");
+    tips.append("导出功能可以分页导出或者导出全部数据,自由选择导出范围,是否使用UTF-8编码...");
+    tips.append("在程序主窗口或者查看行详细信息界面,使用Ctrl+Alt+R(command+option+R)可以进行快速截图保存...");
+    tips.append("固定分隔符文件可以在任意单元格右键对此列手工设置数据格式,调整为数值或者自定义小数长度哟,方便进行数值统计...");
+    tips.append("在设置-首选项里设置默认精简视图,即可默认获得最大化的数据展示空间...");
+    tips.append("本程序支持解析证券各类DBF文件,直接解析或者配置解析均可,使用配置获得更好的解析体验...");
+    tips.append("需要编辑手工创造OFD/类OFD数据文件？尝试新建文件后导出到Excel编辑，编辑后可以立即导入本程序生成OFD/类OFD数据文件...");
+    tips.append("字段必填检查工具可以方便的检查是否有异常的字段值缺失,尝试配置几个检测规则然后使用吧...");
+    tips.append("不可见字符检查工具可以方便的检索文件中是否有不可见的零宽字符...");
+    tips.append("担心文件存在重复冲突数据？尝试使用主键冲突检查工具检查你的文件吧...");
+    tips.append("如果你的文件包含生僻字且显示异常,留意检查是否已安装相关字体补充文件...");
+    tips.append("不喜欢默认字体?,你可以在设置-首选项中任意修改你喜欢的字体...");
+    tips.append("你可以在设置-首选项中设定字体大小，找到适合你的字体大小吧...");
+
+#ifdef Q_OS_WIN32
+    tips.append("同时拖放两个文件到程序主窗口,将使用文件比对插件自动比对两个文件的差异...");
+    tips.append("如果你要查看接口文件的原始数据,不妨在附加工具菜单下点击\"在文本编辑器中打开当前文件\"...");
+    tips.append("想要比对同一个文件不同版本的差异?试试导出到csv固定分隔符文件后同时把两个文件拖向FFReader,它会问你是否要比对差异...");
+    tips.append("禁用压缩功能,可以极大的提高文件加载速度,如果你的电脑内存足够,建议禁用压缩功能(打开2GB的文件大概需要2.5GB内存)...");
+    tips.append("如果没有特殊情况,请使用64位FFReader,32位版本的FFReader难以打开超大的文件...");
+#endif
+    specialCharacter.insert(0X00,"NUL (null):空字符");
+    specialCharacter.insert(0X01,"SOH (start of headling):标题开始");
+    specialCharacter.insert(0X02,"STX (start of text):正文开始");
+    specialCharacter.insert(0X03,"ETX (end of text):正文结束");
+    specialCharacter.insert(0X04,"EOT (end of transmission):传输结束");
+    specialCharacter.insert(0X05,"ENQ (enquiry):请求");
+    specialCharacter.insert(0X06,"ACK (acknowledge):收到通知");
+    specialCharacter.insert(0X07,"BEL (bell):响铃");
+    specialCharacter.insert(0X08,"BS (backspace):退格");
+    specialCharacter.insert(0X09,"HT (horizontal tab):水平制表符");
+    specialCharacter.insert(0X0A,"LF (NL line feed new line):换行键");
+    specialCharacter.insert(0X0B,"VT (vertical tab):垂直制表符");
+    specialCharacter.insert(0X0C,"FF (NP form feed new page):换页键");
+    specialCharacter.insert(0X0D,"CR (carriage return):回车键");
+    specialCharacter.insert(0X0E,"SO (shift out):不用切换");
+    specialCharacter.insert(0X0F,"SI (shift in):启用切换");
+    specialCharacter.insert(0X10,"DLE (data link escape):数据链路转义");
+    specialCharacter.insert(0X11,"DC1 (device control 1):设备控制1");
+    specialCharacter.insert(0X12,"DC2 (device control 2):设备控制2");
+    specialCharacter.insert(0X13,"DC3 (device control 3):设备控制3");
+    specialCharacter.insert(0X14,"DC4 (device control 4):设备控制4");
+    specialCharacter.insert(0X15,"NAK (negative acknowledge):拒绝接收");
+    specialCharacter.insert(0X16,"SYN (synchronous idle):同步空闲");
+    specialCharacter.insert(0X17,"ETB (end of trans block):传输块结束");
+    specialCharacter.insert(0X18,"CAN (cancel):取消");
+    specialCharacter.insert(0X19,"EM (end of medium):介质中断");
+    specialCharacter.insert(0X1A,"SUB (substitute):替补");
+    specialCharacter.insert(0X1B,"ESC (escape):溢出");
+    specialCharacter.insert(0X1C,"FS (file separator):文件分割符");
+    specialCharacter.insert(0X1D,"GS (group separator):分组符");
+    specialCharacter.insert(0X1E,"RS (record separator):记录分离符");
+    specialCharacter.insert(0X1F,"US (unit separator):单元分隔符");
+    specialCharacter.insert(0X20,"SP (space):空格");
+    specialCharacter.insert(0X7F,"DEL (delete):删除");
+
+    //其他不可见或者神奇字符
+    specialCharacter.insert(0X2000,"EN QUAD:en四元");
+    specialCharacter.insert(0X2001,"EM QUAD");
+    specialCharacter.insert(0X2002,"EN SPACE");
+    specialCharacter.insert(0X2003,"EM SPACE:Em空间");
+    specialCharacter.insert(0X2004,"THREE-PER-EM SPACE:每em三个空格");
+    specialCharacter.insert(0X2025,"FOUR-PER-EM SPACE:每em四个空格");
+    specialCharacter.insert(0X2026,"SIX-PER-EM SPACE:六个/em空间");
+    specialCharacter.insert(0X2027,"FIGURE SPACE:数字空间");
+    specialCharacter.insert(0X2028,"PUNCTUATION SPACE:标点符号空间");
+    specialCharacter.insert(0X2029,"THIN SPACE:薄空间");
+    specialCharacter.insert(0X202A,"HAIR SPACE:发际空间");
+    specialCharacter.insert(0X200B,"ZERO WIDTH SPACE:零宽空格");
+    specialCharacter.insert(0X200C,"ZERO WIDTH NON-JOINER:零宽不连字");
+    specialCharacter.insert(0X200D,"ZERO WIDTH JOINER:零宽连字");
+    specialCharacter.insert(0X200E,"LEFT-TO-RIGHT MARK:左至右符号");
+    specialCharacter.insert(0X200F,"RIGHT-TO-LEFT MARK:右至左符号");
+    specialCharacter.insert(0X2011,"NON-BREAKING HYPHEN:不间断连字符");
+    specialCharacter.insert(0X2028,"LINE SEPARATOR:线路分离器");
+    specialCharacter.insert(0X2029,"PARAGRAPH SEPARATOR:段落分隔符");
+    specialCharacter.insert(0X202A,"LEFT-TO-RIGHT EMBEDDING:从左到右嵌入");
+    specialCharacter.insert(0X202B,"RIGHT-TO-LEFT EMBEDDING:从右到左嵌入");
+    specialCharacter.insert(0X202C,"POP DIRECTIONAL FORMATTING:弹出方向格式");
+    specialCharacter.insert(0X202D,"LEFT-TO-RIGHT OVERRIDE:左右超控");
+    specialCharacter.insert(0X202E,"RIGHT-TO-LEFT OVERRIDE:从右向左超控");
+    specialCharacter.insert(0X202F,"NARROW NO-BREAK SPACE:窄的不间断空间");
+    specialCharacter.insert(0X205F,"MEDIUM MATHEMATICAL SPACE:中等数学空间");
+    specialCharacter.insert(0X2060,"WORD JOINER:字连接符");
+    specialCharacter.insert(0X2061,"FUNCTION APPLICATION:功能应用");
+    specialCharacter.insert(0X2062,"INVISIBLE TIMES:不可见时间");
+    specialCharacter.insert(0X2063,"INVISIBLE SEPARATOR:不可见分隔符");
+    specialCharacter.insert(0X2064,"INVISIBLE PLUS:不可见加号");
+    specialCharacter.insert(0X2066,"LEFT-TO-RIGHT ISOLATE:从左到右隔离");
+    specialCharacter.insert(0X2067,"RIGHT-TO-LEFT ISOLATE:从右到左隔离");
+    specialCharacter.insert(0X2068,"FIRST STRONG ISOLATE:第一强分离物");
+    specialCharacter.insert(0X2069,"POP DIRECTIONAL ISOLATE:流行方向隔离");
+    specialCharacter.insert(0X206A,"INHIBIT SYMMETRIC SWAPPING:禁止对称交换");
+    specialCharacter.insert(0X206B,"ACTIVATE SYMMETRIC SWAPPING:激活对称交换");
+    specialCharacter.insert(0X206C,"INHIBIT ARABIC FORM SHAPING:抑制阿拉伯形式的形成");
+    specialCharacter.insert(0X206D,"ACTIVATE ARABIC FORM SHAPING:激活阿拉伯语形式变形");
+    specialCharacter.insert(0X206E,"NATIONAL DIGIT SHAPES:国家数字形状");
+    specialCharacter.insert(0X206F,"NOMINAL DIGIT SHAPES:名义数字形状");
+
+    /*52个PUA汉字*/
+    puaOrDeletedGBKCharacter.insert(0xE82F,"PUA码字符,建议使用正式码【㳠,Unicode码3CE0,GB18030码FE6A】");
+    puaOrDeletedGBKCharacter.insert(0xE81A,"PUA码字符,建议使用正式码【㑳,Unicode码3473,GB18030码FE55】");
+    puaOrDeletedGBKCharacter.insert(0xE81B,"PUA码字符,建议使用正式码【㑇,Unicode码3447,GB18030码FE56】");
+    puaOrDeletedGBKCharacter.insert(0xE81F,"PUA码字符,建议使用正式码【㖞,Unicode码359E,GB18030码FE5A】");
+    puaOrDeletedGBKCharacter.insert(0xE821,"PUA码字符,建议使用正式码【㘎,Unicode码360E,GB18030码FE5C】");
+    puaOrDeletedGBKCharacter.insert(0xE820,"PUA码字符,建议使用正式码【㘚,Unicode码361A,GB18030码FE5B】");
+    puaOrDeletedGBKCharacter.insert(0xE824,"PUA码字符,建议使用正式码【㥮,Unicode码396E,GB18030码FE5F】");
+    puaOrDeletedGBKCharacter.insert(0xE825,"PUA码字符,建议使用正式码【㤘,Unicode码3918,GB18030码FE60】");
+    puaOrDeletedGBKCharacter.insert(0xE827,"PUA码字符,建议使用正式码【㧏,Unicode码39CF,GB18030码FE62】");
+    puaOrDeletedGBKCharacter.insert(0xE828,"PUA码字符,建议使用正式码【㧟,Unicode码39DF,GB18030码FE63】");
+    puaOrDeletedGBKCharacter.insert(0xE829,"PUA码字符,建议使用正式码【㩳,Unicode码3A73,GB18030码FE64】");
+    puaOrDeletedGBKCharacter.insert(0xE82A,"PUA码字符,建议使用正式码【㧐,Unicode码39D0,GB18030码FE65】");
+    puaOrDeletedGBKCharacter.insert(0xE82D,"PUA码字符,建议使用正式码【㭎,Unicode码3B4E,GB18030码FE68】");
+    puaOrDeletedGBKCharacter.insert(0xE82E,"PUA码字符,建议使用正式码【㱮,Unicode码3C6E,GB18030码FE69】");
+    puaOrDeletedGBKCharacter.insert(0xE834,"PUA码字符,建议使用正式码【䁖,Unicode码4056,GB18030码FE6F】");
+    puaOrDeletedGBKCharacter.insert(0xE835,"PUA码字符,建议使用正式码【䅟,Unicode码415F,GB18030码FE70】");
+    puaOrDeletedGBKCharacter.insert(0xE837,"PUA码字符,建议使用正式码【䌷,Unicode码4337,GB18030码FE72】");
+    puaOrDeletedGBKCharacter.insert(0xE83C,"PUA码字符,建议使用正式码【䎱,Unicode码43B1,GB18030码FE77】");
+    puaOrDeletedGBKCharacter.insert(0xE83D,"PUA码字符,建议使用正式码【䎬,Unicode码43AC,GB18030码FE78】");
+    puaOrDeletedGBKCharacter.insert(0xE83F,"PUA码字符,建议使用正式码【䏝,Unicode码43DD,GB18030码FE7A】");
+    puaOrDeletedGBKCharacter.insert(0xE840,"PUA码字符,建议使用正式码【䓖,Unicode码44D6,GB18030码FE7B】");
+    puaOrDeletedGBKCharacter.insert(0xE841,"PUA码字符,建议使用正式码【䙡,Unicode码4661,GB18030码FE7C】");
+    puaOrDeletedGBKCharacter.insert(0xE842,"PUA码字符,建议使用正式码【䙌,Unicode码464C,GB18030码FE7D】");
+    puaOrDeletedGBKCharacter.insert(0xE844,"PUA码字符,建议使用正式码【䜣,Unicode码4723,GB18030码FE80】");
+    puaOrDeletedGBKCharacter.insert(0xE845,"PUA码字符,建议使用正式码【䜩,Unicode码4729,GB18030码FE81】");
+    puaOrDeletedGBKCharacter.insert(0xE846,"PUA码字符,建议使用正式码【䝼,Unicode码477C,GB18030码FE82】");
+    puaOrDeletedGBKCharacter.insert(0xE847,"PUA码字符,建议使用正式码【䞍,Unicode码478D,GB18030码FE83】");
+    puaOrDeletedGBKCharacter.insert(0xE849,"PUA码字符,建议使用正式码【䥇,Unicode码4947,GB18030码FE85】");
+    puaOrDeletedGBKCharacter.insert(0xE84C,"PUA码字符,建议使用正式码【䦂,Unicode码4982,GB18030码FE88】");
+    puaOrDeletedGBKCharacter.insert(0xE84A,"PUA码字符,建议使用正式码【䥺,Unicode码497A,GB18030码FE86】");
+    puaOrDeletedGBKCharacter.insert(0xE84B,"PUA码字符,建议使用正式码【䥽,Unicode码497D,GB18030码FE87】");
+    puaOrDeletedGBKCharacter.insert(0xE84D,"PUA码字符,建议使用正式码【䦃,Unicode码4983,GB18030码FE89】");
+    puaOrDeletedGBKCharacter.insert(0xE84E,"PUA码字符,建议使用正式码【䦅,Unicode码4985,GB18030码FE8A】");
+    puaOrDeletedGBKCharacter.insert(0xE84F,"PUA码字符,建议使用正式码【䦆,Unicode码4986,GB18030码FE8B】");
+    puaOrDeletedGBKCharacter.insert(0xE853,"PUA码字符,建议使用正式码【䦶,Unicode码49B3,GB18030码8234A038】");
+    puaOrDeletedGBKCharacter.insert(0xE850,"PUA码字符,建议使用正式码【䦟,Unicode码499F,GB18030码FE8C】");
+    puaOrDeletedGBKCharacter.insert(0xE852,"PUA码字符,建议使用正式码【䦷,Unicode码49B7,GB18030码FE8E】");
+    puaOrDeletedGBKCharacter.insert(0xE851,"PUA码字符,建议使用正式码【䦛,Unicode码499B,GB18030码FE8D】");
+    puaOrDeletedGBKCharacter.insert(0xE85A,"PUA码字符,建议使用正式码【䱷,Unicode码4C77,GB18030码FE96】");
+    puaOrDeletedGBKCharacter.insert(0xE857,"PUA码字符,建议使用正式码【䲟,Unicode码4C9F,GB18030码FE93】");
+    puaOrDeletedGBKCharacter.insert(0xE858,"PUA码字符,建议使用正式码【䲠,Unicode码4CA0,GB18030码FE94】");
+    puaOrDeletedGBKCharacter.insert(0xE859,"PUA码字符,建议使用正式码【䲡,Unicode码4CA1,GB18030码FE95】");
+    puaOrDeletedGBKCharacter.insert(0xE856,"PUA码字符,建议使用正式码【䲣,Unicode码4CA3,GB18030码FE92】");
+    puaOrDeletedGBKCharacter.insert(0xE85B,"PUA码字符,建议使用正式码【䲢,Unicode码4CA2,GB18030码FE97】");
+    puaOrDeletedGBKCharacter.insert(0xE85C,"PUA码字符,建议使用正式码【䴓,Unicode码4D13,GB18030码FE98】");
+    puaOrDeletedGBKCharacter.insert(0xE85D,"PUA码字符,建议使用正式码【䴔,Unicode码4D14,GB18030码FE99】");
+    puaOrDeletedGBKCharacter.insert(0xE85E,"PUA码字符,建议使用正式码【䴕,Unicode码4D15,GB18030码FE9A】");
+    puaOrDeletedGBKCharacter.insert(0xE85F,"PUA码字符,建议使用正式码【䴖,Unicode码4D16,GB18030码FE9B】");
+    puaOrDeletedGBKCharacter.insert(0xE860,"PUA码字符,建议使用正式码【䴗,Unicode码4D17,GB18030码FE9C】");
+    puaOrDeletedGBKCharacter.insert(0xE861,"PUA码字符,建议使用正式码【䴘,Unicode码4D18,GB18030码FE9D】");
+    puaOrDeletedGBKCharacter.insert(0xE862,"PUA码字符,建议使用正式码【䴙,Unicode码4D19,GB18030码FE9E】");
+    puaOrDeletedGBKCharacter.insert(0xE863,"PUA码字符,建议使用正式码【䶮,Unicode码4DAE,GB18030码FE9F】");
+    //另外一批PUA双码字,这一批不怎么常用
+    puaOrDeletedGBKCharacter.insert(0xE26E,"PUA码字符,建议使用正式码【𫢸,Unicode码2B8B8,GB18030码9839C534】");
+    puaOrDeletedGBKCharacter.insert(0xE278,"PUA码字符,建议使用正式码【𪟝,Unicode码2A7DD,GB18030码98368F39】");
+    puaOrDeletedGBKCharacter.insert(0xE284,"PUA码字符,建议使用正式码【𫭟,Unicode码2BB5F,GB18030码99308B33】");
+    puaOrDeletedGBKCharacter.insert(0xE295,"PUA码字符,建议使用正式码【鿍,Unicode码9FCD,GB18030码82359332】");
+    puaOrDeletedGBKCharacter.insert(0xE297,"PUA码字符,建议使用正式码【𫭼,Unicode码2BB7C,GB18030码99308E32】");
+    puaOrDeletedGBKCharacter.insert(0xE2A5,"PUA码字符,建议使用正式码【𫮃,Unicode码2BB83,GB18030码99308E39】");
+    puaOrDeletedGBKCharacter.insert(0xE2BA,"PUA码字符,建议使用正式码【𪤗,Unicode码2A917,GB18030码9836AF33】");
+    puaOrDeletedGBKCharacter.insert(0xE2C8,"PUA码字符,建议使用正式码【𫰛,Unicode码2BC1B,GB18030码99309E31】");
+    /*10个竖排标点和8个汉字构件*/
+    puaOrDeletedGBKCharacter.insert(0xE7C7,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE78D,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE78E,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE78F,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE790,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE791,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE792,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE793,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE794,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE795,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE796,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE81E,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE826,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE82B,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE82C,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE832,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE843,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE854,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE864,"PUA码字符");
+
+    /*6个汉字构件*/
+    puaOrDeletedGBKCharacter.insert(0xE816,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE817,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE818,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE831,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE83B,"PUA码字符");
+    puaOrDeletedGBKCharacter.insert(0xE855,"PUA码字符");
 }

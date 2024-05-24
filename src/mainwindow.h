@@ -41,60 +41,29 @@
 #include <QProcess>
 #include <QCloseEvent>
 #include <QDesktopServices>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 99)
+    #include <QRandomGenerator>
+#endif
 #include <QPixmap>
 #include <QKeySequence>
 #include "src/utils.h"
 #include "src/ofdfiledefinition.h"
-#include "src/ofdfielddefinition.h"
 #include "src/fixedfiledefinition.h"
-#include "src/fixedfielddefinition.h"
-#include "src/dialogshowtablerow.h"
-#include "src/dialogchoosefiletype.h"
-#include "src/dialogshowtablefieldcheck.h"
-#include "src/dialogshowtablecompareview.h"
-#include "src/dialogmytip.h"
+#include "src/qdbf/qdbftable.h"
 #include "src/dictionary.h"
 #include "src/ofdcodeinfo.h"
 #include "src/QXlsx/header/xlsxdocument.h"
-#include "src/QXlsx/header/xlsxcellrange.h"
-#include "src/dialogmodifycell.h"
-#include "src/dialogaboutauthor.h"
-#include "src/dialogaboutthis.h"
-#include "src/dialogmergetip.h"
 #include "src/csvfiledefinition.h"
 #include "src/faultcause.h"
 #include "fieldisnumber.h"
-#include "src/dialogpreference.h"
-#include "src/dialogmodifyrow.h"
 #include "src/publicdefine.h"
 #include "src/ofdfaultcause.h"
-#include "src/createofdwindow.h"
-#include "src/dialogchooseexporttype.h"
-#include "src/dialogshowcharset.h"
-#include "src/dialogmodifymtime.h"
-#include "src/dialogmagnify.h"
-#include "src/dialogchooseofdconfig.h"
-#include "src/dialogchoosedbfconfig.h"
-#include "src/dialogeditheaderfooter.h"
-#include "src/dialogforcenumber.h"
 #include "src/ucdutils.h"
-#include "src/dialogshareqrcode.h"
-#include "src/qdbf/qdbftable.h"
-#include "src/qdbf/qdbfrecord.h"
-#include "src/qdbf/qdbffield.h"
-#include "src/dbffielddefinition.h"
 #include "src/dbffiledefinition.h"
 #include "src/dbffileconfig.h"
-#include "src/dialogoktools.h"
-#include "src/msgtoast.h"
-#include "src/dialogshowimportexcelerror.h"
-#include "src/dialogshowfieldchecklist.h"
-#include "src/fieldcheckitem.h"
-#include "src/dialogshowfieldchecklist.h"
-#include "src/dialogchoosefieldcheckexportreport.h"
 #include "src/configfile.h"
-#include "src/formfieldcheckedittools.h"
 #include "src/dialogshowprimarycheck.h"
+#include <private/qzipreader_p.h>
 
 #ifdef Q_OS_WIN32
 #include "src/formwebtools.h"
@@ -116,222 +85,120 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(int argc, char *argv[],QWidget *parent = nullptr);
     ~MainWindow();
+signals:
+    void signals_update_import_excel_status();
+    void signals_update_zip_extract_status();
 
 protected:
-    //文件拖拽支持
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
-    //窗口尺寸变化事件
     void resizeEvent (QResizeEvent * event );
     bool event(QEvent *event);
 
-    //槽函数
 private slots:
-
-    void on_fileOpen_triggered();
-
-    void on_aboutOpen_triggered();
-
-    void on_actionAboutQt_triggered();
-
-    void on_pushButtonOpenFile_clicked();
-
-    void on_pushButtonOpenFile_2_clicked();
-
-    //接受滚动条事件
-    void acceptVScrollValueChanged(int value);
-
-    void on_pushButtonPreSearch_clicked();
-
-    void on_pushButtonNextSearch_clicked();
-
-    void on_tableWidget_customContextMenuRequested(const QPoint &pos);
-
-    void showMessage_customContextMenuRequested(const QPoint &pos);
-
-    void editCompareData();
-
-    void deleteRowDataFromFileAndTable();
-
-    void copyRowData();
-
-    void addRowDataPreviousRow();
-
-    void addRowDataNextRow();
-
-    void addRowDataEndRow();
-
-    void addNewLineRowDataEndRow();
-
-    void showMoaifyRow();
-
-    void copyToClipboardWithoutTitle();
-
-    void copyToClipboardWithTitle();
-
-    void showRowDetails();
-
-    void openPlugin();
-
-    void showMagnify();
-
-    void copyMessage();
-
-    int importFromExcel();
-
-    void gotoFirstNotNumber();
-
-    void showOFDOrFixedFiledAnalysis();
-
-    void showModifyCell();
-
-    void save2XlsxFinished();
-
-    void importFromXlsxFinished();
-
-    void loadFileOnWindowisOpenOrDragEnter();
-
-    void showModifyCellBatch();
-
-    void on_actionsOpenCompare_triggered();
-
-    void on_actionClearCompare_triggered();
-
-    void on_pushButtonExport_clicked();
-
-    void on_pushButtonRowJump_clicked();
-
-    void on_actionsss_triggered();
-
-    void on_actionSave_triggered();
-
-    void on_actionSaveAS_triggered();
-
-    void on_actionaboutAuthor_triggered();
-
-    void on_tableWidget_cellDoubleClicked(int row, int column);
-
-    void on_pushButtonColumnJump_clicked();
-
-    void on_pushButtonRowJump2_clicked();
-
-    void on_viewMode_triggered();
-
-    void on_tableWidget_itemSelectionChanged();
-
-    void on_actionpreference_triggered();
-
-    void on_actionnewWindow_triggered();
-
-    void on_pushButtonColumnJump_2_clicked();
-
-    void on_actionwebsite_triggered();
-
-    void on_actionmanual_triggered();
-
-    void on_currentOpenFilePathLineText_returnPressed();
-
-    void on_pushButtonPageFirst_clicked();
-
-    void on_pushButtonPagePrevious_clicked();
-
-    void on_pushButtonPageNext_clicked();
-
-    void on_pushButtonPageLast_clicked();
-
-    void on_pushButtonGo_clicked();
-
-    void on_actiondifftools_triggered();
-
-    void on_actionfileedit_triggered();
-
-    void on_actioncreatenewofdfile_triggered();
-
-    void on_actioncopy_triggered();
-
-    void on_actionedit_triggered();
-
-    void on_actionedit2_triggered();
-
-    void on_actionopeninexcel_triggered();
-
-    void on_actionscreen_triggered();
-
-    void on_actiontipslist_triggered();
-
-    void showCharacter();
-
-    void forceNumber();
-
-    void on_actionmtime_triggered();
-
-    void on_actioneditheaderfooter_triggered();
-
-    void showQrcode();
-
-    void on_actionalldata_triggered();
-
-    void on_actionnotdelete_triggered();
-
-    void on_actionjustdelete_triggered();
-
-    void on_actionGB18030_GB2312_triggered();
-
-    void on_actionIBM437_triggered();
-
-    void on_actionIBM850_triggered();
-
-    void on_actionIBM866_triggered();
-
-    void on_actionWindows1250_triggered();
-
-    void on_actionWindows1251_triggered();
-
-    void on_actionWindows1252_triggered();
-
-    void on_actionBig5_triggered();
-
-    void on_actionShift_JIS_triggered();
-
-    void on_actioncloseFile_triggered();
-
-    void on_actionautcolwidth_triggered();
-
-    void on_actionleftright_triggered();
-
-    void on_actionleft_triggered();
-
-    void on_actionright_triggered();
-
-    void on_actionOKTools_triggered();
-
-    void on_actionimportfromexcel_triggered();
-
     void update_import_excel_status();
-
+    void update_zip_extract_status();
+    void on_fileOpen_triggered();
+    void on_aboutOpen_triggered();
+    void on_actionAboutQt_triggered();
+    void on_pushButtonOpenFile_clicked();
+    void on_pushButtonOpenFile_2_clicked();
+    void acceptVScrollValueChanged(int value);
+    void on_pushButtonPreSearch_clicked();
+    void on_pushButtonNextSearch_clicked();
+    void on_tableWidget_customContextMenuRequested(const QPoint &pos);
+    void showMessage_customContextMenuRequested(const QPoint &pos);
+    void editCompareData();
+    void deleteRowDataFromFileAndTable();
+    void copyRowData();
+    void addRowDataPreviousRow();
+    void addRowDataNextRow();
+    void addRowDataEndRow();
+    void addNewLineRowDataEndRow();
+    void showMoaifyRow();
+    void copyToClipboardWithoutTitle();
+    void copyToClipboardWithTitle();
+    void showRowDetails();
+    void openPlugin();
+    void showMagnify();
+    void copyMessage();
+    int importFromExcel();
+    void gotoFirstNotNumber();
+    void showOFDOrFixedFiledAnalysis();
+    void showModifyCell();
+    void save2XlsxFinished();
+    void importFromXlsxFinished();
+    void extractZipFinished();
+    void loadFileOnWindowisOpenOrDragEnter();
+    void showModifyCellBatch();
+    void on_actionsOpenCompare_triggered();
+    void on_actionClearCompare_triggered();
+    void on_pushButtonExport_clicked();
+    void on_pushButtonRowJump_clicked();
+    void on_actionsss_triggered();
+    void on_actionSave_triggered();
+    void on_actionSaveAS_triggered();
+    void on_actionaboutAuthor_triggered();
+    void on_tableWidget_cellDoubleClicked(int row, int column);
+    void on_pushButtonColumnJump_clicked();
+    void on_pushButtonRowJump2_clicked();
+    void on_viewMode_triggered();
+    void on_tableWidget_itemSelectionChanged();
+    void on_actionpreference_triggered();
+    void on_actionnewWindow_triggered();
+    void on_pushButtonColumnJump_2_clicked();
+    void on_actionwebsite_triggered();
+    void on_actionmanual_triggered();
+    void on_currentOpenFilePathLineText_returnPressed();
+    void on_pushButtonPageFirst_clicked();
+    void on_pushButtonPagePrevious_clicked();
+    void on_pushButtonPageNext_clicked();
+    void on_pushButtonPageLast_clicked();
+    void on_pushButtonGo_clicked();
+    void on_actiondifftools_triggered();
+    void on_actionfileedit_triggered();
+    void on_actioncreatenewofdfile_triggered();
+    void on_actioncopy_triggered();
+    void on_actionedit_triggered();
+    void on_actionedit2_triggered();
+    void on_actionopeninexcel_triggered();
+    void on_actionscreen_triggered();
+    void on_actiontipslist_triggered();
+    void showCharacter();
+    void forceNumber();
+    void on_actionmtime_triggered();
+    void on_actioneditheaderfooter_triggered();
+    void showQrcode();
+    void on_actionalldata_triggered();
+    void on_actionnotdelete_triggered();
+    void on_actionjustdelete_triggered();
+    void on_actionGB18030_GB2312_triggered();
+    void on_actionIBM437_triggered();
+    void on_actionIBM850_triggered();
+    void on_actionIBM866_triggered();
+    void on_actionWindows1250_triggered();
+    void on_actionWindows1251_triggered();
+    void on_actionWindows1252_triggered();
+    void on_actionBig5_triggered();
+    void on_actionShift_JIS_triggered();
+    void on_actioncloseFile_triggered();
+    void on_actionautcolwidth_triggered();
+    void on_actionleftright_triggered();
+    void on_actionleft_triggered();
+    void on_actionright_triggered();
+    void on_actionOKTools_triggered();
+    void on_actionimportfromexcel_triggered();
     void on_actionexpcheckresult_triggered();
-
     void on_actioncurrentfilechekrule_triggered();
-
     void on_actionprefieldcheck_triggered();
-
     void on_actionnextfieldcheck_triggered();
-
     void on_actiontableSelectionBehaviorMenu_triggered();
-
-
     void on_action_fieldcheckconfigtools_triggered();
-
     void on_actionprimaryKeyCheck_triggered();
-
     void on_actionprimarkKeyCheckExport_triggered();
-
     void on_actioninvisibleCharactersCheck1_triggered();
-
     void on_actioninvisibleCharactersCheck2_triggered();
-
     void on_actionactionasciiCharactersCheck1_triggered();
-
     void on_actionactionasciiCharactersCheck2_triggered();
 
 public slots:
@@ -343,7 +210,6 @@ public slots:
     void getSignalsClosePrimaryCheck();
 
 private:
-
     Ui::MainWindow *ui;
     //应用程序名字
     QString appName=tr("金融文件阅读器-").append(VERSION_V);
@@ -366,6 +232,20 @@ private:
     QString currentOpenFilePath="";
     //当前打开的文件名字
     QString currentFileName="";
+    bool fileFromZip=false;
+    QString zipfilePath="";
+    QString zipFileName="";
+    QString zipTargetFileInZip="";
+    QString zipOutPutFileDir="";
+    //默认走系统编码方式
+    QString zipFileCodec="System";
+    QList<QZipReader::FileInfo> zipFileInfoList;
+    QList<QString> zipFileNameSystemCodecList;
+    QMap<QString,QDateTime> zipFileListMdTime;
+    int zipFileCurrentUnzipIndex=0;
+    QString zipExtractMessage="";
+    bool zipExtractAll=false;
+    bool zipExtractSucess=false;
     //程序启动时或者拖拽进来需要加载的文件,当次变量不为空时，timer定时任务会扫描到文件后加载
     QString startUpOrDragfile="";
     //程序启动时读取是否需要加载文件的定时器，以及定时扫描是否拖拽了文件进来
@@ -432,6 +312,7 @@ private:
     QFutureWatcher<int>* watcherXlsxSaveStatus_;
     //导入Excel分析进度
     QFutureWatcher<int>* watcherXlsxImportStatus_;
+    QFutureWatcher<int>* watcherZipExtractStatus_;
     QString fromExcelImportFilePath="";
     //导入excel过程中遇到的致命错误
     QStringList importExcelErrorDetail;
@@ -565,8 +446,8 @@ private:
     //设置选项
     //每页行数类型 0-10万行,1-20万行,2-50万行,3-100万行
     int defaultPageSizeType=0;
-    //设置选项///////////////////////
-
+    //是否使用更大的字号，0为标准，1为较大,2为更大
+    int standFontSize=0;
     //程序所有的tips，用于程序启动后随机显示一条提示
     QList<QString> tips;
 
@@ -610,8 +491,9 @@ private:
     void clear_Table_Contents();
     void clear_Display_Info();
     void clear_OldData( bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
-    void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false);
+    void initFile(QString filePath, bool keepdbfDisplayType=false, bool keepdbfTrimType=false,bool fromZip=false);
     void initStatusBar();
+    void setStandFontSize();
     void open_file_Dialog();
     void primaryCheck(int type,QString fileName="",int exportType=0,int openatexported=0);
 
@@ -621,13 +503,14 @@ private:
 
     void invisibleCharactersCheckDown(int rangeType=0);
 
+    void init_Others();
     //设置和插件加载
     void load_Setting();
     void load_PluginList();
 
     //数据load
     void load_ofdIndexFile();
-    void load_ofdDataFile(QString fileTypeFromFileName);
+    void load_ofdDataFile(QString fileTypeFromFileName,QString sendCode,QString recvCode);
     void load_csvFile(QList<matchIndex> csvMatchList);
     void load_fixedFile(QList<matchIndex> fixedMatchList);
     void load_fixedFileData();
@@ -672,6 +555,7 @@ private:
     void reCalculateFileCountLine();
     void checkRowFieldResult (QStringList & rowdata,QMap<int,QString> & checkresult,int splitFlag=0);
     void checkRowFieldSearch (int direction);
+    int extractFileFromZipFile();
     bool invisibleCharactersCheck(QString str){
         if (str.contains(QChar(0x0C))) {
             return true;

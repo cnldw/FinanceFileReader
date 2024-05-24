@@ -8,7 +8,6 @@
 
 #include <QDialog>
 #include <QString>
-#include "src/qrcode/QrCode.hpp"
 
 namespace Ui {
 class DialogShareQrCode;

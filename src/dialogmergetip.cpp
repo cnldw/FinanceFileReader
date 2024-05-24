@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "src/dialogmergetip.h"
 #include "ui_dialogmergetip.h"
+#include "src/utils.h"
 
 DialogMergeTip::DialogMergeTip(QWidget *parent) :
     QDialog(parent),
@@ -12,6 +13,7 @@ DialogMergeTip::DialogMergeTip(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
 }
 
 DialogMergeTip::~DialogMergeTip()

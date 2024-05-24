@@ -5,7 +5,7 @@
 ************************************************************************/
 #include "dialogchoosefieldcheckexportreport.h"
 #include "ui_dialogchoosefieldcheckexportreport.h"
-#include "src/publicdefine.h"
+#include "src/utils.h"
 
 DialogChooseFieldCheckExportReport::DialogChooseFieldCheckExportReport(QWidget *parent) :
     QDialog(parent),

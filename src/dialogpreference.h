@@ -9,8 +9,10 @@
 #include <QDialog>
 #include <QMessageBox>
 #include <QColorDialog>
+#include <QFontDatabase>
 #include <QString>
 #include <QMap>
+
 namespace Ui {
 class DialogPreference;
 }
@@ -23,7 +25,7 @@ class DialogPreference : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogPreference(QMap<QString,int> * par,QWidget *parent = nullptr);
+    explicit DialogPreference(QMap<QString,int> * par,QMap <QString,QString> * parstr,QWidget *parent = nullptr);
     ~DialogPreference();
     bool getSaveFlag() const;
 
@@ -42,9 +44,16 @@ private slots:
 
     void on_checkBox_stateChanged(int arg1);
 
+    void on_fontComboBox_currentFontChanged(const QFont &f);
+
+    void on_fontComboBox_2_currentFontChanged(const QFont &f);
+
+    void on_comboBox_5_currentIndexChanged(int index);
+
 private:
     Ui::DialogPreference *ui;
     QMap <QString,int> *par;
+    QMap <QString,QString> *parstr;
     bool saveFlag=false;
 };
 

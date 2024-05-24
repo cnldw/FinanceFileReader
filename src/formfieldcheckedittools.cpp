@@ -5,6 +5,12 @@
 ************************************************************************/
 #include "formfieldcheckedittools.h"
 #include "ui_formfieldcheckedittools.h"
+#include "src/utils.h"
+#include "src/publicdefine.h"
+#include "src/dialogmytip.h"
+#include "src/dialogedittext.h"
+
+#define UNUSED(x) (void)x
 
 FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinition>> ofdConfigListPar,QList<ConfigFile<CsvFileDefinition>> csvConfigListPar,QList<ConfigFile<FIXEDFileDefinition>> fixedConfigListPar,QWidget *parent) :
     QMainWindow(parent),
@@ -19,7 +25,6 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
     fixedConfigList=fixedConfigListPar;
 
     ui->textBrowserVisualizationConfig->setReadOnly(true);
-
 
     //初始化字段列表表格标题
     ui->tableWidgetFieldList->setColumnCount(5);
@@ -43,7 +48,6 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
     ui->tableWidgetFieldList->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
     ui->tableWidgetFieldList->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Fixed);
     ui->tableWidgetFieldList->setAlternatingRowColors(true);
-
 
     //字段必填列表
     ui->tableWidgetCheckList->setContextMenuPolicy (Qt::CustomContextMenu);
@@ -102,7 +106,6 @@ FormFieldCheckEditTools::FormFieldCheckEditTools(QList<ConfigFile<OFDFileDefinit
     connect(action_table_field_select_range, SIGNAL(triggered()), this, SLOT(table_field_selectRange()));
     action_table_field_clear_range=new QAction(tr("清除选择的字段必填勾选"),this);
     connect(action_table_field_clear_range, SIGNAL(triggered()), this, SLOT(table_field_clearRange()));
-
 
     action_table_field_clear_condition=new QAction(tr("清除所有已填写条件"),this);
     connect(action_table_field_clear_condition, SIGNAL(triggered()),this, SLOT(table_field_clearCondition()));
@@ -212,7 +215,6 @@ void FormFieldCheckEditTools::on_comboBox_1_currentIndexChanged(int index)
     comboBox_1OK=true;
 }
 
-
 void FormFieldCheckEditTools::on_comboBox_2_currentIndexChanged(int index)
 {
     //一级菜单改变时2级菜单不响应
@@ -266,7 +268,6 @@ void FormFieldCheckEditTools::on_comboBox_2_currentIndexChanged(int index)
     }
     comboBox_2OK=true;
 }
-
 
 void FormFieldCheckEditTools::on_comboBox_3_currentIndexChanged(int index)
 {
@@ -527,7 +528,6 @@ void FormFieldCheckEditTools::on_searchPushButton_clicked()
     }
 }
 
-
 /**
  *编辑规则
  **/
@@ -640,7 +640,6 @@ void FormFieldCheckEditTools::fieldCheckEditSelect()
     }
 }
 
-
 void FormFieldCheckEditTools::fieldCheckDeleteSelect()
 {
     QList<QTableWidgetSelectionRange> itemsRange=ui->tableWidgetCheckList->selectedRanges();
@@ -690,7 +689,6 @@ void FormFieldCheckEditTools::fieldCheckDeleteSelect()
         }
     }
 }
-
 
 void FormFieldCheckEditTools::on_tableWidgetFieldList_customContextMenuRequested(const QPoint &pos)
 {
@@ -982,7 +980,6 @@ void FormFieldCheckEditTools::on_pushButton_abandonSummit_clicked()
     }
 }
 
-
 void FormFieldCheckEditTools::on_pushButton_summitCon_clicked()
 {
     //macos下点提交时，最后一次编辑的表格取不到数据，先调用下禁用再开启就可以了
@@ -1113,7 +1110,6 @@ void FormFieldCheckEditTools::on_pushButton_summitCon_clicked()
     }
 }
 
-
 void FormFieldCheckEditTools::on_pushButton_summitField_clicked()
 {
     if(ui->tableWidgetFieldList->rowCount()>0){
@@ -1162,7 +1158,6 @@ void FormFieldCheckEditTools::on_pushButton_summitField_clicked()
         }
     }
 }
-
 
 void FormFieldCheckEditTools::on_tableWidgeConditionList_customContextMenuRequested(const QPoint &pos)
 {
@@ -1458,7 +1453,6 @@ void FormFieldCheckEditTools::on_pushButton_AbandonWrite_clicked()
     initCurrentItem(index1,index2,index3);
     statusBarDisplayMessage("放弃写入配置,已还原配置...");
 }
-
 
 void FormFieldCheckEditTools::on_pushButton_WriteToFile_clicked()
 {
@@ -1782,7 +1776,6 @@ void FormFieldCheckEditTools::on_pushButton_ImportCon_clicked()
     }
 }
 
-
 void FormFieldCheckEditTools::on_pushButton_ImportField_clicked()
 {
     if(ui->tableWidgetFieldList->rowCount()<1){
@@ -1899,6 +1892,8 @@ void FormFieldCheckEditTools::on_pushButton_PrimaryKey_clicked()
 
 void FormFieldCheckEditTools::on_tableWidgetFieldList_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
+    UNUSED (previousRow);
+    UNUSED (previousColumn);
     this->searchRow=currentRow;
     this->searchColumn=currentColumn;
     if(currentColumn>0){
@@ -1915,4 +1910,3 @@ void FormFieldCheckEditTools::on_tableWidgetFieldList_currentCellChanged(int cur
         this->searchColumn+=1;
     }
 }
-

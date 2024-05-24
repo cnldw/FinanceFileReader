@@ -18,7 +18,6 @@
 #include <QMenu>
 #include <QAction>
 #include <QTableWidgetSelectionRange>
-#include <src/utils.h>
 
 namespace Ui {
 class DialogModifyMtime;

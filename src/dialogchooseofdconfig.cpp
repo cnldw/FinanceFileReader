@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "dialogchooseofdconfig.h"
 #include "ui_dialogchooseofdconfig.h"
+#include "src/utils.h"
 
 DialogChooseOFDConfig::DialogChooseOFDConfig(QString ofdini,QList<OFDFileDefinition> * matchOFD,QWidget *parent) :
     QDialog(parent),
@@ -13,27 +14,21 @@ DialogChooseOFDConfig::DialogChooseOFDConfig(QString ofdini,QList<OFDFileDefinit
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
-    //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);
     ptr_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    //一次只能选择一行
     ptr_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     ptr_table->setSelectionMode(QAbstractItemView::SingleSelection);
     ptr_table->setColumnCount(4);
     ptr_table->setAlternatingRowColors(true);
     ptr_table->verticalHeader()->setDefaultSectionSize(22);
-    //设定默认的规则，表格宽度自动适应
     ptr_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    //锁定第二列
     ptr_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-    ptr_table->setColumnWidth(0, 80);
+    ptr_table->setColumnWidth(0, 100);
     ptr_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
     ptr_table->setColumnWidth(1, 220);
     ptr_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
-    ptr_table->setColumnWidth(3, 160);
-    //设置表格列标题
+    ptr_table->setColumnWidth(3, 120);
     QStringList title;
     title.append("配置文件");
     title.append("解析配置");
@@ -54,7 +49,6 @@ DialogChooseOFDConfig::DialogChooseOFDConfig(QString ofdini,QList<OFDFileDefinit
         QTableWidgetItem *item3= new QTableWidgetItem(QString::number(matchOFD->at(i).getFieldCount()));
         ptr_table->setItem(i, 3, item3);
     }
-    //默认选中第一行
     ptr_table->selectRow(0);
 }
 

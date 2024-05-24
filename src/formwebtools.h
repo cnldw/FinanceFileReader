@@ -7,7 +7,9 @@
 #define FORMWEBTOOLS_H
 
 #include <QWidget>
+#ifdef Q_OS_WIN32
 #include "src/miniblink/miniblink.h"
+#endif
 #include "QFileInfo"
 
 
@@ -25,8 +27,9 @@ public:
 
 private:
     Ui::FormWebTools *ui;
+#ifdef Q_OS_WIN32
     miniblink *webView;
-
+#endif
 };
 
 #endif // FORMWEBTOOLS_H

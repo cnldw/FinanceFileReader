@@ -5,6 +5,8 @@
 ************************************************************************/
 #include "dialogshowcharset.h"
 #include "ui_dialogshowcharset.h"
+#include "src/msgtoast.h"
+#include "src/utils.h"
 
 DialogShowCharset::DialogShowCharset(QList<QStringList> * rowdata,QString fileencoding,QWidget *parent) :
     QDialog(parent),
@@ -13,7 +15,6 @@ DialogShowCharset::DialogShowCharset(QList<QStringList> * rowdata,QString fileen
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);

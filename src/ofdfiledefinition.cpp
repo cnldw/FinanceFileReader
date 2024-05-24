@@ -84,6 +84,16 @@ void OFDFileDefinition::setPrimaryKeyFieldList(const QList<uint> &newPrimaryKeyF
     primaryKeyFieldList = newPrimaryKeyFieldList;
 }
 
+const QStringList &OFDFileDefinition::getUseForTA() const
+{
+    return useForTA;
+}
+
+void OFDFileDefinition::setUseForTA(const QStringList &newUseForTA)
+{
+    useForTA = newUseForTA;
+}
+
 OFDFileDefinition::OFDFileDefinition()
 {
     

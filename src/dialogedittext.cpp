@@ -5,13 +5,15 @@
 ************************************************************************/
 #include "dialogedittext.h"
 #include "ui_dialogedittext.h"
+#include "src/utils.h"
 
 DialogEditText::DialogEditText(QString title,QStringList fieldList,int importType,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogEditText)
 {
-    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
     ui->setupUi(this);
+    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     if(title.isEmpty()){
         this->setWindowTitle("文本编辑");
     }

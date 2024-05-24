@@ -11,7 +11,6 @@
 #include "src/fixedfielddefinition.h"
 #include "src/fieldcheckitem.h"
 
-
 class FIXEDFileDefinition
 {
 private:

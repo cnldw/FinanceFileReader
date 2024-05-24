@@ -5,6 +5,7 @@
 ************************************************************************/
 #include "dialogoktools.h"
 #include "ui_dialogoktools.h"
+#include "src/utils.h"
 
 DialogOKTools::DialogOKTools(QWidget *parent) :
     QDialog(parent),

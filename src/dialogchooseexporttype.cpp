@@ -5,13 +5,15 @@
 ************************************************************************/
 #include "dialogchooseexporttype.h"
 #include "ui_dialogchooseexporttype.h"
+#include "src/utils.h"
 
 DialogChooseExportType::DialogChooseExportType(int currentFileType,int pageCount,int currentPage,bool rowMoreThanExcelMax,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogChooseExportType)
 {
-    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
     ui->setupUi(this);
+    this->setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    Utils::setDefaultWindowFonts(this);
     //默认导出excel无法选择编码方式
     ui->checkBox->setEnabled(false);
     //当前文件记录数超过了允许直接导出的最大行数

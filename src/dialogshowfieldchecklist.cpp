@@ -5,6 +5,8 @@
 ************************************************************************/
 #include "dialogshowfieldchecklist.h"
 #include "ui_dialogshowfieldchecklist.h"
+#include "src/msgtoast.h"
+#include "src/utils.h"
 
 DialogShowFieldCheckList::DialogShowFieldCheckList(QList<QStringList> *data,QWidget *parent) :
     QDialog(parent),
@@ -13,7 +15,6 @@ DialogShowFieldCheckList::DialogShowFieldCheckList(QList<QStringList> *data,QWid
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);

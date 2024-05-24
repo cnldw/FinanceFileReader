@@ -7,8 +7,6 @@
 #define DIALOGMAGNIFY_H
 
 #include <QDialog>
-#include "src/publicdefine.h"
-#include "src/utils.h"
 
 namespace Ui {
 class DialogMagnify;
@@ -22,8 +20,16 @@ public:
     explicit DialogMagnify(QString text,QWidget *parent = nullptr);
     ~DialogMagnify();
 
+private slots:
+    void on_pushButton_ZoomIn_clicked();
+
+    void on_pushButton_ZoomOut_clicked();
+
 private:
+    void initStr();
     Ui::DialogMagnify *ui;
+    int fontSize=64;
+    QString str="";
 };
 
 #endif // DIALOGMAGNIFY_H

@@ -5,6 +5,15 @@
 ************************************************************************/
 #include "src/utils.h"
 #include "qwidget.h"
+#include "src/qdbf/qdbffield.h"
+#include "src/publicdefine.h"
+#include "src/qdbf/qdbfrecord.h"
+#include "time.h"
+#ifdef Q_OS_WIN32
+#include "sys/utime.h"
+#else
+#include "utime.h"
+#endif
 
 Utils::Utils()
 {
@@ -290,6 +299,11 @@ void Utils::load_OFDDefinition(QList<ConfigFile<OFDFileDefinition>> &ofdConfigLi
                             }
                             else{
                                 ofd.setDescribe("未配置说明的文件");
+                            }
+                            //该配置优先专用于某TA
+                            QStringList ta=ofdIni.value(interfaceList.at(i)+"/TA").toStringList();
+                            if (ta.count()>0){
+                                ofd.setUseForTA(ta);
                             }
                             //字典类型
                             QString dictionary=ofdIni.value(interfaceList.at(i)+"/DICTIONARY").toString();
@@ -2724,16 +2738,55 @@ double Utils::CVCcal (QList<QStringList > list){
     return qSqrt((pSigma/n - sigma*sigma))/sigma;
 }
 
-void Utils::setDefaultWindowFonts(QWidget *w){
+void Utils::setDefaultWindowFonts(QWidget *w,bool allFlag){
+    QString styleStr=QString(fontSizeStand);
 #ifdef Q_OS_MAC
-    w->setStyleSheet(QString(FONTSIZE13).append(UIFontsMacOS));
+    if(firstUIFontGlobal.isEmpty()){
+        styleStr.append("font-family:").append(UIFontsMacOS);
+    }
+    else{
+        styleStr.append("font-family:").append(firstUIFontGlobal).append(",").append(UIFontsMacOS);
+    }
+    if(firstRareCharactersFontGlobal.isEmpty()){
+        styleStr.append(";");
+    }
+    else {
+        styleStr.append(",").append(firstRareCharactersFontGlobal).append(";");
+    }
 #endif
 #ifdef Q_OS_LINUX
-    w->setStyleSheet(QString(FONTSIZE13).append(UIFontsLinux));
+    if(firstUIFontGlobal.isEmpty()){
+        styleStr.append("font-family:").append(UIFontsLinux);
+    }
+    else{
+        styleStr.append("font-family:").append(firstUIFontGlobal).append(",").append(UIFontsLinux);
+    }
+    if(firstRareCharactersFontGlobal.isEmpty()){
+        styleStr.append(";");
+    }
+    else {
+        styleStr.append(",").append(firstRareCharactersFontGlobal).append(";");
+    }
 #endif
 #ifdef Q_OS_WIN32
-    w->setStyleSheet(UIFontsWindows);
+    if(firstUIFontGlobal.isEmpty()){
+        styleStr.append("font-family:").append(UIFontsWindows);
+    }
+    else{
+        styleStr.append("font-family:").append(firstUIFontGlobal).append(",").append(UIFontsWindows);
+    }
+    if(firstRareCharactersFontGlobal.isEmpty()){
+        styleStr.append(";");
+    }
+    else {
+        styleStr.append(",").append(firstRareCharactersFontGlobal).append(";");
+    }
 #endif
+    qDebug()<<"样式信息:"<<styleStr;
+    if(allFlag){
+        QApplication::setStyle(styleStr);
+    }
+    w->setStyleSheet(styleStr);
 };
 
 bool Utils::updateOFDOrFixedFieldValueFromRow(QString fieldType,int fieldLength,int fieldDecLength,int updateBegin,int lengthType,QTextCodec *codec,QString valueNew,QByteArray &rowByteArray){
@@ -2875,5 +2928,17 @@ bool Utils::updateOFDOrFixedFieldValue(QString fieldType,int fieldLength,int fie
             valueByteArray=newQByteArray;
         }
         return true;
+    }
+}
+
+QString Utils::formatFileSize(qint64 fileSize) {
+    const qint64 KB = 1024;
+    const qint64 MB = KB * 1024;
+    if (fileSize < KB) {
+        return QString::number(fileSize) + "B";
+    }else if (fileSize < MB) {
+        return Utils::CovertDoubleQStringWithThousandSplit(QString::number(fileSize/KB)) + "KB";
+    } {
+        return Utils::CovertDoubleQStringWithThousandSplit(QString::number(fileSize/MB)) + "MB";
     }
 }

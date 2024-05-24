@@ -5,6 +5,9 @@
 ************************************************************************/
 #include "src/dialogshowtablefieldcheck.h"
 #include "ui_dialogshowtablefieldcheck.h"
+#include "src/msgtoast.h"
+#include "src/utils.h"
+
 #define UNUSED(x) (void)x
 
 DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,QWidget *parent) :
@@ -14,7 +17,6 @@ DialogShowTableFieldCheck::DialogShowTableFieldCheck(QList<QStringList> * data,Q
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
     //初始化表格
     ptr_table =ui->tableWidget;
     ptr_table->setContextMenuPolicy (Qt::CustomContextMenu);

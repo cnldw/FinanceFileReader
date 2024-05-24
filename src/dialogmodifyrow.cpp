@@ -3,8 +3,10 @@
 *
 *Licensed under the LGPL-3.0;
 ************************************************************************/
-#include "dialogmodifyrow.h"
+#include "src/dialogmodifyrow.h"
 #include "ui_dialogmodifyrow.h"
+#include "src/msgtoast.h"
+#include "src/utils.h"
 
 DialogModifyRow::DialogModifyRow(QList<fieldType> fieldList,QTextCodec *codec,QStringList rowdata,QWidget *parent) :
     QDialog(parent),
@@ -12,9 +14,7 @@ DialogModifyRow::DialogModifyRow(QList<fieldType> fieldList,QTextCodec *codec,QS
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Dialog|Qt::WindowCloseButtonHint|Qt::WindowMaximizeButtonHint);
-    /**调教字体差异,为了在macOS和linux上有更佳的字体表现，优化适配系统特性***/
     Utils::setDefaultWindowFonts(this);
-    /**************************************************************/
     this->rowDataOld=rowdata;
     this->rowDataNew=rowdata;
     QPalette pe;
