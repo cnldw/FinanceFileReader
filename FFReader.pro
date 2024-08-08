@@ -50,7 +50,7 @@ win32{
 RC_ICONS =res/icon.ico
 ############以下注意按版本修改###############
 #版本号-给windows生成到程序包使用
-VERSION = 1.10.4
+VERSION = 1.10.7
 ############以下注意按版本修改###############
 
 # 语言
@@ -123,6 +123,7 @@ SOURCES += \
     src/formfieldcheckedittools.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
+    src/mainwindow_ext1.cpp \
     src/msgtoast.cpp \
     src/utils.cpp \
     src/ofdfiledefinition.cpp \

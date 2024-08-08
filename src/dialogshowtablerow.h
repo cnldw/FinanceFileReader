@@ -58,7 +58,7 @@ private slots:
 
     void on_pushButton_clicked();
 
-    void on_tableWidget_itemSelectionChanged();
+    void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
 
 private:
     Ui::DialogShowTableRow *ui;

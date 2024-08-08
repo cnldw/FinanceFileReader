@@ -66,6 +66,7 @@ private:
     QPoint posCurrentMenu;
     //搜索开始位置
     int searchRow =0;
+    int searchColumn=0;
     //是否改变
     bool change=false;
     bool saveFlag=false;

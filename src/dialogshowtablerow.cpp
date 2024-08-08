@@ -267,10 +267,6 @@ void DialogShowTableRow::on_pushButton_clicked()
                 col=0;
             }
             for(int j=col;j<colcount;j++){
-                if(j==2||j==3){
-                    continue;
-                }
-                //搜索到了
                 if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
                     ptr_table->setCurrentCell(i,j);
                     ptr_table->setFocus();
@@ -298,7 +294,7 @@ void DialogShowTableRow::on_pushButton_clicked()
             return;
         }
         for(int i=0;i<=againendrow;i++){
-            int colend=colcount-1;
+            int colend;
             if(i==againendrow){
                 colend=againendcol;
             }
@@ -306,9 +302,6 @@ void DialogShowTableRow::on_pushButton_clicked()
                 colend=colcount-1;
             }
             for(int j=0;j<=colend;j++){
-                if(j==2||j==3){
-                    continue;
-                }
                 //搜索到了
                 if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
                     ptr_table->setCurrentCell(i,j);
@@ -318,32 +311,6 @@ void DialogShowTableRow::on_pushButton_clicked()
             }
         }
         Toast::showMsg("搜索了一圈,没找到你要搜索的内容...", ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
-    }
-}
-
-void DialogShowTableRow::on_tableWidget_itemSelectionChanged()
-{
-    //选择的范围
-    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
-    //范围和
-    int rangeCount=itemsRange.count();
-    //如果仅仅选择了一个单元格，先更新当前选择的单元格
-    ///////////////////////////////////////////////////
-    if(rangeCount==1&&itemsRange.at(0).leftColumn()==itemsRange.at(0).rightColumn()&&itemsRange.at(0).topRow()==itemsRange.at(0).bottomRow()){
-        int rowcount=ptr_table->rowCount();
-        int colcount=ptr_table->columnCount();
-        //记录当前所在行
-        this->searchRow=itemsRange.at(itemsRange.count()-1).bottomRow();
-        //当前所在列
-        this->searchColumn=itemsRange.at(itemsRange.count()-1).rightColumn();
-        //焦点在最后一个单元格时，转移到第一行第一列，其余情况起始列+1
-        if(searchRow==(rowcount-1)&&searchColumn==(colcount-1)){
-            this->searchRow=0;
-            this->searchColumn=0;
-        }
-        else{
-            this->searchColumn+=1;
-        }
     }
 }
 
@@ -441,6 +408,36 @@ void DialogShowTableRow::showMagnify(){
                 dialog->show();
                 dialog->raise();
                 dialog->activateWindow();
+            }
+        }
+    }
+}
+
+
+void DialogShowTableRow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
+{
+    Q_UNUSED(previousRow);
+    Q_UNUSED(previousColumn);
+    int rowcount=ptr_table->rowCount();
+    int colcount=ptr_table->columnCount();
+    this->searchRow=currentRow;
+    this->searchColumn=currentColumn;
+    //焦点在最后一个单元格时，转移到第一行第一列，其余情况起始列+1
+    if(searchRow==(rowcount-1)&&searchColumn==(colcount-1)){
+        this->searchRow=0;
+        this->searchColumn=0;
+    }
+    else{
+        this->searchColumn+=1;
+        //溢出到下一行
+        if(searchColumn>colcount-1){
+            if(searchRow<rowcount-1){
+                searchRow+=1;
+                searchColumn=0;
+            }
+            else{
+                searchRow=0;
+                searchColumn=0;
             }
         }
     }

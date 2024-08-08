@@ -122,7 +122,7 @@ private slots:
     void openPlugin();
     void showMagnify();
     void copyMessage();
-    int importFromExcel();
+    bool importFromExcel();
     void gotoFirstNotNumber();
     void showOFDOrFixedFiledAnalysis();
     void showModifyCell();
@@ -242,10 +242,9 @@ private:
     QList<QZipReader::FileInfo> zipFileInfoList;
     QList<QString> zipFileNameSystemCodecList;
     QMap<QString,QDateTime> zipFileListMdTime;
-    int zipFileCurrentUnzipIndex=0;
+    uint zipFileCurrentUnzipIndex=0;
     QString zipExtractMessage="";
     bool zipExtractAll=false;
-    bool zipExtractSucess=false;
     //程序启动时或者拖拽进来需要加载的文件,当次变量不为空时，timer定时任务会扫描到文件后加载
     QString startUpOrDragfile="";
     //程序启动时读取是否需要加载文件的定时器，以及定时扫描是否拖拽了文件进来
@@ -309,10 +308,10 @@ private:
     //通用字典配置-用于csv和定长文件
     QHash<QString,Dictionary> commonDictionary;
     //监控xlsx文件导出是否完成
-    QFutureWatcher<int>* watcherXlsxSaveStatus_;
+    QFutureWatcher<bool>* watcherXlsxSaveStatus;
     //导入Excel分析进度
-    QFutureWatcher<int>* watcherXlsxImportStatus_;
-    QFutureWatcher<int>* watcherZipExtractStatus_;
+    QFutureWatcher<bool>* watcherXlsxImportStatus;
+    QFutureWatcher<bool>* watcherZipExtractStatus;
     QString fromExcelImportFilePath="";
     //导入excel过程中遇到的致命错误
     QStringList importExcelErrorDetail;
@@ -474,11 +473,12 @@ private:
     //忽略正在进行的任务强制退出
     //如果程序正在进行诸如文件读取,文件导出,搜索任务时,程序强制退出时使用,主动告知进行中的任务进行退出函数，方式程序在后台驻留
     //只允许退出程序时使用此标志,遇到此标志一切进行中的耗时任务都会终止并退出
-    bool abortExit=false;
+    bool abortAndExit=false;
 
     //统计读取文件耗时
     QDateTime time_Start = QDateTime::currentDateTime();
 
+    bool updateOrBlcokCheck();
     bool checkCSVVersion(CsvFileDefinition  csv,QString versionRowData);
     void copyToClipboard(bool withTitle=false);
 
@@ -521,7 +521,7 @@ private:
     void save2Csv(QString filename,int pageNum,int splitBy, bool useUTF8=false);
     void save2Html(QString filename,int pageNum, bool useUTF8=false);
     void save2Xlsx(QString filename,int pageNum);
-    int save2XlxsFile();
+    bool save2XlxsFile();
 
     //表格初始化
     void init_display_OFDIndexTable();
@@ -555,7 +555,7 @@ private:
     void reCalculateFileCountLine();
     void checkRowFieldResult (QStringList & rowdata,QMap<int,QString> & checkresult,int splitFlag=0);
     void checkRowFieldSearch (int direction);
-    int extractFileFromZipFile();
+    bool extractFileFromZipFile();
     bool invisibleCharactersCheck(QString str){
         if (str.contains(QChar(0x0C))) {
             return true;

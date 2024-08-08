@@ -163,10 +163,31 @@ DialogModifyRow::~DialogModifyRow()
 
 void DialogModifyRow::on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn)
 {
-    Q_UNUSED(currentColumn);
     Q_UNUSED(previousRow);
     Q_UNUSED(previousColumn);
-    this->searchRow=currentRow+1;
+    int rowcount=ptr_table->rowCount();
+    int colcount=ptr_table->columnCount();
+    this->searchRow=currentRow;
+    this->searchColumn=currentColumn;
+    //焦点在最后一个单元格时，转移到第一行第一列，其余情况起始列+1
+    if(searchRow==(rowcount-1)&&searchColumn==(colcount-1)){
+        this->searchRow=0;
+        this->searchColumn=0;
+    }
+    else{
+        this->searchColumn+=1;
+        //溢出到下一行
+        if(searchColumn>colcount-1){
+            if(searchRow<rowcount-1){
+                searchRow+=1;
+                searchColumn=0;
+            }
+            else{
+                searchRow=0;
+                searchColumn=0;
+            }
+        }
+    }
 }
 
 /**
@@ -174,31 +195,63 @@ void DialogModifyRow::on_tableWidget_currentCellChanged(int currentRow, int curr
  */
 void DialogModifyRow::on_pushButton_clicked()
 {
-    if(searchRow>=ptr_table->rowCount()){
-        this->searchRow=0;
-    }
     QString text=ui->lineEdit->text();
     if(!text.isEmpty()){
         int rowcount=ptr_table->rowCount();
-        //开始搜索
-        //行
-        for(int i=searchRow;i<rowcount;i++){
-            //搜索到了
-            if(ptr_table->item(i,0)->text().contains(text,Qt::CaseInsensitive)){
-                QTableWidgetSelectionRange addRange=QTableWidgetSelectionRange(i,0,i,ptr_table->columnCount()-1);
-                ptr_table->clearSelection();
-                ptr_table->setRangeSelected(addRange,true);
-                ptr_table->setFocus();
-                this->searchRow=i+1;
-                return;
+        int colcount=ptr_table->columnCount();
+        //逻辑--搜到了就允许继续往下搜，搜不到就搜一圈停止
+        int beginrow=searchRow;
+        int begincol=searchColumn;
+        int col=0;
+        for(int i=beginrow;i<rowcount;i++){
+            if(i==beginrow){
+                col=begincol;
             }
-            //如果搜索到了最后一行都没搜到则将搜索起始点转移到第一行
-            if(i==(rowcount-1)){
-                this->searchRow=0;
+            else{
+                col=0;
+            }
+            for(int j=col;j<colcount;j++){
+                if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
+                    ptr_table->setCurrentCell(i,j);
+                    ptr_table->setFocus();
+                    return;
+                }
             }
         }
+        int againendrow=0;
+        int againendcol=0;
+        if(begincol>0){
+                againendrow=beginrow;
+                againendcol=begincol-1;
+        }
+        else if(beginrow>0&&begincol==0){
+            againendrow=beginrow-1;
+            againendcol=colcount-1;
+        }
+        else if(beginrow==0&&begincol==0){
+            Toast::showMsg("搜索了一圈,没找到你要搜索的内容...", ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
+            return;
+        }
+        int colend;
+        for(int i=0;i<=againendrow;i++){
+            if(i==againendrow){
+                colend=againendcol;
+            }
+            else{
+                colend=colcount-1;
+            }
+            for(int j=0;j<=colend;j++){
+                if(ptr_table->item(i,j)->text().contains(text,Qt::CaseInsensitive)){
+                    ptr_table->setCurrentCell(i,j);
+                    ptr_table->setFocus();
+                    return;
+                }
+            }
+        }
+        Toast::showMsg("搜索了一圈,没找到你要搜索的内容...", ToastTime::Time::ToastTime_short,ToastType::Type::ToastType_info,this);
     }
 }
+
 void DialogModifyRow::checkField(int row,int column,bool updateValue,bool displayErrorMessage){
     if(column==4&&row<(ptr_table->rowCount())){
         //OFD的文件编码
