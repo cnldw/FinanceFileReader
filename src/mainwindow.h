@@ -461,9 +461,6 @@ private:
     //1.8.6开始支持导出100万行
     int maxExcelRow=1000000;
 
-    //换行符长度,正确的来说OFD的换行符都是\r\n两个字节
-    int newLineCharsetLength=2;
-
     enum newLineType {LF/*\n-Uninx*/=0, CRLF/*\r\n-Win*/=1, CR/*\r-macOS*/=2,None=3};
     //当前打开的文件换行符类型
     int currentFileNewLineType=newLineType::CRLF;

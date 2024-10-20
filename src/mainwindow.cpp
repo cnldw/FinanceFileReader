@@ -31,7 +31,6 @@
 #include "src/dialogoktools.h"
 #include "src/msgtoast.h"
 #include "src/dialogshowfieldchecklist.h"
-#include "src/fieldcheckitem.h"
 #include "src/dialogshowfieldchecklist.h"
 #include "src/formfieldcheckedittools.h"
 #include <private/qzipreader_p.h>
@@ -100,7 +99,7 @@ MainWindow::MainWindow(int argc, char *argv[],QWidget *parent) : QMainWindow(par
     connect(action_ModifyRow, SIGNAL(triggered()), this, SLOT(showMoaifyRow()));
     action_ShowCharacter = new QAction(tr("十六进制字符编码透视(乱码分析)"),this);
     connect(action_ShowCharacter, SIGNAL(triggered()), this, SLOT(showCharacter()));
-    action_CsvForceNumber= new QAction(tr("对此列调整数据格式"),this);
+    action_CsvForceNumber= new QAction(tr("对选择的列调整数据格式"),this);
     connect(action_CsvForceNumber, SIGNAL(triggered()), this, SLOT(forceNumber()));
     action_ShareUseQrCode = new QAction(tr("使用二维码分享此单元格"),this);
     connect(action_ShareUseQrCode, SIGNAL(triggered()), this, SLOT(showQrcode()));
@@ -385,28 +384,21 @@ void  MainWindow::reCalculateTableBeginAndEnd(){
         }
         //当前表格可见区域有多少行
         int tableDisplayRow=currentTableRowEnd-currentTableRowBegin+1;
-        //当已加载数据达到20页时,清理一次全部数据
-        if(rowHasloaded.count()>tableDisplayRow*20){
+        //当已加载数据达到5w行时,清理一次全部数据
+        if(rowHasloaded.count()>50000){
             qDebug()<<"对加载记录进行全清理";
             ptr_table->clearContents();
             rowHasloaded.clear();
-            //重设0,下面再计算要开始和结束的位置
             tableRowBegin=0;
             tableRowEnd=0;
         }
-        //如果本次要显示的范围已经在上一次的范围内则不再刷新，降低滚动进度条时的调用填充数据函数的频率
         if(currentTableRowBegin>=tableRowBegin&&currentTableRowEnd<=tableRowEnd){
-            //qDebug()<<"本页数据已加载,跳过";
             return;
         }
         else{
-            //qDebug()<<"开始执行新的加载任务";
             int maxRow=ptr_table->rowCount()-1;
-            //新的起始位置和结束位置,上下各2倍冗余,一次共加载5页,免得进度条稍微滚动又要刷新
             tableRowBegin=(currentTableRowBegin-tableDisplayRow*2)<0?0:(currentTableRowBegin-tableDisplayRow*2);
             tableRowEnd=(currentTableRowEnd+tableDisplayRow*2)>maxRow?maxRow:(currentTableRowEnd+tableDisplayRow*2);
-            //qDebug()<<"本次加载记录数"<<tableRowEnd-tableRowBegin+1;
-            //不同数据类型插入点
             if(currentOpenFileType==openFileType::OFDFile){
                 display_OFDTable();
             }
@@ -455,7 +447,6 @@ void MainWindow::statusBar_clear_statusBar(){
  * @brief MainWindow::open_file_Dialog打开文件的弹窗
  */
 void MainWindow::open_file_Dialog(){
-    //如果没有忽略，则直接返回
     if(!ignoreFileChangeAndOpenNewFile()){
         return;
     }
@@ -507,7 +498,6 @@ void MainWindow::primaryCheck(int type,QString fileName,int exportType,int opena
             else if(currentOpenFileType==openFileType::FIXEDFile){primaryKeyFieldList=fixed.getPrimaryKeyFieldList();}
         }
         if(primaryKeyFieldList.count()>0){
-            //开始获取数据
             uint rowCount=commonContentQByteArrayList.count();
             for (uint row=0;row<rowCount;row++){
                 QStringList rowdata;
@@ -1045,25 +1035,65 @@ void MainWindow::initFile(QString filePath, bool keepdbfDisplayType, bool keepdb
             return;
         }
     }
-    /*读取一行识别一下文件换行符*/
+    /*读取一些文件内容识别一下文件换行符*/
     QFile file(currentOpenFilePath);
     if (file.open(QFile::ReadOnly))
     {
-        QString qstr=file.readLine();
-        qDebug()<<qstr;
-        if(qstr.endsWith("\r\n")){
-            currentFileNewLineType=newLineType::CRLF;
+        const int bufferSize = 102400;
+        QByteArray bufferQByteArray(bufferSize, 0);
+        qint64 bytesRead = file.read(bufferQByteArray.data(), bufferSize);
+        if(bytesRead<bufferSize&&bytesRead>0){
+            bufferQByteArray=bufferQByteArray.mid(0,bytesRead);
+            QString filecharset="UTF-8";
+            filecharset=m_libucd.CharsetDetect(bufferQByteArray);
+            if(!allowCharsetList.contains(filecharset.toUpper())){
+                if(filecharset.toUpper()=="WINDOWS-1252"||filecharset.toUpper()=="WINDOWS-1251"||filecharset.toUpper()=="KOI8-R"){
+                    filecharset="GB18030";
+                }
+                else{
+                    filecharset="UTF-8";
+                }
+            }
+            QTextCodec *codec=QTextCodec::codecForName(filecharset.toLocal8Bit());
+            QString str102400 = codec->toUnicode(bufferQByteArray);
+            int countCRLF = str102400.count("\r\n");
+            int countLF = str102400.count("\n");
+            int countCR = str102400.count("\r");
+            if(countCRLF>0){
+                qDebug()<<"分析文件换行符为CRLF";
+                currentFileNewLineType=newLineType::CRLF;
+            }
+            else if(countLF>0&&countCR==0){
+                qDebug()<<"分析文件换行符为LF";
+                currentFileNewLineType=newLineType::LF;
+            }
+            else if(countLF>0&&countCR>0&&countLF>countCR){
+                qDebug()<<"分析文件换行符为LF";
+                currentFileNewLineType=newLineType::LF;
+            }
+            else if(countCR>0&&countLF==0){
+                qDebug()<<"分析文件换行符为CR";
+                currentFileNewLineType=newLineType::CR;
+            }
+            else if(countCR>0&&countLF>0&&countCR>countLF){
+                qDebug()<<"分析文件换行符为CR";
+                currentFileNewLineType=newLineType::CR;
+            }
+            //只有一行且结尾没换行符
+            else{
+                currentFileNewLineType=newLineType::None;
+            }
         }
-        else if(qstr.endsWith("\n")) {
-            currentFileNewLineType=newLineType::LF;
-        }
-        else if(qstr.endsWith("\r")) {
-            currentFileNewLineType=newLineType::CR;
-        }
+        //空文件
         else{
             currentFileNewLineType=newLineType::None;
         }
         file.close();
+    }
+    //暂不支持macOS风格换行符文件或者疑似二进制文件的解析
+    if(currentFileNewLineType==newLineType::CR&&!currentFileName.endsWith(".dbf",Qt::CaseInsensitive)){
+        statusBar_disPlayMessage("非文本文件/单行数据过长/使用(CR)换行符的文本文件,暂不支持解析...");
+        return;
     }
 
     /*
@@ -1789,43 +1819,32 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName,QString sendCode,
         QByteArray lineQByteArray;
         QString lineQString;
         int lineNumber=0;
-        bool atLastRow=false;
+        int newLineCharsetLength=2;
         while (!dataFile.atEnd())
         {
             lineQByteArray=dataFile.readLine();
             //根据OFD文件的编码解开成unicode字符串
             lineQString = codecOFD->toUnicode(lineQByteArray);
-            atLastRow=dataFile.atEnd();
-            //记录需要截取的换行符长度
+            //记录需要截取的换行符长度--注意兼容最后一行没换行符的情况
             if(lineQString.endsWith("\r\n")){
                 newLineCharsetLength=2;
             }
-            else {
+            else if(lineQString.endsWith("\n")){
                 newLineCharsetLength=1;
             }
+            else if(lineQString.endsWith("\r")){
+                newLineCharsetLength=1;
+            }
+            else{
+                newLineCharsetLength=0;
+            }
             //第一行数据不trim
-            if(lineNumber==lineEnd&&lineNumber!=9&&!atLastRow){
+            if(lineNumber==lineEnd&&lineNumber!=9){
                 //数据行不能trim
                 lineQString=lineQString.left(lineQString.length()-newLineCharsetLength);
             }
             else{
-                if(!atLastRow){
-                    lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
-                }
-                else{
-                    if(lineQString.endsWith("\r\n")){
-                        lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
-                    }
-                    else if(lineQString.endsWith("\r")){
-                        lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
-                    }
-                    else if(lineQString.endsWith("\n")){
-                        lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
-                    }
-                    else{
-                        lineQString=lineQString.trimmed();
-                    }
-                }
+                lineQString=lineQString.left(lineQString.length()-newLineCharsetLength).trimmed();
             }
             //文件的第二行是文件版本
             if(lineNumber==1){
@@ -2114,6 +2133,7 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName,QString sendCode,
                     bool lastRowIsOFDCFEND=false;
                     bool readToLastRow=true;
                     lastRowHasNewLine=true;
+                    int newLineCharsetLength=2;
                     while (!dataFile.atEnd())
                     {
                         lineQByteArray=dataFile.readLine();
@@ -2123,12 +2143,11 @@ void MainWindow::load_ofdDataFile(QString fileTypeFromFileName,QString sendCode,
                             lineQString=lineQString.left(lineQString.length()-newLineCharsetLength);
                             lineQByteArray=lineQByteArray.left(lineQByteArray.length()-newLineCharsetLength);
                         }
-                        else if(lineQString.endsWith("\r")||lineQString.endsWith("\n")){
+                        else if(lineQString.endsWith("\n")||lineQString.endsWith("\r")){
                             newLineCharsetLength=1;
                             lineQString=lineQString.left(lineQString.length()-newLineCharsetLength);
                             lineQByteArray=lineQByteArray.left(lineQByteArray.length()-newLineCharsetLength);
                         }
-                        //最后一行且没有换行符--这种情况正常来说只发生在最后一行
                         else{
                             newLineCharsetLength=0;
                             if(dataFile.atEnd()){
@@ -2477,7 +2496,7 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
             while (!dataFile.atEnd()&&row<rowNeedLoad)
             {
                 QByteArray rowdata=dataFile.readLine();
-                //单行大于20480字节--拒绝读取
+                //单行大于163840字节--拒绝读取
                 if(rowdata.size()>163840){
                     dataFile.close();
                     statusBar_disPlayMessage("单行数据过长,无法正常解析...");
@@ -2545,7 +2564,12 @@ void MainWindow::load_csvFile(QList<matchIndex> csvMatchList){
                 while (row<(dataBeginRow+endIgnore+10)&&row<useForFileAnalyze.count())
                 {
                     line = codec->toUnicode(useForFileAnalyze.at(row));
-                    line=line.remove('\r').remove('\n');
+                    if(line.endsWith("\r\n")){
+                        line=line.left(line.length()-2);
+                    }
+                    else if(line.endsWith("\n")||line.endsWith("\r")){
+                        line=line.left(line.length()-1);
+                    }
                     csvData.append(line);
                     row++;
                 }
@@ -3027,7 +3051,6 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
             while (!dataFile.atEnd()&&row<rowNeedLoad)
             {
                 QByteArray rowdata=dataFile.readLine();
-                //单行大于20480字节--拒绝读取
                 if(rowdata.size()>163840){
                     dataFile.close();
                     statusBar_disPlayMessage("单行数据过长,无法正常解析...");
@@ -3074,7 +3097,12 @@ void MainWindow::load_fixedFile(QList<matchIndex> fixedMatchList){
                 while (row<(dataBeginRow+endIgnore+10)&&row<useForFileAnalyze.count())
                 {
                     line = codec->toUnicode(useForFileAnalyze.at(row));
-                    line=line.remove('\r').remove('\n');
+                    if(line.endsWith("\r\n")){
+                        line=line.left(line.length()-2);
+                    }
+                    else if(line.endsWith("\n")||line.endsWith("\r")){
+                        line=line.left(line.length()-1);
+                    }
                     fixedData.append(line);
                     row++;
                 }
@@ -3276,30 +3304,24 @@ void MainWindow::load_fixedFileData(){
         QByteArray lineQByteArray;
         QString lineQString;
         int lineNumber=0;
+        lastRowHasNewLine=true;
         QApplication::setOverrideCursor(Qt::WaitCursor);
         while (!dataFile.atEnd())
         {
             lineQByteArray=dataFile.readLine();
-            if(dataFile.atEnd()){
-                lineQString = codec->toUnicode(lineQByteArray);
-                if(lineQString.endsWith("\r\n")){
-                    lastRowHasNewLine=true;
-                    lineQString=lineQString.remove("\r\n");
-                }
-                else if(lineQString.endsWith("\r")){
-                    lastRowHasNewLine=true;
-                    lineQString=lineQString.remove("\r");
-                }
-                else if(lineQString.endsWith("\n")){
-                    lastRowHasNewLine=true;
-                    lineQString=lineQString.remove("\n");
-                }
-                else{
-                    lastRowHasNewLine=false;
-                }
+            lineQString = codec->toUnicode(lineQByteArray);
+            if(lineQString.endsWith("\r\n")){
+                lineQString=lineQString.left(lineQString.length()-2);
+                lineQByteArray=lineQByteArray.left(lineQByteArray.length()-2);
+            }
+            else if(lineQString.endsWith("\n")||lineQString.endsWith("\r")){
+                lineQString=lineQString.left(lineQString.length()-1);
+                lineQByteArray=lineQByteArray.left(lineQByteArray.length()-1);
             }
             else{
-                lineQString = codec->toUnicode(lineQByteArray).remove('\r').remove('\n');
+                if(dataFile.atEnd()){
+                    lastRowHasNewLine=false;
+                }
             }
             if(lineNumber<fixed.getDataRowBeginIndex()-1){
                 commonHeaderQStringList.append(lineQString);
@@ -3307,14 +3329,14 @@ void MainWindow::load_fixedFileData(){
             else{
                 //切记注意，在这里我们使用数据压缩算法对数据进行压缩---获取的时候需解压使用
                 if(dataCompressLevel==0){
-                    commonContentQByteArrayList.append(codec->fromUnicode(lineQString));
+                    commonContentQByteArrayList.append(lineQByteArray);
                 }
                 else{
-                    commonContentQByteArrayList.append(qCompress(codec->fromUnicode(lineQString),dataCompressLevel));
+                    commonContentQByteArrayList.append(qCompress(lineQByteArray,dataCompressLevel));
                 }
                 //记录每行长度
                 if(fixed.getFieldlengthtype()==0){
-                    rowLengthList.append(codec->fromUnicode(lineQString).length());
+                    rowLengthList.append(lineQByteArray.length());
                 }
                 else{
                     rowLengthList.append(lineQString.length());
@@ -3742,21 +3764,37 @@ void MainWindow::load_csvFileData(QStringList fieldTitle){
     if (dataFile.open(QFile::ReadOnly))
     {
         QTextCodec *codec=QTextCodec::codecForName(csv.getEcoding().toLocal8Bit());
+        QByteArray lineQByteArray;
         QString line2;
         int lineNumber=0;
+        lastRowHasNewLine=true;
         QApplication::setOverrideCursor(Qt::WaitCursor);
         while (!dataFile.atEnd())
         {
-            line2 = codec->toUnicode(dataFile.readLine()).remove('\r').remove('\n');
+            lineQByteArray=dataFile.readLine();
+            line2 = codec->toUnicode(lineQByteArray);
+            if(line2.endsWith("\r\n")){
+                line2=line2.left(line2.length()-2);
+                lineQByteArray=lineQByteArray.left(lineQByteArray.length()-2);
+            }
+            else if(line2.endsWith("\n")||line2.endsWith("\r")){
+                line2=line2.left(line2.length()-1);
+                lineQByteArray=lineQByteArray.left(lineQByteArray.length()-1);
+            }
+            else{
+                if(dataFile.atEnd()){
+                    lastRowHasNewLine=false;
+                }
+            }
             if(lineNumber<csv.getDatabeginrowindex()-1){
                 commonHeaderQStringList.append(line2);
             }
             else{
                 if(dataCompressLevel==0){
-                    commonContentQByteArrayList.append(codec->fromUnicode(line2));
+                    commonContentQByteArrayList.append(lineQByteArray);
                 }
                 else{
-                    commonContentQByteArrayList.append(qCompress(codec->fromUnicode(line2),dataCompressLevel));
+                    commonContentQByteArrayList.append(qCompress(lineQByteArray,dataCompressLevel));
                 }
             }
             lineNumber++;
@@ -5159,14 +5197,20 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             }else{
                 info.append("读取文件字段数错误");
             }
+            if(currentFileNewLineType==newLineType::CRLF){
+                info.append("换行符:CRLF风格换行符\r\n");
+            }
+            if(currentFileNewLineType==newLineType::LF){
+                info.append("换行符:LF风格换行符\r\n");
+            }
             if(currentFileNewLineType!=newLineType::CRLF&&currentFileNewLineType!=newLineType::None){
-                info.append("一般情况下OFD类文件的换行符应该为\\r\\n(CRLF),但目前不是~\r\n");
+                info.append("一般情况下OFD类文件的换行符应该为CRLF,但目前不是~\r\n");
             }
             if(lastRowHasNewLine){
-                info.append("文件最后一行有换行符~~\r\n");
+                info.append("文件尾特征:文件最后一行有换行符~~\r\n");
             }
             else{
-                info.append("文件最后一行没有换行符!!\r\n");
+                info.append("文件尾特征:文件最后一行没有换行符!!\r\n");
             }
             QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
         }else{
@@ -5182,6 +5226,18 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
         info.append("加载的文件头行数:").append(QString::number(commonHeaderQStringList.count())).append("\r\n");
         info.append("加载的数据行数:").append(QString::number(commonContentQByteArrayList.count())).append("\r\n");
         info.append("配置的文件尾行数:").append(QString::number(csv.getEndIgnoreRow())).append(",实际加载的文件尾行数").append(QString::number(commonFooterQStringList.count())).append("\r\n");
+        if(currentFileNewLineType==newLineType::CRLF){
+            info.append("换行符:CRLF风格换行符\r\n");
+        }
+        if(currentFileNewLineType==newLineType::LF){
+            info.append("换行符:LF风格换行符\r\n");
+        }
+        if(lastRowHasNewLine){
+            info.append("文件尾特征:文件最后一行有换行符~~\r\n");
+        }
+        else{
+            info.append("文件尾特征:文件最后一行没有换行符!!\r\n");
+        }
         QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
     }
     else if(currentOpenFileType==openFileType::FIXEDFile){
@@ -5204,11 +5260,17 @@ void MainWindow::on_pushButtonOpenFile_2_clicked()
             info.append("加载的数据行数:").append(QString::number(commonContentQByteArrayList.count())).append("\r\n");
         }
         info.append("配置的文件尾行数:").append(QString::number(fixed.getEndIgnoreRow())).append(",实际加载的文件尾行数:").append(QString::number(commonFooterQStringList.count())).append("\r\n");
+        if(currentFileNewLineType==newLineType::CRLF){
+            info.append("换行符:CRLF风格换行符\r\n");
+        }
+        if(currentFileNewLineType==newLineType::LF){
+            info.append("换行符:LF风格换行符\r\n");
+        }
         if(lastRowHasNewLine){
-            info.append("文件最后一行有换行符~~\r\n");
+            info.append("文件尾特征:文件最后一行有换行符~~\r\n");
         }
         else{
-            info.append("文件最后一行没有换行符!!\r\n");
+            info.append("文件尾特征:文件最后一行没有换行符!!\r\n");
         }
         QMessageBox::information(this,tr("文件检查结果"),info,QMessageBox::Ok,QMessageBox::Ok);
     }
@@ -6311,40 +6373,64 @@ void MainWindow::showCharacter(){
 
 
 void MainWindow::forceNumber(){
-    int flag=-1;
-    //取当前设定
-    if(CsvFieldIsNumberOrNot.contains(tableColCurrent)){
-        if(CsvFieldIsNumberOrNot.value(tableColCurrent).getIsNumber()){
-            flag=CsvFieldIsNumberOrNot.value(tableColCurrent).getDecimalLength();
+    QList<QTableWidgetSelectionRange> itemsRange=ptr_table->selectedRanges();
+    QList<int> colList;
+    for(int i=0;i<itemsRange.count();i++){
+        for(int c=itemsRange.at(i).leftColumn();c<=itemsRange.at(i).rightColumn();c++){
+            if (!colList.contains(c)){
+                colList.append(c);
+            }
         }
-        else{
-            flag=-1;
+    }
+    if(colList.count()>1){
+        std::sort(colList.begin(), colList.end());
+    }
+    int flag=-1;
+    if(colList.count()==1){
+        //取当前设定
+        if(CsvFieldIsNumberOrNot.contains(colList.at(0))){
+            if(CsvFieldIsNumberOrNot.value(colList.at(0)).getIsNumber()){
+                flag=CsvFieldIsNumberOrNot.value(colList.at(0)).getDecimalLength();
+            }
+            else{
+                flag=-1;
+            }
         }
     }
     DialogForceNumber  dialog (flag,this);
-    dialog.setWindowTitle(QString("对此列调整数据格式-%1").arg(csv.getFieldList().at(tableColCurrent).getFieldDescribe()));
+    QString titile;
+    if(colList.count()==1){
+        titile=QString("对选择的列调整数据格式-%1").arg(csv.getFieldList().at(colList.at(0)).getFieldDescribe());
+    }
+    else{
+        titile="对选择的多列调整数据格式";
+    }
+    dialog.setWindowTitle(titile);
     dialog.setModal(true);
     dialog.exec();
     int flag2=dialog.getFlag();
     if(flag2==-2){
         //statusBar_disPlayMessage("取消设置...");
     }
-    //更新设置--没有改动就不必再处理了
-    else if (flag2!=flag){
-        FieldIsNumber isnumber;
-        isnumber.setDecimalLength(flag2);
-        if(flag2>-1){
-            isnumber.setIsNumber(true);
+    else{
+        if (colList.count()>1||(flag2!=flag&&colList.count()==1)){
+            FieldIsNumber isnumber;
+            isnumber.setDecimalLength(flag2);
+            if(flag2>-1){
+                isnumber.setIsNumber(true);
+            }
+            else{
+                isnumber.setIsNumber(false);
+            }
+            for(int cc=0;cc<colList.count();cc++){
+                CsvFieldIsNumberOrNot.insert(colList.at(cc),isnumber);
+            }
+            //清除重新加载
+            rowHasloaded.clear();
+            acceptVScrollValueChanged(-1);
+            //触发统计
+            on_tableWidget_itemSelectionChanged();
         }
-        else{
-            isnumber.setIsNumber(false);
-        }
-        CsvFieldIsNumberOrNot.insert(tableColCurrent,isnumber);
-        //清除重新加载
-        rowHasloaded.clear();
-        acceptVScrollValueChanged(-1);
-        //触发统计
-        on_tableWidget_itemSelectionChanged();
     }
 }
 
@@ -7054,6 +7140,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                     if(ENABLE_QRCODE){
                         tablePopMenu->addAction(action_ShareUseQrCode);
                     }
+                    tablePopMenu->addAction(action_CsvForceNumber);
                     //比对器
                     tablePopMenu->addAction(action_EditCompareData);
                     //行比对齐文字描述的替换
@@ -7078,8 +7165,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                             tablePopMenu->addAction(action_ShareUseQrCode);
                         }
                         //tablePopMenu->addAction(action_ModifyCellBatch);
-                        tablePopMenu->addAction(action_EditCompareDataBatch);
                         tablePopMenu->addAction(action_CsvForceNumber);
+                        tablePopMenu->addAction(action_EditCompareDataBatch);
                     }
                     //多个选择器
                     else{
@@ -7087,8 +7174,8 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                         tablePopMenu->addAction(action_ShowCopyColum);
                         tablePopMenu->addAction(action_ShowCopyColumWithTitle);
                         //tablePopMenu->addAction(action_ModifyCellBatch);
-                        tablePopMenu->addAction(action_EditCompareDataBatch);
                         tablePopMenu->addAction(action_CsvForceNumber);
+                        tablePopMenu->addAction(action_EditCompareDataBatch);
                     }
                 }
                 //多行多列
@@ -7101,6 +7188,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                         if(ENABLE_QRCODE){
                             tablePopMenu->addAction(action_ShareUseQrCode);
                         }
+                        tablePopMenu->addAction(action_CsvForceNumber);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
                     }
                     //多个选择器
@@ -7108,6 +7196,7 @@ void MainWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
                         //将会弹出复制错误
                         tablePopMenu->addAction(action_ShowCopyColum);
                         tablePopMenu->addAction(action_ShowCopyColumWithTitle);
+                        tablePopMenu->addAction(action_CsvForceNumber);
                         tablePopMenu->addAction(action_EditCompareDataBatch);
                     }
                 }
@@ -8685,6 +8774,12 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                         statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)));
                     }
                 }
+                else{
+                    statusBar_disPlayMessage(csv.getFieldList().at(tableColCurrent).getFieldDescribe().append(csv.getFieldList().at(tableColCurrent).getFieldName().isEmpty()?"":"/"+csv.getFieldList().at(tableColCurrent).getFieldName()));
+                }
+            }
+            else{
+                statusBar_disPlayMessage(csv.getFieldList().at(tableColCurrent).getFieldDescribe().append(csv.getFieldList().at(tableColCurrent).getFieldName().isEmpty()?"":"/"+csv.getFieldList().at(tableColCurrent).getFieldName()));
             }
         }
         else if(currentOpenFileType==openFileType::FIXEDFile){
@@ -8697,52 +8792,61 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
                 if(!text.isEmpty()){
                     statusBar_disPlayMessage(text.append(dic.isEmpty()?"":("|"+dic)));
                 }
+                else{
+                    statusBar_disPlayMessage(fixed.getFieldList().at(tableColCurrent).getFieldDescribe().append(fixed.getFieldList().at(tableColCurrent).getFieldName().isEmpty()?"":"/"+fixed.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(fixed.getFieldList().at(tableColCurrent).getFieldType()));
+                }
+            }
+            else{
+                statusBar_disPlayMessage(fixed.getFieldList().at(tableColCurrent).getFieldDescribe().append(fixed.getFieldList().at(tableColCurrent).getFieldName().isEmpty()?"":"/"+fixed.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(fixed.getFieldList().at(tableColCurrent).getFieldType()));
             }
         }
         else if(currentOpenFileType==openFileType::DBFFile){
             int colInFile=tableColCurrent+1;
             statusBar_display_rowsAndCol(dbfRowMap.value(dataRowCurrent)+1,colInFile,dbf.getFieldList().at(tableColCurrent).getLength());
+            QString fieldType="";
+            switch (dbf.getFieldList().at(tableColCurrent).getFieldType()) {
+            case QDbf::QDbfField::Character:
+                fieldType="Character-字符型";
+                break;
+            case QDbf::QDbfField::Currency:
+                fieldType="Currency-货币型";
+                break;
+            case QDbf::QDbfField::Date:
+                fieldType="Date-日期型";
+                break;
+            case QDbf::QDbfField::DateTime:
+                fieldType="DateTime日期时间型";
+                break;
+            case QDbf::QDbfField::FloatingPoint:
+                fieldType="FloatingPoint浮点型";
+                break;
+            case QDbf::QDbfField::Integer:
+                fieldType="Integer整数型";
+                break;
+            case QDbf::QDbfField::Logical:
+                fieldType="Logical逻辑型";
+                break;
+            case QDbf::QDbfField::Memo:
+                fieldType="Memo备注型";
+                break;
+            case QDbf::QDbfField::Number:
+                fieldType="Number数字型";
+                break;
+            default:
+                fieldType=("Undefined-未定义类型");
+            }
             if(ptr_table->item(tableRowCurrent,tableColCurrent)!=nullptr){
                 QString text=ptr_table->item(tableRowCurrent,tableColCurrent)->text();
                 QString dic=commonDictionary.value("DBF"+dbf.getFileIni()).getDictionary(dbf.getFieldList().at(tableColCurrent).getFieldName().toUpper(),text);
-                QString fieldType="";
-                switch (dbf.getFieldList().at(tableColCurrent).getFieldType()) {
-                case QDbf::QDbfField::Character:
-                    fieldType="Character-字符型";
-                    break;
-                case QDbf::QDbfField::Currency:
-                    fieldType="Currency-货币型";
-                    break;
-                case QDbf::QDbfField::Date:
-                    fieldType="Date-日期型";
-                    break;
-                case QDbf::QDbfField::DateTime:
-                    fieldType="DateTime日期时间型";
-                    break;
-                case QDbf::QDbfField::FloatingPoint:
-                    fieldType="FloatingPoint浮点型";
-                    break;
-                case QDbf::QDbfField::Integer:
-                    fieldType="Integer整数型";
-                    break;
-                case QDbf::QDbfField::Logical:
-                    fieldType="Logical逻辑型";
-                    break;
-                case QDbf::QDbfField::Memo:
-                    fieldType="Memo备注型";
-                    break;
-                case QDbf::QDbfField::Number:
-                    fieldType="Number数字型";
-                    break;
-                default:
-                    fieldType=("Undefined-未定义类型");
-                }
                 if(text.isEmpty()){
-                    statusBar_disPlayMessage(dbf.getFieldList().at(tableColCurrent).getFieldName().append("|").append(fieldType));
+                    statusBar_disPlayMessage(dbf.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(dbf.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(fieldType));
                 }
                 else{
-                    statusBar_disPlayMessage(dbf.getFieldList().at(tableColCurrent).getFieldName().append("|").append(fieldType).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
+                    statusBar_disPlayMessage(dbf.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(dbf.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(fieldType).append("|").append(text).append(dic.isEmpty()?"":("|"+dic)));
                 }
+            }
+            else{
+                statusBar_disPlayMessage(dbf.getFieldList().at(tableColCurrent).getFieldDescribe().append("/").append(dbf.getFieldList().at(tableColCurrent).getFieldName()).append("|").append(fieldType));
             }
         }
         //***********未实现的数据类型插入点

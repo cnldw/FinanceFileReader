@@ -16,6 +16,8 @@ mainwindow.cpp文件中的行数太多了,部分方法实现迁移到该文件�
 #include "src/msgtoast.h"
 #include "src/dialogmodifyrow.h"
 #include "src/dialogmodifycell.h"
+#include "src/fieldcheckitem.h"
+
 
 void MainWindow::init_Others(){
     tips.append("导出数据到Excel,可以使用excel进行强大的筛选、统计、分析...");
@@ -293,6 +295,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到最后一列还没找到
@@ -317,6 +320,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到第一列还没找到
@@ -351,6 +355,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到最后一列还没找到
@@ -375,6 +380,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到第一列还没找到
@@ -409,6 +415,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到最后一列还没找到
@@ -433,6 +440,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到第一列还没找到
@@ -475,6 +483,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到最后一列还没找到
@@ -499,6 +508,7 @@ void MainWindow::columnJump(int type){
                         ptr_table->setCurrentCell(tableRowCurrent,col);
                         ptr_table->setFocus();
                         dataBlocked=false;
+                        on_tableWidget_itemSelectionChanged();
                         return;
                     }
                     //搜到第一列还没找到
@@ -3421,20 +3431,27 @@ void MainWindow::saveOFDOrFixedFile(QString filepath)
     QFile newfile(filepath);
     QApplication::setOverrideCursor(Qt::WaitCursor);
     if (newfile.open(QFile::WriteOnly | QIODevice::Truncate)) {
+        QString newLine="\r\n";
+        if (currentFileNewLineType==newLineType::LF){
+            newLine="\n";
+        }
+        else if (currentFileNewLineType==newLineType::CR){
+            newLine="\r";
+        }
         if(currentOpenFileType==openFileType::OFDFile){
             QString sb;
             for(int i=0;i<commonHeaderQStringList.length();i++){
-                sb.append(commonHeaderQStringList.at(i)).append("\r\n");
+                sb.append(commonHeaderQStringList.at(i)).append(newLine);
             }
             newfile.write(codecOFD->fromUnicode(sb));
             sb.clear();
             int row=0;
             while(row<commonContentQByteArrayList.length()){
                 if(dataCompressLevel==0){
-                    sb.append(codecOFD->toUnicode(commonContentQByteArrayList.at(row))).append("\r\n");
+                    sb.append(codecOFD->toUnicode(commonContentQByteArrayList.at(row))).append(newLine);
                 }
                 else{
-                    sb.append(codecOFD->toUnicode(qUncompress(commonContentQByteArrayList.at(row)))).append("\r\n");
+                    sb.append(codecOFD->toUnicode(qUncompress(commonContentQByteArrayList.at(row)))).append(newLine);
                 }
                 if((row%1000==0)||(row==commonContentQByteArrayList.count()-1)){
                     newfile.write(codecOFD->fromUnicode(sb));
@@ -3450,31 +3467,27 @@ void MainWindow::saveOFDOrFixedFile(QString filepath)
                 row++;
             }
             if(lastRowHasNewLine){
-                newfile.write(codecOFD->fromUnicode(ofdFooterQString+"\r\n"));
+                newfile.write(codecOFD->fromUnicode(ofdFooterQString+newLine));
             }
             else{
                 newfile.write(codecOFD->fromUnicode(ofdFooterQString));
             }
         }
         else if(currentOpenFileType==openFileType::FIXEDFile){
-            QString end="\r\n";
             QTextCodec *codec=QTextCodec::codecForName(fixed.getEcoding().toLocal8Bit());
-            if(currentFileNewLineType==newLineType::CR){end="\r";}
-            else if(currentFileNewLineType==newLineType::CRLF){end="\r\n";}
-            else if(currentFileNewLineType==newLineType::LF){end="\n";}
             QString sb;
             for(int i=0;i<commonHeaderQStringList.count();i++){
-                sb.append(commonHeaderQStringList.at(i)).append(end);
+                sb.append(commonHeaderQStringList.at(i)).append(newLine);
             }
             newfile.write(codec->fromUnicode(sb));
             sb.clear();
             int row=0;
             while(row<commonContentQByteArrayList.length()){
                 if(dataCompressLevel==0){
-                    sb.append(codec->toUnicode(commonContentQByteArrayList.at(row))).append(end);
+                    sb.append(codec->toUnicode(commonContentQByteArrayList.at(row))).append(newLine);
                 }
                 else{
-                    sb.append(codec->toUnicode(qUncompress(commonContentQByteArrayList.at(row)))).append(end);
+                    sb.append(codec->toUnicode(qUncompress(commonContentQByteArrayList.at(row)))).append(newLine);
                 }
                 if((row%1000==0)||(row==commonContentQByteArrayList.count()-1)){
                     newfile.write(codec->fromUnicode(sb));
@@ -3491,11 +3504,11 @@ void MainWindow::saveOFDOrFixedFile(QString filepath)
             }
             for(int i=0;i<commonFooterQStringList.count();i++){
                 if(i<commonFooterQStringList.count()-1){
-                    newfile.write(codec->fromUnicode(commonFooterQStringList.at(i)+end));
+                    newfile.write(codec->fromUnicode(commonFooterQStringList.at(i)+newLine));
                 }
                 else{
                     if(lastRowHasNewLine){
-                        newfile.write(codec->fromUnicode(commonFooterQStringList.at(i)+end));
+                        newfile.write(codec->fromUnicode(commonFooterQStringList.at(i)+newLine));
                     }
                     else{
                         newfile.write(codec->fromUnicode(commonFooterQStringList.at(i)));
